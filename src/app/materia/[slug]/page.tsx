@@ -28,7 +28,7 @@ function DashboardBrand() {
       </span>
       <span>
         <span className="block text-[11px] font-semibold uppercase tracking-[0.24em] text-white/40">
-          Subject board
+          Materia
         </span>
         <span className="block text-lg font-black tracking-tight text-white">
           NextCampus
@@ -133,14 +133,14 @@ export default async function SubjectPage({
               {subject.nombre}
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-white/64 sm:text-base">
-              Agenda, unidades y apuntes en una superficie dark, manteniendo el
-              quiz/focus claro como experiencia aparte.
+              Agenda, unidades y apuntes organizados para que puedas estudiar y
+              practicar en una experiencia enfocada.
             </p>
           </DarkCard>
 
           <DarkCard className="p-6">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">
-              Snapshot
+              Resumen
             </p>
             <div className="mt-4 space-y-4 text-sm text-white/64">
               <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-4">
@@ -177,8 +177,7 @@ export default async function SubjectPage({
             </h2>
           </div>
           <p className="max-w-xl text-sm text-white/48">
-            El calendario vive en un wrapper client-only y la página sigue siendo
-            Server Component.
+            Fechas, entregas y avisos importantes de la materia en un solo lugar.
           </p>
         </div>
 
@@ -236,7 +235,7 @@ export default async function SubjectPage({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
-              Focus claro
+              Modo estudio
             </p>
             <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
               Unidades de quiz

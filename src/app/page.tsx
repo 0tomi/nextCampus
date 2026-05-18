@@ -62,9 +62,8 @@ export default async function HomePage() {
               No hay datos cargados todavía.
             </h1>
             <p className="mt-3 text-sm leading-6 text-white/64">
-              Corré <code className="bg-white/5 px-1.5 py-0.5">pnpm db:migrate</code>{' '}
-              y <code className="bg-white/5 px-1.5 py-0.5">pnpm db:seed</code>{' '}
-              para poblar la carrera.
+              Todavía no se cargó la información de la carrera. Cuando esté
+              lista, vas a ver acá los años y materias disponibles.
             </p>
           </DarkCard>
         </AnimateIn>
@@ -130,7 +129,7 @@ export default async function HomePage() {
               icon={<GraduationCap className="h-5 w-5" />}
               label="Años activos"
               value={career.years.length}
-              meta="Ruta completa"
+              meta="Recorrido completo"
               progress={100}
               chipClassName="bg-gradient-to-br from-amber-400/15 to-orange-500/15 text-amber-200"
               progressClassName="bg-gradient-to-r from-amber-400 to-orange-500"
@@ -139,7 +138,7 @@ export default async function HomePage() {
               icon={<BookOpen className="h-5 w-5" />}
               label="Materias visibles"
               value={totalSubjects}
-              meta="Acceso público"
+              meta="Disponibles"
               progress={career.years.length > 0 ? 100 : 0}
               chipClassName="bg-gradient-to-br from-cyan-400/15 to-blue-500/15 text-cyan-200"
               progressClassName="bg-gradient-to-r from-cyan-400 to-blue-500"
@@ -159,8 +158,8 @@ export default async function HomePage() {
             </h2>
           </div>
           <p className="max-w-xl text-sm text-white/48">
-            Cada bloque mantiene el color estable por año y conserva las rutas
-            públicas existentes.
+            Cada bloque agrupa las materias por año para que encuentres rápido
+            el contenido que necesitás.
           </p>
         </div>
 

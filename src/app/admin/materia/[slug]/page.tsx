@@ -78,8 +78,8 @@ export default async function AdminSubjectPage({
           {subject.nombre}
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-white/62 sm:text-base">
-          Agenda, apuntes y quiz sobre la misma data y server actions existentes,
-          ahora en una superficie admin dark consistente.
+          Gestioná agenda, apuntes y quiz desde una superficie clara para el
+          equipo de administración.
         </p>
       </DarkCard>
 
@@ -273,7 +273,7 @@ export default async function AdminSubjectPage({
       <DarkCard className="space-y-5 p-6">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38">
-            Focus contenido
+            Contenido de práctica
           </p>
           <h2 className="mt-2 text-2xl font-black tracking-tight text-white">
             Quiz

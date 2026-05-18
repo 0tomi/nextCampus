@@ -20,7 +20,7 @@ function DashboardBrand() {
       </span>
       <span>
         <span className="block text-[11px] font-semibold uppercase tracking-[0.24em] text-white/40">
-          Year board
+          Año académico
         </span>
         <span className="block text-lg font-black tracking-tight text-white">
           NextCampus
@@ -89,8 +89,8 @@ export default async function YearPage({
               {year.nombre}
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-white/64 sm:text-base">
-              Entrá a cada materia desde el sidebar o desde la grilla principal
-              para mantener el flujo público server-side intacto.
+              Entrá a cada materia desde el menú lateral o desde la grilla
+              principal para seguir tu recorrido de cursada.
             </p>
           </DarkCard>
 
@@ -99,7 +99,7 @@ export default async function YearPage({
               icon={<CalendarDays className="h-5 w-5" />}
               label="Materias visibles"
               value={year.subjects.length}
-              meta="Ruta anual"
+              meta="Recorrido anual"
               progress={100}
               chipClassName="bg-gradient-to-br from-violet-400/15 to-purple-500/15 text-violet-200"
               progressClassName={colors.progressClassName}
@@ -111,11 +111,11 @@ export default async function YearPage({
               <div
                 className={`mt-4 inline-flex border px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] ${colors.chipClassName}`}
               >
-                Vista pública dark activa
+                Vista del año activa
               </div>
               <p className="mt-4 text-sm leading-6 text-white/58">
-                El calendario consolidado por año no expone eventos en esta
-                query, así que la agenda detallada sigue dentro de cada materia.
+                La agenda detallada se organiza dentro de cada materia para que
+                encuentres fechas y entregas en contexto.
               </p>
             </DarkCard>
           </div>
@@ -133,8 +133,8 @@ export default async function YearPage({
             </h2>
           </div>
           <p className="max-w-xl text-sm text-white/48">
-            La navegación queda en el shell dark y el calendario se renderiza en
-            un wrapper client aislado.
+            Consultá las fechas importantes del año y entrá a cada materia para
+            ver el detalle completo.
           </p>
         </div>
 
@@ -155,8 +155,7 @@ export default async function YearPage({
             </h2>
           </div>
           <p className="max-w-xl text-sm text-white/48">
-            Misma data, nueva superficie: links directos a cada materia sin tocar
-            rutas ni queries.
+            Accesos rápidos para abrir cada materia y continuar estudiando.
           </p>
         </div>
 

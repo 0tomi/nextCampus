@@ -50,14 +50,13 @@ export function LoginForm() {
 
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
-              Admin access
+              Acceso interno
             </p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-white">
               Acceso administrador
             </h1>
             <p className="mt-3 text-sm leading-6 text-white/58">
-              Ingresá con tu cuenta habilitada para abrir la consola dark del panel
-              interno.
+              Ingresá con tu cuenta habilitada para abrir el panel interno.
             </p>
           </div>
         </div>

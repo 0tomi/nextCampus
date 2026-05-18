@@ -18,7 +18,7 @@ function AdminBrand() {
       </span>
       <span>
         <span className="block text-[11px] font-semibold uppercase tracking-[0.24em] text-white/40">
-          Admin shell
+          Panel interno
         </span>
         <span className="block text-lg font-black tracking-tight text-white">
           NextCampus
@@ -55,7 +55,7 @@ export default async function AdminHubPage() {
                 href: '/admin/login',
                 label: 'Iniciar sesión',
                 badge: <Shield className="h-4 w-4" />,
-                meta: 'ADMIN_EMAILS',
+                meta: 'Acceso habilitado',
                 badgeClassName: 'from-violet-400 to-purple-500 text-white',
               },
             ]}
@@ -71,8 +71,8 @@ export default async function AdminHubPage() {
               No autorizado.
             </h1>
             <p className="mt-4 text-sm leading-7 text-white/62">
-              Tu usuario no está en la allowlist de administradores
-              (`ADMIN_EMAILS`). Ingresá con una cuenta habilitada para continuar.
+              Tu usuario no tiene permisos de administración. Ingresá con una
+              cuenta habilitada para continuar.
             </p>
             <Link
               href="/admin/login"
@@ -131,9 +131,8 @@ export default async function AdminHubPage() {
               Panel de administración
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-white/62 sm:text-base">
-              Misma lógica server-side, nueva superficie dark. Navegá por año desde
-              el menú lateral y entrá a cada materia para editar agenda, apuntes y
-              quiz sin tocar rutas ni actions.
+              Navegá por año desde el menú lateral y entrá a cada materia para
+              editar agenda, apuntes y quiz desde un panel unificado.
             </p>
           </DarkCard>
 
@@ -158,7 +157,7 @@ export default async function AdminHubPage() {
                 <span>Acceso</span>
                 <span className="inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-200">
                   <Shield className="h-3.5 w-3.5" />
-                  Allowlist admin
+                  Acceso habilitado
                 </span>
               </div>
             </div>
