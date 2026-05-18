@@ -64,20 +64,30 @@ export async function createApunte(formData: FormData): Promise<void> {
     descripcionHtml: formData.get('descripcionHtml') ?? '',
   })
 
-  const file = formData.get('pdf')
-  let pdfObjectKey: string | null = null
-  if (file instanceof File && file.size > 0) {
-    pdfObjectKey = await uploadApuntePdf(file, data.subjectSlug)
-  }
-
-  await prisma.apunte.create({
+  // DB-first: crear la fila sin PDF; solo después subir el archivo.
+  // Si la subida falla, borramos la fila como compensación (Storage no participa
+  // en transacciones SQL, así que este es el único patrón seguro).
+  const apunte = await prisma.apunte.create({
     data: {
       subjectId: data.subjectId,
       titulo: data.titulo,
       descripcionHtml: sanitizeRichHtml(data.descripcionHtml),
-      pdfObjectKey,
+      pdfObjectKey: null,
     },
   })
+
+  const file = formData.get('pdf')
+  if (file instanceof File && file.size > 0) {
+    let pdfObjectKey: string
+    try {
+      pdfObjectKey = await uploadApuntePdf(file, data.subjectSlug)
+    } catch (err) {
+      await prisma.apunte.delete({ where: { id: apunte.id } })
+      throw err
+    }
+    await prisma.apunte.update({ where: { id: apunte.id }, data: { pdfObjectKey } })
+  }
+
   revalidatePath(`/materia/${data.subjectSlug}`)
 }
 
@@ -86,10 +96,19 @@ export async function deleteApunte(formData: FormData): Promise<void> {
   const id = z.string().min(1).parse(formData.get('id'))
   const subjectSlug = z.string().min(1).parse(formData.get('subjectSlug'))
   const apunte = await prisma.apunte.findUnique({ where: { id } })
-  if (apunte?.pdfObjectKey) {
-    await deleteApuntePdf(apunte.pdfObjectKey)
-  }
+
+  // DB-first: borrar la fila antes de tocar Storage. Si el delete de Storage falla,
+  // la fila ya no existe en DB (correcto); el objeto huérfano queda para limpieza manual.
   await prisma.apunte.delete({ where: { id } })
+
+  if (apunte?.pdfObjectKey) {
+    try {
+      await deleteApuntePdf(apunte.pdfObjectKey)
+    } catch {
+      console.error(`Storage cleanup pendiente para key: ${apunte.pdfObjectKey}`)
+    }
+  }
+
   revalidatePath(`/materia/${subjectSlug}`)
 }
 
@@ -145,6 +164,21 @@ export async function createPregunta(formData: FormData): Promise<void> {
     respuestaCorrecta: formData.get('respuestaCorrecta'),
     explicacion: formData.get('explicacion') ?? '',
   })
+
+  // Validación del contrato por tipo (ver schema.prisma para el contrato completo)
+  if (data.tipo === 'VERDADERO_FALSO') {
+    if (data.respuestaCorrecta !== 'true' && data.respuestaCorrecta !== 'false') {
+      throw new Error('VALIDATION: Para V/F la respuesta debe ser "true" o "false"')
+    }
+  }
+  if (data.tipo === 'MULTIPLE_CHOICE') {
+    if (data.opciones.length < 2) {
+      throw new Error('VALIDATION: MULTIPLE_CHOICE requiere al menos 2 opciones')
+    }
+    if (!data.opciones.includes(data.respuestaCorrecta)) {
+      throw new Error('VALIDATION: La respuesta correcta debe ser una de las opciones')
+    }
+  }
 
   await prisma.pregunta.create({
     data: {

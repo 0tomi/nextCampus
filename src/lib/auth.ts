@@ -1,5 +1,7 @@
 import 'server-only'
+import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from './supabase/server'
+import { env } from '@/lib/env'
 
 export interface AdminUser {
   id: string
@@ -7,7 +9,7 @@ export interface AdminUser {
 }
 
 function adminAllowlist(): string[] {
-  return (process.env.ADMIN_EMAILS ?? '')
+  return env.ADMIN_EMAILS
     .split(',')
     .map((entry) => entry.trim().toLowerCase())
     .filter(Boolean)
@@ -27,11 +29,12 @@ export async function getAdminUser(): Promise<AdminUser | null> {
   return { id: user.id, email }
 }
 
-// Lanza si no hay admin. Para usar al inicio de toda server action de escritura.
+// Redirige a /admin/login si no hay admin. Para usar al inicio de toda server
+// action de escritura. Usa redirect() para un 302 limpio en lugar de un 500.
 export async function requireAdmin(): Promise<AdminUser> {
   const admin = await getAdminUser()
   if (!admin) {
-    throw new Error('UNAUTHORIZED: se requiere sesión de administrador')
+    redirect('/admin/login')
   }
   return admin
 }

@@ -1,7 +1,8 @@
 import 'server-only'
 import { createSupabaseAdminClient } from './supabase/admin'
+import { env } from '@/lib/env'
 
-const BUCKET = process.env.SUPABASE_STORAGE_BUCKET ?? 'apuntes'
+const BUCKET = env.SUPABASE_STORAGE_BUCKET
 const MAX_PDF_BYTES = 20 * 1024 * 1024 // 20 MB
 
 // Sube un PDF de apunte a Supabase Storage. Valida tipo y tamaño server-side.

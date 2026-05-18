@@ -51,12 +51,22 @@ export function normalizeAnswer(value: unknown): string {
     .replace(',', '.')
 }
 
-// Evalúa una respuesta contra la pregunta. Núcleo de corrección server-side.
+// Evalúa una respuesta contra la pregunta. Ramifica por tipo para manejar
+// correctamente V/F (valida que la respuesta sea booleana canónica) y MC
+// (compara contra el texto exacto de la opción correcta).
 export function evaluatePregunta(pregunta: Pregunta, answer: unknown): boolean {
   const given = normalizeAnswer(answer)
-  const expected = normalizeAnswer(pregunta.respuestaCorrecta)
   if (given.length === 0) return false
-  return given === expected
+  const expected = normalizeAnswer(pregunta.respuestaCorrecta)
+
+  switch (pregunta.tipo) {
+    case 'VERDADERO_FALSO':
+      return (given === 'true' || given === 'false') && given === expected
+    case 'MULTIPLE_CHOICE':
+      return given === expected
+    case 'RESPUESTA_CORTA':
+      return given === expected
+  }
 }
 
 export function corregir(
