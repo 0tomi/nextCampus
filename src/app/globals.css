@@ -1,0 +1,64 @@
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800&display=swap");
+@plugin "@tailwindcss/forms";
+
+/* Tema portado de la SPA (paleta UADER) a Tailwind 4 (@theme). */
+@theme {
+  --color-brand-50: #fef2f2;
+  --color-brand-100: #fee2e2;
+  --color-brand-200: #fecaca;
+  --color-brand-300: #fca5a5;
+  --color-brand-400: #f87171;
+  --color-brand-500: #ef4444;
+  --color-brand-600: #dc2626;
+  --color-brand-700: #b91c1c;
+  --color-brand-800: #991b1b;
+  --color-brand-900: #7f1d1d;
+
+  --color-uader-red: #cc0000;
+  --color-uader-red-light: #e80000;
+  --color-uader-red-dark: #990000;
+  --color-uader-blue: #003366;
+  --color-uader-blue-light: #1e5a8f;
+  --color-uader-cream: #faf8f5;
+
+  --color-paper: #faf8f5;
+  --color-ink: #1a1a1a;
+  --color-primary: #cc0000;
+  --color-accent: #003366;
+
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-display: "Sora", system-ui, sans-serif;
+
+  --shadow-soft: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-card: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-lift: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 4px 8px rgba(0, 0, 0, 0.1);
+  --shadow-hard-sm: 4px 4px 0 0 #1a1a1a;
+  --shadow-hard: 6px 6px 0 0 #1a1a1a;
+
+  --radius-sm: 6px;
+  --radius-DEFAULT: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: #f8fafc;
+  color: #09090b;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(204, 0, 0, 0.1);
+}
