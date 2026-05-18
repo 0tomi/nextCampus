@@ -7,7 +7,9 @@ datasource db {
 
 generator client {
   provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  // Mantener el cliente generado fuera de `src`: Next/Turbopack no debe
+  // observar ni compilar miles de líneas generadas como parte del frontend.
+  output   = "./generated/client"
 }
 
 /// Carrera. Scope fijo: una sola carrera (Lic. en Sistemas), cargada por seed.

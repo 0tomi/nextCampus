@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { getYearBySlug } from '@/lib/queries'
 import { ConstructivistCard } from '@/components/shared/ConstructivistCard'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 300
 
 export default async function YearPage({
   params,

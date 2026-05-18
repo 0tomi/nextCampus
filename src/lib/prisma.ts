@@ -1,5 +1,5 @@
 import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from '@/generated/prisma/client'
+import { PrismaClient } from '../../prisma/generated/client/client'
 
 // Runtime: conexión pooled de Supabase (pgbouncer, puerto 6543).
 // El adapter pg toma DATABASE_URL directamente; las migraciones usan DIRECT_URL

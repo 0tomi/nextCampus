@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { getPreguntasByUnidades, getSubjectBySlug } from '@/lib/queries'
+import {
+  getPreguntasByUnidades,
+  getSubjectQuizUnitIdsBySlug,
+} from '@/lib/queries'
 import { buildQuizSet, toPreguntaPublica } from '@/lib/domain/quiz'
 
 const querySchema = z.object({
@@ -19,7 +22,7 @@ export async function GET(request: Request) {
   }
   const { subject: subjectSlug, mode, count, unidades } = parsed.data
 
-  const subject = await getSubjectBySlug(subjectSlug)
+  const subject = await getSubjectQuizUnitIdsBySlug(subjectSlug)
   if (!subject) {
     return NextResponse.json({ error: 'Materia no encontrada' }, { status: 404 })
   }

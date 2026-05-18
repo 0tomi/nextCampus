@@ -6,20 +6,17 @@ import {
   buildQuizSet,
   resumirIntento,
   corregir,
+  type PreguntaQuiz,
 } from './quiz'
-import type { Pregunta } from '@/generated/prisma/client'
 
-function makePregunta(overrides: Partial<Pregunta> = {}): Pregunta {
+function makePregunta(overrides: Partial<PreguntaQuiz> = {}): PreguntaQuiz {
   return {
     id: 'test-id',
-    quizUnidadId: 'unidad-id',
     tipo: 'RESPUESTA_CORTA',
     enunciado: '¿Qué es una variable?',
     opciones: [],
     respuestaCorrecta: 'contenedor de datos',
     explicacion: 'Una variable almacena datos.',
-    createdAt: new Date(),
-    updatedAt: new Date(),
     ...overrides,
   }
 }

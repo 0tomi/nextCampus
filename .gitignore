@@ -36,6 +36,7 @@ yarn-error.log*
 
 # prisma generated client
 /src/generated
+/prisma/generated
 
 # vercel
 .vercel

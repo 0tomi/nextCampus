@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { getSubjectBySlug } from '@/lib/queries'
+import { getSubjectQuizBySlug } from '@/lib/queries'
 import { QuizRunner } from './QuizRunner'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 300
 
 export default async function QuizPage({
   params,
@@ -11,7 +11,7 @@ export default async function QuizPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const subject = await getSubjectBySlug(slug)
+  const subject = await getSubjectQuizBySlug(slug)
   if (!subject) notFound()
 
   const unidades = subject.quizUnidades.map((u) => ({

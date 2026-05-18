@@ -9,6 +9,11 @@ import { uploadApuntePdf, deleteApuntePdf } from '@/lib/storage'
 
 // Toda escritura: requireAdmin() (verifica JWT + allowlist) -> Zod -> sanitize.
 
+function revalidateSubjectContent(subjectSlug: string): void {
+  revalidatePath(`/materia/${subjectSlug}`)
+  revalidatePath(`/materia/${subjectSlug}/quiz`)
+}
+
 const eventoSchema = z.object({
   agendaId: z.string().min(1),
   tipoEventoId: z.string().min(1),
@@ -37,7 +42,7 @@ export async function createEvento(formData: FormData): Promise<void> {
       fecha: data.fecha,
     },
   })
-  revalidatePath(`/materia/${data.subjectSlug}`)
+  revalidateSubjectContent(data.subjectSlug)
 }
 
 export async function deleteEvento(formData: FormData): Promise<void> {
@@ -45,7 +50,7 @@ export async function deleteEvento(formData: FormData): Promise<void> {
   const id = z.string().min(1).parse(formData.get('id'))
   const subjectSlug = z.string().min(1).parse(formData.get('subjectSlug'))
   await prisma.evento.delete({ where: { id } })
-  revalidatePath(`/materia/${subjectSlug}`)
+  revalidateSubjectContent(subjectSlug)
 }
 
 const apunteSchema = z.object({
@@ -88,7 +93,7 @@ export async function createApunte(formData: FormData): Promise<void> {
     await prisma.apunte.update({ where: { id: apunte.id }, data: { pdfObjectKey } })
   }
 
-  revalidatePath(`/materia/${data.subjectSlug}`)
+  revalidateSubjectContent(data.subjectSlug)
 }
 
 export async function deleteApunte(formData: FormData): Promise<void> {
@@ -109,7 +114,7 @@ export async function deleteApunte(formData: FormData): Promise<void> {
     }
   }
 
-  revalidatePath(`/materia/${subjectSlug}`)
+  revalidateSubjectContent(subjectSlug)
 }
 
 const unidadSchema = z.object({
@@ -134,7 +139,7 @@ export async function createQuizUnidad(formData: FormData): Promise<void> {
       orden: data.orden,
     },
   })
-  revalidatePath(`/materia/${data.subjectSlug}`)
+  revalidateSubjectContent(data.subjectSlug)
 }
 
 const preguntaSchema = z.object({
@@ -190,5 +195,5 @@ export async function createPregunta(formData: FormData): Promise<void> {
       explicacion: data.explicacion,
     },
   })
-  revalidatePath(`/materia/${data.subjectSlug}`)
+  revalidateSubjectContent(data.subjectSlug)
 }

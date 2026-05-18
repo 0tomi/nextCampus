@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getAdminUser } from '@/lib/auth'
-import { getSubjectBySlug, getTiposEvento } from '@/lib/queries'
+import { getAdminSubjectBySlug, getTiposEvento } from '@/lib/queries'
 import { ConstructivistCard } from '@/components/shared/ConstructivistCard'
 import { formatDate } from '@/lib/utils'
 import {
@@ -30,7 +30,7 @@ export default async function AdminSubjectPage({
   }
 
   const { slug } = await params
-  const subject = await getSubjectBySlug(slug)
+  const subject = await getAdminSubjectBySlug(slug)
   if (!subject || !subject.agenda) notFound()
   const tipos = await getTiposEvento()
   const agendaId = subject.agenda.id

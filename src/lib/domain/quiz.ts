@@ -3,9 +3,20 @@
 // La corrección es SIEMPRE server-side; las respuestas correctas nunca se
 // envían al cliente al armar un set.
 
-import type { Pregunta, TipoPregunta } from '@/generated/prisma/client'
-
 export type QuizMode = 'examen-tiempo' | 'practica' | 'general'
+export type TipoPregunta =
+  | 'MULTIPLE_CHOICE'
+  | 'VERDADERO_FALSO'
+  | 'RESPUESTA_CORTA'
+
+export interface PreguntaQuiz {
+  id: string
+  tipo: TipoPregunta
+  enunciado: string
+  opciones: unknown
+  respuestaCorrecta: string
+  explicacion: string
+}
 
 // Pregunta tal como se envía al cliente: SIN respuestaCorrecta ni explicación.
 export interface PreguntaPublica {
@@ -28,14 +39,14 @@ export interface ResumenIntento {
   porcentaje: number
 }
 
-function parseOpciones(opciones: Pregunta['opciones']): string[] {
+function parseOpciones(opciones: PreguntaQuiz['opciones']): string[] {
   if (Array.isArray(opciones)) {
     return opciones.filter((o): o is string => typeof o === 'string')
   }
   return []
 }
 
-export function toPreguntaPublica(pregunta: Pregunta): PreguntaPublica {
+export function toPreguntaPublica(pregunta: PreguntaQuiz): PreguntaPublica {
   return {
     id: pregunta.id,
     tipo: pregunta.tipo,
@@ -54,7 +65,10 @@ export function normalizeAnswer(value: unknown): string {
 // Evalúa una respuesta contra la pregunta. Ramifica por tipo para manejar
 // correctamente V/F (valida que la respuesta sea booleana canónica) y MC
 // (compara contra el texto exacto de la opción correcta).
-export function evaluatePregunta(pregunta: Pregunta, answer: unknown): boolean {
+export function evaluatePregunta(
+  pregunta: PreguntaQuiz,
+  answer: unknown,
+): boolean {
   const given = normalizeAnswer(answer)
   if (given.length === 0) return false
   const expected = normalizeAnswer(pregunta.respuestaCorrecta)
@@ -70,7 +84,7 @@ export function evaluatePregunta(pregunta: Pregunta, answer: unknown): boolean {
 }
 
 export function corregir(
-  pregunta: Pregunta,
+  pregunta: PreguntaQuiz,
   answer: unknown,
 ): ResultadoRespuesta {
   return {
@@ -93,10 +107,10 @@ function shuffle<T>(items: T[]): T[] {
 // Arma el set de un intento. `count <= 0` => todas las preguntas.
 // `examen-tiempo` y `general` mezclan; `practica` conserva el orden.
 export function buildQuizSet(
-  preguntas: Pregunta[],
+  preguntas: PreguntaQuiz[],
   mode: QuizMode,
   count: number,
-): Pregunta[] {
+): PreguntaQuiz[] {
   const ordered = mode === 'practica' ? preguntas : shuffle(preguntas)
   if (count <= 0 || count >= ordered.length) return ordered
   return ordered.slice(0, count)

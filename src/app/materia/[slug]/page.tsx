@@ -1,10 +1,10 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getSubjectBySlug } from '@/lib/queries'
+import { getSubjectPageBySlug } from '@/lib/queries'
 import { ConstructivistCard } from '@/components/shared/ConstructivistCard'
 import { formatDate } from '@/lib/utils'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 300
 
 export default async function SubjectPage({
   params,
@@ -12,7 +12,7 @@ export default async function SubjectPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const subject = await getSubjectBySlug(slug)
+  const subject = await getSubjectPageBySlug(slug)
   if (!subject) notFound()
 
   const eventos = subject.agenda?.eventos ?? []

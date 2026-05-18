@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { getCareer } from '@/lib/queries'
 import { ConstructivistCard } from '@/components/shared/ConstructivistCard'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 300
 
 export default async function HomePage() {
   const career = await getCareer()

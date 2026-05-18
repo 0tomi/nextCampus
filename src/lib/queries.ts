@@ -5,10 +5,21 @@ import { prisma } from './prisma'
 
 export function getCareer() {
   return prisma.career.findFirst({
-    include: {
+    select: {
+      id: true,
+      nombre: true,
+      descripcion: true,
       years: {
         orderBy: { orden: 'asc' },
-        include: { subjects: { orderBy: { nombre: 'asc' } } },
+        select: {
+          id: true,
+          slug: true,
+          nombre: true,
+          subjects: {
+            orderBy: { nombre: 'asc' },
+            select: { id: true, slug: true, nombre: true },
+          },
+        },
       },
     },
   })
@@ -17,15 +28,101 @@ export function getCareer() {
 export function getYearBySlug(slug: string) {
   return prisma.academicYear.findUnique({
     where: { slug },
-    include: { subjects: { orderBy: { nombre: 'asc' } }, career: true },
+    select: {
+      id: true,
+      slug: true,
+      nombre: true,
+      subjects: {
+        orderBy: { nombre: 'asc' },
+        select: { id: true, slug: true, nombre: true },
+      },
+      career: { select: { nombre: true } },
+    },
   })
 }
 
-export function getSubjectBySlug(slug: string) {
+export function getSubjectPageBySlug(slug: string) {
+  return prisma.subject.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      slug: true,
+      nombre: true,
+      year: {
+        select: {
+          slug: true,
+          nombre: true,
+          career: { select: { nombre: true } },
+        },
+      },
+      agenda: {
+        select: {
+          eventos: {
+            orderBy: { fecha: 'asc' },
+            select: {
+              id: true,
+              titulo: true,
+              descripcionHtml: true,
+              fecha: true,
+              tipoEvento: { select: { nombre: true } },
+            },
+          },
+        },
+      },
+      quizUnidades: {
+        orderBy: { orden: 'asc' },
+        select: {
+          id: true,
+          titulo: true,
+          _count: { select: { preguntas: true } },
+        },
+      },
+      apuntes: {
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          titulo: true,
+          descripcionHtml: true,
+          pdfObjectKey: true,
+        },
+      },
+    },
+  })
+}
+
+export function getSubjectQuizBySlug(slug: string) {
+  return prisma.subject.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      nombre: true,
+      quizUnidades: {
+        orderBy: { orden: 'asc' },
+        select: {
+          id: true,
+          titulo: true,
+          _count: { select: { preguntas: true } },
+        },
+      },
+    },
+  })
+}
+
+export function getSubjectQuizUnitIdsBySlug(slug: string) {
+  return prisma.subject.findUnique({
+    where: { slug },
+    select: {
+      quizUnidades: {
+        select: { id: true },
+      },
+    },
+  })
+}
+
+export function getAdminSubjectBySlug(slug: string) {
   return prisma.subject.findUnique({
     where: { slug },
     include: {
-      year: { include: { career: true } },
       agenda: {
         include: {
           eventos: {
@@ -50,9 +147,41 @@ export function getTiposEvento() {
 export function getPreguntasByUnidades(quizUnidadIds: string[]) {
   return prisma.pregunta.findMany({
     where: { quizUnidadId: { in: quizUnidadIds } },
+    select: {
+      id: true,
+      tipo: true,
+      enunciado: true,
+      opciones: true,
+      respuestaCorrecta: true,
+      explicacion: true,
+    },
+  })
+}
+
+export function getPreguntasByIds(ids: string[]) {
+  return prisma.pregunta.findMany({
+    where: { id: { in: ids } },
+    select: {
+      id: true,
+      tipo: true,
+      enunciado: true,
+      opciones: true,
+      respuestaCorrecta: true,
+      explicacion: true,
+    },
   })
 }
 
 export function getPreguntaById(id: string) {
-  return prisma.pregunta.findUnique({ where: { id } })
+  return prisma.pregunta.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      tipo: true,
+      enunciado: true,
+      opciones: true,
+      respuestaCorrecta: true,
+      explicacion: true,
+    },
+  })
 }

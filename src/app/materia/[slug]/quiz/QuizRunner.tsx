@@ -25,6 +25,11 @@ interface Resultado {
   respuestaCorrecta: string
 }
 
+interface AnswerPayload {
+  preguntaId: string
+  userAnswer: string
+}
+
 interface QuizRunnerProps {
   subjectSlug: string
   unidades: UnidadInfo[]
@@ -80,13 +85,38 @@ export function QuizRunner({ subjectSlug, unidades }: QuizRunnerProps) {
     setResultados((prev) => ({ ...prev, [preguntaId]: data }))
   }, [])
 
+  const gradeBatch = useCallback(async (payloads: AnswerPayload[]) => {
+    const res = await fetch('/api/quiz/answer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers: payloads }),
+    })
+    if (!res.ok) throw new Error('No se pudo corregir el quiz')
+    const data: { resultados: Resultado[] } = await res.json()
+    return Object.fromEntries(
+      data.resultados.map((resultado) => [resultado.preguntaId, resultado]),
+    )
+  }, [])
+
   const submitAll = useCallback(async () => {
     if (!preguntas) return
-    for (const p of preguntas) {
-      await grade(p.id, answers[p.id] ?? '')
+    setLoading(true)
+    setError(null)
+    try {
+      const nextResultados = await gradeBatch(
+        preguntas.map((p) => ({
+          preguntaId: p.id,
+          userAnswer: answers[p.id] ?? '',
+        })),
+      )
+      setResultados(nextResultados)
+      setFinished(true)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error')
+    } finally {
+      setLoading(false)
     }
-    setFinished(true)
-  }, [preguntas, answers, grade])
+  }, [preguntas, answers, gradeBatch])
 
   function toggleUnidad(id: string) {
     setSelectedUnidades((prev) =>
@@ -264,6 +294,8 @@ export function QuizRunner({ subjectSlug, unidades }: QuizRunnerProps) {
         </div>
       )}
 
+      {error && <p className="text-primary">{error}</p>}
+
       <div className="flex gap-3">
         {isPractice && !resultado && (
           <button
@@ -286,9 +318,10 @@ export function QuizRunner({ subjectSlug, unidades }: QuizRunnerProps) {
           <button
             type="button"
             onClick={submitAll}
+            disabled={loading}
             className="border-4 border-ink bg-primary px-4 py-2 font-bold text-paper shadow-hard-sm"
           >
-            Finalizar
+            {loading ? 'Corrigiendo…' : 'Finalizar'}
           </button>
         )}
       </div>
