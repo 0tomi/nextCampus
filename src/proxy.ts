@@ -4,7 +4,7 @@ import { env } from '@/lib/env'
 
 // Protege /admin/** (salvo /admin/login) y refresca la sesión Supabase.
 // La autorización fina (allowlist de email) se re-chequea en cada server action.
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(
