@@ -1,6 +1,21 @@
 import type { Metadata } from 'next'
+import { Plus_Jakarta_Sans, Sora } from 'next/font/google'
 import Link from 'next/link'
 import './globals.css'
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-jakarta',
+  display: 'swap',
+})
+
+const sora = Sora({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-sora',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'NextCampus — Campus Estudiantil',
@@ -11,7 +26,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className="h-full">
+    <html
+      lang="es"
+      className={`h-full ${jakarta.variable} ${sora.variable}`}
+    >
       <body className="flex min-h-full flex-col bg-[#f8fafc] text-ink">
         <header className="border-b-4 border-ink bg-paper">
           <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
