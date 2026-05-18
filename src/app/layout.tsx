@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Plus_Jakarta_Sans, Sora } from 'next/font/google'
-import Link from 'next/link'
 import './globals.css'
 
 const jakarta = Plus_Jakarta_Sans({
@@ -30,29 +29,8 @@ export default function RootLayout({
       lang="es"
       className={`h-full ${jakarta.variable} ${sora.variable}`}
     >
-      <body className="flex min-h-full flex-col bg-[#f8fafc] text-ink">
-        <header className="border-b-4 border-ink bg-paper">
-          <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-            <Link
-              href="/"
-              className="font-display text-xl font-extrabold tracking-tight"
-            >
-              Next<span className="text-primary">Campus</span>
-            </Link>
-            <Link
-              href="/admin"
-              className="text-sm font-semibold text-accent hover:underline"
-            >
-              Administración
-            </Link>
-          </div>
-        </header>
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-          {children}
-        </main>
-        <footer className="border-t-4 border-ink bg-paper py-4 text-center text-xs text-ink/60">
-          FCYT · UADER — Licenciatura en Sistemas de Información
-        </footer>
+      <body className="min-h-full bg-[#0f0f0f] font-sans text-white antialiased">
+        {children}
       </body>
     </html>
   )

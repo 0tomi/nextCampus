@@ -1,10 +1,42 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import {
+  ArrowLeft,
+  ArrowRight,
+  CalendarDays,
+  Download,
+  GraduationCap,
+  NotebookTabs,
+  Sparkles,
+} from 'lucide-react'
 import { getSubjectPageBySlug } from '@/lib/queries'
-import { ConstructivistCard } from '@/components/shared/ConstructivistCard'
+import { DashboardShell } from '@/components/shell/DashboardShell'
+import { Sidebar } from '@/components/shell/Sidebar'
+import { EventCalendar } from '@/components/calendar/EventCalendar'
+import { AnimateIn } from '@/components/ui/AnimateIn'
+import { DarkCard } from '@/components/ui/DarkCard'
+import { getYearColorClasses } from '@/lib/yearColors'
 import { formatDate } from '@/lib/utils'
 
 export const revalidate = 300
+
+function DashboardBrand() {
+  return (
+    <Link href="/" className="flex items-center gap-3 text-left">
+      <span className="inline-flex h-11 w-11 items-center justify-center rounded-none bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 text-black shadow-[0_0_30px_rgba(249,115,22,0.22)]">
+        <GraduationCap className="h-5 w-5" />
+      </span>
+      <span>
+        <span className="block text-[11px] font-semibold uppercase tracking-[0.24em] text-white/40">
+          Subject board
+        </span>
+        <span className="block text-lg font-black tracking-tight text-white">
+          NextCampus
+        </span>
+      </span>
+    </Link>
+  )
+}
 
 export default async function SubjectPage({
   params,
@@ -16,118 +48,292 @@ export default async function SubjectPage({
   if (!subject) notFound()
 
   const eventos = subject.agenda?.eventos ?? []
+  const colors = getYearColorClasses(subject.year.slug)
+  const sectionItems = [
+    {
+      id: 'year',
+      href: `/year/${subject.year.slug}`,
+      label: subject.year.nombre,
+      badge: <ArrowLeft className="h-4 w-4" />,
+      meta: 'Volver al año',
+      badgeClassName: colors.badgeClassName,
+    },
+    {
+      id: 'calendar',
+      href: '#calendario',
+      label: 'Calendario',
+      badge: <CalendarDays className="h-4 w-4" />,
+      meta: `${eventos.length} eventos`,
+      badgeClassName: 'from-white/15 to-white/5 text-white',
+    },
+    {
+      id: 'quiz',
+      href: '#quiz',
+      label: 'Quiz',
+      badge: <Sparkles className="h-4 w-4" />,
+      meta: `${subject.quizUnidades.length} unidades`,
+      badgeClassName: 'from-violet-400 to-purple-500 text-white',
+    },
+    {
+      id: 'notes',
+      href: '#apuntes',
+      label: 'Apuntes',
+      badge: <NotebookTabs className="h-4 w-4" />,
+      meta: `${subject.apuntes.length} recursos`,
+      badgeClassName: 'from-cyan-400 to-blue-500 text-black',
+    },
+  ]
 
   return (
-    <div className="space-y-8">
-      <nav className="text-sm text-ink/60">
-        <Link href="/" className="hover:underline">
-          {subject.year.career.nombre}
-        </Link>{' '}
-        /{' '}
+    <DashboardShell
+      brand={<DashboardBrand />}
+      topbar={
         <Link
           href={`/year/${subject.year.slug}`}
-          className="hover:underline"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-white/56 transition-colors hover:text-white/80"
         >
+          <ArrowLeft className="h-4 w-4" />
           {subject.year.nombre}
-        </Link>{' '}
-        / <span className="font-semibold">{subject.nombre}</span>
-      </nav>
+        </Link>
+      }
+      sidebar={
+        <Sidebar
+          eyebrow="Materia"
+          title={subject.nombre}
+          items={sectionItems}
+        />
+      }
+      mainClassName="space-y-10"
+    >
+      <AnimateIn className="space-y-6">
+        <nav className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/42">
+          <Link href="/" className="transition-colors hover:text-white/72">
+            {subject.year.career.nombre}
+          </Link>
+          <span>/</span>
+          <Link
+            href={`/year/${subject.year.slug}`}
+            className="transition-colors hover:text-white/72"
+          >
+            {subject.year.nombre}
+          </Link>
+          <span>/</span>
+          <span className="text-white/72">{subject.nombre}</span>
+        </nav>
 
-      <h1 className="font-display text-3xl font-extrabold">
-        {subject.nombre}
-      </h1>
-
-      {/* Calendario por materia */}
-      <section className="space-y-3">
-        <h2 className="font-display text-2xl font-bold">Calendario</h2>
-        {eventos.length === 0 ? (
-          <p className="text-ink/60">Sin eventos cargados.</p>
-        ) : (
-          <ul className="space-y-3">
-            {eventos.map((evento) => (
-              <ConstructivistCard key={evento.id} className="p-4">
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="font-bold">{evento.titulo}</span>
-                  <span className="text-xs uppercase text-primary">
-                    {evento.tipoEvento.nombre}
-                  </span>
-                </div>
-                <p className="text-sm text-ink/60">
-                  {formatDate(evento.fecha)}
-                </p>
-                {evento.descripcionHtml && (
-                  <div
-                    className="prose-sm mt-2"
-                    // Contenido YA sanitizado al persistir (lib/sanitize).
-                    dangerouslySetInnerHTML={{
-                      __html: evento.descripcionHtml,
-                    }}
-                  />
-                )}
-              </ConstructivistCard>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* Quiz por materia */}
-      <section className="space-y-3">
-        <h2 className="font-display text-2xl font-bold">Quiz</h2>
-        {subject.quizUnidades.length === 0 ? (
-          <p className="text-ink/60">Sin unidades de quiz.</p>
-        ) : (
-          <>
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {subject.quizUnidades.map((unidad) => (
-                <ConstructivistCard key={unidad.id} className="p-4">
-                  <p className="font-bold">{unidad.titulo}</p>
-                  <p className="text-sm text-ink/60">
-                    {unidad._count.preguntas} preguntas
-                  </p>
-                </ConstructivistCard>
-              ))}
-            </ul>
-            <Link
-              href={`/materia/${subject.slug}/quiz`}
-              className="inline-block border-4 border-ink bg-primary px-4 py-2 font-bold text-paper shadow-hard-sm"
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
+          <DarkCard className="p-6 sm:p-8">
+            <span
+              className={`inline-flex border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${colors.chipClassName}`}
             >
-              Empezar quiz
-            </Link>
-          </>
+              {subject.year.nombre}
+            </span>
+
+            <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl">
+              {subject.nombre}
+            </h1>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-white/64 sm:text-base">
+              Agenda, unidades y apuntes en una superficie dark, manteniendo el
+              quiz/focus claro como experiencia aparte.
+            </p>
+          </DarkCard>
+
+          <DarkCard className="p-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">
+              Snapshot
+            </p>
+            <div className="mt-4 space-y-4 text-sm text-white/64">
+              <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-4">
+                <span>Eventos</span>
+                <strong className="text-lg font-black text-white">
+                  {eventos.length}
+                </strong>
+              </div>
+              <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-4">
+                <span>Unidades de quiz</span>
+                <strong className="text-lg font-black text-white">
+                  {subject.quizUnidades.length}
+                </strong>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span>Apuntes</span>
+                <strong className="text-lg font-black text-white">
+                  {subject.apuntes.length}
+                </strong>
+              </div>
+            </div>
+          </DarkCard>
+        </section>
+      </AnimateIn>
+
+      <section id="calendario" className="space-y-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
+              Agenda
+            </p>
+            <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+              Calendario de eventos
+            </h2>
+          </div>
+          <p className="max-w-xl text-sm text-white/48">
+            El calendario vive en un wrapper client-only y la página sigue siendo
+            Server Component.
+          </p>
+        </div>
+
+        <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.85fr)]">
+          <EventCalendar
+            events={eventos.map((evento) => ({
+              id: evento.id,
+              titulo: evento.titulo,
+              fecha: evento.fecha,
+              tipo: evento.tipoEvento.nombre,
+            }))}
+            emptyMessage="Sin eventos cargados para esta materia."
+          />
+
+          <div className="space-y-3">
+            {eventos.length === 0 ? (
+              <DarkCard className="p-5 text-sm leading-6 text-white/58">
+                Todavía no hay eventos detallados para esta materia.
+              </DarkCard>
+            ) : (
+              eventos.map((evento) => (
+                <DarkCard key={evento.id} className="p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38">
+                        {evento.tipoEvento.nombre}
+                      </p>
+                      <h3 className="mt-2 text-lg font-black tracking-tight text-white">
+                        {evento.titulo}
+                      </h3>
+                    </div>
+                    <span
+                      className={`inline-flex border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${colors.chipClassName}`}
+                    >
+                      {formatDate(evento.fecha)}
+                    </span>
+                  </div>
+
+                  {evento.descripcionHtml ? (
+                    <div
+                      className="mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
+                      dangerouslySetInnerHTML={{
+                        __html: evento.descripcionHtml,
+                      }}
+                    />
+                  ) : null}
+                </DarkCard>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section id="quiz" className="space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
+              Focus claro
+            </p>
+            <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+              Unidades de quiz
+            </h2>
+          </div>
+          <Link
+            href={`/materia/${subject.slug}/quiz`}
+            className="inline-flex items-center gap-2 self-start border-4 border-ink bg-paper px-4 py-2 text-sm font-bold text-ink shadow-hard-sm transition-transform hover:-translate-y-0.5"
+          >
+            Empezar quiz
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        {subject.quizUnidades.length === 0 ? (
+          <p className="text-sm text-white/58">Sin unidades de quiz.</p>
+        ) : (
+          <div className="stagger-children grid gap-4 xl:grid-cols-2">
+            {subject.quizUnidades.map((unidad, index) => (
+              <DarkCard key={unidad.id} variant="interactive" className="p-5">
+                <div className="flex items-start gap-4">
+                  <span
+                    className={`inline-flex h-12 min-w-12 items-center justify-center bg-gradient-to-r px-3 text-sm font-black tracking-[0.16em] ${colors.progressClassName}`}
+                  >
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38">
+                      Unidad
+                    </p>
+                    <h3 className="mt-2 text-xl font-black tracking-tight text-white">
+                      {unidad.titulo}
+                    </h3>
+                    <p className="mt-2 text-sm text-white/58">
+                      {unidad._count.preguntas} preguntas disponibles
+                    </p>
+                  </div>
+
+                  <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-white/28" />
+                </div>
+              </DarkCard>
+            ))}
+          </div>
         )}
       </section>
 
-      {/* Apuntes */}
-      <section className="space-y-3">
-        <h2 className="font-display text-2xl font-bold">Apuntes</h2>
+      <section id="apuntes" className="space-y-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
+            Recursos
+          </p>
+          <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+            Apuntes y descargas
+          </h2>
+        </div>
+
         {subject.apuntes.length === 0 ? (
-          <p className="text-ink/60">Sin apuntes.</p>
+          <p className="text-sm text-white/58">Sin apuntes.</p>
         ) : (
-          <ul className="space-y-3">
+          <div className="stagger-children grid gap-4 xl:grid-cols-2">
             {subject.apuntes.map((apunte) => (
-              <ConstructivistCard key={apunte.id} className="p-4">
-                <p className="font-bold">{apunte.titulo}</p>
-                {apunte.descripcionHtml && (
+              <DarkCard key={apunte.id} className="flex h-full flex-col p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38">
+                      Apunte
+                    </p>
+                    <h3 className="mt-2 text-xl font-black tracking-tight text-white">
+                      {apunte.titulo}
+                    </h3>
+                  </div>
+
+                  {apunte.pdfObjectKey ? (
+                    <a
+                      href={`/api/apuntes/${apunte.id}/pdf`}
+                      className={`inline-flex items-center gap-2 border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition-colors hover:bg-white/5 ${colors.chipClassName}`}
+                    >
+                      <Download className="h-4 w-4" />
+                      PDF
+                    </a>
+                  ) : null}
+                </div>
+
+                {apunte.descripcionHtml ? (
                   <div
-                    className="prose-sm mt-1"
+                    className="mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
                     dangerouslySetInnerHTML={{
                       __html: apunte.descripcionHtml,
                     }}
                   />
-                )}
-                {apunte.pdfObjectKey && (
-                  <a
-                    href={`/api/apuntes/${apunte.id}/pdf`}
-                    className="mt-2 inline-block text-sm font-semibold text-accent hover:underline"
-                  >
-                    Descargar PDF
-                  </a>
-                )}
-              </ConstructivistCard>
+                ) : null}
+              </DarkCard>
             ))}
-          </ul>
+          </div>
         )}
       </section>
-    </div>
+    </DashboardShell>
   )
 }
