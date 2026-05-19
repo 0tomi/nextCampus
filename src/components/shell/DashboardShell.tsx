@@ -19,8 +19,8 @@ export function DashboardShell({
   mainClassName,
 }: DashboardShellProps) {
   return (
-    <div className={cn('min-h-screen bg-[#0f0f0f] text-white', className)}>
-      <header className="sticky top-0 z-40 h-16 border-b border-white/5 bg-[#1a1a1a]">
+    <div className={cn('min-h-screen bg-surface-0 text-white', className)}>
+      <header className="sticky top-0 z-40 h-16 border-b border-white/5 bg-surface-1">
         <div className="flex h-full items-center justify-between gap-4 px-6">
           {brand ?? (
             <div className="flex items-center gap-3">
@@ -35,11 +35,11 @@ export function DashboardShell({
       </header>
 
       <div className="flex min-h-[calc(100vh-4rem)]">
-        <aside className="w-72 shrink-0 border-r border-white/5 bg-[#141414]">
+        <aside className="w-72 shrink-0 border-r border-white/5 bg-surface-2">
           <div className="h-full overflow-y-auto">{sidebar}</div>
         </aside>
 
-        <main className={cn('flex-1 bg-[#0f0f0f] p-8', mainClassName)}>
+        <main className={cn('flex-1 bg-surface-0 p-8', mainClassName)}>
           {children}
         </main>
       </div>

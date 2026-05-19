@@ -23,6 +23,7 @@ interface SidebarProps {
   emptyState?: ReactNode
   className?: string
   ariaLabel?: string
+  secondaryEyebrow?: string
 }
 
 export function Sidebar({
@@ -32,6 +33,7 @@ export function Sidebar({
   emptyState,
   className,
   ariaLabel = 'Dashboard sidebar navigation',
+  secondaryEyebrow,
 }: SidebarProps) {
   return (
     <div className={cn('flex h-full flex-col', className)}>
@@ -50,7 +52,15 @@ export function Sidebar({
         </div>
       ) : null}
 
-      <nav aria-label={ariaLabel} className="flex-1 px-3 py-3">
+      <nav aria-label={ariaLabel} className="flex-1 px-3 py-4">
+        {secondaryEyebrow ? (
+          <div className="mb-4 px-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
+              {secondaryEyebrow}
+            </p>
+          </div>
+        ) : null}
+
         {items.length === 0 ? (
           <div className="border border-dashed border-white/10 px-4 py-5 text-sm text-white/45">
             {emptyState ?? 'Todavía no hay elementos para mostrar.'}
@@ -63,13 +73,13 @@ export function Sidebar({
                   href={item.href}
                   aria-current={item.active ? 'page' : undefined}
                   className={cn(
-                    'group flex items-center gap-3 rounded-none border border-white/5 px-3 py-3 text-left transition-colors duration-200 hover:border-white/10 hover:bg-white/5',
-                    item.active && 'border-white/10 bg-white/5',
+                    'group flex items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors duration-200 hover:bg-white/5',
+                    item.active && 'bg-white/5',
                   )}
                 >
                   <span
                     className={cn(
-                      'inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-none bg-gradient-to-br text-xs font-black tracking-[0.08em]',
+                      'inline-flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded-sm bg-gradient-to-br text-xs font-black tracking-normal',
                       item.badgeClassName ?? DEFAULT_BADGE_CLASSNAME,
                     )}
                   >

@@ -1,29 +1,28 @@
 import Link from 'next/link'
-import { ArrowRight, BookOpen, GraduationCap, Shield } from 'lucide-react'
+import { GraduationCap, Shield, Layers } from 'lucide-react'
 import { getCareer } from '@/lib/queries'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
 import { AnimateIn } from '@/components/ui/AnimateIn'
-import { DarkCard } from '@/components/ui/DarkCard'
-import { StatCard } from '@/components/ui/StatCard'
+import { cn } from '@/lib/utils'
 
 export const revalidate = 300
 
 function DashboardBrand() {
   return (
     <Link href="/" className="flex items-center gap-3 text-left">
-      <span className="inline-flex h-11 w-11 items-center justify-center rounded-none bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 text-black shadow-[0_0_30px_rgba(249,115,22,0.22)]">
+      <span className="inline-flex h-9 w-9 items-center justify-center rounded bg-gradient-to-br from-amber-400 to-orange-500 text-black shadow-[0_0_15px_rgba(249,115,22,0.2)]">
         <GraduationCap className="h-5 w-5" />
       </span>
-      <span>
-        <span className="block text-[11px] font-semibold uppercase tracking-[0.24em] text-white/40">
-          Lobby académico
+      <div className="flex items-baseline gap-2">
+        <span className="text-xl font-bold tracking-tight text-white">
+          Campus Virtual
         </span>
-        <span className="block text-lg font-black tracking-tight text-white">
-          NextCampus
+        <span className="text-xs font-semibold uppercase tracking-widest text-white/40">
+          FCYT - UADER
         </span>
-      </span>
+      </div>
     </Link>
   )
 }
@@ -38,16 +37,17 @@ export default async function HomePage() {
         topbar={
           <Link
             href="/admin"
-            className="inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+            className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
           >
             <Shield className="h-4 w-4" />
-            Administración
+            Admin
           </Link>
         }
         sidebar={
           <Sidebar
-            eyebrow="Mapa académico"
-            title="Años"
+            eyebrow="CARRERA"
+            title="Sin datos"
+            secondaryEyebrow="AÑOS ACADÉMICOS"
             items={[]}
             emptyState="Todavía no hay años cargados."
           />
@@ -57,7 +57,7 @@ export default async function HomePage() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/40">
             Estado inicial
           </p>
-          <DarkCard className="max-w-2xl p-6">
+          <div className="max-w-2xl rounded-md bg-surface-1 p-6">
             <h1 className="text-3xl font-black tracking-tight text-white">
               No hay datos cargados todavía.
             </h1>
@@ -65,27 +65,22 @@ export default async function HomePage() {
               Todavía no se cargó la información de la carrera. Cuando esté
               lista, vas a ver acá los años y materias disponibles.
             </p>
-          </DarkCard>
+          </div>
         </AnimateIn>
       </DashboardShell>
     )
   }
-
-  const totalSubjects = career.years.reduce(
-    (acc, year) => acc + year.subjects.length,
-    0,
-  )
 
   const sidebarItems = career.years.map((year, index) => {
     const colors = getYearColorClasses(year.slug)
 
     return {
       id: year.id,
-      href: `#year-${year.slug}`,
+      href: `/year/${year.slug}`,
       label: year.nombre,
-      badge: String(index + 1).padStart(2, '0'),
+      badge: String(index + 1),
       meta: `${year.subjects.length} materias`,
-      badgeClassName: colors.badgeClassName,
+      badgeClassName: colors.progressClassName + ' text-white',
     }
   })
 
@@ -95,143 +90,87 @@ export default async function HomePage() {
       topbar={
         <Link
           href="/admin"
-          className="inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+          className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
         >
           <Shield className="h-4 w-4" />
-          Administración
+          Admin
         </Link>
       }
       sidebar={
         <Sidebar
-          eyebrow="Mapa académico"
-          title="Años"
+          eyebrow="CARRERA"
+          title={career.nombre}
+          secondaryEyebrow="AÑOS ACADÉMICOS"
           items={sidebarItems}
         />
       }
-      mainClassName="space-y-8"
+      mainClassName="space-y-12"
     >
-      <AnimateIn className="space-y-8">
-        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(340px,0.7fr)]">
-          <DarkCard className="p-6 sm:p-8">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
-              Campus estudiantil
-            </p>
-            <h1 className="mt-4 max-w-3xl text-4xl font-black tracking-tight text-white sm:text-5xl">
-              {career.nombre}
-            </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-white/64 sm:text-base">
-              {career.descripcion}
-            </p>
-          </DarkCard>
-
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            <StatCard
-              icon={<GraduationCap className="h-5 w-5" />}
-              label="Años activos"
-              value={career.years.length}
-              meta="Recorrido completo"
-              progress={100}
-              chipClassName="bg-gradient-to-br from-amber-400/15 to-orange-500/15 text-amber-200"
-              progressClassName="bg-gradient-to-r from-amber-400 to-orange-500"
-            />
-            <StatCard
-              icon={<BookOpen className="h-5 w-5" />}
-              label="Materias visibles"
-              value={totalSubjects}
-              meta="Disponibles"
-              progress={career.years.length > 0 ? 100 : 0}
-              chipClassName="bg-gradient-to-br from-cyan-400/15 to-blue-500/15 text-cyan-200"
-              progressClassName="bg-gradient-to-r from-cyan-400 to-blue-500"
-            />
-          </div>
-        </section>
-      </AnimateIn>
-
-      <section className="space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
-              Trayectos
-            </p>
-            <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
-              Explorá cada año de la carrera
-            </h2>
-          </div>
-          <p className="max-w-xl text-sm text-white/48">
-            Cada bloque agrupa las materias por año para que encuentres rápido
-            el contenido que necesitás.
+      <AnimateIn className="space-y-10">
+        <section className="px-1 pt-2">
+          <h1 className="max-w-4xl text-4xl font-bold tracking-tight text-white sm:text-5xl">
+            {career.nombre}
+          </h1>
+          <p className="mt-4 text-base font-medium text-white/50">
+            {career.descripcion}
           </p>
-        </div>
+        </section>
 
-        <div className="stagger-children grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          {career.years.map((year, index) => {
-            const colors = getYearColorClasses(year.slug)
-            const visibleSubjects = year.subjects.slice(0, 6)
-            const hiddenSubjects = year.subjects.length - visibleSubjects.length
+        <section className="space-y-5">
+          <div className="px-1">
+            <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/40">
+              MATERIAS POR AÑO
+            </p>
+          </div>
 
-            return (
-              <DarkCard
-                key={year.id}
-                id={`year-${year.slug}`}
-                variant="interactive"
-                className="overflow-hidden"
-              >
+          <div className="stagger-children grid gap-4 md:grid-cols-3 xl:grid-cols-5">
+            {career.years.map((year, index) => {
+              const colors = getYearColorClasses(year.slug)
+
+              return (
                 <div
-                  className={`h-1.5 ${colors.progressClassName}`}
-                  aria-hidden="true"
-                />
-                <div className="space-y-5 p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/38">
-                        Año {String(index + 1).padStart(2, '0')}
+                  key={year.id}
+                  id={`year-${year.slug}`}
+                  className="flex flex-col overflow-hidden rounded bg-surface-1"
+                >
+                  <Link href={`/year/${year.slug}`} className="group block">
+                    <div className={cn('px-5 py-4 transition-opacity group-hover:opacity-90', colors.progressClassName)}>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-white/90">
+                        Año {index + 1}
                       </p>
-                      <h3 className="mt-2 text-xl font-black tracking-tight text-white">
+                      <h3 className="mt-1 text-base font-bold text-white">
                         {year.nombre}
                       </h3>
                     </div>
-                    <span
-                      className={`inline-flex shrink-0 border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${colors.chipClassName}`}
-                    >
-                      {year.subjects.length} materias
-                    </span>
-                  </div>
+                  </Link>
 
-                  <ul className="space-y-2">
-                    {visibleSubjects.map((subject) => (
-                      <li key={subject.id}>
+                  <ul className="flex flex-col">
+                    {year.subjects.map((subject, subjectIndex) => (
+                      <li
+                        key={subject.id}
+                        className={cn(
+                          subjectIndex !== year.subjects.length - 1 &&
+                            'border-b border-white/5',
+                        )}
+                      >
                         <Link
                           href={`/materia/${subject.slug}`}
-                          className="group flex items-center justify-between gap-3 border border-white/5 bg-white/[0.02] px-3 py-3 transition-colors hover:border-white/10 hover:bg-white/5"
+                          className="group flex items-center gap-3 px-5 py-4 transition-colors hover:bg-white/5"
                         >
-                          <span className="min-w-0 flex-1 text-sm font-semibold text-white/82">
+                          <Layers className="h-[14px] w-[14px] shrink-0 text-white/20 transition-colors group-hover:text-white/40" />
+                          <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-white/60 transition-colors group-hover:text-white">
                             {subject.nombre}
                           </span>
-                          <ArrowRight className="h-4 w-4 shrink-0 text-white/26 transition-transform group-hover:translate-x-0.5 group-hover:text-white/58" />
                         </Link>
                       </li>
                     ))}
                   </ul>
-
-                  {hiddenSubjects > 0 ? (
-                    <p className="text-xs uppercase tracking-[0.18em] text-white/34">
-                      + {hiddenSubjects} materias más en esta vista
-                    </p>
-                  ) : null}
-
-                  <Link
-                    href={`/year/${year.slug}`}
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-white/72 transition-colors hover:text-white"
-                  >
-                    Ver tablero del año
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
                 </div>
-              </DarkCard>
-            )
-          })}
-        </div>
-      </section>
+              )
+            })}
+          </div>
+        </section>
+      </AnimateIn>
     </DashboardShell>
   )
 }

@@ -29,7 +29,7 @@ export default function RootLayout({
       lang="es"
       className={`h-full ${jakarta.variable} ${sora.variable}`}
     >
-      <body className="min-h-full bg-[#0f0f0f] font-sans text-white antialiased">
+      <body className="min-h-full bg-surface-0 font-sans text-white antialiased">
         {children}
       </body>
     </html>

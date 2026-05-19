@@ -186,7 +186,7 @@ export default async function AdminSubjectPage({
           {subject.agenda.eventos.map((evento) => (
             <li
               key={evento.id}
-              className="flex flex-col gap-3 border border-white/5 bg-[#0f0f0f] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-3 border border-white/5 bg-surface-0 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
             >
               <span className="text-sm text-white/74">
                 {formatDate(evento.fecha)} — {evento.titulo} (
@@ -250,7 +250,7 @@ export default async function AdminSubjectPage({
           {subject.apuntes.map((apunte) => (
             <li
               key={apunte.id}
-              className="flex flex-col gap-3 border border-white/5 bg-[#0f0f0f] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-3 border border-white/5 bg-surface-0 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
             >
               <span className="text-sm text-white/74">{apunte.titulo}</span>
               <form action={deleteApunte}>
@@ -305,7 +305,7 @@ export default async function AdminSubjectPage({
         </form>
 
         {subject.quizUnidades.map((unidad) => (
-          <div key={unidad.id} className="border border-white/5 bg-[#0f0f0f] p-4">
+          <div key={unidad.id} className="border border-white/5 bg-surface-0 p-4">
             <p className="font-semibold text-white/82">
               {unidad.titulo} — {unidad._count.preguntas} preguntas
             </p>
