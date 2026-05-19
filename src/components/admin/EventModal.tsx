@@ -13,15 +13,23 @@ interface TipoEvento {
   nombre: string
 }
 
+interface EventModalSubject {
+  id: string
+  slug: string
+  nombre: string
+  agendaId: string
+}
+
 interface EventModalProps {
   open: boolean
   onClose: () => void
-  agendaId: string
-  subjectSlug: string
+  agendaId?: string
+  subjectSlug?: string
   tiposEvento: TipoEvento[]
   /** Fecha precargada al abrir desde un clic en el calendario (ISO o string YYYY-MM-DDTHH:mm) */
   initialDate?: string
   onSuccess?: () => void
+  subjects?: EventModalSubject[]
 }
 
 const emptyState: EventoActionState = { ok: false, message: '' }
@@ -29,15 +37,34 @@ const emptyState: EventoActionState = { ok: false, message: '' }
 export function EventModal({
   open,
   onClose,
-  agendaId,
-  subjectSlug,
+  agendaId = '',
+  subjectSlug = '',
   tiposEvento,
   initialDate,
   onSuccess,
+  subjects,
 }: EventModalProps) {
   const [state, formAction, pending] = useActionState(createEventoAction, emptyState)
   const [titulo, setTitulo] = useState('')
   const [selectedTipoId, setSelectedTipoId] = useState('')
+  const [selectedSubjectId, setSelectedSubjectId] = useState('')
+
+  // Determine current active agendaId and subjectSlug
+  const isYearMode = subjects && subjects.length > 0
+  const currentSubject = isYearMode
+    ? subjects.find((s) => s.id === selectedSubjectId)
+    : null
+
+  const activeAgendaId = isYearMode ? (currentSubject?.agendaId ?? '') : agendaId
+  const activeSubjectSlug = isYearMode ? (currentSubject?.slug ?? '') : subjectSlug
+
+  useEffect(() => {
+    if (open) {
+      setTitulo('')
+      setSelectedTipoId('')
+      setSelectedSubjectId('')
+    }
+  }, [open])
 
   useEffect(() => {
     if (state.ok) {
@@ -104,8 +131,35 @@ export function EventModal({
   return (
     <Modal open={open} onClose={onClose} title="Nuevo evento">
       <form onSubmit={handleSubmit} action={formAction} className="space-y-4">
-        <input type="hidden" name="agendaId" value={agendaId} />
-        <input type="hidden" name="subjectSlug" value={subjectSlug} />
+        <input type="hidden" name="agendaId" value={activeAgendaId} />
+        <input type="hidden" name="subjectSlug" value={activeSubjectSlug} />
+
+        {isYearMode && (
+          <div className="space-y-1">
+            <label
+              htmlFor="evento-subject"
+              className="block text-xs font-semibold uppercase tracking-widest text-white/40"
+            >
+              Materia
+            </label>
+            <select
+              id="evento-subject"
+              required
+              value={selectedSubjectId}
+              onChange={(e) => setSelectedSubjectId(e.target.value)}
+              className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none cursor-pointer"
+            >
+              <option value="" disabled>
+                Seleccioná una materia
+              </option>
+              {subjects.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="space-y-1">
           <label

@@ -27,9 +27,16 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 // Toda escritura: requireAdmin() (verifica JWT + allowlist) -> Zod -> sanitize.
 
-function revalidateSubjectContent(subjectSlug: string): void {
+async function revalidateSubjectContent(subjectSlug: string): Promise<void> {
   revalidatePath(`/materia/${subjectSlug}`)
   revalidatePath(`/materia/${subjectSlug}/quiz`)
+  const subject = await prisma.subject.findUnique({
+    where: { slug: subjectSlug },
+    select: { year: { select: { slug: true } } },
+  })
+  if (subject?.year?.slug) {
+    revalidatePath(`/year/${subject.year.slug}`)
+  }
 }
 
 const eventoSchema = z.object({
@@ -60,7 +67,7 @@ export async function createEvento(formData: FormData): Promise<void> {
       fecha: data.fecha,
     },
   })
-  revalidateSubjectContent(data.subjectSlug)
+  await revalidateSubjectContent(data.subjectSlug)
 }
 
 // Wrapper para useActionState en modales cliente
@@ -94,7 +101,7 @@ export async function updateEventoFechaAction(
   const validFecha = z.coerce.date().parse(nuevaFecha)
   const validSlug = z.string().min(1).parse(subjectSlug)
   await prisma.evento.update({ where: { id: validId }, data: { fecha: validFecha } })
-  revalidateSubjectContent(validSlug)
+  await revalidateSubjectContent(validSlug)
   return { ok: true }
 }
 
@@ -103,7 +110,7 @@ export async function deleteEvento(formData: FormData): Promise<void> {
   const id = z.string().min(1).parse(formData.get('id'))
   const subjectSlug = z.string().min(1).parse(formData.get('subjectSlug'))
   await prisma.evento.delete({ where: { id } })
-  revalidateSubjectContent(subjectSlug)
+  await revalidateSubjectContent(subjectSlug)
 }
 
 const apunteSchema = z.object({
@@ -146,7 +153,7 @@ export async function createApunte(formData: FormData): Promise<void> {
     await prisma.apunte.update({ where: { id: apunte.id }, data: { pdfObjectKey } })
   }
 
-  revalidateSubjectContent(data.subjectSlug)
+  await revalidateSubjectContent(data.subjectSlug)
 }
 
 // Wrapper para useActionState en modal cliente
@@ -188,7 +195,7 @@ export async function deleteApunte(formData: FormData): Promise<void> {
     }
   }
 
-  revalidateSubjectContent(subjectSlug)
+  await revalidateSubjectContent(subjectSlug)
 }
 
 // --- Banco de preguntas (quiz JSON-en-bucket) ------------------------------
@@ -251,7 +258,7 @@ export async function uploadQuizBankAction(
     }
   }
 
-  revalidateSubjectContent(subjectSlug)
+  await revalidateSubjectContent(subjectSlug)
   return {
     ok: true,
     message: `Banco "${nombre}" cargado (${bank.totalPreguntas} preguntas).`,
@@ -265,7 +272,7 @@ export async function deleteQuizBankAction(formData: FormData): Promise<void> {
   const subject = await getSubjectQuizMeta(subjectSlug)
   if (!subject) return
   await deleteQuizBank(subject.year.slug, subject.slug, bankId)
-  revalidateSubjectContent(subjectSlug)
+  await revalidateSubjectContent(subjectSlug)
 }
 
 // --- ABM Años académicos ---------------------------------------------------

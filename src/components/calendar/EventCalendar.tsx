@@ -21,6 +21,7 @@ export interface EventCalendarEvent {
   type?: string | null
   tipo?: string | null
   classNames?: string | string[]
+  subjectSlug?: string
 }
 
 interface EventCalendarProps {

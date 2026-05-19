@@ -413,6 +413,28 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
               max={maxPreguntas || undefined}
               value={count === 0 ? '' : count}
               placeholder="0"
+              onKeyDown={(e) => {
+                if (
+                  [
+                    'Backspace',
+                    'Delete',
+                    'Tab',
+                    'Escape',
+                    'Enter',
+                    'ArrowUp',
+                    'ArrowDown',
+                    'ArrowLeft',
+                    'ArrowRight',
+                  ].includes(e.key) ||
+                  e.ctrlKey ||
+                  e.metaKey
+                ) {
+                  return
+                }
+                if (!/^[0-9]$/.test(e.key)) {
+                  e.preventDefault()
+                }
+              }}
               onChange={(e) => {
                 const val = e.target.value
                 if (val === '') {
@@ -472,6 +494,28 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
                 min={1}
                 value={timeLimit === 0 ? '' : timeLimit}
                 placeholder="60"
+                onKeyDown={(e) => {
+                  if (
+                    [
+                      'Backspace',
+                      'Delete',
+                      'Tab',
+                      'Escape',
+                      'Enter',
+                      'ArrowUp',
+                      'ArrowDown',
+                      'ArrowLeft',
+                      'ArrowRight',
+                    ].includes(e.key) ||
+                    e.ctrlKey ||
+                    e.metaKey
+                  ) {
+                    return
+                  }
+                  if (!/^[0-9]$/.test(e.key)) {
+                    e.preventDefault()
+                  }
+                }}
                 onChange={(e) => {
                   const val = e.target.value
                   if (val === '') {

@@ -14,9 +14,15 @@ interface EventCalendarAdminProps {
   events: readonly EventCalendarEvent[]
   emptyMessage?: string
   className?: string
-  agendaId: string
-  subjectSlug: string
+  agendaId?: string
+  subjectSlug?: string
   tiposEvento: TipoEvento[]
+  subjects?: {
+    id: string
+    slug: string
+    nombre: string
+    agendaId: string
+  }[]
 }
 
 /**
@@ -29,9 +35,10 @@ export function EventCalendarAdmin({
   events,
   emptyMessage,
   className,
-  agendaId,
-  subjectSlug,
+  agendaId = '',
+  subjectSlug = '',
   tiposEvento,
+  subjects,
 }: EventCalendarAdminProps) {
   const [isAdmin, setIsAdmin] = useState(false)
   const [eventModalOpen, setEventModalOpen] = useState(false)
@@ -55,13 +62,16 @@ export function EventCalendarAdmin({
   const handleEventDrop = useCallback(
     async (id: string, nuevaFecha: Date): Promise<boolean> => {
       try {
-        const result = await updateEventoFechaAction(id, nuevaFecha, subjectSlug)
+        const eventObj = events.find((e) => e.id === id)
+        const activeSlug = eventObj?.subjectSlug ?? subjectSlug
+        if (!activeSlug) return false
+        const result = await updateEventoFechaAction(id, nuevaFecha, activeSlug)
         return result.ok
       } catch {
         return false
       }
     },
-    [subjectSlug],
+    [events, subjectSlug],
   )
 
   const handleDateClick = useCallback((fecha: string) => {
@@ -94,6 +104,7 @@ export function EventCalendarAdmin({
           subjectSlug={subjectSlug}
           tiposEvento={tiposEvento}
           initialDate={initialDate}
+          subjects={subjects}
         />
       )}
     </>

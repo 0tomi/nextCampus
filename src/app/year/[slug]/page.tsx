@@ -1,13 +1,15 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowRight, GraduationCap } from 'lucide-react'
-import { getYearBySlug } from '@/lib/queries'
+import { ArrowRight, GraduationCap, Plus } from 'lucide-react'
+import { getYearBySlug, getTiposEvento } from '@/lib/queries'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
-import { EventCalendar } from '@/components/calendar/EventCalendar'
+import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
 import { DarkCard } from '@/components/ui/DarkCard'
-
+import { AdminControls } from '@/components/admin/AdminControls'
+import { AdminTriggerButton } from '@/components/admin/SubjectPageAdminOverlay'
+import { YearPageAdminOverlay } from '@/components/admin/YearPageAdminOverlay'
 
 export const revalidate = 300
 
@@ -35,7 +37,10 @@ export default async function YearPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const year = await getYearBySlug(slug)
+  const [year, tiposEvento] = await Promise.all([
+    getYearBySlug(slug),
+    getTiposEvento(),
+  ])
   if (!year) notFound()
 
   const colors = getYearColorClasses(year.slug)
@@ -47,6 +52,28 @@ export default async function YearPage({
     meta: 'Materia',
     badgeClassName: colors.badgeClassName,
   }))
+
+  const events = year.subjects
+    .flatMap((subject) => {
+      const subjectEvents = subject.agenda?.eventos ?? []
+      return subjectEvents.map((evento) => ({
+        id: evento.id,
+        titulo: `${evento.titulo} (${subject.nombre})`,
+        fecha: evento.fecha,
+        tipo: evento.tipoEvento.nombre,
+        subjectSlug: subject.slug,
+      }))
+    })
+    .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
+
+  const modalSubjects = year.subjects
+    .filter((s) => s.agenda !== null)
+    .map((s) => ({
+      id: s.id,
+      slug: s.slug,
+      nombre: s.nombre,
+      agendaId: s.agenda!.id,
+    }))
 
   return (
     <DashboardShell
@@ -70,17 +97,26 @@ export default async function YearPage({
       }
       mainClassName="space-y-8"
     >
-
-
       <section className="space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
               Agenda
             </p>
-            <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
-              Calendario del año
-            </h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+                Calendario del año
+              </h2>
+              <AdminControls>
+                <AdminTriggerButton
+                  action="new-event"
+                  className="inline-flex items-center gap-1.5 rounded border border-white/10 bg-surface-1 px-3 py-1.5 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+                >
+                  <Plus className="h-3 w-3" />
+                  Agregar nuevo evento
+                </AdminTriggerButton>
+              </AdminControls>
+            </div>
           </div>
           <p className="max-w-xl text-sm text-white/48">
             Consultá las fechas importantes del año y entrá a cada materia para
@@ -88,9 +124,11 @@ export default async function YearPage({
           </p>
         </div>
 
-        <EventCalendar
-          events={[]}
+        <EventCalendarAdmin
+          events={events}
           emptyMessage="Todavía no hay eventos visibles a nivel año. Entrá a una materia para ver su agenda real."
+          tiposEvento={tiposEvento}
+          subjects={modalSubjects}
         />
       </section>
 
@@ -139,6 +177,11 @@ export default async function YearPage({
           ))}
         </div>
       </section>
+
+      <YearPageAdminOverlay
+        subjects={modalSubjects}
+        tiposEvento={tiposEvento}
+      />
     </DashboardShell>
   )
 }

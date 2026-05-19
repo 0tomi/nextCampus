@@ -35,7 +35,26 @@ export function getYearBySlug(slug: string) {
       nombre: true,
       subjects: {
         orderBy: { nombre: 'asc' },
-        select: { id: true, slug: true, nombre: true },
+        select: {
+          id: true,
+          slug: true,
+          nombre: true,
+          agenda: {
+            select: {
+              id: true,
+              eventos: {
+                orderBy: { fecha: 'asc' },
+                select: {
+                  id: true,
+                  titulo: true,
+                  descripcionHtml: true,
+                  fecha: true,
+                  tipoEvento: { select: { nombre: true } },
+                },
+              },
+            },
+          },
+        },
       },
       career: { select: { nombre: true } },
     },
