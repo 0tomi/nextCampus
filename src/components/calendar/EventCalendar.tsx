@@ -153,7 +153,7 @@ export function EventCalendar({
   })
 
   return (
-    <DarkCard className={cn('overflow-hidden p-4 sm:p-6', className)}>
+    <DarkCard className={cn('overflow-hidden p-4 sm:p-6', className, editable && 'calendar-editable')}>
       {calendarEvents.length === 0 ? (
         <p className="mb-4 text-sm text-white/54">{emptyMessage}</p>
       ) : null}

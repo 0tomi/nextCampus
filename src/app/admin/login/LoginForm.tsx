@@ -82,7 +82,7 @@ export function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-none border border-violet-400/20 bg-gradient-to-r from-violet-500 to-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_24px_80px_rgba(109,40,217,0.28)] transition hover:from-violet-400 hover:to-purple-500 disabled:opacity-50"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-none border border-violet-400/20 bg-gradient-to-r from-violet-500 to-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_24px_80px_rgba(109,40,217,0.28)] transition hover:from-violet-400 hover:to-purple-500 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             {loading ? 'Ingresando…' : 'Ingresar'}
             <ArrowRight className="h-4 w-4" />

@@ -126,7 +126,7 @@ export function ConfirmDeleteYearModal({
           <button
             type="button"
             onClick={handleClose}
-            className="rounded border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+            className="rounded border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white cursor-pointer"
           >
             Cancelar
           </button>
@@ -134,7 +134,7 @@ export function ConfirmDeleteYearModal({
             type="button"
             onClick={handleConfirm}
             disabled={isPending || loadingImpact}
-            className="inline-flex items-center gap-2 rounded bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition-opacity hover:bg-rose-600 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition-opacity hover:bg-rose-600 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             <Trash2 className="h-4 w-4" />
             {isPending ? 'Eliminando…' : 'Eliminar año'}
@@ -253,7 +253,7 @@ export function ConfirmDeleteSubjectModal({
           <button
             type="button"
             onClick={handleClose}
-            className="rounded border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+            className="rounded border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white cursor-pointer"
           >
             Cancelar
           </button>
@@ -261,7 +261,7 @@ export function ConfirmDeleteSubjectModal({
             type="button"
             onClick={handleConfirm}
             disabled={isPending || loadingImpact}
-            className="inline-flex items-center gap-2 rounded bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition-opacity hover:bg-rose-600 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition-opacity hover:bg-rose-600 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             <Trash2 className="h-4 w-4" />
             {isPending ? 'Eliminando…' : 'Eliminar materia'}

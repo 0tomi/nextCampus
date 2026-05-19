@@ -293,7 +293,7 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
                   onClick={() => toggleBanco(b.id)}
                   aria-pressed={active}
                   className={cn(
-                    'flex items-center justify-between gap-3 px-4 py-3.5 text-left',
+                    'flex items-center justify-between gap-3 px-4 py-3.5 text-left cursor-pointer',
                     active ? CONTROL_ACTIVE : CONTROL,
                   )}
                 >
@@ -336,7 +336,7 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
                   type="button"
                   onClick={() => setMode(value)}
                   className={cn(
-                    'px-4 py-2.5 text-sm font-semibold transition-colors',
+                    'px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer',
                     mode === value
                       ? CONTROL_ACTIVE + ' text-white'
                       : CONTROL + ' text-white/60',
@@ -387,7 +387,7 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
             type="button"
             onClick={start}
             disabled={loading || selectedBancos.length === 0}
-            className="inline-flex w-full items-center justify-center gap-2 bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex w-full items-center justify-center gap-2 bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
           >
             {loading ? 'Cargando…' : 'Comenzar quiz'}
             <ChevronRight className="h-4 w-4" />
@@ -420,7 +420,7 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
           <button
             type="button"
             onClick={reset}
-            className="mt-7 inline-flex items-center gap-2 border border-white/[0.06] bg-surface-3 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:border-white/12"
+            className="mt-7 inline-flex items-center gap-2 border border-white/[0.06] bg-surface-3 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:border-white/12 cursor-pointer"
           >
             <RotateCcw className="h-4 w-4" />
             Volver a empezar
@@ -579,7 +579,7 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
             type="button"
             onClick={() => setIndex((i) => Math.max(i - 1, 0))}
             disabled={index === 0}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/52 transition-colors hover:text-white disabled:pointer-events-none disabled:opacity-25"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/52 transition-colors hover:text-white disabled:pointer-events-none disabled:opacity-25 cursor-pointer"
           >
             <ChevronLeft className="h-4 w-4" />
             Anterior
@@ -590,7 +590,7 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
               type="button"
               onClick={verificar}
               disabled={loading || !respondida}
-              className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
             >
               {loading ? 'Verificando…' : 'Verificar'}
             </button>
@@ -599,7 +599,7 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
               type="button"
               onClick={next}
               disabled={loading || !canAdvance}
-              className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
             >
               {loading
                 ? 'Corrigiendo…'
@@ -652,7 +652,7 @@ function OptionButton({
       disabled={disabled}
       aria-pressed={selected}
       className={cn(
-        'flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm transition-colors',
+        'flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm transition-colors cursor-pointer disabled:cursor-not-allowed',
         // borde siempre presente => sin salto de layout entre estados
         state === 'idle' && (selected ? CONTROL_ACTIVE : CONTROL),
         state === 'correct' && 'border border-emerald-400/50 bg-emerald-500/10',

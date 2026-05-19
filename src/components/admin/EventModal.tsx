@@ -136,14 +136,14 @@ export function EventModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+            className="rounded border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white cursor-pointer"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={pending}
-            className="rounded bg-white px-4 py-2 text-sm font-semibold text-black transition-opacity disabled:opacity-50"
+            className="rounded bg-white px-4 py-2 text-sm font-semibold text-black transition-opacity disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             {pending ? 'Guardando…' : 'Crear evento'}
           </button>

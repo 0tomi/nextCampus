@@ -127,7 +127,7 @@ export function Modal({
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="inline-flex h-8 w-8 items-center justify-center text-white/46 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="inline-flex h-8 w-8 items-center justify-center text-white/46 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>

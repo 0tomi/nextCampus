@@ -183,7 +183,7 @@ export function QuizBankModal({
             <button
               type="button"
               onClick={copyPrompt}
-              className="inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10"
+              className="inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10 cursor-pointer"
             >
               {copied ? (
                 <Check className="h-3.5 w-3.5 text-emerald-400" />
@@ -195,7 +195,7 @@ export function QuizBankModal({
             <a
               href="/resources/banco-preguntas-examen.skill"
               download
-              className="inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10"
+              className="inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10 cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
               Descargar skill
@@ -286,14 +286,14 @@ export function QuizBankModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 text-sm font-semibold text-white/58 transition-colors hover:text-white"
+              className="px-4 py-2.5 text-sm font-semibold text-white/58 transition-colors hover:text-white cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={pending || !preview}
-              className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
             >
               {pending ? 'Subiendo…' : 'Subir banco'}
             </button>

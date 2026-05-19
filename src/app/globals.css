@@ -1,6 +1,16 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/forms";
 
+button,
+[role="button"] {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"]:disabled {
+  cursor: not-allowed;
+}
+
 /* Tema portado de la SPA (paleta UADER) a Tailwind 4 (@theme). */
 @theme {
   --color-paper: #faf8f5;
@@ -298,4 +308,14 @@ body {
   background: rgba(34, 211, 238, 0.16);
   border-color: rgba(34, 211, 238, 0.36);
   color: #cffafe;
+}
+
+.fc .fc-event,
+.fc .fc-event * {
+  cursor: pointer;
+}
+
+.calendar-editable .fc-daygrid-day,
+.calendar-editable .fc-daygrid-day * {
+  cursor: pointer;
 }
