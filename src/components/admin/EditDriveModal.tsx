@@ -74,7 +74,7 @@ export function EditDriveModal({
             value={driveUrl}
             onChange={(e) => setDriveUrl(e.target.value)}
             placeholder="https://drive.google.com/drive/folders/..."
-            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none focus:ring-0"
+            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none"
           />
         </div>
 

@@ -123,7 +123,7 @@ export function EventModal({
             onChange={(e) => setTitulo(e.target.value)}
             onBlur={handleBlur}
             placeholder="Ej: Parcial de Estructuras"
-            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none focus:ring-0"
+            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none"
           />
         </div>
 
@@ -140,7 +140,7 @@ export function EventModal({
             required
             value={selectedTipoId}
             onChange={(e) => setSelectedTipoId(e.target.value)}
-            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/20 focus:outline-none focus:ring-0"
+            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none"
           >
             <option value="" disabled>
               Seleccioná un tipo
@@ -166,7 +166,7 @@ export function EventModal({
             name="fecha"
             required
             defaultValue={initialDate ?? ''}
-            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/20 focus:outline-none focus:ring-0"
+            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none"
           />
         </div>
 
@@ -185,7 +185,7 @@ export function EventModal({
             name="descripcionHtml"
             rows={3}
             placeholder="Detalles del evento"
-            className="w-full resize-none rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none focus:ring-0"
+            className="w-full resize-none rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none"
           />
         </div>
 
