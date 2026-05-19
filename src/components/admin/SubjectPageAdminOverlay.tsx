@@ -133,6 +133,7 @@ export function SubjectPageAdminOverlay({
       />
 
       <EventModal
+        key={`${agendaId}-${subject.slug}-${newEventOpen}`}
         open={newEventOpen}
         onClose={() => setNewEventOpen(false)}
         agendaId={agendaId}

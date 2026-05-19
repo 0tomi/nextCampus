@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useActionState } from 'react'
+import { useEffect, useActionState, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import {
   createEventoAction,
@@ -35,6 +35,8 @@ export function EventModal({
   onSuccess,
 }: EventModalProps) {
   const [state, formAction, pending] = useActionState(createEventoAction, emptyState)
+  const [titulo, setTitulo] = useState('')
+  const [selectedTipoId, setSelectedTipoId] = useState('')
 
   useEffect(() => {
     if (state.ok) {
@@ -42,6 +44,43 @@ export function EventModal({
       onClose()
     }
   }, [state.ok, onClose, onSuccess])
+
+
+  const detectEventType = (text: string) => {
+    if (!text.trim()) return
+
+    const normalize = (str: string) =>
+      str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+    const normalizedText = normalize(text)
+
+    const patterns = [
+      {
+        keyword: 'examen',
+        regex: /examen|parcial|final|evaluacion|quiz|test|recuperatorio/i,
+      },
+      {
+        keyword: 'exposicion',
+        regex: /exposicion|exponer|expo|presentacion|coloquio|defensa/i,
+      },
+      {
+        keyword: 'trabajo practico',
+        regex: /trabajo\s+practico|tp|practico|entregable|taller/i,
+      },
+    ]
+
+    const match = patterns.find((p) => p.regex.test(normalizedText))
+    if (!match) return
+
+    const matchedTipo = tiposEvento.find((t) => {
+      const normalizedName = normalize(t.nombre)
+      return normalizedName.includes(match.keyword) || match.keyword.includes(normalizedName)
+    })
+
+    if (matchedTipo) {
+      setSelectedTipoId(matchedTipo.id)
+    }
+  }
 
   return (
     <Modal open={open} onClose={onClose} title="Nuevo evento">
@@ -61,6 +100,9 @@ export function EventModal({
             type="text"
             name="titulo"
             required
+            value={titulo}
+            onChange={(e) => setTitulo(e.target.value)}
+            onBlur={() => detectEventType(titulo)}
             placeholder="Ej: Parcial de Estructuras"
             className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
           />
@@ -77,6 +119,8 @@ export function EventModal({
             id="evento-tipo"
             name="tipoEventoId"
             required
+            value={selectedTipoId}
+            onChange={(e) => setSelectedTipoId(e.target.value)}
             className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/20 focus:outline-none"
           >
             <option value="" disabled>
