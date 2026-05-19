@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import { AdminControls } from '@/components/admin/AdminControls'
+import { SignOutButton } from '@/components/admin/SignOutButton'
 
 interface DashboardShellProps {
   brand?: ReactNode
@@ -30,7 +32,12 @@ export function DashboardShell({
               </span>
             </div>
           )}
-          {topbar ? <div className="flex items-center gap-3">{topbar}</div> : null}
+          <div className="flex items-center gap-3">
+            {topbar}
+            <AdminControls>
+              <SignOutButton />
+            </AdminControls>
+          </div>
         </div>
       </header>
 

@@ -3,6 +3,7 @@
 import { useRef } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
+import interactionPlugin, { type DateClickArg } from '@fullcalendar/interaction'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { cn, slugify } from '@/lib/utils'
 
@@ -26,6 +27,12 @@ interface EventCalendarProps {
   events?: readonly EventCalendarEvent[]
   emptyMessage?: string
   className?: string
+  /** Habilita drag-and-drop y dateClick para el admin. Anónimos siempre read-only. */
+  editable?: boolean
+  /** Callback cuando se arrastra un evento a otra fecha. Si retorna false o lanza, el drag se revierte. */
+  onEventDrop?: (id: string, nuevaFecha: Date) => Promise<boolean>
+  /** Callback cuando el admin hace clic en un día vacío. */
+  onDateClick?: (fecha: string) => void
 }
 
 const EVENT_TYPE_CLASS_MAP = {
@@ -105,8 +112,24 @@ export function EventCalendar({
   events = [],
   emptyMessage = 'Sin eventos cargados por ahora.',
   className,
+  editable = false,
+  onEventDrop,
+  onDateClick,
 }: EventCalendarProps) {
   const calendarRef = useRef<FullCalendar>(null)
+
+  async function handleEventDrop(info: { event: { id: string; start: Date | null }; revert: () => void }) {
+    if (!onEventDrop) {
+      info.revert()
+      return
+    }
+    const ok = await onEventDrop(info.event.id, info.event.start ?? new Date())
+    if (!ok) info.revert()
+  }
+
+  function handleDateClick(info: DateClickArg) {
+    onDateClick?.(info.dateStr)
+  }
 
   const calendarEvents = events.flatMap((event, index) => {
     const title = (event.title ?? event.titulo ?? '').trim()
@@ -137,7 +160,7 @@ export function EventCalendar({
 
       <FullCalendar
         ref={calendarRef}
-        plugins={[dayGridPlugin]}
+        plugins={editable ? [dayGridPlugin, interactionPlugin] : [dayGridPlugin]}
         initialView="dayGridMonth"
         headerToolbar={{
           left: 'customPrev,customNext customToday',
@@ -168,6 +191,10 @@ export function EventCalendar({
         showNonCurrentDates={false}
         displayEventTime={false}
         dayMaxEventRows={3}
+        editable={editable}
+        eventStartEditable={editable}
+        eventDrop={editable ? handleEventDrop : undefined}
+        dateClick={editable ? handleDateClick : undefined}
       />
     </DarkCard>
   )

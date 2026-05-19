@@ -7,3 +7,10 @@ allowBuilds:
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+minimumReleaseAgeExclude:
+  - '@hono/node-server@1.19.13'
+  - 'postcss@8.5.10'
+
+overrides:
+  '@hono/node-server': '1.19.13'
+  'postcss': '8.5.10'

@@ -6,6 +6,13 @@ import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
 import { AnimateIn } from '@/components/ui/AnimateIn'
 import { cn } from '@/lib/utils'
+import { AdminControls } from '@/components/admin/AdminControls'
+import {
+  AddYearButton,
+  YearAdminBar,
+  SubjectAdminRow,
+  AddSubjectButton,
+} from '@/components/admin/HomeAdminOverlay'
 
 export const revalidate = 300
 
@@ -117,10 +124,13 @@ export default async function HomePage() {
         </section>
 
         <section className="space-y-5">
-          <div className="px-1">
+          <div className="flex items-center justify-between px-1">
             <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/40">
               MATERIAS POR AÑO
             </p>
+            <AdminControls>
+              <AddYearButton />
+            </AdminControls>
           </div>
 
           <div className="stagger-children grid gap-4 md:grid-cols-3 xl:grid-cols-5">
@@ -161,10 +171,41 @@ export default async function HomePage() {
                           <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-white/60 transition-colors group-hover:text-white">
                             {subject.nombre}
                           </span>
+                          <AdminControls>
+                            <SubjectAdminRow
+                              subject={{
+                                id: subject.id,
+                                slug: subject.slug,
+                                nombre: subject.nombre,
+                              }}
+                              yearId={year.id}
+                            />
+                          </AdminControls>
                         </Link>
                       </li>
                     ))}
+                    <AdminControls>
+                      <li>
+                        <AddSubjectButton yearId={year.id} />
+                      </li>
+                    </AdminControls>
                   </ul>
+
+                  <AdminControls>
+                    <YearAdminBar
+                      year={{
+                        id: year.id,
+                        slug: year.slug,
+                        nombre: year.nombre,
+                        orden: index + 1,
+                        subjects: year.subjects.map((s) => ({
+                          id: s.id,
+                          slug: s.slug,
+                          nombre: s.nombre,
+                        })),
+                      }}
+                    />
+                  </AdminControls>
                 </div>
               )
             })}

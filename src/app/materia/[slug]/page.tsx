@@ -9,14 +9,19 @@ import {
   NotebookTabs,
   Sparkles,
 } from 'lucide-react'
-import { getSubjectPageBySlug } from '@/lib/queries'
+import { getSubjectPageBySlug, getTiposEvento } from '@/lib/queries'
 import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
-import { EventCalendar } from '@/components/calendar/EventCalendar'
+import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
 import { AnimateIn } from '@/components/ui/AnimateIn'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { formatDate } from '@/lib/utils'
+import {
+  SubjectPageAdminOverlay,
+  DeleteEventoButton,
+  DeleteApunteButton,
+} from '@/components/admin/SubjectPageAdminOverlay'
 
 export const revalidate = 300
 
@@ -44,9 +49,13 @@ export default async function SubjectPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const subject = await getSubjectPageBySlug(slug)
+  const [subject, tiposEvento] = await Promise.all([
+    getSubjectPageBySlug(slug),
+    getTiposEvento(),
+  ])
   if (!subject) notFound()
 
+  const agendaId = subject.agenda?.id ?? ''
   const eventos = subject.agenda?.eventos ?? []
   const colors = getYearColorClasses(subject.year.slug)
   const sectionItems = [
@@ -176,7 +185,7 @@ export default async function SubjectPage({
         </div>
 
         <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.85fr)]">
-          <EventCalendar
+          <EventCalendarAdmin
             events={eventos.map((evento) => ({
               id: evento.id,
               titulo: evento.titulo,
@@ -184,6 +193,9 @@ export default async function SubjectPage({
               tipo: evento.tipoEvento.nombre,
             }))}
             emptyMessage="Sin eventos cargados para esta materia."
+            agendaId={agendaId}
+            subjectSlug={subject.slug}
+            tiposEvento={tiposEvento}
           />
 
           <div className="space-y-3">
@@ -203,11 +215,17 @@ export default async function SubjectPage({
                         {evento.titulo}
                       </h3>
                     </div>
-                    <span
-                      className={`inline-flex border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${colors.chipClassName}`}
-                    >
-                      {formatDate(evento.fecha)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${colors.chipClassName}`}
+                      >
+                        {formatDate(evento.fecha)}
+                      </span>
+                      <DeleteEventoButton
+                        eventoId={evento.id}
+                        subjectSlug={subject.slug}
+                      />
+                    </div>
                   </div>
 
                   {evento.descripcionHtml ? (
@@ -290,15 +308,21 @@ export default async function SubjectPage({
                     </h3>
                   </div>
 
-                  {apunte.pdfObjectKey ? (
-                    <a
-                      href={`/api/apuntes/${apunte.id}/pdf`}
-                      className={`inline-flex items-center gap-2 border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition-colors hover:bg-white/5 ${colors.chipClassName}`}
-                    >
-                      <Download className="h-4 w-4" />
-                      PDF
-                    </a>
-                  ) : null}
+                  <div className="flex items-center gap-2">
+                    {apunte.pdfObjectKey ? (
+                      <a
+                        href={`/api/apuntes/${apunte.id}/pdf`}
+                        className={`inline-flex items-center gap-2 border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition-colors hover:bg-white/5 ${colors.chipClassName}`}
+                      >
+                        <Download className="h-4 w-4" />
+                        PDF
+                      </a>
+                    ) : null}
+                    <DeleteApunteButton
+                      apunteId={apunte.id}
+                      subjectSlug={subject.slug}
+                    />
+                  </div>
                 </div>
 
                 {apunte.descripcionHtml ? (
@@ -314,6 +338,11 @@ export default async function SubjectPage({
           </div>
         )}
       </section>
+      <SubjectPageAdminOverlay
+        subject={{ id: subject.id, slug: subject.slug, nombre: subject.nombre }}
+        agendaId={agendaId}
+        tiposEvento={tiposEvento}
+      />
     </DashboardShell>
   )
 }

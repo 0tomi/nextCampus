@@ -223,3 +223,72 @@ export async function deleteQuizBank(
     .from(BUCKET)
     .remove([bankKey(yearSlug, subjectSlug, bankId)])
 }
+
+/**
+ * Cuenta los bancos de preguntas de una materia listando los .meta.json
+ * en quizzes/{yearSlug}/{subjectSlug}/. Reutiliza el mismo list() que
+ * deleteSubjectStorage para mantener consistencia con lo que se borra.
+ */
+export async function countSubjectQuizBanks(
+  yearSlug: string,
+  subjectSlug: string,
+): Promise<number> {
+  const supabase = createSupabaseAdminClient()
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .list(bankDir(yearSlug, subjectSlug), { limit: 1000 })
+  if (error || !data) return 0
+  return data.filter((o) => o.name.endsWith(META_SUFFIX)).length
+}
+
+// ---------------------------------------------------------------------------
+// Limpieza masiva por materia / año (para ABM admin).
+// Borra TODOS los archivos de una materia: PDFs de apuntes y bancos de quiz.
+// No lanza si ya no existen los archivos (operación idempotente).
+// ---------------------------------------------------------------------------
+
+/**
+ * Elimina todos los archivos en Storage asociados a una materia:
+ * - PDFs de apuntes: `{subjectSlug}/*.pdf` (y cualquier otro archivo en esa ruta)
+ * - Bancos de quiz:  `quizzes/{yearSlug}/{subjectSlug}/*`
+ */
+export async function deleteSubjectStorage(
+  yearSlug: string,
+  subjectSlug: string,
+): Promise<void> {
+  const supabase = createSupabaseAdminClient()
+
+  // 1. PDFs de apuntes
+  const { data: pdfFiles } = await supabase.storage
+    .from(BUCKET)
+    .list(subjectSlug, { limit: 1000 })
+  if (pdfFiles && pdfFiles.length > 0) {
+    const pdfKeys = pdfFiles.map((f) => `${subjectSlug}/${f.name}`)
+    await supabase.storage.from(BUCKET).remove(pdfKeys)
+  }
+
+  // 2. Bancos de quiz
+  const quizDir = bankDir(yearSlug, subjectSlug)
+  const { data: quizFiles } = await supabase.storage
+    .from(BUCKET)
+    .list(quizDir, { limit: 1000 })
+  if (quizFiles && quizFiles.length > 0) {
+    const quizKeys = quizFiles.map((f) => `${quizDir}/${f.name}`)
+    await supabase.storage.from(BUCKET).remove(quizKeys)
+  }
+}
+
+/**
+ * Elimina todos los archivos en Storage de todas las materias de un año.
+ * Recibe un array de { yearSlug, subjectSlug } para operar sobre las
+ * combinaciones ya conocidas ANTES del delete en BD (que los borra en cascada).
+ */
+export async function deleteYearStorage(
+  subjects: ReadonlyArray<{ yearSlug: string; subjectSlug: string }>,
+): Promise<void> {
+  await Promise.all(
+    subjects.map(({ yearSlug, subjectSlug }) =>
+      deleteSubjectStorage(yearSlug, subjectSlug),
+    ),
+  )
+}
