@@ -4,6 +4,7 @@ Tecnologias que utilizamos aca:
 - NextJS
 - Prisma
 - Supabase 
+- PNPM Como gestor de dependencias
 
 Para supabase, contas con el MCP instalado para comunicarte con la base de datos si lo necesitas.
 
