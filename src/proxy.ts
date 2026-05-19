@@ -9,29 +9,6 @@ import { apiRatelimit, loginRatelimit, getClientIp } from '@/lib/ratelimit'
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // --- Nonce + CSP ---
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
-  const isDev = process.env.NODE_ENV !== 'production'
-  const scriptSrc = `'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`
-  const styleSrc = `'self' 'nonce-${nonce}'`
-
-  const csp = [
-    "default-src 'self'",
-    `script-src ${scriptSrc}`,
-    `style-src ${styleSrc}`,
-    "font-src 'self'",
-    "img-src 'self' data: blob:",
-    "connect-src 'self' https://*.supabase.co",
-    "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-  ].join('; ')
-
-  // Propagar el nonce al render como request header (los Server Components lo leen vía headers()).
-  const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-nonce', nonce)
-  requestHeaders.set('Content-Security-Policy', csp)
-
   // --- Rate limiting (solo /admin y /api) ---
   const shouldRateLimit = pathname.startsWith('/admin') || pathname.startsWith('/api')
   if (shouldRateLimit) {
@@ -53,6 +30,33 @@ export async function proxy(request: NextRequest) {
       }
     }
   }
+
+  if (pathname.startsWith('/api')) {
+    return NextResponse.next()
+  }
+
+  // --- Nonce + CSP ---
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
+  const isDev = process.env.NODE_ENV !== 'production'
+  const scriptSrc = `'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`
+  const styleSrc = `'self' 'nonce-${nonce}'`
+
+  const csp = [
+    "default-src 'self'",
+    `script-src ${scriptSrc}`,
+    `style-src ${styleSrc}`,
+    "font-src 'self'",
+    "img-src 'self' data: blob: https://*.supabase.co",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join('; ')
+
+  // Propagar el nonce al render como request header (los Server Components lo leen vía headers()).
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-nonce', nonce)
+  requestHeaders.set('Content-Security-Policy', csp)
 
   let response = NextResponse.next({ request: { headers: requestHeaders } })
 
@@ -101,7 +105,15 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Aplica a todo salvo assets estáticos / optimizaciones / API.
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
+    // Rate limit para API sin CSP de página.
+    '/api/:path*',
+    // CSP para páginas, salteando assets y prefetches.
+    {
+      source: '/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
   ],
 }

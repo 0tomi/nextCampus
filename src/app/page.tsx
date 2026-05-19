@@ -14,8 +14,6 @@ import {
   AddSubjectButton,
 } from '@/components/admin/HomeAdminOverlay'
 
-export const revalidate = 300
-
 function DashboardBrand() {
   return (
     <Link href="/" className="flex items-center gap-3 text-left">
