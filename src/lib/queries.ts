@@ -69,14 +69,6 @@ export function getSubjectPageBySlug(slug: string) {
           },
         },
       },
-      quizUnidades: {
-        orderBy: { orden: 'asc' },
-        select: {
-          id: true,
-          titulo: true,
-          _count: { select: { preguntas: true } },
-        },
-      },
       apuntes: {
         orderBy: { createdAt: 'desc' },
         select: {
@@ -90,31 +82,16 @@ export function getSubjectPageBySlug(slug: string) {
   })
 }
 
-export function getSubjectQuizBySlug(slug: string) {
+// Metadata mínima para resolver la key de Storage del banco de preguntas
+// (quizzes/{anioSlug}/{materiaSlug}/...) y los títulos de la UI de quiz.
+export function getSubjectQuizMeta(slug: string) {
   return prisma.subject.findUnique({
     where: { slug },
     select: {
       id: true,
+      slug: true,
       nombre: true,
-      quizUnidades: {
-        orderBy: { orden: 'asc' },
-        select: {
-          id: true,
-          titulo: true,
-          _count: { select: { preguntas: true } },
-        },
-      },
-    },
-  })
-}
-
-export function getSubjectQuizUnitIdsBySlug(slug: string) {
-  return prisma.subject.findUnique({
-    where: { slug },
-    select: {
-      quizUnidades: {
-        select: { id: true },
-      },
+      year: { select: { slug: true } },
     },
   })
 }
@@ -123,6 +100,7 @@ export function getAdminSubjectBySlug(slug: string) {
   return prisma.subject.findUnique({
     where: { slug },
     include: {
+      year: { select: { slug: true } },
       agenda: {
         include: {
           eventos: {
@@ -131,10 +109,6 @@ export function getAdminSubjectBySlug(slug: string) {
           },
         },
       },
-      quizUnidades: {
-        orderBy: { orden: 'asc' },
-        include: { _count: { select: { preguntas: true } } },
-      },
       apuntes: { orderBy: { createdAt: 'desc' } },
     },
   })
@@ -142,46 +116,4 @@ export function getAdminSubjectBySlug(slug: string) {
 
 export function getTiposEvento() {
   return prisma.tipoEvento.findMany({ orderBy: { nombre: 'asc' } })
-}
-
-export function getPreguntasByUnidades(quizUnidadIds: string[]) {
-  return prisma.pregunta.findMany({
-    where: { quizUnidadId: { in: quizUnidadIds } },
-    select: {
-      id: true,
-      tipo: true,
-      enunciado: true,
-      opciones: true,
-      respuestaCorrecta: true,
-      explicacion: true,
-    },
-  })
-}
-
-export function getPreguntasByIds(ids: string[]) {
-  return prisma.pregunta.findMany({
-    where: { id: { in: ids } },
-    select: {
-      id: true,
-      tipo: true,
-      enunciado: true,
-      opciones: true,
-      respuestaCorrecta: true,
-      explicacion: true,
-    },
-  })
-}
-
-export function getPreguntaById(id: string) {
-  return prisma.pregunta.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      tipo: true,
-      enunciado: true,
-      opciones: true,
-      respuestaCorrecta: true,
-      explicacion: true,
-    },
-  })
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import { useRef } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import { DarkCard } from '@/components/ui/DarkCard'
@@ -105,6 +106,8 @@ export function EventCalendar({
   emptyMessage = 'Sin eventos cargados por ahora.',
   className,
 }: EventCalendarProps) {
+  const calendarRef = useRef<FullCalendar>(null)
+
   const calendarEvents = events.flatMap((event, index) => {
     const title = (event.title ?? event.titulo ?? '').trim()
     const startValue = event.start ?? event.date ?? event.fecha
@@ -133,14 +136,30 @@ export function EventCalendar({
       ) : null}
 
       <FullCalendar
+        ref={calendarRef}
         plugins={[dayGridPlugin]}
         initialView="dayGridMonth"
         headerToolbar={{
-          left: 'prev,next today',
+          left: 'customPrev,customNext customToday',
           center: 'title',
           right: '',
         }}
-        buttonText={{ today: 'Hoy' }}
+        customButtons={{
+          customPrev: {
+            text: '←',
+            click: () => calendarRef.current?.getApi().prev(),
+            hint: 'Mes anterior',
+          },
+          customNext: {
+            text: '→',
+            click: () => calendarRef.current?.getApi().next(),
+            hint: 'Mes siguiente',
+          },
+          customToday: {
+            text: 'Hoy',
+            click: () => calendarRef.current?.getApi().today(),
+          },
+        }}
         events={calendarEvents}
         locale="es"
         firstDay={1}

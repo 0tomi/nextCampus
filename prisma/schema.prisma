@@ -46,7 +46,6 @@ model Subject {
   nombre      String
   descripcion String       @default("")
   agenda      Agenda?
-  quizUnidades QuizUnidad[]
   apuntes     Apunte[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -92,47 +91,11 @@ model Evento {
 }
 
 // ---------------------------------------------------------------------------
-// Quiz: materia -> QuizUnidad -> Pregunta
+// Quiz: ya NO vive en la base de datos. Los bancos de preguntas son JSON
+// privados en Supabase Storage (quizzes/{anio}/{materia}/{uuid}.json) con un
+// manifest index.json por materia. Ver src/lib/storage.ts y
+// src/lib/domain/quiz-bank.ts. La corrección es siempre server-side.
 // ---------------------------------------------------------------------------
-
-enum TipoPregunta {
-  MULTIPLE_CHOICE
-  VERDADERO_FALSO
-  RESPUESTA_CORTA
-}
-
-model QuizUnidad {
-  id        String     @id @default(cuid())
-  subject   Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  subjectId String
-  titulo    String
-  orden     Int        @default(0)
-  preguntas Pregunta[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  @@index([subjectId])
-}
-
-model Pregunta {
-  id           String       @id @default(cuid())
-  quizUnidad   QuizUnidad   @relation(fields: [quizUnidadId], references: [id], onDelete: Cascade)
-  quizUnidadId String
-  tipo         TipoPregunta
-  enunciado    String
-  /// Opciones para MULTIPLE_CHOICE (array de strings). Vacío para otros tipos.
-  opciones     Json         @default("[]")
-  /// Respuesta correcta por tipo:
-  /// - MULTIPLE_CHOICE: texto exacto de la opción correcta (debe existir en `opciones`)
-  /// - VERDADERO_FALSO: literal "true" o "false"
-  /// - RESPUESTA_CORTA: texto normalizado (trim + lowercase)
-  respuestaCorrecta String
-  explicacion  String       @default("")
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-
-  @@index([quizUnidadId])
-}
 
 // ---------------------------------------------------------------------------
 // Apuntes: materia -> Apunte (PDF en Supabase Storage o solo descripción)

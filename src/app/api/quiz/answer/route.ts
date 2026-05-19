@@ -1,27 +1,41 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { getPreguntaById, getPreguntasByIds } from '@/lib/queries'
-import { corregir } from '@/lib/domain/quiz'
+import { getSubjectQuizMeta } from '@/lib/queries'
+import { listQuizBanks, readQuizBank } from '@/lib/storage'
+import {
+  getQuestionFromBank,
+  gradeQuestion,
+  parseQuestionId,
+  type GradeResult,
+  type QuizBankFile,
+} from '@/lib/domain/quiz-bank'
+
+export const dynamic = 'force-dynamic'
+
+const userAnswerSchema = z.union([
+  z.number().int(),
+  z.array(z.number().int()).max(20),
+  z.boolean(),
+  z.null(),
+])
 
 const bodySchema = z.object({
-  preguntaId: z.string().min(1),
-  userAnswer: z.string().max(2000),
-})
-
-const batchBodySchema = z.object({
+  subject: z.string().min(1),
   answers: z
     .array(
       z.object({
-        preguntaId: z.string().min(1),
-        userAnswer: z.string().max(2000),
+        id: z.string().min(1).max(200),
+        answer: userAnswerSchema,
       }),
     )
     .min(1)
-    .max(200),
+    .max(500),
 })
 
-// Corrección server-side. Recibe la respuesta y devuelve si es correcta + la
-// explicación. La respuesta correcta NO viaja antes de que el usuario responda.
+// Corrección server-side. El cliente manda {id, answer}; el server RECARGA el
+// banco correspondiente desde Storage y corrige. Las respuestas correctas
+// nunca viajan antes de esto. Un id forjado no sirve: solo se corrige contra
+// bancos que existan en el manifest de la materia.
 export async function POST(request: Request) {
   let json: unknown
   try {
@@ -30,41 +44,51 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'JSON inválido' }, { status: 400 })
   }
 
-  const batchParsed = batchBodySchema.safeParse(json)
-  if (batchParsed.success) {
-    const preguntas = await getPreguntasByIds(
-      batchParsed.data.answers.map((answer) => answer.preguntaId),
-    )
-    const preguntasById = new Map(
-      preguntas.map((pregunta) => [pregunta.id, pregunta]),
-    )
-    const resultados = batchParsed.data.answers.map((answer) => {
-      const pregunta = preguntasById.get(answer.preguntaId)
-      return pregunta ? corregir(pregunta, answer.userAnswer) : null
-    })
+  const parsed = bodySchema.safeParse(json)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Cuerpo inválido' }, { status: 400 })
+  }
+  const { subject: subjectSlug, answers } = parsed.data
 
-    if (resultados.some((resultado) => resultado === null)) {
+  const subject = await getSubjectQuizMeta(subjectSlug)
+  if (!subject) {
+    return NextResponse.json({ error: 'Materia no encontrada' }, { status: 404 })
+  }
+
+  const manifest = await listQuizBanks(subject.year.slug, subject.slug)
+  const allowed = new Set(manifest.map((b) => b.id))
+
+  const bankCache = new Map<string, QuizBankFile | null>()
+  async function loadBank(bankId: string): Promise<QuizBankFile | null> {
+    if (bankCache.has(bankId)) return bankCache.get(bankId) ?? null
+    const bank = allowed.has(bankId)
+      ? await readQuizBank(subject!.year.slug, subject!.slug, bankId)
+      : null
+    bankCache.set(bankId, bank)
+    return bank
+  }
+
+  const resultados: GradeResult[] = []
+  for (const { id, answer } of answers) {
+    const loc = parseQuestionId(id)
+    if (!loc || !allowed.has(loc.bankId)) {
       return NextResponse.json(
         { error: 'Pregunta no encontrada' },
         { status: 404 },
       )
     }
-
-    return NextResponse.json({ resultados })
+    const bank = await loadBank(loc.bankId)
+    const question = bank
+      ? getQuestionFromBank(bank, loc.unitIdx, loc.qIdx)
+      : null
+    if (!question) {
+      return NextResponse.json(
+        { error: 'Pregunta no encontrada' },
+        { status: 404 },
+      )
+    }
+    resultados.push(gradeQuestion(id, question, answer))
   }
 
-  const parsed = bodySchema.safeParse(json)
-  if (!parsed.success) {
-    return NextResponse.json({ error: 'Cuerpo inválido' }, { status: 400 })
-  }
-
-  const pregunta = await getPreguntaById(parsed.data.preguntaId)
-  if (!pregunta) {
-    return NextResponse.json(
-      { error: 'Pregunta no encontrada' },
-      { status: 404 },
-    )
-  }
-
-  return NextResponse.json(corregir(pregunta, parsed.data.userAnswer))
+  return NextResponse.json({ resultados })
 }

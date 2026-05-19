@@ -1,14 +1,13 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, ArrowRight, CalendarDays, GraduationCap } from 'lucide-react'
+import { ArrowRight, GraduationCap } from 'lucide-react'
 import { getYearBySlug } from '@/lib/queries'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
 import { EventCalendar } from '@/components/calendar/EventCalendar'
-import { AnimateIn } from '@/components/ui/AnimateIn'
 import { DarkCard } from '@/components/ui/DarkCard'
-import { StatCard } from '@/components/ui/StatCard'
+
 
 export const revalidate = 300
 
@@ -71,56 +70,7 @@ export default async function YearPage({
       }
       mainClassName="space-y-8"
     >
-      <AnimateIn className="space-y-8">
-        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-          <DarkCard className="p-6 sm:p-8">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-white/56 transition-colors hover:text-white/80"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Volver al lobby
-            </Link>
 
-            <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
-              Trayecto académico
-            </p>
-            <h1 className="mt-3 text-4xl font-black tracking-tight text-white sm:text-5xl">
-              {year.nombre}
-            </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-white/64 sm:text-base">
-              Entrá a cada materia desde el menú lateral o desde la grilla
-              principal para seguir tu recorrido de cursada.
-            </p>
-          </DarkCard>
-
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            <StatCard
-              icon={<CalendarDays className="h-5 w-5" />}
-              label="Materias visibles"
-              value={year.subjects.length}
-              meta="Recorrido anual"
-              progress={100}
-              chipClassName="bg-gradient-to-br from-violet-400/15 to-purple-500/15 text-violet-200"
-              progressClassName={colors.progressClassName}
-            />
-            <DarkCard className="p-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                Estado
-              </p>
-              <div
-                className={`mt-4 inline-flex border px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] ${colors.chipClassName}`}
-              >
-                Vista del año activa
-              </div>
-              <p className="mt-4 text-sm leading-6 text-white/58">
-                La agenda detallada se organiza dentro de cada materia para que
-                encuentres fechas y entregas en contexto.
-              </p>
-            </DarkCard>
-          </div>
-        </section>
-      </AnimateIn>
 
       <section className="space-y-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

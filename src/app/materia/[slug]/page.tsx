@@ -71,7 +71,7 @@ export default async function SubjectPage({
       href: '#quiz',
       label: 'Quiz',
       badge: <Sparkles className="h-4 w-4" />,
-      meta: `${subject.quizUnidades.length} unidades`,
+      meta: 'Practicá',
       badgeClassName: 'from-violet-400 to-purple-500 text-white',
     },
     {
@@ -147,12 +147,6 @@ export default async function SubjectPage({
                 <span>Eventos</span>
                 <strong className="text-lg font-black text-white">
                   {eventos.length}
-                </strong>
-              </div>
-              <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-4">
-                <span>Unidades de quiz</span>
-                <strong className="text-lg font-black text-white">
-                  {subject.quizUnidades.length}
                 </strong>
               </div>
               <div className="flex items-center justify-between gap-4">
@@ -232,55 +226,42 @@ export default async function SubjectPage({
       </section>
 
       <section id="quiz" className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
-              Modo estudio
-            </p>
-            <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
-              Unidades de quiz
-            </h2>
-          </div>
-          <Link
-            href={`/materia/${subject.slug}/quiz`}
-            className="inline-flex items-center gap-2 self-start border-4 border-ink bg-paper px-4 py-2 text-sm font-bold text-ink shadow-hard-sm transition-transform hover:-translate-y-0.5"
-          >
-            Empezar quiz
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
+            Modo estudio
+          </p>
+          <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+            Poné a prueba lo que sabés
+          </h2>
         </div>
 
-        {subject.quizUnidades.length === 0 ? (
-          <p className="text-sm text-white/58">Sin unidades de quiz.</p>
-        ) : (
-          <div className="stagger-children grid gap-4 xl:grid-cols-2">
-            {subject.quizUnidades.map((unidad, index) => (
-              <DarkCard key={unidad.id} variant="interactive" className="p-5">
-                <div className="flex items-start gap-4">
-                  <span
-                    className={`inline-flex h-12 min-w-12 items-center justify-center bg-gradient-to-r px-3 text-sm font-black tracking-[0.16em] ${colors.progressClassName}`}
-                  >
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38">
-                      Unidad
-                    </p>
-                    <h3 className="mt-2 text-xl font-black tracking-tight text-white">
-                      {unidad.titulo}
-                    </h3>
-                    <p className="mt-2 text-sm text-white/58">
-                      {unidad._count.preguntas} preguntas disponibles
-                    </p>
-                  </div>
-
-                  <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-white/28" />
-                </div>
-              </DarkCard>
-            ))}
+        <DarkCard variant="interactive" className="p-6 sm:p-8">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-4">
+              <span
+                className={`inline-flex h-12 w-12 shrink-0 items-center justify-center bg-gradient-to-r ${colors.progressClassName}`}
+              >
+                <Sparkles className="h-5 w-5" />
+              </span>
+              <div>
+                <h3 className="text-xl font-black tracking-tight text-white">
+                  Quiz de {subject.nombre}
+                </h3>
+                <p className="mt-2 max-w-md text-sm leading-6 text-white/58">
+                  Elegí uno o varios bancos de preguntas y practicá en modo
+                  práctica (con explicaciones) o examen.
+                </p>
+              </div>
+            </div>
+            <Link
+              href={`/materia/${subject.slug}/quiz`}
+              className="inline-flex shrink-0 items-center gap-2 self-start bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-uader-red-light"
+            >
+              Empezar quiz
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-        )}
+        </DarkCard>
       </section>
 
       <section id="apuntes" className="space-y-4">

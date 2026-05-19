@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import {
   ArrowLeft,
-  BookOpen,
   CalendarDays,
   FileText,
   Shield,
@@ -11,16 +10,16 @@ import {
 } from 'lucide-react'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminSubjectBySlug, getTiposEvento } from '@/lib/queries'
+import { listQuizBanks } from '@/lib/storage'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { formatDate } from '@/lib/utils'
 import {
   createApunte,
   createEvento,
-  createPregunta,
-  createQuizUnidad,
   deleteApunte,
   deleteEvento,
 } from '@/app/admin/actions'
+import { QuizBankManager } from './QuizBankManager'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,6 +51,7 @@ export default async function AdminSubjectPage({
   if (!subject || !subject.agenda) notFound()
   const tipos = await getTiposEvento()
   const agendaId = subject.agenda.id
+  const bancos = await listQuizBanks(subject.year.slug, slug)
 
   return (
     <div className="space-y-8 text-white">
@@ -120,10 +120,10 @@ export default async function AdminSubjectPage({
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38">
-                Quiz
+                Bancos de quiz
               </p>
               <strong className="mt-3 block text-3xl font-black text-white">
-                {subject.quizUnidades.length}
+                {bancos.length}
               </strong>
             </div>
             <span className="inline-flex h-11 w-11 items-center justify-center border border-white/10 bg-white/5 text-white/78">
@@ -270,96 +270,7 @@ export default async function AdminSubjectPage({
       </DarkCard>
 
       {/* Quiz */}
-      <DarkCard className="space-y-5 p-6">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38">
-            Contenido de práctica
-          </p>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-white">
-            Quiz
-          </h2>
-        </div>
-        <form action={createQuizUnidad} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_auto] sm:items-start">
-          <input type="hidden" name="subjectId" value={subject.id} />
-          <input type="hidden" name="subjectSlug" value={slug} />
-          <input
-            name="titulo"
-            placeholder="Título de la unidad"
-            required
-            className={FIELD_CLASSNAME}
-          />
-          <input
-            type="number"
-            name="orden"
-            placeholder="Orden"
-            defaultValue={0}
-            className={FIELD_CLASSNAME}
-          />
-          <button
-            type="submit"
-            className={BUTTON_CLASSNAME}
-          >
-            <BookOpen className="h-4 w-4" />
-            Crear unidad
-          </button>
-        </form>
-
-        {subject.quizUnidades.map((unidad) => (
-          <div key={unidad.id} className="border border-white/5 bg-surface-0 p-4">
-            <p className="font-semibold text-white/82">
-              {unidad.titulo} — {unidad._count.preguntas} preguntas
-            </p>
-            <form
-              action={createPregunta}
-              className="mt-4 space-y-3 border-t border-white/5 pt-4"
-            >
-              <input
-                type="hidden"
-                name="quizUnidadId"
-                value={unidad.id}
-              />
-              <input type="hidden" name="subjectSlug" value={slug} />
-              <input
-                name="enunciado"
-                placeholder="Enunciado"
-                required
-                className={FIELD_CLASSNAME}
-              />
-              <select
-                name="tipo"
-                className={FIELD_CLASSNAME}
-              >
-                <option value="MULTIPLE_CHOICE">Opción múltiple</option>
-                <option value="VERDADERO_FALSO">Verdadero / Falso</option>
-                <option value="RESPUESTA_CORTA">Respuesta corta</option>
-              </select>
-              <textarea
-                name="opciones"
-                placeholder="Opciones (una por línea, solo opción múltiple)"
-                className={`${FIELD_CLASSNAME} min-h-24`}
-              />
-              <input
-                name="respuestaCorrecta"
-                placeholder="Respuesta correcta"
-                required
-                className={FIELD_CLASSNAME}
-              />
-              <textarea
-                name="explicacion"
-                placeholder="Explicación"
-                className={`${FIELD_CLASSNAME} min-h-24`}
-              />
-              <button
-                type="submit"
-                className={BUTTON_CLASSNAME}
-              >
-                <Sparkles className="h-4 w-4" />
-                Agregar pregunta
-              </button>
-            </form>
-          </div>
-        ))}
-      </DarkCard>
+      <QuizBankManager subjectSlug={slug} bancos={bancos} />
     </div>
   )
 }

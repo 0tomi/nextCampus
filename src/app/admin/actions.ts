@@ -5,7 +5,14 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth'
 import { sanitizeRichHtml } from '@/lib/sanitize'
-import { uploadApuntePdf, deleteApuntePdf } from '@/lib/storage'
+import {
+  uploadApuntePdf,
+  deleteApuntePdf,
+  uploadQuizBank,
+  deleteQuizBank,
+} from '@/lib/storage'
+import { getSubjectQuizMeta } from '@/lib/queries'
+import { parseQuizBank } from '@/lib/domain/quiz-bank'
 
 // Toda escritura: requireAdmin() (verifica JWT + allowlist) -> Zod -> sanitize.
 
@@ -117,83 +124,79 @@ export async function deleteApunte(formData: FormData): Promise<void> {
   revalidateSubjectContent(subjectSlug)
 }
 
-const unidadSchema = z.object({
-  subjectId: z.string().min(1),
-  subjectSlug: z.string().min(1),
-  titulo: z.string().min(1).max(200),
-  orden: z.coerce.number().int().min(0).default(0),
-})
+// --- Banco de preguntas (quiz JSON-en-bucket) ------------------------------
 
-export async function createQuizUnidad(formData: FormData): Promise<void> {
-  await requireAdmin()
-  const data = unidadSchema.parse({
-    subjectId: formData.get('subjectId'),
-    subjectSlug: formData.get('subjectSlug'),
-    titulo: formData.get('titulo'),
-    orden: formData.get('orden') ?? 0,
-  })
-  await prisma.quizUnidad.create({
-    data: {
-      subjectId: data.subjectId,
-      titulo: data.titulo,
-      orden: data.orden,
-    },
-  })
-  revalidateSubjectContent(data.subjectSlug)
+export interface QuizBankActionState {
+  ok: boolean
+  message: string
 }
 
-const preguntaSchema = z.object({
-  quizUnidadId: z.string().min(1),
+const uploadBankSchema = z.object({
   subjectSlug: z.string().min(1),
-  tipo: z.enum(['MULTIPLE_CHOICE', 'VERDADERO_FALSO', 'RESPUESTA_CORTA']),
-  enunciado: z.string().min(1).max(2000),
-  opciones: z.array(z.string().max(500)).max(10).default([]),
-  respuestaCorrecta: z.string().min(1).max(500),
-  explicacion: z.string().max(4000).default(''),
+  nombre: z.string().trim().min(1).max(120),
+  json: z.string().min(1).max(2 * 1024 * 1024),
 })
 
-export async function createPregunta(formData: FormData): Promise<void> {
-  await requireAdmin()
-  const rawOpciones = formData.get('opciones')
-  const opciones =
-    typeof rawOpciones === 'string' && rawOpciones.trim().length > 0
-      ? rawOpciones.split('\n').map((o) => o.trim()).filter(Boolean)
-      : []
+// Sube un banco de preguntas. Valida el JSON ANTES de tocar Storage (forma +
+// semántica, sin eval). Devuelve estado para feedback en el modal.
+export async function uploadQuizBankAction(
+  _prev: QuizBankActionState,
+  formData: FormData,
+): Promise<QuizBankActionState> {
+  const admin = await requireAdmin()
 
-  const data = preguntaSchema.parse({
-    quizUnidadId: formData.get('quizUnidadId'),
+  const parsedForm = uploadBankSchema.safeParse({
     subjectSlug: formData.get('subjectSlug'),
-    tipo: formData.get('tipo'),
-    enunciado: formData.get('enunciado'),
-    opciones,
-    respuestaCorrecta: formData.get('respuestaCorrecta'),
-    explicacion: formData.get('explicacion') ?? '',
+    nombre: formData.get('nombre'),
+    json: formData.get('json'),
   })
-
-  // Validación del contrato por tipo (ver schema.prisma para el contrato completo)
-  if (data.tipo === 'VERDADERO_FALSO') {
-    if (data.respuestaCorrecta !== 'true' && data.respuestaCorrecta !== 'false') {
-      throw new Error('VALIDATION: Para V/F la respuesta debe ser "true" o "false"')
-    }
+  if (!parsedForm.success) {
+    return { ok: false, message: 'Completá el nombre y pegá el JSON del banco.' }
   }
-  if (data.tipo === 'MULTIPLE_CHOICE') {
-    if (data.opciones.length < 2) {
-      throw new Error('VALIDATION: MULTIPLE_CHOICE requiere al menos 2 opciones')
-    }
-    if (!data.opciones.includes(data.respuestaCorrecta)) {
-      throw new Error('VALIDATION: La respuesta correcta debe ser una de las opciones')
-    }
+  const { subjectSlug, nombre, json } = parsedForm.data
+
+  const subject = await getSubjectQuizMeta(subjectSlug)
+  if (!subject) {
+    return { ok: false, message: 'Materia no encontrada.' }
   }
 
-  await prisma.pregunta.create({
-    data: {
-      quizUnidadId: data.quizUnidadId,
-      tipo: data.tipo,
-      enunciado: data.enunciado,
-      opciones: data.opciones,
-      respuestaCorrecta: data.respuestaCorrecta,
-      explicacion: data.explicacion,
-    },
-  })
-  revalidateSubjectContent(data.subjectSlug)
+  const bank = parseQuizBank(json)
+  if (!bank.ok) {
+    return { ok: false, message: bank.error }
+  }
+
+  try {
+    await uploadQuizBank({
+      yearSlug: subject.year.slug,
+      subjectSlug: subject.slug,
+      nombre,
+      // Re-serializa la versión validada/normalizada (descarta basura extra).
+      rawJson: JSON.stringify(bank.bank),
+      totalPreguntas: bank.totalPreguntas,
+      subidoPor: admin.email,
+    })
+  } catch {
+    return {
+      ok: false,
+      message: 'No se pudo guardar el banco. Probá de nuevo.',
+    }
+  }
+
+  revalidateSubjectContent(subjectSlug)
+  revalidatePath(`/admin/materia/${subjectSlug}`)
+  return {
+    ok: true,
+    message: `Banco "${nombre}" cargado (${bank.totalPreguntas} preguntas).`,
+  }
+}
+
+export async function deleteQuizBankAction(formData: FormData): Promise<void> {
+  await requireAdmin()
+  const subjectSlug = z.string().min(1).parse(formData.get('subjectSlug'))
+  const bankId = z.string().min(1).max(64).parse(formData.get('bankId'))
+  const subject = await getSubjectQuizMeta(subjectSlug)
+  if (!subject) return
+  await deleteQuizBank(subject.year.slug, subject.slug, bankId)
+  revalidateSubjectContent(subjectSlug)
+  revalidatePath(`/admin/materia/${subjectSlug}`)
 }

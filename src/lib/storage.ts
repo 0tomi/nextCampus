@@ -1,9 +1,16 @@
 import 'server-only'
 import { createSupabaseAdminClient } from './supabase/admin'
 import { env } from '@/lib/env'
+import {
+  parseQuizBank,
+  quizBankMetaSchema,
+  type QuizBankFile,
+  type QuizBankMeta,
+} from '@/lib/domain/quiz-bank'
 
 const BUCKET = env.SUPABASE_STORAGE_BUCKET
 const MAX_PDF_BYTES = 20 * 1024 * 1024 // 20 MB
+const MAX_BANK_BYTES = 1 * 1024 * 1024 // 1 MB de JSON es de sobra
 
 // Sube un PDF de apunte a Supabase Storage. Valida tipo y tamaño server-side.
 export async function uploadApuntePdf(
@@ -45,4 +52,174 @@ export async function getApuntePdfUrl(
 export async function deleteApuntePdf(objectKey: string): Promise<void> {
   const supabase = createSupabaseAdminClient()
   await supabase.storage.from(BUCKET).remove([objectKey])
+}
+
+// ---------------------------------------------------------------------------
+// Bancos de preguntas (quiz). JSON privado en Storage, recuperado por
+// año + materia. El bucket es privado: el JSON con respuestas NUNCA se sirve
+// al cliente vía URL firmada; solo lo lee el server para corregir.
+//
+// SIN manifest central. El directorio ES la fuente de verdad: cada banco son
+// dos archivos con su propio uuid —{uuid}.json (banco con respuestas) y
+// {uuid}.meta.json (metadata sin preguntas). Como cada operación escribe SOLO
+// sus propias keys, dos admins subiendo a la vez no pueden pisarse: no hay
+// estado mutable compartido => no hay race condition de "lost update".
+//
+// El .meta.json es el "commit": se escribe DESPUÉS del banco. Un {uuid}.json
+// sin su meta es un huérfano y el listado lo ignora. Al borrar, se elimina
+// primero el meta (desaparece del listado al instante) y luego el banco.
+// ---------------------------------------------------------------------------
+
+const META_SUFFIX = '.meta.json'
+
+function bankDir(yearSlug: string, subjectSlug: string): string {
+  return `quizzes/${yearSlug}/${subjectSlug}`
+}
+
+function bankKey(yearSlug: string, subjectSlug: string, bankId: string): string {
+  return `${bankDir(yearSlug, subjectSlug)}/${bankId}.json`
+}
+
+function metaKey(yearSlug: string, subjectSlug: string, bankId: string): string {
+  return `${bankDir(yearSlug, subjectSlug)}/${bankId}${META_SUFFIX}`
+}
+
+// Lista los bancos derivándolos del directorio: un list() para los nombres y
+// la descarga en paralelo de los .meta.json (diminutos). Huérfanos o metas
+// corruptos se saltean; nunca rompe la página.
+export async function listQuizBanks(
+  yearSlug: string,
+  subjectSlug: string,
+): Promise<QuizBankMeta[]> {
+  const supabase = createSupabaseAdminClient()
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .list(bankDir(yearSlug, subjectSlug), { limit: 1000 })
+  if (error || !data) return []
+
+  const metaFiles = data.filter((o) => o.name.endsWith(META_SUFFIX))
+  const metas = await Promise.all(
+    metaFiles.map(async (file) => {
+      const { data: blob, error: dlErr } = await supabase.storage
+        .from(BUCKET)
+        .download(`${bankDir(yearSlug, subjectSlug)}/${file.name}`)
+      if (dlErr || !blob) return null
+      try {
+        const parsed = quizBankMetaSchema.safeParse(JSON.parse(await blob.text()))
+        return parsed.success ? parsed.data : null
+      } catch {
+        return null
+      }
+    }),
+  )
+
+  return metas
+    .filter((m): m is QuizBankMeta => m !== null)
+    .sort((a, b) => a.subidoEl.localeCompare(b.subidoEl))
+}
+
+// Sube un banco ya validado. Escribe el banco primero y el .meta.json al
+// final (el meta = commit). Si el meta falla, se borra el banco recién subido
+// (Storage no participa en transacciones SQL). No toca ningún recurso
+// compartido: solo las dos keys de ESTE uuid.
+export async function uploadQuizBank(params: {
+  yearSlug: string
+  subjectSlug: string
+  nombre: string
+  rawJson: string
+  totalPreguntas: number
+  subidoPor: string
+}): Promise<QuizBankMeta> {
+  const { yearSlug, subjectSlug, nombre, rawJson, totalPreguntas, subidoPor } =
+    params
+
+  if (Buffer.byteLength(rawJson, 'utf8') > MAX_BANK_BYTES) {
+    throw new Error('BAD_REQUEST: el banco supera el límite de 1 MB')
+  }
+
+  const supabase = createSupabaseAdminClient()
+  const bankId = crypto.randomUUID()
+  const key = bankKey(yearSlug, subjectSlug, bankId)
+
+  const { error: upErr } = await supabase.storage
+    .from(BUCKET)
+    .upload(key, new Blob([rawJson], { type: 'application/json' }), {
+      contentType: 'application/json',
+      upsert: false,
+    })
+  if (upErr) {
+    throw new Error(`STORAGE: no se pudo subir el banco (${upErr.message})`)
+  }
+
+  const meta: QuizBankMeta = {
+    id: bankId,
+    nombre,
+    totalPreguntas,
+    subidoEl: new Date().toISOString(),
+    subidoPor,
+  }
+
+  const { error: metaErr } = await supabase.storage
+    .from(BUCKET)
+    .upload(
+      metaKey(yearSlug, subjectSlug, bankId),
+      new Blob([JSON.stringify(meta)], { type: 'application/json' }),
+      { contentType: 'application/json', upsert: false },
+    )
+  if (metaErr) {
+    await supabase.storage.from(BUCKET).remove([key])
+    throw new Error(
+      `STORAGE: no se pudo registrar el banco (${metaErr.message})`,
+    )
+  }
+
+  return meta
+}
+
+// Lee y RE-VALIDA un banco desde Storage (defensa en profundidad: el objeto
+// pudo ser manipulado fuera de la app). Devuelve null si falta o es inválido.
+export async function readQuizBank(
+  yearSlug: string,
+  subjectSlug: string,
+  bankId: string,
+): Promise<QuizBankFile | null> {
+  const supabase = createSupabaseAdminClient()
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .download(bankKey(yearSlug, subjectSlug, bankId))
+  if (error || !data) return null
+  const parsed = parseQuizBank(await data.text())
+  return parsed.ok ? parsed.bank : null
+}
+
+export async function readQuizBanks(
+  yearSlug: string,
+  subjectSlug: string,
+  bankIds: string[],
+): Promise<Map<string, QuizBankFile>> {
+  const out = new Map<string, QuizBankFile>()
+  await Promise.all(
+    bankIds.map(async (id) => {
+      const bank = await readQuizBank(yearSlug, subjectSlug, id)
+      if (bank) out.set(id, bank)
+    }),
+  )
+  return out
+}
+
+// Borra: primero el meta (el banco desaparece del listado al instante),
+// luego el banco. Solo toca las keys de ESTE uuid: sin conflicto con otras
+// operaciones concurrentes.
+export async function deleteQuizBank(
+  yearSlug: string,
+  subjectSlug: string,
+  bankId: string,
+): Promise<void> {
+  const supabase = createSupabaseAdminClient()
+  await supabase.storage
+    .from(BUCKET)
+    .remove([metaKey(yearSlug, subjectSlug, bankId)])
+  await supabase.storage
+    .from(BUCKET)
+    .remove([bankKey(yearSlug, subjectSlug, bankId)])
 }

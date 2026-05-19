@@ -1,44 +1,70 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import {
-  getPreguntasByUnidades,
-  getSubjectQuizUnitIdsBySlug,
-} from '@/lib/queries'
-import { buildQuizSet, toPreguntaPublica } from '@/lib/domain/quiz'
+import { getSubjectQuizMeta } from '@/lib/queries'
+import { listQuizBanks, readQuizBanks } from '@/lib/storage'
+import { buildSet, flattenBank, toPublicQuestion } from '@/lib/domain/quiz-bank'
+
+export const dynamic = 'force-dynamic'
 
 const querySchema = z.object({
   subject: z.string().min(1),
-  mode: z.enum(['examen-tiempo', 'practica', 'general']).default('general'),
-  count: z.coerce.number().int().min(0).max(200).default(0),
-  unidades: z.string().optional(), // ids separados por coma
+  banks: z.string().min(1), // ids separados por coma
+  mode: z.enum(['practica', 'examen', 'general']).default('general'),
+  count: z.coerce.number().int().min(0).max(500).default(0),
 })
 
-// Devuelve el set de preguntas SIN respuestaCorrecta ni explicación.
+// Arma el set público (SIN answer ni explanation). El server lee los bancos
+// elegidos desde Storage, los fusiona y mezcla según el modo.
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const parsed = querySchema.safeParse(Object.fromEntries(searchParams))
   if (!parsed.success) {
     return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 })
   }
-  const { subject: subjectSlug, mode, count, unidades } = parsed.data
+  const { subject: subjectSlug, banks, mode, count } = parsed.data
 
-  const subject = await getSubjectQuizUnitIdsBySlug(subjectSlug)
+  const subject = await getSubjectQuizMeta(subjectSlug)
   if (!subject) {
     return NextResponse.json({ error: 'Materia no encontrada' }, { status: 404 })
   }
 
-  const allUnidadIds = subject.quizUnidades.map((u) => u.id)
-  const requested = unidades
-    ? unidades.split(',').filter((id) => allUnidadIds.includes(id))
-    : allUnidadIds
-  const unidadIds = requested.length > 0 ? requested : allUnidadIds
+  // Solo se aceptan ids que existan en el manifest de ESTA materia.
+  const manifest = await listQuizBanks(subject.year.slug, subject.slug)
+  const allowed = new Set(manifest.map((b) => b.id))
+  const requested = banks
+    .split(',')
+    .map((id) => id.trim())
+    .filter((id) => allowed.has(id))
 
-  const preguntas = await getPreguntasByUnidades(unidadIds)
-  const set = buildQuizSet(preguntas, mode, count)
+  if (requested.length === 0) {
+    return NextResponse.json(
+      { error: 'No hay bancos válidos seleccionados' },
+      { status: 400 },
+    )
+  }
 
+  const loaded = await readQuizBanks(
+    subject.year.slug,
+    subject.slug,
+    requested,
+  )
+
+  const flat = requested.flatMap((bankId) => {
+    const bank = loaded.get(bankId)
+    return bank ? flattenBank(bankId, bank) : []
+  })
+
+  if (flat.length === 0) {
+    return NextResponse.json(
+      { error: 'Los bancos seleccionados no tienen preguntas' },
+      { status: 404 },
+    )
+  }
+
+  const set = buildSet(flat, mode, count)
   return NextResponse.json({
     mode,
     total: set.length,
-    preguntas: set.map(toPreguntaPublica),
+    preguntas: set.map(toPublicQuestion),
   })
 }
