@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { env } from '@/lib/env'
 import { apiRatelimit, loginRatelimit, getClientIp } from '@/lib/ratelimit'
 
-// Inyecta CSP con nonce por request, aplica rate limiting en /admin y /api,
+// Inyecta CSP compatible con SRI, aplica rate limiting en /admin y /api,
 // y protege /admin/** (salvo /admin/login) con auth check de Supabase.
 // La autorización fina (allowlist de email) se re-chequea en cada server action.
 export async function proxy(request: NextRequest) {
@@ -35,11 +35,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // --- Nonce + CSP ---
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
+  // --- CSP con SRI ---
   const isDev = process.env.NODE_ENV !== 'production'
-  const scriptSrc = `'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`
-  const styleSrc = `'self' 'nonce-${nonce}'`
+  const scriptSrc = `'self'${isDev ? " 'unsafe-eval'" : ''}`
+  const styleSrc = "'self' 'unsafe-inline'"
 
   const csp = [
     "default-src 'self'",
@@ -48,17 +47,13 @@ export async function proxy(request: NextRequest) {
     "font-src 'self'",
     "img-src 'self' data: blob: https://*.supabase.co",
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+    "object-src 'none'",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
   ].join('; ')
 
-  // Propagar el nonce al render como request header (los Server Components lo leen vía headers()).
-  const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-nonce', nonce)
-  requestHeaders.set('Content-Security-Policy', csp)
-
-  let response = NextResponse.next({ request: { headers: requestHeaders } })
+  let response = NextResponse.next()
 
   // El check de Supabase solo corre en /admin/** para evitar latencia en rutas
   // públicas. La CSP y el rate limit ya se aplicaron arriba.
@@ -75,7 +70,7 @@ export async function proxy(request: NextRequest) {
             for (const { name, value } of cookiesToSet) {
               request.cookies.set(name, value)
             }
-            response = NextResponse.next({ request: { headers: requestHeaders } })
+            response = NextResponse.next()
             for (const { name, value, options } of cookiesToSet) {
               response.cookies.set(name, value, options)
             }

@@ -11,6 +11,8 @@ import { AdminControls } from '@/components/admin/AdminControls'
 import { AdminTriggerButton } from '@/components/admin/SubjectPageAdminOverlay'
 import { YearPageAdminOverlay } from '@/components/admin/YearPageAdminOverlay'
 
+export const revalidate = 300
+
 function DashboardBrand() {
   return (
     <Link href="/" className="flex items-center gap-3 text-left">

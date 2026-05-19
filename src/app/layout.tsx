@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Plus_Jakarta_Sans, Sora } from 'next/font/google'
-import { connection } from 'next/server'
 import './globals.css'
 
 const jakarta = Plus_Jakarta_Sans({
@@ -22,11 +21,9 @@ export const metadata: Metadata = {
   description: 'Calendario, quiz y apuntes por asignatura',
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  await connection()
-
   return (
     <html
       lang="es"
