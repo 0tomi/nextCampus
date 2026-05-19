@@ -46,8 +46,8 @@ export function EventModal({
   }, [state.ok, onClose, onSuccess])
 
 
-  const detectEventType = (text: string) => {
-    if (!text.trim()) return
+  const detectEventType = (text: string): string | null => {
+    if (!text.trim()) return null
 
     const normalize = (str: string) =>
       str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -57,34 +57,50 @@ export function EventModal({
     const patterns = [
       {
         keyword: 'examen',
-        regex: /examen|parcial|final|evaluacion|quiz|test|recuperatorio/i,
+        regex: /exam|parc|fin|evalu|quiz|test|recup/i,
       },
       {
         keyword: 'exposicion',
-        regex: /exposicion|exponer|expo|presentacion|coloquio|defensa/i,
+        regex: /expo|presen|coloq|defen/i,
       },
       {
         keyword: 'trabajo practico',
-        regex: /trabajo\s+practico|tp|practico|entregable|taller/i,
+        regex: /\btp\b|trab|prac|entre/i,
       },
     ]
 
     const match = patterns.find((p) => p.regex.test(normalizedText))
-    if (!match) return
+    if (!match) return null
 
     const matchedTipo = tiposEvento.find((t) => {
       const normalizedName = normalize(t.nombre)
       return normalizedName.includes(match.keyword) || match.keyword.includes(normalizedName)
     })
 
-    if (matchedTipo) {
-      setSelectedTipoId(matchedTipo.id)
+    return matchedTipo ? matchedTipo.id : null
+  }
+
+  const handleBlur = () => {
+    const matchedId = detectEventType(titulo)
+    if (matchedId) {
+      setSelectedTipoId(matchedId)
+    }
+  }
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const matchedId = detectEventType(titulo)
+    if (matchedId) {
+      setSelectedTipoId(matchedId)
+      const selectEl = e.currentTarget.querySelector('select[name="tipoEventoId"]') as HTMLSelectElement | null
+      if (selectEl) {
+        selectEl.value = matchedId
+      }
     }
   }
 
   return (
     <Modal open={open} onClose={onClose} title="Nuevo evento">
-      <form action={formAction} className="space-y-4">
+      <form onSubmit={handleSubmit} action={formAction} className="space-y-4">
         <input type="hidden" name="agendaId" value={agendaId} />
         <input type="hidden" name="subjectSlug" value={subjectSlug} />
 
@@ -102,7 +118,7 @@ export function EventModal({
             required
             value={titulo}
             onChange={(e) => setTitulo(e.target.value)}
-            onBlur={() => detectEventType(titulo)}
+            onBlur={handleBlur}
             placeholder="Ej: Parcial de Estructuras"
             className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
           />
