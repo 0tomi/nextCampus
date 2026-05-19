@@ -20,6 +20,12 @@ export async function uploadApuntePdf(
   if (file.type !== 'application/pdf') {
     throw new Error('BAD_REQUEST: el archivo debe ser PDF')
   }
+  const head = new Uint8Array(await file.slice(0, 4).arrayBuffer())
+  const isPdfMagic =
+    head[0] === 0x25 && head[1] === 0x50 && head[2] === 0x44 && head[3] === 0x46
+  if (!isPdfMagic) {
+    throw new Error('BAD_REQUEST: el archivo no es un PDF válido')
+  }
   if (file.size > MAX_PDF_BYTES) {
     throw new Error('BAD_REQUEST: el PDF supera el límite de 20 MB')
   }

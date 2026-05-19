@@ -191,7 +191,7 @@ export async function deleteApunte(formData: FormData): Promise<void> {
     try {
       await deleteApuntePdf(apunte.pdfObjectKey)
     } catch {
-      console.error(`Storage cleanup pendiente para key: ${apunte.pdfObjectKey}`)
+      console.error(`Storage cleanup pendiente para apunte ID: ${apunte.id}`)
     }
   }
 

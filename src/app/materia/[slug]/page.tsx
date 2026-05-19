@@ -19,6 +19,7 @@ import { AnimateIn } from '@/components/ui/AnimateIn'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { formatDateTime } from '@/lib/utils'
+import { sanitizeRichHtml } from '@/lib/sanitize'
 import {
   SubjectPageAdminOverlay,
   DeleteEventoButton,
@@ -286,7 +287,7 @@ export default async function SubjectPage({
                     <div
                       className="mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
                       dangerouslySetInnerHTML={{
-                        __html: evento.descripcionHtml,
+                        __html: sanitizeRichHtml(evento.descripcionHtml ?? ''),
                       }}
                     />
                   ) : null}
@@ -385,7 +386,7 @@ export default async function SubjectPage({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {apunte.pdfObjectKey ? (
+                    {apunte.hasPdf ? (
                       <a
                         href={`/api/apuntes/${apunte.id}/pdf`}
                         className={`inline-flex items-center gap-2 border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition-colors hover:bg-white/5 ${colors.chipClassName}`}
@@ -405,7 +406,7 @@ export default async function SubjectPage({
                   <div
                     className="mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
                     dangerouslySetInnerHTML={{
-                      __html: apunte.descripcionHtml,
+                      __html: sanitizeRichHtml(apunte.descripcionHtml ?? ''),
                     }}
                   />
                 ) : null}

@@ -61,8 +61,8 @@ export function getYearBySlug(slug: string) {
   })
 }
 
-export function getSubjectPageBySlug(slug: string) {
-  return prisma.subject.findUnique({
+export async function getSubjectPageBySlug(slug: string) {
+  const result = await prisma.subject.findUnique({
     where: { slug },
     select: {
       id: true,
@@ -103,6 +103,14 @@ export function getSubjectPageBySlug(slug: string) {
       },
     },
   })
+  if (!result) return null
+  return {
+    ...result,
+    apuntes: result.apuntes.map(({ pdfObjectKey, ...rest }) => ({
+      ...rest,
+      hasPdf: !!pdfObjectKey,
+    })),
+  }
 }
 
 // Metadata mínima para resolver la key de Storage del banco de preguntas

@@ -28,7 +28,9 @@ export function LoginForm() {
       setError('Credenciales inválidas')
       return
     }
-    router.push(searchParams.get('redirectTo') ?? '/admin')
+    const raw = searchParams.get('redirectTo') ?? '/admin'
+    const safe = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/admin'
+    router.push(safe)
     router.refresh()
   }
 
