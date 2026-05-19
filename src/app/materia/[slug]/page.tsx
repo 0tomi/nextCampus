@@ -241,6 +241,10 @@ export default async function SubjectPage({
               titulo: evento.titulo,
               fecha: evento.fecha,
               tipo: evento.tipoEvento.nombre,
+              materiaNombre: subject.nombre,
+              descripcionHtml: evento.descripcionHtml,
+              tituloOriginal: evento.titulo,
+              subjectSlug: subject.slug,
             }))}
             emptyMessage="Sin eventos cargados para esta materia."
             agendaId={agendaId}

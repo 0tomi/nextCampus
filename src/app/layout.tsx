@@ -28,6 +28,7 @@ export default function RootLayout({
     <html
       lang="es"
       className={`h-full ${jakarta.variable} ${sora.variable}`}
+      suppressHydrationWarning
     >
       <body className="min-h-full bg-surface-0 font-sans text-white antialiased">
         {children}

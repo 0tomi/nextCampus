@@ -22,6 +22,9 @@ export interface EventCalendarEvent {
   tipo?: string | null
   classNames?: string | string[]
   subjectSlug?: string
+  materiaNombre?: string
+  descripcionHtml?: string
+  tituloOriginal?: string
 }
 
 interface EventCalendarProps {
@@ -34,6 +37,8 @@ interface EventCalendarProps {
   onEventDrop?: (id: string, nuevaFecha: Date) => Promise<boolean>
   /** Callback cuando el admin hace clic en un día vacío. */
   onDateClick?: (fecha: string) => void
+  /** Callback cuando se hace clic en un evento. */
+  onEventClick?: (event: EventCalendarEvent) => void
 }
 
 const EVENT_TYPE_CLASS_MAP = {
@@ -116,6 +121,7 @@ export function EventCalendar({
   editable = false,
   onEventDrop,
   onDateClick,
+  onEventClick,
 }: EventCalendarProps) {
   const calendarRef = useRef<FullCalendar>(null)
 
@@ -196,6 +202,18 @@ export function EventCalendar({
         eventStartEditable={editable}
         eventDrop={editable ? handleEventDrop : undefined}
         dateClick={editable ? handleDateClick : undefined}
+        eventClick={(info) => {
+          const clickedId = info.event.id
+          const originalEvent = events.find((e, idx) => {
+            const startVal = e.start ?? e.date ?? e.fecha
+            const titleVal = e.title ?? e.titulo ?? ''
+            const eventId = buildEventId(e, idx, titleVal, startVal!)
+            return eventId === clickedId || e.id === clickedId
+          })
+          if (originalEvent && onEventClick) {
+            onEventClick(originalEvent)
+          }
+        }}
       />
     </DarkCard>
   )

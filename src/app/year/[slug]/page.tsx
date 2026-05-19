@@ -62,6 +62,9 @@ export default async function YearPage({
         fecha: evento.fecha,
         tipo: evento.tipoEvento.nombre,
         subjectSlug: subject.slug,
+        materiaNombre: subject.nombre,
+        descripcionHtml: evento.descripcionHtml,
+        tituloOriginal: evento.titulo,
       }))
     })
     .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
