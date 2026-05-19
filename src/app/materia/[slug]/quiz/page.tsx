@@ -24,28 +24,35 @@ export default async function QuizPage({
   }))
 
   return (
-    <div className="space-y-8 text-white">
-      <div>
-        <Link
-          href={`/materia/${slug}`}
-          className="inline-flex items-center gap-2 text-sm font-semibold text-white/58 transition-colors hover:text-white/82"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {subject.nombre}
-        </Link>
-        <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
-          Modo estudio
-        </p>
-        <h1 className="mt-2 text-4xl font-black tracking-tight text-white sm:text-5xl">
-          Quiz · {subject.nombre}
-        </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-white/58">
-          Elegí uno o varios bancos de preguntas, configurá tu práctica y
-          poné a prueba lo que sabés.
-        </p>
-      </div>
+    <div className="min-h-screen bg-surface-0">
+      <header className="sticky top-0 z-40 border-b border-white/5 bg-surface-1/80 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-3xl items-center px-6">
+          <Link
+            href={`/materia/${slug}`}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-white/56 transition-colors hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {subject.nombre}
+          </Link>
+        </div>
+      </header>
 
-      <QuizRunner subjectSlug={slug} bancos={bancos} />
+      <main className="mx-auto max-w-3xl px-6 py-12">
+        <div className="mb-10">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/36">
+            Modo estudio
+          </p>
+          <h1 className="mt-3 font-display text-4xl font-black tracking-tight text-white">
+            Quiz · {subject.nombre}
+          </h1>
+          <p className="mt-3 max-w-xl text-sm leading-7 text-white/52">
+            Elegí uno o varios bancos de preguntas, configurá tu práctica y
+            poné a prueba lo que sabés.
+          </p>
+        </div>
+
+        <QuizRunner subjectSlug={slug} bancos={bancos} />
+      </main>
     </div>
   )
 }

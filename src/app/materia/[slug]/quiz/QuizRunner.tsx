@@ -1,18 +1,12 @@
 'use client'
 
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react'
-import {
-  CheckCircle2,
+  Check,
   ChevronLeft,
   ChevronRight,
   Layers,
   RotateCcw,
-  XCircle,
 } from 'lucide-react'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { cn } from '@/lib/utils'
@@ -46,8 +40,11 @@ interface QuizRunnerProps {
   bancos: BancoInfo[]
 }
 
-const PANEL =
-  'border border-white/5 bg-surface-1 transition-colors hover:border-white/10'
+// Control hundido: más oscuro que la DarkCard (surface-1) que lo contiene.
+// El layering nace de ese salto de lightness, no de bordes fuertes.
+const CONTROL =
+  'border border-white/[0.06] bg-surface-3 transition-colors hover:border-white/12'
+const CONTROL_ACTIVE = 'border border-primary/45 bg-primary/12'
 
 export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
   const [phase, setPhase] = useState<'config' | 'running' | 'done'>('config')
@@ -195,8 +192,7 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
     }
   }, [isLast, finalizar, preguntas.length])
 
-  // Atajos de teclado: 1-9 elige opción, V/F para verdadero/falso,
-  // Enter avanza/verifica, flechas navegan.
+  // Atajos: 1-9 elige opción, V/F verdadero/falso, ←/→ navegan, Enter avanza.
   useEffect(() => {
     if (phase !== 'running' || !pregunta) return
     function onKey(e: KeyboardEvent) {
@@ -259,12 +255,14 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
   // ---------- Sin bancos ----------
   if (bancos.length === 0) {
     return (
-      <DarkCard className="p-8 text-center">
-        <Layers className="mx-auto h-10 w-10 text-white/24" />
-        <p className="mt-4 text-lg font-black text-white">
+      <DarkCard className="px-6 py-16 text-center">
+        <span className="mx-auto flex h-12 w-12 items-center justify-center border border-white/[0.06] bg-surface-3">
+          <Layers className="h-5 w-5 text-white/28" />
+        </span>
+        <p className="mt-5 text-lg font-black tracking-tight text-white">
           Todavía no hay preguntas para practicar
         </p>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/52">
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/48">
           Cuando el equipo de la materia cargue un banco de preguntas, vas a
           poder practicar acá.
         </p>
@@ -275,14 +273,16 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
   // ---------- Configuración ----------
   if (phase === 'config') {
     return (
-      <DarkCard className="space-y-8 p-6 sm:p-8">
-        <div className="space-y-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38">
-            Bancos de preguntas
-          </p>
-          <p className="text-sm text-white/52">
-            Elegí uno o combiná varios para mezclar sus preguntas.
-          </p>
+      <DarkCard className="divide-y divide-white/[0.06]">
+        <section className="space-y-4 p-6 sm:p-8">
+          <div>
+            <h2 className="text-sm font-bold text-white">
+              Bancos de preguntas
+            </h2>
+            <p className="mt-1 text-sm text-white/48">
+              Elegí uno o combiná varios para mezclar sus preguntas.
+            </p>
+          </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {bancos.map((b) => {
               const active = selectedBancos.includes(b.id)
@@ -293,42 +293,38 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
                   onClick={() => toggleBanco(b.id)}
                   aria-pressed={active}
                   className={cn(
-                    'flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors',
-                    active
-                      ? 'border border-primary/60 bg-primary/10'
-                      : PANEL,
+                    'flex items-center justify-between gap-3 px-4 py-3.5 text-left',
+                    active ? CONTROL_ACTIVE : CONTROL,
                   )}
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-white">
                       {b.nombre}
                     </span>
-                    <span className="text-xs text-white/48">
+                    <span className="mt-0.5 block text-xs text-white/44">
                       {b.totalPreguntas} preguntas
                     </span>
                   </span>
                   <span
                     className={cn(
-                      'flex h-5 w-5 shrink-0 items-center justify-center border',
+                      'flex h-5 w-5 shrink-0 items-center justify-center transition-colors',
                       active
-                        ? 'border-primary bg-primary text-white'
-                        : 'border-white/20 text-transparent',
+                        ? 'bg-primary text-white'
+                        : 'border border-white/15',
                     )}
                   >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {active && <Check className="h-3 w-3" strokeWidth={3} />}
                   </span>
                 </button>
               )
             })}
           </div>
-        </div>
+        </section>
 
-        <div className="grid gap-6 sm:grid-cols-2">
+        <section className="grid gap-8 p-6 sm:grid-cols-2 sm:p-8">
           <div className="space-y-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38">
-              Modo
-            </p>
-            <div className="flex gap-2">
+            <h2 className="text-sm font-bold text-white">Modo</h2>
+            <div className="grid grid-cols-2 gap-2">
               {(
                 [
                   ['practica', 'Práctica'],
@@ -340,10 +336,10 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
                   type="button"
                   onClick={() => setMode(value)}
                   className={cn(
-                    'flex-1 px-4 py-2.5 text-sm font-semibold transition-colors',
+                    'px-4 py-2.5 text-sm font-semibold transition-colors',
                     mode === value
-                      ? 'border border-primary/60 bg-primary/10 text-white'
-                      : `${PANEL} text-white/64`,
+                      ? CONTROL_ACTIVE + ' text-white'
+                      : CONTROL + ' text-white/60',
                   )}
                 >
                   {label}
@@ -360,7 +356,7 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
           <div className="space-y-3">
             <label
               htmlFor="count"
-              className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38"
+              className="block text-sm font-bold text-white"
             >
               Cantidad de preguntas
             </label>
@@ -373,29 +369,30 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
               onChange={(e) =>
                 setCount(Math.max(0, Number(e.target.value) || 0))
               }
-              className="block w-full border border-white/5 bg-[#0a0a0a] px-3 py-2.5 text-sm text-white placeholder:text-white/28 focus:border-white/10 focus:outline-none"
+              className="block w-full border border-white/[0.06] bg-surface-3 px-3 py-2.5 text-sm text-white tabular-nums focus:border-primary/45 focus:outline-none"
             />
             <p className="text-xs leading-5 text-white/40">
-              0 = todas{maxPreguntas > 0 ? ` (hasta ${maxPreguntas})` : ''}.
+              0 = todas{maxPreguntas > 0 ? ` · hasta ${maxPreguntas}` : ''}.
             </p>
           </div>
-        </div>
+        </section>
 
-        {error && (
-          <p className="border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-            {error}
-          </p>
-        )}
-
-        <button
-          type="button"
-          onClick={start}
-          disabled={loading || selectedBancos.length === 0}
-          className="inline-flex w-full items-center justify-center gap-2 bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
-        >
-          {loading ? 'Cargando…' : 'Comenzar quiz'}
-          <ChevronRight className="h-4 w-4" />
-        </button>
+        <section className="space-y-4 p-6 sm:p-8">
+          {error && (
+            <p className="border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+              {error}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={start}
+            disabled={loading || selectedBancos.length === 0}
+            className="inline-flex w-full items-center justify-center gap-2 bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {loading ? 'Cargando…' : 'Comenzar quiz'}
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </section>
       </DarkCard>
     )
   }
@@ -408,21 +405,22 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
     ).length
     const pct = total > 0 ? Math.round((correctas / total) * 100) : 0
     return (
-      <div className="space-y-6">
-        <DarkCard className="p-6 text-center sm:p-10">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
+      <div className="space-y-4">
+        <DarkCard className="flex flex-col items-center px-6 py-12 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/36">
             Resultado
           </p>
-          <p className="mt-4 text-6xl font-black tracking-tight text-white">
-            {pct}%
+          <p className="mt-4 font-display text-7xl font-black tracking-tight text-white tabular-nums">
+            {pct}
+            <span className="text-3xl text-white/40">%</span>
           </p>
-          <p className="mt-2 text-sm text-white/58">
+          <p className="mt-3 text-sm text-white/52">
             {correctas} de {total} respuestas correctas
           </p>
           <button
             type="button"
             onClick={reset}
-            className="mt-6 inline-flex items-center gap-2 border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+            className="mt-7 inline-flex items-center gap-2 border border-white/[0.06] bg-surface-3 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:border-white/12"
           >
             <RotateCcw className="h-4 w-4" />
             Volver a empezar
@@ -432,24 +430,27 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
         <div className="space-y-3">
           {preguntas.map((p, i) => {
             const r = resultados[p.id]
+            const ok = r?.correcta
             return (
-              <DarkCard key={p.id} className="p-5">
-                <div className="flex items-start gap-3">
-                  {r?.correcta ? (
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
-                  ) : (
-                    <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-400" />
-                  )}
+              <DarkCard key={p.id} className="p-5 sm:p-6">
+                <div className="flex items-start gap-4">
+                  <span
+                    className={cn(
+                      'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center text-xs font-black tabular-nums',
+                      ok
+                        ? 'bg-emerald-500/15 text-emerald-300'
+                        : 'bg-rose-500/15 text-rose-300',
+                    )}
+                  >
+                    {i + 1}
+                  </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/38">
-                      Pregunta {i + 1}
-                    </p>
-                    <p className="mt-1 font-semibold text-white">
+                    <p className="font-semibold leading-relaxed text-white">
                       {p.question}
                     </p>
                     <AnswerSummary question={p} resultado={r} />
                     {r?.explicacion && (
-                      <p className="mt-3 border-l-2 border-white/10 pl-3 text-sm leading-6 text-white/58">
+                      <p className="mt-3 border-l border-white/12 pl-3 text-sm leading-6 text-white/52">
                         {r.explicacion}
                       </p>
                     )}
@@ -471,90 +472,86 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
 
   return (
     <div className="space-y-5">
-      <div>
-        <div className="flex items-center justify-between text-sm text-white/52">
-          <span>
-            Pregunta{' '}
-            <strong className="text-white">{index + 1}</strong> de{' '}
-            {preguntas.length}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-semibold text-white/56 tabular-nums">
+            Pregunta {index + 1}
+            <span className="text-white/32"> / {preguntas.length}</span>
           </span>
-          <span className="uppercase tracking-[0.18em] text-white/38">
+          <span className="font-semibold uppercase tracking-[0.18em] text-white/32">
             {isPractica ? 'Práctica' : 'Examen'}
           </span>
         </div>
-        <div className="mt-2 h-1.5 w-full overflow-hidden bg-white/5">
+        <div className="h-1 w-full overflow-hidden bg-white/[0.06]">
           <div
-            className="h-full bg-primary transition-[width] duration-300"
+            className="h-full bg-primary transition-[width] duration-300 ease-out"
             style={{ width: `${progreso}%` }}
           />
         </div>
       </div>
 
-      <DarkCard className="space-y-6 p-6 sm:p-8">
+      <DarkCard className="p-6 sm:p-8">
         <h2 className="text-xl font-black leading-snug tracking-tight text-white sm:text-2xl">
           {pregunta.question}
         </h2>
 
-        {pregunta.type === 'truefalse' ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {[
-              { value: true, label: 'Verdadero' },
-              { value: false, label: 'Falso' },
-            ].map((opt) => (
-              <OptionButton
-                key={String(opt.value)}
-                label={opt.label}
-                selected={answers[pregunta.id] === opt.value}
-                state={optionState(pregunta, resultado, opt.value)}
-                disabled={Boolean(resultado)}
-                onClick={() => setAnswer(opt.value)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {pregunta.options?.map((op, i) => {
-              const isMulti = pregunta.type === 'multiple'
-              const selectedArr = Array.isArray(answers[pregunta.id])
-                ? (answers[pregunta.id] as number[])
-                : []
-              const selected = isMulti
-                ? selectedArr.includes(i)
-                : answers[pregunta.id] === i
-              return (
+        <div className="mt-6 space-y-2.5">
+          {pregunta.type === 'truefalse'
+            ? [
+                { value: true, label: 'Verdadero' },
+                { value: false, label: 'Falso' },
+              ].map((opt) => (
                 <OptionButton
-                  key={i}
-                  index={i}
-                  label={op}
-                  selected={selected}
-                  state={optionState(pregunta, resultado, i)}
+                  key={String(opt.value)}
+                  label={opt.label}
+                  selected={answers[pregunta.id] === opt.value}
+                  state={optionState(resultado, opt.value)}
                   disabled={Boolean(resultado)}
-                  onClick={() => {
-                    if (isMulti) {
-                      setAnswer(
-                        selectedArr.includes(i)
-                          ? selectedArr.filter((x) => x !== i)
-                          : [...selectedArr, i],
-                      )
-                    } else {
-                      setAnswer(i)
-                    }
-                  }}
+                  onClick={() => setAnswer(opt.value)}
                 />
-              )
-            })}
-            {pregunta.type === 'multiple' && (
-              <p className="text-xs text-white/38">
-                Puede haber más de una respuesta correcta.
-              </p>
-            )}
-          </div>
+              ))
+            : pregunta.options?.map((op, i) => {
+                const isMulti = pregunta.type === 'multiple'
+                const selectedArr = Array.isArray(answers[pregunta.id])
+                  ? (answers[pregunta.id] as number[])
+                  : []
+                const selected = isMulti
+                  ? selectedArr.includes(i)
+                  : answers[pregunta.id] === i
+                return (
+                  <OptionButton
+                    key={i}
+                    index={i}
+                    label={op}
+                    selected={selected}
+                    state={optionState(resultado, i)}
+                    disabled={Boolean(resultado)}
+                    onClick={() => {
+                      if (isMulti) {
+                        setAnswer(
+                          selectedArr.includes(i)
+                            ? selectedArr.filter((x) => x !== i)
+                            : [...selectedArr, i],
+                        )
+                      } else {
+                        setAnswer(i)
+                      }
+                    }}
+                  />
+                )
+              })}
+        </div>
+
+        {pregunta.type === 'multiple' && !resultado && (
+          <p className="mt-3 text-xs text-white/36">
+            Puede haber más de una respuesta correcta.
+          </p>
         )}
 
         {isPractica && resultado && (
           <div
             className={cn(
-              'border-l-2 px-4 py-3 text-sm',
+              'mt-6 border-l-2 px-4 py-3 text-sm',
               resultado.correcta
                 ? 'border-emerald-400 bg-emerald-500/10'
                 : 'border-rose-400 bg-rose-500/10',
@@ -564,7 +561,7 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
               {resultado.correcta ? 'Correcto' : 'Incorrecto'}
             </p>
             {resultado.explicacion && (
-              <p className="mt-1 leading-6 text-white/64">
+              <p className="mt-1 leading-6 text-white/60">
                 {resultado.explicacion}
               </p>
             )}
@@ -572,17 +569,17 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
         )}
 
         {error && (
-          <p className="border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+          <p className="mt-6 border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
             {error}
           </p>
         )}
 
-        <div className="flex items-center justify-between gap-3 pt-2">
+        <div className="mt-7 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-5">
           <button
             type="button"
             onClick={() => setIndex((i) => Math.max(i - 1, 0))}
             disabled={index === 0}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-white/58 transition-colors hover:text-white disabled:opacity-30"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/52 transition-colors hover:text-white disabled:pointer-events-none disabled:opacity-25"
           >
             <ChevronLeft className="h-4 w-4" />
             Anterior
@@ -618,9 +615,8 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
   )
 }
 
-// Estado visual de una opción: solo se colorea cuando ya hay corrección.
+// El color solo aparece tras corregir. Antes, todo es neutro (idle).
 function optionState(
-  pregunta: PublicQuestion,
   resultado: Resultado | undefined,
   value: number | boolean,
 ): 'idle' | 'correct' | 'wrong' {
@@ -656,28 +652,33 @@ function OptionButton({
       disabled={disabled}
       aria-pressed={selected}
       className={cn(
-        'flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors',
-        state === 'correct' && 'border border-emerald-400/60 bg-emerald-500/10',
+        'flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm transition-colors',
+        // borde siempre presente => sin salto de layout entre estados
+        state === 'idle' && (selected ? CONTROL_ACTIVE : CONTROL),
+        state === 'correct' && 'border border-emerald-400/50 bg-emerald-500/10',
         state === 'wrong' &&
-          selected &&
-          'border border-rose-400/60 bg-rose-500/10',
-        state === 'wrong' && !selected && PANEL,
-        state === 'idle' && selected && 'border border-primary/60 bg-primary/10',
-        state === 'idle' && !selected && PANEL,
-        !disabled && state === 'idle' && 'cursor-pointer',
+          (selected
+            ? 'border border-rose-400/50 bg-rose-500/10'
+            : 'border border-white/[0.06] bg-surface-3 opacity-55'),
       )}
     >
-      {typeof index === 'number' && (
-        <span
-          className={cn(
-            'flex h-6 w-6 shrink-0 items-center justify-center text-xs font-bold',
-            selected ? 'bg-primary text-white' : 'bg-white/5 text-white/52',
-          )}
-        >
-          {index + 1}
-        </span>
-      )}
-      <span className="min-w-0 flex-1 text-white/82">{label}</span>
+      <span
+        className={cn(
+          'flex h-6 w-6 shrink-0 items-center justify-center text-xs font-bold tabular-nums transition-colors',
+          state === 'correct'
+            ? 'bg-emerald-500/20 text-emerald-300'
+            : state === 'wrong' && selected
+              ? 'bg-rose-500/20 text-rose-300'
+              : selected
+                ? 'bg-primary text-white'
+                : 'bg-white/[0.06] text-white/44',
+        )}
+      >
+        {typeof index === 'number' ? index + 1 : selected ? '•' : ''}
+      </span>
+      <span className="min-w-0 flex-1 leading-relaxed text-white/82">
+        {label}
+      </span>
     </button>
   )
 }
@@ -702,7 +703,7 @@ function AnswerSummary({
     texto = question.options?.[correcta] ?? `Opción ${correcta + 1}`
   }
   return (
-    <p className="mt-2 text-sm text-white/52">
+    <p className="mt-2 text-sm text-white/48">
       Respuesta correcta:{' '}
       <span className="font-semibold text-white/82">{texto}</span>
     </p>
