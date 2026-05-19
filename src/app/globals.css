@@ -78,7 +78,7 @@ body {
   scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
 }
 
-*:focus-visible {
+*:focus-visible:not(input):not(select):not(textarea) {
   outline: 2px solid #cc0000;
   outline-offset: 2px;
 }

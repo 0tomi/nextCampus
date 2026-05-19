@@ -18,7 +18,7 @@ import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
 import { AnimateIn } from '@/components/ui/AnimateIn'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { getYearColorClasses } from '@/lib/yearColors'
-import { formatDate } from '@/lib/utils'
+import { formatDateTime } from '@/lib/utils'
 import {
   SubjectPageAdminOverlay,
   DeleteEventoButton,
@@ -269,7 +269,7 @@ export default async function SubjectPage({
                       <span
                         className={`inline-flex border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${colors.chipClassName}`}
                       >
-                        {formatDate(evento.fecha)}
+                        {formatDateTime(evento.fecha)}
                       </span>
                       <DeleteEventoButton
                         eventoId={evento.id}
