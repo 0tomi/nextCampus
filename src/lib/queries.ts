@@ -18,7 +18,7 @@ export function getCareer() {
           nombre: true,
           subjects: {
             orderBy: { nombre: 'asc' },
-            select: { id: true, slug: true, nombre: true },
+            select: { id: true, slug: true, nombre: true, descripcion: true, driveUrl: true },
           },
         },
       },
@@ -49,6 +49,8 @@ export function getSubjectPageBySlug(slug: string) {
       id: true,
       slug: true,
       nombre: true,
+      descripcion: true,
+      driveUrl: true,
       year: {
         select: {
           slug: true,

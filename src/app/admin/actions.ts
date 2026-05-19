@@ -413,6 +413,7 @@ export interface SubjectActionState {
 const subjectSchema = z.object({
   nombre: z.string().trim().min(1, 'El nombre es obligatorio').max(200),
   descripcion: z.string().trim().max(500).default(''),
+  driveUrl: z.string().trim().url('El enlace de Drive debe ser una URL válida').or(z.literal('')).nullable().optional(),
 })
 
 export async function createSubjectAction(
@@ -426,11 +427,12 @@ export async function createSubjectAction(
   const parsed = subjectSchema.safeParse({
     nombre: formData.get('nombre'),
     descripcion: formData.get('descripcion') ?? '',
+    driveUrl: formData.get('driveUrl') ?? '',
   })
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0].message }
   }
-  const { nombre, descripcion } = parsed.data
+  const { nombre, descripcion, driveUrl } = parsed.data
 
   const year = await prisma.academicYear.findUnique({
     where: { id: yearId },
@@ -448,7 +450,7 @@ export async function createSubjectAction(
   // Crear materia + Agenda 1:1 en una transacción
   await prisma.$transaction(async (tx) => {
     const subject = await tx.subject.create({
-      data: { nombre, slug, descripcion, yearId },
+      data: { nombre, slug, descripcion, driveUrl: driveUrl || null, yearId },
     })
     await tx.agenda.create({ data: { subjectId: subject.id } })
   })
@@ -469,11 +471,12 @@ export async function updateSubjectAction(
   const parsed = subjectSchema.safeParse({
     nombre: formData.get('nombre'),
     descripcion: formData.get('descripcion') ?? '',
+    driveUrl: formData.get('driveUrl') ?? '',
   })
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0].message }
   }
-  const { nombre, descripcion } = parsed.data
+  const { nombre, descripcion, driveUrl } = parsed.data
 
   const subject = await prisma.subject.findUnique({
     where: { id },
@@ -493,7 +496,7 @@ export async function updateSubjectAction(
 
   await prisma.subject.update({
     where: { id },
-    data: { nombre, slug: newSlug, descripcion },
+    data: { nombre, slug: newSlug, descripcion, driveUrl: driveUrl || null },
   })
 
   revalidatePath('/')
@@ -540,6 +543,46 @@ export async function getSubjectDeleteImpactAction(
   await requireAdmin()
   const id = z.string().min(1).parse(formData.get('id'))
   return getSubjectDeleteImpact(id)
+}
+
+export async function updateSubjectDriveUrlAction(
+  subjectId: string,
+  driveUrl: string | null,
+  subjectSlug: string,
+): Promise<SubjectActionState> {
+  await requireAdmin()
+
+  const urlSchema = z
+    .string()
+    .trim()
+    .url('El enlace de Drive debe ser una URL válida')
+    .or(z.literal(''))
+    .nullable()
+    .optional()
+
+  const parsed = urlSchema.safeParse(driveUrl)
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0].message }
+  }
+
+  const normalizedDriveUrl = parsed.data || null
+
+  const subject = await prisma.subject.findUnique({
+    where: { id: subjectId },
+    select: { year: { select: { slug: true } } },
+  })
+  if (!subject) return { ok: false, message: 'Materia no encontrada.' }
+
+  await prisma.subject.update({
+    where: { id: subjectId },
+    data: { driveUrl: normalizedDriveUrl },
+  })
+
+  revalidatePath('/')
+  revalidatePath(`/year/${subject.year.slug}`)
+  revalidatePath(`/materia/${subjectSlug}`)
+
+  return { ok: true, message: 'Enlace de Google Drive actualizado correctamente.' }
 }
 
 // --- Sesión ----------------------------------------------------------------

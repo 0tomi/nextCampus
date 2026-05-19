@@ -84,6 +84,7 @@ export function EventCalendarAdmin({
 
       {isAdmin && (
         <EventModal
+          key={initialDate || 'default'}
           open={eventModalOpen}
           onClose={() => {
             setEventModalOpen(false)

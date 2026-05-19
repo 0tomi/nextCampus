@@ -13,6 +13,8 @@ interface SubjectData {
   id: string
   slug: string
   nombre: string
+  descripcion?: string
+  driveUrl?: string | null
 }
 
 interface YearData {
@@ -133,7 +135,12 @@ function SubjectAdminRow({
       <SubjectModal
         open={editOpen}
         onClose={() => setEditOpen(false)}
-        subject={{ id: subject.id, nombre: subject.nombre }}
+        subject={{
+          id: subject.id,
+          nombre: subject.nombre,
+          descripcion: subject.descripcion,
+          driveUrl: subject.driveUrl,
+        }}
         yearId={yearId}
       />
 

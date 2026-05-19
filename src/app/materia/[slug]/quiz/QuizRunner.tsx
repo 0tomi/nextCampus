@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Check,
   ChevronLeft,
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { cn } from '@/lib/utils'
+import { AlertDialog } from '@/components/ui/AlertDialog'
 
 type Mode = 'practica' | 'examen'
 
@@ -59,6 +60,10 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
   const [resultados, setResultados] = useState<Record<string, Resultado>>({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [timeLimit, setTimeLimit] = useState(60) // por defecto 60 minutos
+  const [timeLeft, setTimeLeft] = useState<number | null>(null)
+  const [showExitDialog, setShowExitDialog] = useState(false)
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false)
 
   const maxPreguntas = useMemo(
     () =>
@@ -98,13 +103,18 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
       setIndex(0)
       setAnswers({})
       setResultados({})
+      if (mode === 'examen') {
+        setTimeLeft(timeLimit * 60)
+      } else {
+        setTimeLeft(null)
+      }
       setPhase('running')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error inesperado.')
     } finally {
       setLoading(false)
     }
-  }, [subjectSlug, mode, count, selectedBancos])
+  }, [subjectSlug, mode, count, selectedBancos, timeLimit])
 
   const reset = useCallback(() => {
     setPhase('config')
@@ -113,6 +123,9 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
     setResultados({})
     setIndex(0)
     setError(null)
+    setTimeLeft(null)
+    setShowExitDialog(false)
+    setShowSubmitDialog(false)
   }, [])
 
   const pregunta = preguntas[index]
@@ -180,6 +193,36 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
       setLoading(false)
     }
   }, [preguntas, answers, subjectSlug])
+
+  const finalizarRef = useRef(finalizar)
+  useEffect(() => {
+    finalizarRef.current = finalizar
+  }, [finalizar])
+
+  useEffect(() => {
+    if (phase !== 'running' || mode !== 'examen' || timeLeft === null) return
+
+    if (timeLeft <= 0) {
+      void finalizarRef.current()
+      return
+    }
+
+    const timer = setTimeout(() => {
+      setTimeLeft((prev) => (prev !== null ? prev - 1 : null))
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [phase, mode, timeLeft])
+
+  const formatTime = useCallback((seconds: number) => {
+    const h = Math.floor(seconds / 3600)
+    const m = Math.floor((seconds % 3600) / 60)
+    const s = seconds % 60
+    if (h > 0) {
+      return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+    }
+    return `${m}:${s.toString().padStart(2, '0')}`
+  }, [])
 
   const isLast = index === preguntas.length - 1
   const canAdvance = isPractica ? Boolean(resultado) : true
@@ -321,7 +364,10 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
           </div>
         </section>
 
-        <section className="grid gap-8 p-6 sm:grid-cols-2 sm:p-8">
+        <section className={cn(
+          "grid gap-8 p-6 sm:p-8",
+          mode === 'examen' ? "sm:grid-cols-3" : "sm:grid-cols-2"
+        )}>
           <div className="space-y-3">
             <h2 className="text-sm font-bold text-white">Modo</h2>
             <div className="grid grid-cols-2 gap-2">
@@ -365,16 +411,102 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
               type="number"
               min={0}
               max={maxPreguntas || undefined}
-              value={count}
-              onChange={(e) =>
-                setCount(Math.max(0, Number(e.target.value) || 0))
-              }
+              value={count === 0 ? '' : count}
+              placeholder="0"
+              onChange={(e) => {
+                const val = e.target.value
+                if (val === '') {
+                  setCount(0)
+                } else {
+                  const num = parseInt(val, 10)
+                  if (!isNaN(num)) {
+                    setCount(Math.max(0, num))
+                  }
+                }
+              }}
               className="block w-full border border-white/[0.06] bg-surface-3 px-3 py-2.5 text-sm text-white tabular-nums focus:border-primary/45 focus:outline-none"
             />
+            <div className="flex flex-wrap gap-2 pt-1">
+              {[
+                { value: 30, label: '30' },
+                { value: 50, label: '50' },
+                { value: 0, label: 'Todas' },
+              ].map((opt) => {
+                const active = count === opt.value
+                const disabled =
+                  opt.value > 0 && maxPreguntas > 0 && maxPreguntas < opt.value
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => setCount(opt.value)}
+                    className={cn(
+                      'px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-30',
+                      active
+                        ? CONTROL_ACTIVE + ' text-white'
+                        : CONTROL + ' text-white/60',
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
             <p className="text-xs leading-5 text-white/40">
               0 = todas{maxPreguntas > 0 ? ` · hasta ${maxPreguntas}` : ''}.
             </p>
           </div>
+
+          {mode === 'examen' && (
+            <div className="space-y-3">
+              <label
+                htmlFor="timeLimit"
+                className="block text-sm font-bold text-white"
+              >
+                Tiempo de examen (minutos)
+              </label>
+              <input
+                id="timeLimit"
+                type="number"
+                min={1}
+                value={timeLimit === 0 ? '' : timeLimit}
+                placeholder="60"
+                onChange={(e) => {
+                  const val = e.target.value
+                  if (val === '') {
+                    setTimeLimit(60)
+                  } else {
+                    const num = parseInt(val, 10)
+                    if (!isNaN(num)) {
+                      setTimeLimit(Math.max(1, num))
+                    }
+                  }
+                }}
+                className="block w-full border border-white/[0.06] bg-surface-3 px-3 py-2.5 text-sm text-white tabular-nums focus:border-primary/45 focus:outline-none"
+              />
+              <div className="flex flex-wrap gap-2 pt-1">
+                {[30, 60, 120].map((t) => {
+                  const active = timeLimit === t
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setTimeLimit(t)}
+                      className={cn(
+                        'px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+                        active
+                          ? CONTROL_ACTIVE + ' text-white'
+                          : CONTROL + ' text-white/60',
+                      )}
+                    >
+                      {t} min
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="space-y-4 p-6 sm:p-8">
@@ -417,14 +549,23 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
           <p className="mt-3 text-sm text-white/52">
             {correctas} de {total} respuestas correctas
           </p>
-          <button
-            type="button"
-            onClick={reset}
-            className="mt-7 inline-flex items-center gap-2 border border-white/[0.06] bg-surface-3 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:border-white/12 cursor-pointer"
-          >
-            <RotateCcw className="h-4 w-4" />
-            Volver a empezar
-          </button>
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            <button
+              type="button"
+              onClick={reset}
+              className="inline-flex items-center gap-2 border border-white/[0.06] bg-surface-3 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:border-white/12 cursor-pointer"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Volver a empezar
+            </button>
+            <button
+              type="button"
+              onClick={reset}
+              className="inline-flex items-center gap-2 border border-white/[0.06] bg-surface-3 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:border-white/12 cursor-pointer"
+            >
+              Volver a los quizzes
+            </button>
+          </div>
         </DarkCard>
 
         <div className="space-y-3">
@@ -478,9 +619,30 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
             Pregunta {index + 1}
             <span className="text-white/32"> / {preguntas.length}</span>
           </span>
-          <span className="font-semibold uppercase tracking-[0.18em] text-white/32">
-            {isPractica ? 'Práctica' : 'Examen'}
-          </span>
+          <div className="flex items-center gap-3">
+            {timeLeft !== null ? (
+              <span
+                className={cn(
+                  'font-mono font-bold px-2 py-0.5 rounded-sm text-[11px] tabular-nums',
+                  timeLeft < 60
+                    ? 'bg-rose-500/20 text-rose-300 animate-pulse'
+                    : 'bg-white/[0.06] text-white/80',
+                )}
+              >
+                ⏱️ {formatTime(timeLeft)}
+              </span>
+            ) : null}
+            <span className="font-semibold uppercase tracking-[0.18em] text-white/32">
+              {isPractica ? 'Práctica' : 'Examen'}
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowExitDialog(true)}
+              className="text-rose-400 hover:text-rose-300 font-semibold cursor-pointer transition-colors"
+            >
+              Salir
+            </button>
+          </div>
         </div>
         <div className="h-1 w-full overflow-hidden bg-white/[0.06]">
           <div
@@ -585,32 +747,80 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
             Anterior
           </button>
 
-          {isPractica && !resultado ? (
-            <button
-              type="button"
-              onClick={verificar}
-              disabled={loading || !respondida}
-              className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
-            >
-              {loading ? 'Verificando…' : 'Verificar'}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={next}
-              disabled={loading || !canAdvance}
-              className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
-            >
-              {loading
-                ? 'Corrigiendo…'
-                : isLast
-                  ? 'Finalizar'
-                  : 'Siguiente'}
-              {!isLast && <ChevronRight className="h-4 w-4" />}
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {isPractica && !resultado ? (
+              <>
+                <button
+                  type="button"
+                  onClick={next}
+                  className="inline-flex items-center gap-2 border border-white/[0.06] bg-surface-3 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/12 cursor-pointer"
+                >
+                  {isLast ? 'Finalizar sin verificar' : 'Avanzar sin verificar'}
+                </button>
+                <button
+                  type="button"
+                  onClick={verificar}
+                  disabled={loading || !respondida}
+                  className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                >
+                  {loading ? 'Verificando…' : 'Verificar'}
+                </button>
+              </>
+            ) : (
+              <>
+                {!isPractica && !isLast ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowSubmitDialog(true)}
+                    className="inline-flex items-center gap-2 border border-white/8 bg-surface-3 px-5 py-2.5 text-sm font-semibold text-white/85 transition-colors hover:border-rose-500/30 hover:bg-rose-500/5 hover:text-rose-300 cursor-pointer"
+                  >
+                    Entregar examen
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={next}
+                  disabled={loading || !canAdvance}
+                  className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                >
+                  {loading
+                    ? 'Corrigiendo…'
+                    : isLast
+                      ? 'Finalizar'
+                      : 'Siguiente'}
+                  {!isLast ? <ChevronRight className="h-4 w-4" /> : null}
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </DarkCard>
+      <AlertDialog
+        open={showExitDialog}
+        onClose={() => setShowExitDialog(false)}
+        onConfirm={reset}
+        title={mode === 'examen' ? '¿Abandonar examen?' : '¿Salir del quiz?'}
+        description={
+          mode === 'examen'
+            ? '¿Estás seguro de que querés abandonar el examen? Perderás tu progreso actual.'
+            : '¿Estás seguro de que querés salir y volver a la pantalla de configuración?'
+        }
+        cancelText="Cancelar"
+        confirmText="Salir"
+        variant="destructive"
+      />
+      <AlertDialog
+        open={showSubmitDialog}
+        onClose={() => setShowSubmitDialog(false)}
+        onConfirm={() => {
+          setShowSubmitDialog(false)
+          void finalizar()
+        }}
+        title="¿Entregar examen?"
+        description="Se corregirán las preguntas que hayas respondido hasta el momento y finalizará el intento."
+        cancelText="Cancelar"
+        confirmText="Entregar"
+      />
     </div>
   )
 }

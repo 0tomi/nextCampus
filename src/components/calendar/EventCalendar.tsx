@@ -160,7 +160,7 @@ export function EventCalendar({
 
       <FullCalendar
         ref={calendarRef}
-        plugins={editable ? [dayGridPlugin, interactionPlugin] : [dayGridPlugin]}
+        plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
         headerToolbar={{
           left: 'customPrev,customNext customToday',

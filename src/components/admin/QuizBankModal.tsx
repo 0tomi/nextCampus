@@ -11,10 +11,9 @@ import { parseQuizBank } from '@/lib/domain/quiz-bank'
 
 // ---- Prompt para la IA (con la skill instalada) ----------------------------
 
-const AI_PROMPT = `Tenés la skill "banco-preguntas-examen" instalada. Usala para analizar el material de la materia y generar el banco de preguntas en el formato que se describe a continuación.
+const AI_PROMPT = `Si tenés la skill "banco-preguntas-examen" instalada, usala para analizar el material de la materia y generar un banco de preguntas. Si no tenés la skill, analizá directamente los PDFs o apuntes de la materia para extraer las preguntas.
 
-Si la skill no está disponible, generá el banco directamente siguiendo estas instrucciones:
-Analizá los PDFs o apuntes de la materia y devolvé UN ÚNICO JSON válido, sin ningún texto adicional antes o después, con exactamente esta estructura:
+Independientemente de si usás la skill o no, el formato del JSON que debés devolver al usuario debe seguir exactamente esta estructura (sin ningún texto adicional antes o después):
 
 {
   "title": "Nombre descriptivo del banco (usá el nombre de la materia o cátedra)",

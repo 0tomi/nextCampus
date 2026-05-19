@@ -45,6 +45,7 @@ model Subject {
   slug        String       @unique
   nombre      String
   descripcion String       @default("")
+  driveUrl    String?
   agenda      Agenda?
   apuntes     Apunte[]
   createdAt   DateTime     @default(now())

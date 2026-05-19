@@ -8,6 +8,8 @@ import {
   GraduationCap,
   NotebookTabs,
   Sparkles,
+  Plus,
+  Pencil,
 } from 'lucide-react'
 import { getSubjectPageBySlug, getTiposEvento } from '@/lib/queries'
 import { DashboardShell } from '@/components/shell/DashboardShell'
@@ -21,7 +23,9 @@ import {
   SubjectPageAdminOverlay,
   DeleteEventoButton,
   DeleteApunteButton,
+  AdminTriggerButton,
 } from '@/components/admin/SubjectPageAdminOverlay'
+import { AdminControls } from '@/components/admin/AdminControls'
 
 export const revalidate = 300
 
@@ -40,6 +44,17 @@ function DashboardBrand() {
         </span>
       </span>
     </Link>
+  )
+}
+
+function GoogleDriveIcon({ className }: { className?: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/resources/google_drive_logo_icon_159334.png"
+      alt="Google Drive"
+      className={className}
+    />
   )
 }
 
@@ -145,6 +160,30 @@ export default async function SubjectPage({
               Agenda, unidades y apuntes organizados para que puedas estudiar y
               practicar en una experiencia enfocada.
             </p>
+
+            <div className="mt-6 flex items-center gap-2">
+              <a
+                href={subject.driveUrl || `https://drive.google.com/drive/u/0/search?q=${encodeURIComponent(subject.nombre)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+              >
+                <GoogleDriveIcon className="h-5 w-5" />
+                Drive con contenido de la materia
+              </a>
+
+              <AdminControls>
+                <AdminTriggerButton
+                  action="edit-drive"
+                  className="group relative inline-flex h-9 w-9 items-center justify-center rounded border border-white/10 bg-surface-1 text-white/50 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+                >
+                  <Pencil className="h-4 w-4" />
+                  <span className="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 scale-0 rounded bg-black/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-white opacity-0 transition-all group-hover:scale-100 group-hover:opacity-100 whitespace-nowrap z-10 border border-white/5 shadow-md">
+                    Editar link del drive
+                  </span>
+                </AdminTriggerButton>
+              </AdminControls>
+            </div>
           </DarkCard>
 
           <DarkCard className="p-6">
@@ -170,14 +209,25 @@ export default async function SubjectPage({
       </AnimateIn>
 
       <section id="calendario" className="space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
               Agenda
             </p>
-            <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
-              Calendario de eventos
-            </h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+                Calendario de eventos
+              </h2>
+              <AdminControls>
+                <AdminTriggerButton
+                  action="new-event"
+                  className="inline-flex items-center gap-1.5 rounded border border-white/10 bg-surface-1 px-3 py-1.5 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+                >
+                  <Plus className="h-3 w-3" />
+                  Agregar nuevo evento
+                </AdminTriggerButton>
+              </AdminControls>
+            </div>
           </div>
           <p className="max-w-xl text-sm text-white/48">
             Fechas, entregas y avisos importantes de la materia en un solo lugar.
@@ -244,13 +294,24 @@ export default async function SubjectPage({
       </section>
 
       <section id="quiz" className="space-y-4">
-        <div>
+        <div className="flex flex-col gap-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
             Modo estudio
           </p>
-          <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
-            Poné a prueba lo que sabés
-          </h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+              Poné a prueba lo que sabés
+            </h2>
+            <AdminControls>
+              <AdminTriggerButton
+                action="upload-bank"
+                className="inline-flex items-center gap-1.5 rounded border border-white/10 bg-surface-1 px-3 py-1.5 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+              >
+                <Plus className="h-3 w-3" />
+                Agregar nuevo banco de preguntas
+              </AdminTriggerButton>
+            </AdminControls>
+          </div>
         </div>
 
         <DarkCard variant="interactive" className="p-6 sm:p-8">
@@ -283,13 +344,24 @@ export default async function SubjectPage({
       </section>
 
       <section id="apuntes" className="space-y-4">
-        <div>
+        <div className="flex flex-col gap-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
             Recursos
           </p>
-          <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
-            Apuntes y descargas
-          </h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+              Apuntes y descargas
+            </h2>
+            <AdminControls>
+              <AdminTriggerButton
+                action="new-apunte"
+                className="inline-flex items-center gap-1.5 rounded border border-white/10 bg-surface-1 px-3 py-1.5 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+              >
+                <Plus className="h-3 w-3" />
+                Agregar nuevos apuntes
+              </AdminTriggerButton>
+            </AdminControls>
+          </div>
         </div>
 
         {subject.apuntes.length === 0 ? (
@@ -339,7 +411,13 @@ export default async function SubjectPage({
         )}
       </section>
       <SubjectPageAdminOverlay
-        subject={{ id: subject.id, slug: subject.slug, nombre: subject.nombre }}
+        subject={{
+          id: subject.id,
+          slug: subject.slug,
+          nombre: subject.nombre,
+          descripcion: subject.descripcion || undefined,
+          driveUrl: subject.driveUrl,
+        }}
         agendaId={agendaId}
         tiposEvento={tiposEvento}
       />

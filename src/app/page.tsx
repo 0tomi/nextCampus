@@ -177,6 +177,8 @@ export default async function HomePage() {
                                 id: subject.id,
                                 slug: subject.slug,
                                 nombre: subject.nombre,
+                                descripcion: subject.descripcion,
+                                driveUrl: subject.driveUrl,
                               }}
                               yearId={year.id}
                             />

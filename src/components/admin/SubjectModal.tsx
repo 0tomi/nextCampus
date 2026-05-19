@@ -16,6 +16,7 @@ interface SubjectModalProps {
     id: string
     nombre: string
     descripcion?: string
+    driveUrl?: string | null
   }
   /** ID del año al que pertenece la materia (requerido para crear). */
   yearId?: string
@@ -90,6 +91,26 @@ export function SubjectModal({
             defaultValue={subject?.descripcion ?? ''}
             placeholder="Breve descripción de la materia"
             className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none resize-none"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label
+            htmlFor="subject-driveUrl"
+            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
+          >
+            Enlace de Google Drive{' '}
+            <span className="font-normal normal-case tracking-normal text-white/30">
+              (opcional)
+            </span>
+          </label>
+          <input
+            id="subject-driveUrl"
+            type="url"
+            name="driveUrl"
+            defaultValue={subject?.driveUrl ?? ''}
+            placeholder="Ej: https://drive.google.com/drive/folders/..."
+            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
           />
         </div>
 
