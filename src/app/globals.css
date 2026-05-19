@@ -310,6 +310,24 @@ body {
   color: #cffafe;
 }
 
+.fc .fc-event-tone-red {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.36);
+  color: #fee2e2;
+}
+
+.fc .fc-event-tone-orange {
+  background: rgba(249, 115, 22, 0.16);
+  border-color: rgba(249, 115, 22, 0.36);
+  color: #ffedd5;
+}
+
+.fc .fc-event-tone-yellow {
+  background: rgba(234, 179, 8, 0.16);
+  border-color: rgba(234, 179, 8, 0.36);
+  color: #fef9c3;
+}
+
 .fc .fc-event,
 .fc .fc-event * {
   cursor: pointer;

@@ -36,14 +36,14 @@ interface EventCalendarProps {
 }
 
 const EVENT_TYPE_CLASS_MAP = {
-  examen: 'fc-event-tone-rose',
-  parcial: 'fc-event-tone-rose',
-  final: 'fc-event-tone-rose',
-  recuperatorio: 'fc-event-tone-rose',
-  'trabajo-practico': 'fc-event-tone-amber',
-  tp: 'fc-event-tone-amber',
+  examen: 'fc-event-tone-red',
+  parcial: 'fc-event-tone-red',
+  final: 'fc-event-tone-red',
+  recuperatorio: 'fc-event-tone-red',
+  'trabajo-practico': 'fc-event-tone-yellow',
+  tp: 'fc-event-tone-yellow',
   entrega: 'fc-event-tone-cyan',
-  exposicion: 'fc-event-tone-violet',
+  exposicion: 'fc-event-tone-orange',
   clase: 'fc-event-tone-emerald',
 } as const
 
