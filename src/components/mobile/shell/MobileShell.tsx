@@ -1,6 +1,18 @@
-import type { ReactNode } from 'react'
+'use client'
+
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
+import Link from 'next/link'
+import {
+  GraduationCap,
+  Menu,
+  ChevronLeft,
+  Shield,
+  X,
+  ChevronRight,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { MobileTopbar } from './MobileTopbar'
+import { getYearColorClasses } from '@/lib/yearColors'
 
 export interface MobileShellDrawerYear {
   slug: string
@@ -29,17 +41,178 @@ export function MobileShell({
   children,
   mainClassName,
 }: MobileShellProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const [open, setOpen] = useState(false)
+
+  const openDrawer = useCallback(() => setOpen(true), [])
+  const closeDrawer = useCallback(() => setOpen(false), [])
+
+  useEffect(() => {
+    if (!open) return
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', handleKey)
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.removeEventListener('keydown', handleKey)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [open])
+
+  useEffect(() => {
+    setOpen(false)
+  }, [pathname])
+
   return (
     <div className="min-h-screen bg-surface-0 text-white">
-      <MobileTopbar
-        title={title}
-        subtitle={subtitle}
-        onBack={onBack}
-        drawerYears={drawerYears}
-        careerName={careerName}
-        currentYearSlug={currentYearSlug}
+      {/* TOPBAR */}
+      <header className="fixed inset-x-0 top-0 z-50 h-14 border-b border-white/5 bg-[rgba(20,20,20,0.92)] backdrop-blur-[14px] backdrop-saturate-[1.8]">
+        <div className="flex h-full items-center justify-between px-3">
+          <button
+            type="button"
+            aria-label={onBack ? 'Volver' : 'Abrir menú'}
+            onClick={onBack ? () => router.back() : openDrawer}
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+          >
+            {onBack ? (
+              <ChevronLeft size={22} strokeWidth={2.5} />
+            ) : (
+              <Menu size={22} strokeWidth={2} />
+            )}
+          </button>
+
+          <div className="mx-3 flex min-w-0 flex-1 items-center gap-2.5">
+            <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-amber-400 to-orange-500 text-black">
+              <GraduationCap size={16} strokeWidth={2.5} />
+            </div>
+            <div className="flex min-w-0 flex-col">
+              {title && (
+                <span className="truncate text-sm font-bold leading-tight text-white">
+                  {title}
+                </span>
+              )}
+              {subtitle && (
+                <span className="truncate text-[9px] font-bold uppercase leading-tight tracking-[0.18em] text-white/40">
+                  {subtitle}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <Link
+            href="/admin"
+            aria-label="Administración"
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/5 hover:text-white/70"
+          >
+            <Shield size={17} strokeWidth={2} />
+          </Link>
+        </div>
+      </header>
+
+      {/* DRAWER */}
+      <div
+        aria-hidden={!open}
+        onClick={closeDrawer}
+        className={cn(
+          'fixed inset-0 z-[60] bg-black/60 transition-opacity duration-[240ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
+          open ? 'opacity-100' : 'pointer-events-none opacity-0',
+        )}
       />
-      <main className={cn('pt-14 pb-12', mainClassName)}>{children}</main>
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menú principal"
+        aria-hidden={!open}
+        className={cn(
+          'fixed inset-y-0 left-0 z-[70] flex w-[304px] flex-col border-r border-white/[0.06] bg-[#141414] shadow-[24px_0_60px_rgba(0,0,0,0.5)]',
+          'transition-transform duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
+          open ? 'translate-x-0' : '-translate-x-full',
+        )}
+      >
+        <div className="flex items-start justify-between border-b border-white/5 px-5 pb-4 pt-5">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
+              CARRERA
+            </span>
+            <span className="text-[17px] font-black leading-snug text-white">
+              {careerName}
+            </span>
+          </div>
+          <button
+            type="button"
+            aria-label="Cerrar menú"
+            onClick={closeDrawer}
+            className="mt-0.5 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/5 hover:text-white"
+          >
+            <X size={18} strokeWidth={2} />
+          </button>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <span className="mb-2 block px-3 text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
+            AÑOS ACADÉMICOS
+          </span>
+          <ul className="flex flex-col gap-1">
+            {drawerYears.map((year, idx) => {
+              const colorClasses = getYearColorClasses(year.slug)
+              const isActive = year.slug === currentYearSlug
+              return (
+                <li key={year.slug}>
+                  <Link
+                    href={`/year/${year.slug}`}
+                    onClick={closeDrawer}
+                    className={cn(
+                      'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
+                      isActive ? 'bg-white/5' : 'hover:bg-white/5',
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        'flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-md bg-gradient-to-br',
+                        colorClasses.badgeClassName,
+                      )}
+                    >
+                      <span className="text-[13px] font-black leading-none">
+                        {idx + 1}
+                      </span>
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-sm font-bold leading-tight text-white">
+                        {year.nombre}
+                      </span>
+                      <span className="mt-0.5 text-[10px] font-bold uppercase leading-tight tracking-[0.16em] text-white/40">
+                        {year.subjectsCount}{' '}
+                        {year.subjectsCount === 1 ? 'materia' : 'materias'}
+                      </span>
+                    </div>
+                    <ChevronRight
+                      size={15}
+                      strokeWidth={2}
+                      className="shrink-0 text-white/30"
+                    />
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        </nav>
+
+        <div className="flex items-center justify-between border-t border-white/5 px-5 py-[14px]">
+          <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+            FCYT · UADER
+          </span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/30">
+            v alpha
+          </span>
+        </div>
+      </aside>
+
+      <main className={cn('pb-12 pt-14', mainClassName)}>{children}</main>
     </div>
   )
 }

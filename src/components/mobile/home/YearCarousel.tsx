@@ -14,19 +14,21 @@ interface CarouselYear {
 
 export function YearCarousel({ years }: { years: CarouselYear[] }) {
   const scrollerRef = useRef<HTMLDivElement>(null)
+  const slidesRef = useRef<Array<HTMLDivElement | null>>([])
   const [page, setPage] = useState(0)
 
   const handleScroll = useCallback(() => {
     const el = scrollerRef.current
-    if (!el) return
+    if (!el || el.clientWidth === 0) return
     const idx = Math.round(el.scrollLeft / el.clientWidth)
     setPage(idx)
   }, [])
 
   const scrollTo = useCallback((idx: number) => {
-    const el = scrollerRef.current
-    if (!el) return
-    el.scrollTo({ left: idx * el.clientWidth, behavior: 'smooth' })
+    const slide = slidesRef.current[idx]
+    if (!slide) return
+    slide.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
+    setPage(idx)
   }, [])
 
   return (
@@ -72,7 +74,9 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
           return (
             <div
               key={y.id}
-              className="snap-center shrink-0 w-full px-[18px]"
+              ref={(el) => { slidesRef.current[idx] = el }}
+              className="snap-start px-[18px]"
+              style={{ flex: '0 0 100%', minWidth: '100%' }}
             >
               <div className="bg-[#1a1a1a] border border-white/5 rounded-xl overflow-hidden flex flex-col">
                 {/* Gradient header */}

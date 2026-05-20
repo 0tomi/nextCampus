@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import dynamic from 'next/dynamic'
 import { GraduationCap, ArrowLeft } from 'lucide-react'
 import { getCareer, getYearBySlug, getTiposEvento } from '@/lib/queries'
 import { getYearColorClasses, getYearTone } from '@/lib/yearColors'
@@ -8,14 +7,7 @@ import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
 import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
-
-const MobileCalendar = dynamic(
-  () =>
-    import('@/components/mobile/calendar/MobileCalendar').then(
-      (m) => m.MobileCalendar,
-    ),
-  { ssr: false },
-)
+import { MobileCalendarLazy } from '@/components/mobile/calendar/MobileCalendarLazy'
 
 export const revalidate = 300
 
@@ -148,7 +140,7 @@ export default async function YearCalendarPage({
           currentYearSlug={year.slug}
         >
           <div className="pt-4">
-            <MobileCalendar
+            <MobileCalendarLazy
               events={events.map((e) => ({
                 id: e.id,
                 fecha: e.fecha,
