@@ -9,56 +9,7 @@ import {
 } from '@/lib/domain/quiz-bank'
 
 const BUCKET = env.SUPABASE_STORAGE_BUCKET
-const MAX_PDF_BYTES = 20 * 1024 * 1024 // 20 MB
 const MAX_BANK_BYTES = 1 * 1024 * 1024 // 1 MB de JSON es de sobra
-
-// Sube un PDF de apunte a Supabase Storage. Valida tipo y tamaño server-side.
-export async function uploadApuntePdf(
-  file: File,
-  subjectSlug: string,
-): Promise<string> {
-  if (file.type !== 'application/pdf') {
-    throw new Error('BAD_REQUEST: el archivo debe ser PDF')
-  }
-  const head = new Uint8Array(await file.slice(0, 4).arrayBuffer())
-  const isPdfMagic =
-    head[0] === 0x25 && head[1] === 0x50 && head[2] === 0x44 && head[3] === 0x46
-  if (!isPdfMagic) {
-    throw new Error('BAD_REQUEST: el archivo no es un PDF válido')
-  }
-  if (file.size > MAX_PDF_BYTES) {
-    throw new Error('BAD_REQUEST: el PDF supera el límite de 20 MB')
-  }
-
-  const supabase = createSupabaseAdminClient()
-  const objectKey = `${subjectSlug}/${crypto.randomUUID()}.pdf`
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(objectKey, file, { contentType: 'application/pdf', upsert: false })
-
-  if (error) {
-    throw new Error(`STORAGE: no se pudo subir el PDF (${error.message})`)
-  }
-  return objectKey
-}
-
-// URL firmada temporal para descargar un apunte (bucket privado).
-export async function getApuntePdfUrl(
-  objectKey: string,
-  expiresInSeconds = 60 * 60,
-): Promise<string | null> {
-  const supabase = createSupabaseAdminClient()
-  const { data, error } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUrl(objectKey, expiresInSeconds)
-  if (error || !data) return null
-  return data.signedUrl
-}
-
-export async function deleteApuntePdf(objectKey: string): Promise<void> {
-  const supabase = createSupabaseAdminClient()
-  await supabase.storage.from(BUCKET).remove([objectKey])
-}
 
 // ---------------------------------------------------------------------------
 // Bancos de preguntas (quiz). JSON privado en Storage, recuperado por

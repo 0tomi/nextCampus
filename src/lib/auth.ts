@@ -238,7 +238,6 @@ export interface EventoAdminScope extends AgendaAdminScope {
 
 export interface ApunteAdminScope extends SubjectAdminScope {
   apunteId: string
-  pdfObjectKey: string | null
 }
 
 type YearAdminScopeInput<T extends YearAdminScope> = Omit<T, 'admin'> & {
@@ -387,7 +386,6 @@ export async function requireYearAdminForApunteId(
     where: { id: apunteId },
     select: {
       id: true,
-      pdfObjectKey: true,
       subject: {
         select: {
           id: true,
@@ -403,7 +401,6 @@ export async function requireYearAdminForApunteId(
     apunte
       ? {
           apunteId: apunte.id,
-          pdfObjectKey: apunte.pdfObjectKey,
           subjectId: apunte.subject.id,
           subjectSlug: apunte.subject.slug,
           yearId: apunte.subject.year.id,

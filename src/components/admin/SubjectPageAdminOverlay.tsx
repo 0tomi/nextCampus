@@ -8,7 +8,8 @@ import { EventModal } from './EventModal'
 import { ApunteModal } from './ApunteModal'
 import { QuizBankModal } from './QuizBankModal'
 import { EditDriveModal } from './EditDriveModal'
-import { deleteEvento, deleteApunte } from '@/app/admin/actions'
+import { deleteEvento, deleteApunteAction } from '@/app/admin/actions'
+import type { ApunteFull } from './ApunteModal'
 
 interface TipoEvento {
   id: string
@@ -22,6 +23,8 @@ interface SubjectPageAdminOverlayProps {
     nombre: string
     descripcion?: string
     driveUrl?: string | null
+    playlistUrl?: string | null
+    playlistEnabled?: boolean
   }
   agendaId: string
   yearId?: string
@@ -65,6 +68,7 @@ export function SubjectPageAdminOverlay({
   const [editSubjectOpen, setEditSubjectOpen] = useState(false)
   const [newEventOpen, setNewEventOpen] = useState(false)
   const [newApunteOpen, setNewApunteOpen] = useState(false)
+  const [editingApunte, setEditingApunte] = useState<ApunteFull | null>(null)
   const [uploadBankOpen, setUploadBankOpen] = useState(false)
   const [uploadBankKey, setUploadBankKey] = useState(0)
   const [editDriveOpen, setEditDriveOpen] = useState(false)
@@ -77,17 +81,23 @@ export function SubjectPageAdminOverlay({
     const handleNewApunte = () => setNewApunteOpen(true)
     const handleNewEvent = () => setNewEventOpen(true)
     const handleEditDrive = () => setEditDriveOpen(true)
+    const handleEditApunte = (e: Event) => {
+      const { apunte } = (e as CustomEvent<{ apunte: ApunteFull }>).detail
+      setEditingApunte(apunte)
+    }
 
     window.addEventListener('open-admin-modal-upload-bank', handleUploadBank)
     window.addEventListener('open-admin-modal-new-apunte', handleNewApunte)
     window.addEventListener('open-admin-modal-new-event', handleNewEvent)
     window.addEventListener('open-admin-modal-edit-drive', handleEditDrive)
+    window.addEventListener('open-admin-modal-edit-apunte', handleEditApunte)
 
     return () => {
       window.removeEventListener('open-admin-modal-upload-bank', handleUploadBank)
       window.removeEventListener('open-admin-modal-new-apunte', handleNewApunte)
       window.removeEventListener('open-admin-modal-new-event', handleNewEvent)
       window.removeEventListener('open-admin-modal-edit-drive', handleEditDrive)
+      window.removeEventListener('open-admin-modal-edit-apunte', handleEditApunte)
     }
   }, [])
 
@@ -133,7 +143,14 @@ export function SubjectPageAdminOverlay({
       <SubjectModal
         open={editSubjectOpen}
         onClose={() => setEditSubjectOpen(false)}
-        subject={{ id: subject.id, nombre: subject.nombre, descripcion: subject.descripcion, driveUrl: subject.driveUrl }}
+        subject={{
+          id: subject.id,
+          nombre: subject.nombre,
+          descripcion: subject.descripcion,
+          driveUrl: subject.driveUrl,
+          playlistUrl: subject.playlistUrl,
+          playlistEnabled: subject.playlistEnabled,
+        }}
         yearId={yearId}
       />
 
@@ -146,12 +163,25 @@ export function SubjectPageAdminOverlay({
         tiposEvento={tiposEvento}
       />
 
+      {/* Modal de creación de apunte */}
       <ApunteModal
         open={newApunteOpen}
         onClose={() => setNewApunteOpen(false)}
         subjectId={subject.id}
         subjectSlug={subject.slug}
       />
+
+      {/* Modal de edición de apunte — se monta solo cuando hay un apunte seleccionado */}
+      {editingApunte && (
+        <ApunteModal
+          key={editingApunte.id}
+          open={true}
+          onClose={() => setEditingApunte(null)}
+          subjectId={subject.id}
+          subjectSlug={subject.slug}
+          apunte={editingApunte}
+        />
+      )}
 
       <QuizBankModal
         key={uploadBankKey}
@@ -224,7 +254,7 @@ export function DeleteApunteButton({
 }: DeleteApunteButtonProps) {
   return (
     <AdminControls yearId={yearId} yearSlug={yearSlug}>
-      <form action={deleteApunte}>
+      <form action={deleteApunteAction}>
         <input type="hidden" name="id" value={apunteId} />
         <input type="hidden" name="subjectSlug" value={subjectSlug} />
         <button

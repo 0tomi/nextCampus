@@ -75,17 +75,19 @@ model UserYearPermission {
 }
 
 model Subject {
-  id          String       @id @default(cuid())
-  year        AcademicYear @relation(fields: [yearId], references: [id], onDelete: Cascade)
-  yearId      String
-  slug        String       @unique
-  nombre      String
-  descripcion String       @default("")
-  driveUrl    String?
-  agenda      Agenda?
-  apuntes     Apunte[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id              String       @id @default(cuid())
+  year            AcademicYear @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  yearId          String
+  slug            String       @unique
+  nombre          String
+  descripcion     String       @default("")
+  driveUrl        String?
+  playlistUrl     String?
+  playlistEnabled Boolean      @default(false)
+  agenda          Agenda?
+  apuntes         Apunte[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   @@index([yearId])
 }
@@ -135,22 +137,39 @@ model Evento {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// Apuntes: materia -> Apunte (PDF en Supabase Storage o solo descripción)
+// Apuntes: materia -> Apunte (rich text + recursos YouTube/Drive ordenables)
 // ---------------------------------------------------------------------------
 
+enum RecursoTipo {
+  YOUTUBE
+  DRIVE
+}
+
 model Apunte {
-  id              String   @id @default(cuid())
-  subject         Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  id              String          @id @default(cuid())
+  subject         Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   subjectId       String
   titulo          String
   /// HTML enriquecido y SANITIZADO (links a Drive/Docs, formato).
-  descripcionHtml String   @default("")
-  /// Object key del PDF en Supabase Storage (bucket `apuntes`). Null = sin PDF.
-  pdfObjectKey    String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  descripcionHtml String          @default("")
+  recursos        ApunteRecurso[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   @@index([subjectId])
+}
+
+model ApunteRecurso {
+  id        String      @id @default(cuid())
+  apunte    Apunte      @relation(fields: [apunteId], references: [id], onDelete: Cascade)
+  apunteId  String
+  tipo      RecursoTipo
+  url       String
+  orden     Int         @db.SmallInt
+  createdAt DateTime    @default(now())
+
+  @@unique([apunteId, orden])
+  @@index([apunteId])
 }
 
 // Admins: ADMIN_EMAILS sigue siendo el bootstrap de AdminGeneral.

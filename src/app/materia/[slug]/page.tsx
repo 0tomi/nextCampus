@@ -4,12 +4,12 @@ import {
   ArrowLeft,
   ArrowRight,
   CalendarDays,
-  Download,
   GraduationCap,
   NotebookTabs,
   Sparkles,
   Plus,
   Pencil,
+  CirclePlay,
 } from 'lucide-react'
 import { getCareer, getSubjectPageBySlug, getTiposEvento } from '@/lib/queries'
 import { MobileSubject } from '@/components/mobile/subject/MobileSubject'
@@ -28,6 +28,8 @@ import {
   AdminTriggerButton,
 } from '@/components/admin/SubjectPageAdminOverlay'
 import { AdminControls } from '@/components/admin/AdminControls'
+import { ApunteRecursoView } from '@/components/apuntes/ApunteRecursoView'
+import { EditApunteButton } from '@/components/admin/EditApunteButton'
 
 export const revalidate = 300
 
@@ -168,11 +170,10 @@ export default async function SubjectPage({
               {subject.nombre}
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-white/64 sm:text-base">
-              Agenda, unidades y apuntes organizados para que puedas estudiar y
-              practicar en una experiencia enfocada.
+              {subject.descripcion.trim() || 'Materia sin descripción aún. Los administradores pueden agregarla desde el modo edición.'}
             </p>
 
-            <div className="mt-6 flex items-center gap-2">
+            <div className="mt-6 flex flex-wrap items-center gap-2">
               <a
                 href={subject.driveUrl || `https://drive.google.com/drive/u/0/search?q=${encodeURIComponent(subject.nombre)}`}
                 target="_blank"
@@ -182,6 +183,37 @@ export default async function SubjectPage({
                 <GoogleDriveIcon className="h-5 w-5" />
                 Drive con contenido de la materia
               </a>
+
+              {/* Botón Playlist */}
+              {subject.playlistUrl && subject.playlistEnabled && (
+                <a
+                  href={subject.playlistUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+                >
+                  <CirclePlay className="h-5 w-5 text-red-400" />
+                  Playlist de clases
+                </a>
+              )}
+
+              {/* Botón Playlist para admins cuando está oculta */}
+              {subject.playlistUrl && !subject.playlistEnabled && (
+                <AdminControls yearId={subject.year.id}>
+                  <a
+                    href={subject.playlistUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/40 transition-colors hover:bg-white/10 hover:text-white/80 cursor-pointer"
+                  >
+                    <CirclePlay className="h-5 w-5 text-red-400/50" />
+                    Playlist de clases
+                    <span className="rounded border border-white/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                      Oculta
+                    </span>
+                  </a>
+                </AdminControls>
+              )}
 
               <AdminControls yearId={subject.year.id}>
                 <AdminTriggerButton
@@ -398,15 +430,16 @@ export default async function SubjectPage({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {apunte.hasPdf ? (
-                      <a
-                        href={`/api/apuntes/${apunte.id}/pdf`}
-                        className={`inline-flex items-center gap-2 border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition-colors hover:bg-white/5 ${colors.chipClassName}`}
-                      >
-                        <Download className="h-4 w-4" />
-                        PDF
-                      </a>
-                    ) : null}
+                    <AdminControls yearId={subject.year.id}>
+                      <EditApunteButton
+                        apunte={{
+                          id: apunte.id,
+                          titulo: apunte.titulo,
+                          descripcionHtml: apunte.descripcionHtml,
+                          recursos: apunte.recursos,
+                        }}
+                      />
+                    </AdminControls>
                     <DeleteApunteButton
                       apunteId={apunte.id}
                       subjectSlug={subject.slug}
@@ -419,10 +452,18 @@ export default async function SubjectPage({
                   <div
                     className="mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
                     dangerouslySetInnerHTML={{
-                      __html: sanitizeRichHtml(apunte.descripcionHtml ?? ''),
+                      __html: sanitizeRichHtml(apunte.descripcionHtml),
                     }}
                   />
                 ) : null}
+
+                {apunte.recursos.length > 0 && (
+                  <div className="mt-4 flex flex-col gap-3">
+                    {apunte.recursos.map((recurso) => (
+                      <ApunteRecursoView key={recurso.id} recurso={recurso} />
+                    ))}
+                  </div>
+                )}
               </DarkCard>
             ))}
           </div>
@@ -435,6 +476,8 @@ export default async function SubjectPage({
           nombre: subject.nombre,
           descripcion: subject.descripcion || undefined,
           driveUrl: subject.driveUrl,
+          playlistUrl: subject.playlistUrl,
+          playlistEnabled: subject.playlistEnabled,
         }}
         agendaId={agendaId}
         yearId={subject.year.id}

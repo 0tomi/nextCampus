@@ -16,13 +16,12 @@ import {
 import { sanitizeRichHtml } from '@/lib/sanitize'
 import { slugify, uniqueSlug } from '@/lib/slug'
 import {
-  uploadApuntePdf,
-  deleteApuntePdf,
   uploadQuizBank,
   deleteQuizBank,
   deleteSubjectStorage,
   deleteYearStorage,
 } from '@/lib/storage'
+import { detectarRecurso } from '@/lib/recursos'
 import {
   getSubjectDeleteImpact,
   getYearDeleteImpact,
@@ -123,85 +122,164 @@ export async function deleteEvento(formData: FormData): Promise<void> {
   await revalidateSubjectContent(scope.subjectSlug)
 }
 
-const apunteSchema = z.object({
-  subjectId: z.string().min(1),
-  titulo: z.string().min(1).max(200),
-  descripcionHtml: z.string().max(20000).default(''),
-})
-
-export async function createApunte(formData: FormData): Promise<void> {
-  const data = apunteSchema.parse({
-    subjectId: formData.get('subjectId'),
-    titulo: formData.get('titulo'),
-    descripcionHtml: formData.get('descripcionHtml') ?? '',
-  })
-  const scope = await requireYearAdminForSubjectId(data.subjectId)
-  if (!scope) throw new Error('Materia no encontrada')
-
-  // DB-first: crear la fila sin PDF; solo después subir el archivo.
-  // Si la subida falla, borramos la fila como compensación (Storage no participa
-  // en transacciones SQL, así que este es el único patrón seguro).
-  const apunte = await prisma.apunte.create({
-    data: {
-      subjectId: data.subjectId,
-      titulo: data.titulo,
-      descripcionHtml: sanitizeRichHtml(data.descripcionHtml),
-      pdfObjectKey: null,
-    },
-  })
-
-  const file = formData.get('pdf')
-  if (file instanceof File && file.size > 0) {
-    let pdfObjectKey: string
-    try {
-      pdfObjectKey = await uploadApuntePdf(file, scope.subjectSlug)
-    } catch (err) {
-      await prisma.apunte.delete({ where: { id: apunte.id } })
-      throw err
-    }
-    await prisma.apunte.update({ where: { id: apunte.id }, data: { pdfObjectKey } })
-  }
-
-  await revalidateSubjectContent(scope.subjectSlug)
-}
-
 // Wrapper para useActionState en modal cliente
 export interface ApunteActionState {
   ok: boolean
   message: string
 }
 
+const recursoSchema = z
+  .object({
+    url: z.string().url(),
+    tipo: z.enum(['YOUTUBE', 'DRIVE']),
+    orden: z.number().int().min(0).max(255),
+  })
+  .refine(
+    (r) => {
+      const detected = detectarRecurso(r.url)
+      return detected !== null && detected.tipo === r.tipo
+    },
+    { message: 'URL no permitida o tipo inconsistente' },
+  )
+
+const apunteContentSchema = z.object({
+  titulo: z.string().trim().min(1).max(200),
+  descripcionHtml: z.string().max(20000).default(''),
+  recursos: z
+    .array(recursoSchema)
+    .max(50)
+    .default([])
+    .refine(
+      (recursos) => {
+        const ordenes = recursos.map((r) => r.orden)
+        return new Set(ordenes).size === ordenes.length
+      },
+      { message: 'Órdenes duplicados' },
+    ),
+})
+
+function parseRecursosJson(raw: unknown): z.infer<typeof recursoSchema>[] | null {
+  if (typeof raw !== 'string' || raw.trim() === '') return []
+  try {
+    return JSON.parse(raw) as z.infer<typeof recursoSchema>[]
+  } catch {
+    return null
+  }
+}
+
 export async function createApunteAction(
   _prev: ApunteActionState,
   formData: FormData,
 ): Promise<ApunteActionState> {
+  const subjectId = z.string().min(1).safeParse(formData.get('subjectId'))
+  if (!subjectId.success) {
+    return { ok: false, message: 'Materia no especificada.' }
+  }
+
+  const scope = await requireYearAdminForSubjectId(subjectId.data)
+  if (!scope) return { ok: false, message: 'Materia no encontrada.' }
+
+  const recursosRaw = parseRecursosJson(formData.get('recursosJson'))
+  if (recursosRaw === null) {
+    return { ok: false, message: 'El formato de los recursos no es válido.' }
+  }
+
+  const parsed = apunteContentSchema.safeParse({
+    titulo: formData.get('titulo'),
+    descripcionHtml: formData.get('descripcionHtml') ?? '',
+    recursos: recursosRaw,
+  })
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0].message }
+  }
+
+  const { titulo, descripcionHtml, recursos } = parsed.data
+
   try {
-    await createApunte(formData)
-    return { ok: true, message: 'Apunte creado correctamente.' }
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      return { ok: false, message: err.issues[0].message }
-    }
+    await prisma.apunte.create({
+      data: {
+        subjectId: subjectId.data,
+        titulo,
+        descripcionHtml: sanitizeRichHtml(descripcionHtml),
+        recursos: {
+          create: recursos.map((r) => ({
+            tipo: r.tipo,
+            url: r.url,
+            orden: r.orden,
+          })),
+        },
+      },
+    })
+  } catch {
     return { ok: false, message: 'No se pudo crear el apunte. Intentá de nuevo.' }
   }
+
+  await revalidateSubjectContent(scope.subjectSlug)
+  return { ok: true, message: 'Apunte creado correctamente.' }
 }
 
-export async function deleteApunte(formData: FormData): Promise<void> {
+export async function updateApunteAction(
+  _prev: ApunteActionState,
+  formData: FormData,
+): Promise<ApunteActionState> {
+  const apunteId = z.string().min(1).safeParse(formData.get('apunteId'))
+  if (!apunteId.success) {
+    return { ok: false, message: 'Apunte no especificado.' }
+  }
+
+  const scope = await requireYearAdminForApunteId(apunteId.data)
+  if (!scope) return { ok: false, message: 'Apunte no encontrado.' }
+
+  const recursosRaw = parseRecursosJson(formData.get('recursosJson'))
+  if (recursosRaw === null) {
+    return { ok: false, message: 'El formato de los recursos no es válido.' }
+  }
+
+  const parsed = apunteContentSchema.safeParse({
+    titulo: formData.get('titulo'),
+    descripcionHtml: formData.get('descripcionHtml') ?? '',
+    recursos: recursosRaw,
+  })
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0].message }
+  }
+
+  const { titulo, descripcionHtml, recursos } = parsed.data
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.apunte.update({
+        where: { id: apunteId.data },
+        data: {
+          titulo,
+          descripcionHtml: sanitizeRichHtml(descripcionHtml),
+        },
+      })
+      await tx.apunteRecurso.deleteMany({ where: { apunteId: apunteId.data } })
+      await tx.apunteRecurso.createMany({
+        data: recursos.map((r) => ({
+          apunteId: apunteId.data,
+          tipo: r.tipo,
+          url: r.url,
+          orden: r.orden,
+        })),
+      })
+    })
+  } catch {
+    return { ok: false, message: 'No se pudo actualizar el apunte. Intentá de nuevo.' }
+  }
+
+  await revalidateSubjectContent(scope.subjectSlug)
+  return { ok: true, message: 'Apunte actualizado correctamente.' }
+}
+
+export async function deleteApunteAction(formData: FormData): Promise<void> {
   const id = z.string().min(1).parse(formData.get('id'))
   const scope = await requireYearAdminForApunteId(id)
   if (!scope) return
 
-  // DB-first: borrar la fila antes de tocar Storage. Si el delete de Storage falla,
-  // la fila ya no existe en DB (correcto); el objeto huérfano queda para limpieza manual.
+  // La FK con onDelete: Cascade borra los ApunteRecurso automáticamente.
   await prisma.apunte.delete({ where: { id } })
-
-  if (scope.pdfObjectKey) {
-    try {
-      await deleteApuntePdf(scope.pdfObjectKey)
-    } catch {
-      console.error(`Storage cleanup pendiente para apunte ID: ${scope.apunteId}`)
-    }
-  }
 
   await revalidateSubjectContent(scope.subjectSlug)
 }
@@ -472,6 +550,11 @@ export async function createSubjectAction(
   return { ok: true, message: 'Materia creada correctamente.' }
 }
 
+const updateSubjectSchema = subjectSchema.extend({
+  playlistUrl: z.string().trim().url().or(z.literal('')).nullable().optional(),
+  playlistEnabled: z.coerce.boolean().default(false),
+})
+
 export async function updateSubjectAction(
   _prev: SubjectActionState,
   formData: FormData,
@@ -480,15 +563,26 @@ export async function updateSubjectAction(
   const scope = await requireYearAdminForSubjectId(id)
   if (!scope) return { ok: false, message: 'Materia no encontrada.' }
 
-  const parsed = subjectSchema.safeParse({
+  const parsed = updateSubjectSchema.safeParse({
     nombre: formData.get('nombre'),
     descripcion: formData.get('descripcion') ?? '',
     driveUrl: formData.get('driveUrl') ?? '',
+    playlistUrl: formData.get('playlistUrl') ?? '',
+    playlistEnabled: formData.get('playlistEnabled'),
   })
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0].message }
   }
-  const { nombre, descripcion, driveUrl } = parsed.data
+  const { nombre, descripcion, driveUrl, playlistUrl, playlistEnabled } = parsed.data
+
+  // Validar que playlistUrl sea de YouTube si se provee
+  const normalizedPlaylistUrl = playlistUrl || null
+  if (normalizedPlaylistUrl) {
+    const detected = detectarRecurso(normalizedPlaylistUrl)
+    if (!detected || detected.tipo !== 'YOUTUBE') {
+      return { ok: false, message: 'La playlist debe ser un enlace de YouTube válido.' }
+    }
+  }
 
   const oldSlug = scope.subjectSlug
 
@@ -502,7 +596,14 @@ export async function updateSubjectAction(
 
   await prisma.subject.update({
     where: { id },
-    data: { nombre, slug: newSlug, descripcion, driveUrl: driveUrl || null },
+    data: {
+      nombre,
+      slug: newSlug,
+      descripcion,
+      driveUrl: driveUrl || null,
+      playlistUrl: normalizedPlaylistUrl,
+      playlistEnabled,
+    },
   })
 
   revalidatePath('/')
@@ -579,6 +680,52 @@ export async function updateSubjectDriveUrlAction(
   revalidatePath(`/materia/${scope.subjectSlug}`)
 
   return { ok: true, message: 'Enlace de Google Drive actualizado correctamente.' }
+}
+
+// Edición rápida de la playlist (espejo de updateSubjectDriveUrlAction).
+// Firma: (subjectId, playlistUrl | null, playlistEnabled, _subjectSlug)
+export async function updateSubjectPlaylistAction(
+  subjectId: string,
+  playlistUrl: string | null,
+  playlistEnabled: boolean,
+  _subjectSlug: string,
+): Promise<SubjectActionState> {
+  void _subjectSlug
+
+  const urlParsed = z
+    .string()
+    .trim()
+    .url()
+    .or(z.literal(''))
+    .nullable()
+    .optional()
+    .safeParse(playlistUrl)
+  if (!urlParsed.success) {
+    return { ok: false, message: 'El enlace de la playlist no es válido.' }
+  }
+
+  const normalizedPlaylistUrl = urlParsed.data || null
+  if (normalizedPlaylistUrl) {
+    const detected = detectarRecurso(normalizedPlaylistUrl)
+    if (!detected || detected.tipo !== 'YOUTUBE') {
+      return { ok: false, message: 'La playlist debe ser un enlace de YouTube válido.' }
+    }
+  }
+
+  const validSubjectId = z.string().min(1).parse(subjectId)
+  const scope = await requireYearAdminForSubjectId(validSubjectId)
+  if (!scope) return { ok: false, message: 'Materia no encontrada.' }
+
+  await prisma.subject.update({
+    where: { id: validSubjectId },
+    data: { playlistUrl: normalizedPlaylistUrl, playlistEnabled },
+  })
+
+  revalidatePath('/')
+  revalidatePath(`/year/${scope.yearSlug}`)
+  revalidatePath(`/materia/${scope.subjectSlug}`)
+
+  return { ok: true, message: 'Playlist actualizada correctamente.' }
 }
 
 // --- Sesión ----------------------------------------------------------------

@@ -50,6 +50,7 @@ export async function proxy(request: NextRequest) {
     "font-src 'self'",
     "img-src 'self' data: blob: https://*.supabase.co",
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+    "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com",
     "object-src 'none'",
     "frame-ancestors 'none'",
     "base-uri 'self'",

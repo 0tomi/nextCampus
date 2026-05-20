@@ -70,6 +70,8 @@ export async function getSubjectPageBySlug(slug: string) {
       nombre: true,
       descripcion: true,
       driveUrl: true,
+      playlistUrl: true,
+      playlistEnabled: true,
       year: {
         select: {
           id: true,
@@ -99,19 +101,20 @@ export async function getSubjectPageBySlug(slug: string) {
           id: true,
           titulo: true,
           descripcionHtml: true,
-          pdfObjectKey: true,
+          recursos: {
+            orderBy: { orden: 'asc' },
+            select: {
+              id: true,
+              tipo: true,
+              url: true,
+              orden: true,
+            },
+          },
         },
       },
     },
   })
-  if (!result) return null
-  return {
-    ...result,
-    apuntes: result.apuntes.map(({ pdfObjectKey, ...rest }) => ({
-      ...rest,
-      hasPdf: !!pdfObjectKey,
-    })),
-  }
+  return result
 }
 
 // Metadata mínima para resolver la key de Storage del banco de preguntas
@@ -141,7 +144,12 @@ export function getAdminSubjectBySlug(slug: string) {
           },
         },
       },
-      apuntes: { orderBy: { createdAt: 'desc' } },
+      apuntes: {
+        orderBy: { createdAt: 'desc' },
+        include: {
+          recursos: { orderBy: { orden: 'asc' } },
+        },
+      },
     },
   })
 }
@@ -180,7 +188,8 @@ export interface SubjectDeleteImpact {
   subjectNombre: string
   eventosCount: number
   apuntesCount: number
-  pdfCount: number
+  /** Cantidad de recursos multimedia (YouTube/Drive) ligados a los apuntes de esta materia. */
+  recursosCount: number
   bancosCount: number
 }
 
@@ -203,9 +212,9 @@ export async function getSubjectDeleteImpact(
   })
   if (!subject) return null
 
-  const [pdfCount, bancosCount] = await Promise.all([
-    prisma.apunte.count({
-      where: { subjectId, pdfObjectKey: { not: null } },
+  const [recursosCount, bancosCount] = await Promise.all([
+    prisma.apunteRecurso.count({
+      where: { apunte: { subjectId } },
     }),
     countSubjectQuizBanks(subject.year.slug, subject.slug),
   ])
@@ -214,7 +223,7 @@ export async function getSubjectDeleteImpact(
     subjectNombre: subject.nombre,
     eventosCount: subject.agenda?._count.eventos ?? 0,
     apuntesCount: subject._count.apuntes,
-    pdfCount,
+    recursosCount,
     bancosCount,
   }
 }
@@ -224,7 +233,8 @@ export interface YearDeleteImpact {
   subjectsCount: number
   eventosCount: number
   apuntesCount: number
-  pdfCount: number
+  /** Cantidad de recursos multimedia (YouTube/Drive) en los apuntes de todo el año. */
+  recursosCount: number
   bancosCount: number
 }
 
@@ -257,9 +267,9 @@ export async function getYearDeleteImpact(
   }
 
   const subjectIds = year.subjects.map((s) => s.id)
-  const [pdfCount, bancosPerSubject] = await Promise.all([
-    prisma.apunte.count({
-      where: { subjectId: { in: subjectIds }, pdfObjectKey: { not: null } },
+  const [recursosCount, bancosPerSubject] = await Promise.all([
+    prisma.apunteRecurso.count({
+      where: { apunte: { subjectId: { in: subjectIds } } },
     }),
     Promise.all(
       year.subjects.map((s) => countSubjectQuizBanks(year.slug, s.slug)),
@@ -273,7 +283,7 @@ export async function getYearDeleteImpact(
     subjectsCount: year._count.subjects,
     eventosCount,
     apuntesCount,
-    pdfCount,
+    recursosCount,
     bancosCount,
   }
 }

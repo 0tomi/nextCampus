@@ -14,7 +14,7 @@ interface SubjectTabsProps {
   subjectName: string
   yearSlug: string
   events: Array<{ id: string; titulo: string; fecha: Date | string; tipo: string }>
-  apuntes: Array<{ id: string; titulo: string; descripcionHtml: string | null; hasPdf: boolean }>
+  apuntes: Array<{ id: string; titulo: string; descripcionHtml: string | null; recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE'; url: string; orden: number }> }>
 }
 
 const TABS: Array<{ key: TabKey; label: string; Icon: typeof CalendarDays }> = [
@@ -75,7 +75,7 @@ export function SubjectTabs({ subjectSlug, subjectName, yearSlug, events, apunte
       <div>
         {active === 'agenda' && <AgendaTab events={events} accent={colors.tone} />}
         {active === 'quiz' && <QuizTab subjectSlug={subjectSlug} subjectName={subjectName} yearSlug={yearSlug} />}
-        {active === 'apuntes' && <ApuntesTab apuntes={apuntes} yearSlug={yearSlug} />}
+        {active === 'apuntes' && <ApuntesTab apuntes={apuntes} />}
       </div>
     </div>
   )

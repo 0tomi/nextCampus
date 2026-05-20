@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useActionState } from 'react'
+import { useEffect, useActionState, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import {
   createSubjectAction,
   updateSubjectAction,
   type SubjectActionState,
 } from '@/app/admin/actions'
+import { detectarRecurso } from '@/lib/recursos'
 
 interface SubjectModalProps {
   open: boolean
@@ -17,6 +18,8 @@ interface SubjectModalProps {
     nombre: string
     descripcion?: string
     driveUrl?: string | null
+    playlistUrl?: string | null
+    playlistEnabled?: boolean
   }
   /** ID del año al que pertenece la materia (requerido para crear). */
   yearId?: string
@@ -33,6 +36,21 @@ export function SubjectModal({
   onSuccess,
 }: SubjectModalProps) {
   const isEdit = !!subject
+  const [playlistUrlError, setPlaylistUrlError] = useState('')
+
+  const handlePlaylistUrlBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const val = e.target.value.trim()
+    if (!val) {
+      setPlaylistUrlError('')
+      return
+    }
+    const result = detectarRecurso(val)
+    if (!result || result.tipo !== 'YOUTUBE') {
+      setPlaylistUrlError('El link debe ser de YouTube (youtube.com o youtu.be).')
+    } else {
+      setPlaylistUrlError('')
+    }
+  }
 
   const action = isEdit ? updateSubjectAction : createSubjectAction
 
@@ -116,6 +134,44 @@ export function SubjectModal({
             className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
           />
         </div>
+
+        <div className="space-y-1">
+          <label
+            htmlFor="subject-playlistUrl"
+            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
+          >
+            Playlist de YouTube{' '}
+            <span className="font-normal normal-case tracking-normal text-white/30">
+              (opcional)
+            </span>
+          </label>
+          <input
+            id="subject-playlistUrl"
+            type="url"
+            name="playlistUrl"
+            defaultValue={subject?.playlistUrl ?? ''}
+            placeholder="Ej: https://www.youtube.com/playlist?list=..."
+            onBlur={handlePlaylistUrlBlur}
+            className={`w-full rounded border bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none ${
+              playlistUrlError
+                ? 'border-rose-400/50 focus:border-rose-400/70'
+                : 'border-white/10 focus:border-white/20'
+            }`}
+          />
+          {playlistUrlError && (
+            <p className="text-xs text-rose-400">{playlistUrlError}</p>
+          )}
+        </div>
+
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-white/70">
+          <input
+            type="checkbox"
+            name="playlistEnabled"
+            defaultChecked={subject?.playlistEnabled ?? false}
+            className="h-4 w-4 rounded border border-white/20 bg-surface-0 accent-red-500 cursor-pointer"
+          />
+          Mostrar playlist a los estudiantes
+        </label>
 
         {state.message && !state.ok && (
           <p className="rounded border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">

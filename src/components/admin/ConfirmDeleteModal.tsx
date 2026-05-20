@@ -99,14 +99,14 @@ export function ConfirmDeleteYearModal({
               </span>{' '}
               {impact.apuntesCount === 1 ? 'apunte' : 'apuntes'}
             </li>
-            {impact.pdfCount > 0 && (
+            {impact.recursosCount > 0 && (
               <li className="text-sm text-white/60">
                 <span className="font-semibold text-white">
-                  {impact.pdfCount}
+                  {impact.recursosCount}
                 </span>{' '}
-                {impact.pdfCount === 1
-                  ? 'archivo adjunto'
-                  : 'archivos adjuntos'}
+                {impact.recursosCount === 1
+                  ? 'recurso adjunto'
+                  : 'recursos adjuntos'}
               </li>
             )}
             {impact.bancosCount > 0 && (
@@ -226,14 +226,14 @@ export function ConfirmDeleteSubjectModal({
               </span>{' '}
               {impact.apuntesCount === 1 ? 'apunte' : 'apuntes'}
             </li>
-            {impact.pdfCount > 0 && (
+            {impact.recursosCount > 0 && (
               <li className="text-sm text-white/60">
                 <span className="font-semibold text-white">
-                  {impact.pdfCount}
+                  {impact.recursosCount}
                 </span>{' '}
-                {impact.pdfCount === 1
-                  ? 'archivo adjunto'
-                  : 'archivos adjuntos'}
+                {impact.recursosCount === 1
+                  ? 'recurso adjunto'
+                  : 'recursos adjuntos'}
               </li>
             )}
             {impact.bancosCount > 0 && (
