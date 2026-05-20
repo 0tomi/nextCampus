@@ -59,7 +59,7 @@ export function MobileYear({
     <MobileShell
       title={year.nombre}
       subtitle={careerName}
-      onBack
+      onBack="/"
       drawerYears={drawerYears}
       careerName={careerName}
       currentYearSlug={year.slug}

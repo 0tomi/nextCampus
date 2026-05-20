@@ -39,7 +39,7 @@ export function MobileSubject({
     <MobileShell
       title={subject.nombre}
       subtitle={subject.year.nombre}
-      onBack
+      onBack={`/year/${subject.year.slug}`}
       drawerYears={drawerYears}
       careerName={subject.year.career.nombre}
       currentYearSlug={subject.year.slug}

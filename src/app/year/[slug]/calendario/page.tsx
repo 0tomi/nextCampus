@@ -134,7 +134,7 @@ export default async function YearCalendarPage({
         <MobileShell
           title="Calendario"
           subtitle={year.nombre}
-          onBack
+          onBack={`/year/${year.slug}`}
           drawerYears={drawerYears}
           careerName={year.career.nombre}
           currentYearSlug={year.slug}

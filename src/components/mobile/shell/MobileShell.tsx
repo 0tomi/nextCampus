@@ -23,7 +23,7 @@ export interface MobileShellDrawerYear {
 interface MobileShellProps {
   title?: string
   subtitle?: string
-  onBack?: boolean
+  onBack?: boolean | string
   drawerYears: MobileShellDrawerYear[]
   careerName: string
   currentYearSlug?: string
@@ -76,7 +76,13 @@ export function MobileShell({
           <button
             type="button"
             aria-label={onBack ? 'Volver' : 'Abrir menú'}
-            onClick={onBack ? () => router.back() : openDrawer}
+            onClick={
+              onBack
+                ? typeof onBack === 'string'
+                  ? () => router.push(onBack)
+                  : () => router.back()
+                : openDrawer
+            }
             className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white"
           >
             {onBack ? (
@@ -86,7 +92,10 @@ export function MobileShell({
             )}
           </button>
 
-          <div className="mx-3 flex min-w-0 flex-1 items-center gap-2.5">
+          <Link
+            href="/"
+            className="mx-3 flex min-w-0 flex-1 items-center gap-2.5 cursor-pointer"
+          >
             <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-amber-400 to-orange-500 text-black">
               <GraduationCap size={16} strokeWidth={2.5} />
             </div>
@@ -102,7 +111,7 @@ export function MobileShell({
                 </span>
               )}
             </div>
-          </div>
+          </Link>
 
           <Link
             href="/admin"
