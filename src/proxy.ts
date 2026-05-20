@@ -35,12 +35,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // --- CSP con SRI ---
-  // En dev, Next.js (Turbopack/HMR) inyecta scripts inline para bootstrap y
-  // refresh. Necesita 'unsafe-inline' + 'unsafe-eval'. En prod se mantiene
-  // estricto: solo 'self' + SRI vía el bundler.
-  const isDev = process.env.NODE_ENV !== 'production'
-  const scriptSrc = `'self'${isDev ? " 'unsafe-eval' 'unsafe-inline'" : ''}`
+  // --- CSP ---
+  // Next.js requiere 'unsafe-inline' y 'unsafe-eval' en script-src para
+  // ejecutar scripts de hidratación y bootstrap inline (__NEXT_DATA__)
+  // en páginas estáticas e ISR, dado que SRI no es compatible con Vercel.
+  const scriptSrc = "'self' 'unsafe-inline' 'unsafe-eval'"
   const styleSrc = "'self' 'unsafe-inline'"
 
   const csp = [
