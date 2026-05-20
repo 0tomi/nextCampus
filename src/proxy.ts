@@ -36,10 +36,11 @@ export async function proxy(request: NextRequest) {
   }
 
   // --- CSP ---
-  // Next.js requiere 'unsafe-inline' y 'unsafe-eval' en script-src para
-  // ejecutar scripts de hidratación y bootstrap inline (__NEXT_DATA__)
-  // en páginas estáticas e ISR, dado que SRI no es compatible con Vercel.
-  const scriptSrc = "'self' 'unsafe-inline' 'unsafe-eval'"
+  // Next.js requiere 'unsafe-inline' en script-src para ejecutar scripts de
+  // hidratación inline (__NEXT_DATA__) en páginas estáticas e ISR.
+  // 'unsafe-eval' solo se habilita en desarrollo para Hot Module Replacement.
+  const isDev = process.env.NODE_ENV !== 'production'
+  const scriptSrc = `'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`
   const styleSrc = "'self' 'unsafe-inline'"
 
   const csp = [
