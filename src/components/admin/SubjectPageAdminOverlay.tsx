@@ -24,6 +24,8 @@ interface SubjectPageAdminOverlayProps {
     driveUrl?: string | null
   }
   agendaId: string
+  yearId?: string
+  yearSlug?: string
   tiposEvento: TipoEvento[]
 }
 
@@ -56,6 +58,8 @@ export function AdminTriggerButton({ action, className, children }: AdminTrigger
 export function SubjectPageAdminOverlay({
   subject,
   agendaId,
+  yearId,
+  yearSlug,
   tiposEvento,
 }: SubjectPageAdminOverlayProps) {
   const [editSubjectOpen, setEditSubjectOpen] = useState(false)
@@ -88,7 +92,7 @@ export function SubjectPageAdminOverlay({
   }, [])
 
   return (
-    <AdminControls>
+    <AdminControls yearId={yearId} yearSlug={yearSlug}>
       {/* Botones de acción flotante en la parte superior */}
       <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2">
         <button
@@ -130,6 +134,7 @@ export function SubjectPageAdminOverlay({
         open={editSubjectOpen}
         onClose={() => setEditSubjectOpen(false)}
         subject={{ id: subject.id, nombre: subject.nombre, descripcion: subject.descripcion, driveUrl: subject.driveUrl }}
+        yearId={yearId}
       />
 
       <EventModal
@@ -174,11 +179,18 @@ export function SubjectPageAdminOverlay({
 interface DeleteEventoButtonProps {
   eventoId: string
   subjectSlug: string
+  yearId?: string
+  yearSlug?: string
 }
 
-export function DeleteEventoButton({ eventoId, subjectSlug }: DeleteEventoButtonProps) {
+export function DeleteEventoButton({
+  eventoId,
+  subjectSlug,
+  yearId,
+  yearSlug,
+}: DeleteEventoButtonProps) {
   return (
-    <AdminControls>
+    <AdminControls yearId={yearId} yearSlug={yearSlug}>
       <form action={deleteEvento}>
         <input type="hidden" name="id" value={eventoId} />
         <input type="hidden" name="subjectSlug" value={subjectSlug} />
@@ -200,11 +212,18 @@ export function DeleteEventoButton({ eventoId, subjectSlug }: DeleteEventoButton
 interface DeleteApunteButtonProps {
   apunteId: string
   subjectSlug: string
+  yearId?: string
+  yearSlug?: string
 }
 
-export function DeleteApunteButton({ apunteId, subjectSlug }: DeleteApunteButtonProps) {
+export function DeleteApunteButton({
+  apunteId,
+  subjectSlug,
+  yearId,
+  yearSlug,
+}: DeleteApunteButtonProps) {
   return (
-    <AdminControls>
+    <AdminControls yearId={yearId} yearSlug={yearSlug}>
       <form action={deleteApunte}>
         <input type="hidden" name="id" value={apunteId} />
         <input type="hidden" name="subjectSlug" value={subjectSlug} />

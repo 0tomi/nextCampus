@@ -4,7 +4,15 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth'
+import {
+  requireGeneralAdmin,
+  requireYearAdminForAgendaId,
+  requireYearAdminForApunteId,
+  requireYearAdminForEventoId,
+  requireYearAdminForSubjectId,
+  requireYearAdminForSubjectSlug,
+  requireYearAdminForYearId,
+} from '@/lib/auth'
 import { sanitizeRichHtml } from '@/lib/sanitize'
 import { slugify, uniqueSlug } from '@/lib/slug'
 import {
@@ -16,7 +24,6 @@ import {
   deleteYearStorage,
 } from '@/lib/storage'
 import {
-  getSubjectQuizMeta,
   getSubjectDeleteImpact,
   getYearDeleteImpact,
   type SubjectDeleteImpact,
@@ -25,7 +32,7 @@ import {
 import { parseQuizBank } from '@/lib/domain/quiz-bank'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
-// Toda escritura: requireAdmin() (verifica JWT + allowlist) -> Zod -> sanitize.
+// Toda escritura: auth específico (general o por año) -> Zod -> sanitize.
 
 async function revalidateSubjectContent(subjectSlug: string): Promise<void> {
   revalidatePath(`/materia/${subjectSlug}`)
@@ -45,19 +52,19 @@ const eventoSchema = z.object({
   titulo: z.string().min(1).max(200),
   descripcionHtml: z.string().max(20000).default(''),
   fecha: z.coerce.date(),
-  subjectSlug: z.string().min(1),
 })
 
 export async function createEvento(formData: FormData): Promise<void> {
-  await requireAdmin()
   const data = eventoSchema.parse({
     agendaId: formData.get('agendaId'),
     tipoEventoId: formData.get('tipoEventoId'),
     titulo: formData.get('titulo'),
     descripcionHtml: formData.get('descripcionHtml') ?? '',
     fecha: formData.get('fecha'),
-    subjectSlug: formData.get('subjectSlug'),
   })
+  const scope = await requireYearAdminForAgendaId(data.agendaId)
+  if (!scope) throw new Error('Agenda no encontrada')
+
   await prisma.evento.create({
     data: {
       agendaId: data.agendaId,
@@ -67,7 +74,7 @@ export async function createEvento(formData: FormData): Promise<void> {
       fecha: data.fecha,
     },
   })
-  await revalidateSubjectContent(data.subjectSlug)
+  await revalidateSubjectContent(scope.subjectSlug)
 }
 
 // Wrapper para useActionState en modales cliente
@@ -94,40 +101,42 @@ export async function createEventoAction(
 export async function updateEventoFechaAction(
   id: string,
   nuevaFecha: Date,
-  subjectSlug: string,
+  _subjectSlug: string,
 ): Promise<{ ok: boolean }> {
-  await requireAdmin()
+  void _subjectSlug
   const validId = z.string().min(1).parse(id)
   const validFecha = z.coerce.date().parse(nuevaFecha)
-  const validSlug = z.string().min(1).parse(subjectSlug)
+  const scope = await requireYearAdminForEventoId(validId)
+  if (!scope) return { ok: false }
+
   await prisma.evento.update({ where: { id: validId }, data: { fecha: validFecha } })
-  await revalidateSubjectContent(validSlug)
+  await revalidateSubjectContent(scope.subjectSlug)
   return { ok: true }
 }
 
 export async function deleteEvento(formData: FormData): Promise<void> {
-  await requireAdmin()
   const id = z.string().min(1).parse(formData.get('id'))
-  const subjectSlug = z.string().min(1).parse(formData.get('subjectSlug'))
+  const scope = await requireYearAdminForEventoId(id)
+  if (!scope) return
+
   await prisma.evento.delete({ where: { id } })
-  await revalidateSubjectContent(subjectSlug)
+  await revalidateSubjectContent(scope.subjectSlug)
 }
 
 const apunteSchema = z.object({
   subjectId: z.string().min(1),
-  subjectSlug: z.string().min(1),
   titulo: z.string().min(1).max(200),
   descripcionHtml: z.string().max(20000).default(''),
 })
 
 export async function createApunte(formData: FormData): Promise<void> {
-  await requireAdmin()
   const data = apunteSchema.parse({
     subjectId: formData.get('subjectId'),
-    subjectSlug: formData.get('subjectSlug'),
     titulo: formData.get('titulo'),
     descripcionHtml: formData.get('descripcionHtml') ?? '',
   })
+  const scope = await requireYearAdminForSubjectId(data.subjectId)
+  if (!scope) throw new Error('Materia no encontrada')
 
   // DB-first: crear la fila sin PDF; solo después subir el archivo.
   // Si la subida falla, borramos la fila como compensación (Storage no participa
@@ -145,7 +154,7 @@ export async function createApunte(formData: FormData): Promise<void> {
   if (file instanceof File && file.size > 0) {
     let pdfObjectKey: string
     try {
-      pdfObjectKey = await uploadApuntePdf(file, data.subjectSlug)
+      pdfObjectKey = await uploadApuntePdf(file, scope.subjectSlug)
     } catch (err) {
       await prisma.apunte.delete({ where: { id: apunte.id } })
       throw err
@@ -153,7 +162,7 @@ export async function createApunte(formData: FormData): Promise<void> {
     await prisma.apunte.update({ where: { id: apunte.id }, data: { pdfObjectKey } })
   }
 
-  await revalidateSubjectContent(data.subjectSlug)
+  await revalidateSubjectContent(scope.subjectSlug)
 }
 
 // Wrapper para useActionState en modal cliente
@@ -178,24 +187,23 @@ export async function createApunteAction(
 }
 
 export async function deleteApunte(formData: FormData): Promise<void> {
-  await requireAdmin()
   const id = z.string().min(1).parse(formData.get('id'))
-  const subjectSlug = z.string().min(1).parse(formData.get('subjectSlug'))
-  const apunte = await prisma.apunte.findUnique({ where: { id } })
+  const scope = await requireYearAdminForApunteId(id)
+  if (!scope) return
 
   // DB-first: borrar la fila antes de tocar Storage. Si el delete de Storage falla,
   // la fila ya no existe en DB (correcto); el objeto huérfano queda para limpieza manual.
   await prisma.apunte.delete({ where: { id } })
 
-  if (apunte?.pdfObjectKey) {
+  if (scope.pdfObjectKey) {
     try {
-      await deleteApuntePdf(apunte.pdfObjectKey)
+      await deleteApuntePdf(scope.pdfObjectKey)
     } catch {
-      console.error(`Storage cleanup pendiente para apunte ID: ${apunte.id}`)
+      console.error(`Storage cleanup pendiente para apunte ID: ${scope.apunteId}`)
     }
   }
 
-  await revalidateSubjectContent(subjectSlug)
+  await revalidateSubjectContent(scope.subjectSlug)
 }
 
 // --- Banco de preguntas (quiz JSON-en-bucket) ------------------------------
@@ -217,8 +225,6 @@ export async function uploadQuizBankAction(
   _prev: QuizBankActionState,
   formData: FormData,
 ): Promise<QuizBankActionState> {
-  const admin = await requireAdmin()
-
   const parsedForm = uploadBankSchema.safeParse({
     subjectSlug: formData.get('subjectSlug'),
     json: formData.get('json'),
@@ -228,8 +234,8 @@ export async function uploadQuizBankAction(
   }
   const { subjectSlug, json } = parsedForm.data
 
-  const subject = await getSubjectQuizMeta(subjectSlug)
-  if (!subject) {
+  const scope = await requireYearAdminForSubjectSlug(subjectSlug)
+  if (!scope) {
     return { ok: false, message: 'Materia no encontrada.' }
   }
 
@@ -243,13 +249,13 @@ export async function uploadQuizBankAction(
 
   try {
     await uploadQuizBank({
-      yearSlug: subject.year.slug,
-      subjectSlug: subject.slug,
+      yearSlug: scope.yearSlug,
+      subjectSlug: scope.subjectSlug,
       nombre,
       // Re-serializa la versión validada/normalizada (descarta basura extra).
       rawJson: JSON.stringify(bank.bank),
       totalPreguntas: bank.totalPreguntas,
-      subidoPor: admin.email,
+      subidoPor: scope.admin.email,
     })
   } catch {
     return {
@@ -258,7 +264,7 @@ export async function uploadQuizBankAction(
     }
   }
 
-  await revalidateSubjectContent(subjectSlug)
+  await revalidateSubjectContent(scope.subjectSlug)
   return {
     ok: true,
     message: `Banco "${nombre}" cargado (${bank.totalPreguntas} preguntas).`,
@@ -266,13 +272,13 @@ export async function uploadQuizBankAction(
 }
 
 export async function deleteQuizBankAction(formData: FormData): Promise<void> {
-  await requireAdmin()
   const subjectSlug = z.string().min(1).parse(formData.get('subjectSlug'))
-  const bankId = z.string().min(1).max(64).parse(formData.get('bankId'))
-  const subject = await getSubjectQuizMeta(subjectSlug)
-  if (!subject) return
-  await deleteQuizBank(subject.year.slug, subject.slug, bankId)
-  await revalidateSubjectContent(subjectSlug)
+  const bankId = z.uuid().parse(formData.get('bankId'))
+  const scope = await requireYearAdminForSubjectSlug(subjectSlug)
+  if (!scope) return
+
+  await deleteQuizBank(scope.yearSlug, scope.subjectSlug, bankId)
+  await revalidateSubjectContent(scope.subjectSlug)
 }
 
 // --- ABM Años académicos ---------------------------------------------------
@@ -294,7 +300,7 @@ export async function createYearAction(
   _prev: YearActionState,
   formData: FormData,
 ): Promise<YearActionState> {
-  await requireAdmin()
+  await requireGeneralAdmin()
 
   const parsed = yearSchema.safeParse({
     nombre: formData.get('nombre'),
@@ -329,7 +335,7 @@ export async function updateYearAction(
   _prev: YearActionState,
   formData: FormData,
 ): Promise<YearActionState> {
-  await requireAdmin()
+  await requireGeneralAdmin()
 
   const id = z.string().min(1).parse(formData.get('id'))
 
@@ -370,7 +376,7 @@ export async function updateYearAction(
 }
 
 export async function deleteYearAction(formData: FormData): Promise<void> {
-  await requireAdmin()
+  await requireGeneralAdmin()
   const id = z.string().min(1).parse(formData.get('id'))
 
   // Capturar toda la info ANTES de borrar (la cascada elimina los registros)
@@ -405,7 +411,7 @@ export async function deleteYearAction(formData: FormData): Promise<void> {
 export async function getYearDeleteImpactAction(
   formData: FormData,
 ): Promise<YearDeleteImpact | null> {
-  await requireAdmin()
+  await requireGeneralAdmin()
   const id = z.string().min(1).parse(formData.get('id'))
   return getYearDeleteImpact(id)
 }
@@ -427,9 +433,8 @@ export async function createSubjectAction(
   _prev: SubjectActionState,
   formData: FormData,
 ): Promise<SubjectActionState> {
-  await requireAdmin()
-
   const yearId = z.string().min(1).parse(formData.get('yearId'))
+  await requireYearAdminForYearId(yearId)
 
   const parsed = subjectSchema.safeParse({
     nombre: formData.get('nombre'),
@@ -471,9 +476,9 @@ export async function updateSubjectAction(
   _prev: SubjectActionState,
   formData: FormData,
 ): Promise<SubjectActionState> {
-  await requireAdmin()
-
   const id = z.string().min(1).parse(formData.get('id'))
+  const scope = await requireYearAdminForSubjectId(id)
+  if (!scope) return { ok: false, message: 'Materia no encontrada.' }
 
   const parsed = subjectSchema.safeParse({
     nombre: formData.get('nombre'),
@@ -485,13 +490,7 @@ export async function updateSubjectAction(
   }
   const { nombre, descripcion, driveUrl } = parsed.data
 
-  const subject = await prisma.subject.findUnique({
-    where: { id },
-    select: { slug: true, year: { select: { slug: true } } },
-  })
-  if (!subject) return { ok: false, message: 'Materia no encontrada.' }
-
-  const oldSlug = subject.slug
+  const oldSlug = scope.subjectSlug
 
   const existingSlugs = await prisma.subject.findMany({
     where: { id: { not: id } },
@@ -507,31 +506,23 @@ export async function updateSubjectAction(
   })
 
   revalidatePath('/')
-  revalidatePath(`/year/${subject.year.slug}`)
+  revalidatePath(`/year/${scope.yearSlug}`)
   revalidatePath(`/materia/${oldSlug}`)
   if (newSlug !== oldSlug) revalidatePath(`/materia/${newSlug}`)
   return { ok: true, message: 'Materia actualizada correctamente.' }
 }
 
 export async function deleteSubjectAction(formData: FormData): Promise<void> {
-  await requireAdmin()
   const id = z.string().min(1).parse(formData.get('id'))
 
-  // Capturar slugs ANTES de borrar
-  const subject = await prisma.subject.findUnique({
-    where: { id },
-    select: {
-      slug: true,
-      year: { select: { slug: true } },
-    },
-  })
-  if (!subject) return
+  const scope = await requireYearAdminForSubjectId(id)
+  if (!scope) return
 
-  const { slug: subjectSlug, year } = subject
+  const { subjectSlug, yearSlug } = scope
 
   // Limpiar Storage ANTES de borrar en BD
   try {
-    await deleteSubjectStorage(year.slug, subjectSlug)
+    await deleteSubjectStorage(yearSlug, subjectSlug)
   } catch {
     console.error(`Storage cleanup parcial para materia ${subjectSlug}`)
   }
@@ -539,7 +530,7 @@ export async function deleteSubjectAction(formData: FormData): Promise<void> {
   await prisma.subject.delete({ where: { id } })
 
   revalidatePath('/')
-  revalidatePath(`/year/${year.slug}`)
+  revalidatePath(`/year/${yearSlug}`)
   revalidatePath(`/materia/${subjectSlug}`)
 }
 
@@ -547,18 +538,19 @@ export async function deleteSubjectAction(formData: FormData): Promise<void> {
 export async function getSubjectDeleteImpactAction(
   formData: FormData,
 ): Promise<SubjectDeleteImpact | null> {
-  await requireAdmin()
   const id = z.string().min(1).parse(formData.get('id'))
+  const scope = await requireYearAdminForSubjectId(id)
+  if (!scope) return null
+
   return getSubjectDeleteImpact(id)
 }
 
 export async function updateSubjectDriveUrlAction(
   subjectId: string,
   driveUrl: string | null,
-  subjectSlug: string,
+  _subjectSlug: string,
 ): Promise<SubjectActionState> {
-  await requireAdmin()
-
+  void _subjectSlug
   const urlSchema = z
     .string()
     .trim()
@@ -573,21 +565,18 @@ export async function updateSubjectDriveUrlAction(
   }
 
   const normalizedDriveUrl = parsed.data || null
-
-  const subject = await prisma.subject.findUnique({
-    where: { id: subjectId },
-    select: { year: { select: { slug: true } } },
-  })
-  if (!subject) return { ok: false, message: 'Materia no encontrada.' }
+  const validSubjectId = z.string().min(1).parse(subjectId)
+  const scope = await requireYearAdminForSubjectId(validSubjectId)
+  if (!scope) return { ok: false, message: 'Materia no encontrada.' }
 
   await prisma.subject.update({
-    where: { id: subjectId },
+    where: { id: validSubjectId },
     data: { driveUrl: normalizedDriveUrl },
   })
 
   revalidatePath('/')
-  revalidatePath(`/year/${subject.year.slug}`)
-  revalidatePath(`/materia/${subjectSlug}`)
+  revalidatePath(`/year/${scope.yearSlug}`)
+  revalidatePath(`/materia/${scope.subjectSlug}`)
 
   return { ok: true, message: 'Enlace de Google Drive actualizado correctamente.' }
 }

@@ -25,15 +25,15 @@ Si vuelve con más información de la pedida, el implementador descarta lo que n
 
 **Útil cuando** la fase produjo una decisión arquitectónica no trivial, un patrón nuevo, o un workaround que merece quedar documentado en el repo.
 
-**No conviene cuando** el cambio es obvio o ya está cubierto por convenciones existentes. Las decisiones del estado del plan van a Engram, no acá.
+**No conviene cuando** el cambio es obvio o ya está cubierto por convenciones existentes. Las decisiones del estado del plan van al archivo del plan, no acá.
 
 **Tip clave**: llegar con el contenido cerrado. sdd-archive persiste, no decide. El implementador tiene que pasarle: contexto, decisión, razones, alternativas descartadas, consecuencias.
 
 ---
 
-## Diferencia con Engram
+## Diferencia con el archivo del plan
 
-Engram persiste el estado del plan (vive durante el proyecto, lo escribe el orquestador). sdd-archive persiste decisiones técnicas en el repo (vive permanentemente, lo dispara el implementador). Pueden coexistir: Engram registra que la fase tomó la decisión X; sdd-archive deja la decisión X documentada en el código.
+El archivo del plan persiste el estado del plan (vive durante el proyecto, lo escribe el orquestador). `sdd-archive` persiste decisiones técnicas en el repo (vive permanentemente, lo dispara el implementador). Pueden coexistir: el archivo del plan registra que la fase tomó la decisión X; `sdd-archive` deja la decisión X documentada en el código.
 
 ---
 
@@ -48,7 +48,7 @@ Si durante esta fase necesitás:
   - Documentar una decisión arquitectónica que tomes: podés spawnear sdd-archive.
     Llegá con la decisión cerrada — sdd-archive solo persiste.
 
-Si los usás, mencionalo en tu reporte para que pueda registrarlo en Engram.
+Si los usás, mencionalo en tu reporte para que pueda registrarlo en el archivo del plan.
 ```
 
 Omitir si la fase es trivial. No mencionarlos solo por completitud.

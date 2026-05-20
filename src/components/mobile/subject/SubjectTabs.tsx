@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { CalendarDays, Sparkles, NotebookTabs } from 'lucide-react'
 import { AgendaTab } from './tabs/AgendaTab'
 import { QuizTab } from './tabs/QuizTab'
@@ -30,15 +30,12 @@ const HASH_MAP: Record<string, TabKey> = {
 }
 
 export function SubjectTabs({ subjectSlug, subjectName, yearSlug, events, apuntes }: SubjectTabsProps) {
-  const [active, setActive] = useState<TabKey>('agenda')
-  const colors = getYearColorClasses(yearSlug)
-
-  useEffect(() => {
+  const [active, setActive] = useState<TabKey>(() => {
+    if (typeof window === 'undefined') return 'agenda'
     const hash = window.location.hash
-    if (hash in HASH_MAP) {
-      setActive(HASH_MAP[hash])
-    }
-  }, [])
+    return hash in HASH_MAP ? HASH_MAP[hash] : 'agenda'
+  })
+  const colors = getYearColorClasses(yearSlug)
 
   const onSelect = (key: TabKey) => {
     setActive(key)

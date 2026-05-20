@@ -51,6 +51,7 @@ export default async function YearPage({
     subjectsCount: y.subjects.length,
   }))
 
+  // eslint-disable-next-line react-hooks/purity -- el corte "próximos eventos" depende del momento actual del render
   const now = Date.now()
   const nextEvents = year.subjects
     .flatMap(s => (s.agenda?.eventos ?? []).map(e => ({
@@ -134,7 +135,7 @@ export default async function YearPage({
                   <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
                     Calendario del año
                   </h2>
-                  <AdminControls>
+                  <AdminControls yearId={year.id}>
                     <AdminTriggerButton
                       action="new-event"
                       className="inline-flex items-center gap-1.5 rounded border border-white/10 bg-surface-1 px-3 py-1.5 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
@@ -154,6 +155,7 @@ export default async function YearPage({
             <EventCalendarAdmin
               events={events}
               emptyMessage="Todavía no hay eventos visibles a nivel año. Entrá a una materia para ver su agenda real."
+              yearId={year.id}
               tiposEvento={tiposEvento}
               subjects={modalSubjects}
             />
@@ -206,6 +208,7 @@ export default async function YearPage({
           </section>
 
           <YearPageAdminOverlay
+            yearId={year.id}
             subjects={modalSubjects}
             tiposEvento={tiposEvento}
           />

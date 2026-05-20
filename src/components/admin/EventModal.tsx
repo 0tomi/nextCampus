@@ -36,6 +36,14 @@ const emptyState: EventoActionState = { ok: false, message: '' }
 
 export function EventModal({
   open,
+  ...props
+}: EventModalProps) {
+  if (!open) return null
+  return <EventModalContent open={open} {...props} />
+}
+
+function EventModalContent({
+  open,
   onClose,
   agendaId = '',
   subjectSlug = '',
@@ -57,14 +65,6 @@ export function EventModal({
 
   const activeAgendaId = isYearMode ? (currentSubject?.agendaId ?? '') : agendaId
   const activeSubjectSlug = isYearMode ? (currentSubject?.slug ?? '') : subjectSlug
-
-  useEffect(() => {
-    if (open) {
-      setTitulo('')
-      setSelectedTipoId('')
-      setSelectedSubjectId('')
-    }
-  }, [open])
 
   useEffect(() => {
     if (state.ok) {

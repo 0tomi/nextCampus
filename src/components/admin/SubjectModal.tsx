@@ -51,7 +51,10 @@ export function SubjectModal({
     <Modal open={open} onClose={onClose} title={title}>
       <form action={formAction} className="space-y-4">
         {isEdit ? (
-          <input type="hidden" name="id" value={subject.id} />
+          <>
+            <input type="hidden" name="id" value={subject.id} />
+            <input type="hidden" name="yearId" value={yearId ?? ''} />
+          </>
         ) : (
           <input type="hidden" name="yearId" value={yearId ?? ''} />
         )}

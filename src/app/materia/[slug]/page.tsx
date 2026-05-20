@@ -183,7 +183,7 @@ export default async function SubjectPage({
                 Drive con contenido de la materia
               </a>
 
-              <AdminControls>
+              <AdminControls yearId={subject.year.id}>
                 <AdminTriggerButton
                   action="edit-drive"
                   className="group relative inline-flex h-9 w-9 items-center justify-center rounded border border-white/10 bg-surface-1 text-white/50 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
@@ -229,7 +229,7 @@ export default async function SubjectPage({
               <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
                 Calendario de eventos
               </h2>
-              <AdminControls>
+              <AdminControls yearId={subject.year.id}>
                 <AdminTriggerButton
                   action="new-event"
                   className="inline-flex items-center gap-1.5 rounded border border-white/10 bg-surface-1 px-3 py-1.5 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
@@ -260,6 +260,7 @@ export default async function SubjectPage({
             emptyMessage="Sin eventos cargados para esta materia."
             agendaId={agendaId}
             subjectSlug={subject.slug}
+            yearId={subject.year.id}
             tiposEvento={tiposEvento}
           />
 
@@ -289,6 +290,7 @@ export default async function SubjectPage({
                       <DeleteEventoButton
                         eventoId={evento.id}
                         subjectSlug={subject.slug}
+                        yearId={subject.year.id}
                       />
                     </div>
                   </div>
@@ -317,7 +319,7 @@ export default async function SubjectPage({
             <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
               Poné a prueba lo que sabés
             </h2>
-            <AdminControls>
+            <AdminControls yearId={subject.year.id}>
               <AdminTriggerButton
                 action="upload-bank"
                 className="inline-flex items-center gap-1.5 rounded border border-white/10 bg-surface-1 px-3 py-1.5 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
@@ -349,7 +351,7 @@ export default async function SubjectPage({
             </div>
             <Link
               href={`/materia/${subject.slug}/quiz`}
-              className="inline-flex shrink-0 items-center gap-2 self-start bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-uader-red-light"
+              className="inline-flex shrink-0 items-center gap-2 self-start bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-uader-red-light cursor-pointer"
             >
               Empezar quiz
               <ArrowRight className="h-4 w-4" />
@@ -367,7 +369,7 @@ export default async function SubjectPage({
             <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
               Apuntes y descargas
             </h2>
-            <AdminControls>
+            <AdminControls yearId={subject.year.id}>
               <AdminTriggerButton
                 action="new-apunte"
                 className="inline-flex items-center gap-1.5 rounded border border-white/10 bg-surface-1 px-3 py-1.5 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
@@ -408,6 +410,7 @@ export default async function SubjectPage({
                     <DeleteApunteButton
                       apunteId={apunte.id}
                       subjectSlug={subject.slug}
+                      yearId={subject.year.id}
                     />
                   </div>
                 </div>
@@ -434,6 +437,7 @@ export default async function SubjectPage({
           driveUrl: subject.driveUrl,
         }}
         agendaId={agendaId}
+        yearId={subject.year.id}
         tiposEvento={tiposEvento}
       />
     </DashboardShell>

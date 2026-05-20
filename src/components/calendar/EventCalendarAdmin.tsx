@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import Link from 'next/link'
 import { EventCalendar, type EventCalendarEvent } from './EventCalendar'
 import { EventModal } from '@/components/admin/EventModal'
+import { useAdminAccess } from '@/components/admin/adminAccess'
 import { Sheet } from '@/components/ui/Sheet'
 import { updateEventoFechaAction } from '@/app/admin/actions'
 import { cn, formatDateTime } from '@/lib/utils'
@@ -19,6 +20,8 @@ interface EventCalendarAdminProps {
   className?: string
   agendaId?: string
   subjectSlug?: string
+  yearId?: string
+  yearSlug?: string
   tiposEvento: TipoEvento[]
   subjects?: {
     id: string
@@ -40,29 +43,16 @@ export function EventCalendarAdmin({
   className,
   agendaId = '',
   subjectSlug = '',
+  yearId,
+  yearSlug,
   tiposEvento,
   subjects,
 }: EventCalendarAdminProps) {
-  const [isAdmin, setIsAdmin] = useState(false)
+  const canEdit = useAdminAccess({ yearId, yearSlug }) ?? false
   const [eventModalOpen, setEventModalOpen] = useState(false)
   const [initialDate, setInitialDate] = useState<string | undefined>()
   const [selectedEvent, setSelectedEvent] = useState<EventCalendarEvent | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    fetch('/api/admin/me', { credentials: 'same-origin' })
-      .then((res) => (res.ok ? (res.json() as Promise<{ isAdmin: boolean }>) : { isAdmin: false }))
-      .then((data) => {
-        if (!cancelled) setIsAdmin(data.isAdmin)
-      })
-      .catch(() => {
-        if (!cancelled) setIsAdmin(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   const handleEventDrop = useCallback(
     async (id: string, nuevaFecha: Date): Promise<boolean> => {
@@ -97,9 +87,9 @@ export function EventCalendarAdmin({
         events={events}
         emptyMessage={emptyMessage}
         className={className}
-        editable={isAdmin}
-        onEventDrop={isAdmin ? handleEventDrop : undefined}
-        onDateClick={isAdmin ? handleDateClick : undefined}
+        editable={canEdit}
+        onEventDrop={canEdit ? handleEventDrop : undefined}
+        onDateClick={canEdit ? handleDateClick : undefined}
         onEventClick={handleEventClick}
       />
 
@@ -204,7 +194,7 @@ export function EventCalendarAdmin({
         )}
       </Sheet>
 
-      {isAdmin && (
+      {canEdit && (
         <EventModal
           key={initialDate || 'default'}
           open={eventModalOpen}

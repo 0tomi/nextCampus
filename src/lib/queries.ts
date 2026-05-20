@@ -72,6 +72,7 @@ export async function getSubjectPageBySlug(slug: string) {
       driveUrl: true,
       year: {
         select: {
+          id: true,
           slug: true,
           nombre: true,
           career: { select: { nombre: true } },

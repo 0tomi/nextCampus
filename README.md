@@ -44,12 +44,21 @@ Repositorio de material de estudio por materia. Soporta PDFs (almacenados en Sup
 | Frontend | React 19 + Tailwind CSS 4 |
 | ORM | Prisma 7 con driver adapter (`@prisma/adapter-pg`) |
 | Base de datos | Supabase Postgres |
-| Storage | Supabase Storage (bucket `apuntes`) |
+| Storage | Supabase Storage (bucket privado `apuntes`: PDFs y bancos de quiz) |
 | Auth | Supabase Auth — solo admins, sin registro público |
-| Estado | Zustand 5 |
 | Validación | Zod 4 |
 | Package manager | pnpm |
 | Deploy | Vercel |
+
+## Modelo de administración
+
+El campus no tiene registro público.
+
+- `ADMIN_EMAILS` sirve como **bootstrap** de los usuarios **AdminGeneral**.
+- Un **AdminGeneral** tiene acceso total y puede gestionar usuarios desde **`/admin/users`**.
+- Los usuarios **AdminCampus** se crean y editan desde **`/admin/users`**.
+- Un **AdminCampus** administra solamente los años académicos que tenga asignados.
+- Si un usuario queda **desactivado**, deja de poder usar las secciones administrativas de la app.
 
 ## Configuración local
 
@@ -63,12 +72,23 @@ DATABASE_URL="postgresql://postgres.<ref>:<pwd>@aws-0-<region>.pooler.supabase.c
 DIRECT_URL="postgresql://postgres.<ref>:<pwd>@aws-0-<region>.pooler.supabase.com:5432/postgres"
 
 NEXT_PUBLIC_SUPABASE_URL="https://<ref>.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="<anon-key>"
-SUPABASE_SERVICE_ROLE_KEY="<service-role-key>"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="<publishable-key>"
+SUPABASE_SECRET_KEY="<secret-key>"
 SUPABASE_STORAGE_BUCKET="apuntes"
+ADMIN_EMAILS="admin@ejemplo.com"
 ```
 
 > **Nota:** El `?pgbouncer=true&connection_limit=1` en `DATABASE_URL` es obligatorio para entornos serverless. Sin él aparece el error `prepared statement "s0" already exists`.
+
+### Primer acceso administrativo
+
+1. Creá en Supabase Auth un usuario con email y contraseña.
+2. Agregá ese email a `ADMIN_EMAILS`.
+3. Iniciá sesión en `/admin/login`.
+
+Con eso, ese usuario queda habilitado como **AdminGeneral**. Después, desde **`/admin/users`**, puede crear y editar usuarios **AdminCampus**.
+
+### Puesta en marcha
 
 ```bash
 pnpm install
@@ -76,6 +96,8 @@ pnpm db:migrate   # crea las tablas
 pnpm db:seed      # carga datos iniciales (carrera, años, materias)
 pnpm dev          # http://localhost:3000
 ```
+
+Para una guía paso a paso, ver **`docs/SETUP.md`**.
 
 ## Contribuir
 

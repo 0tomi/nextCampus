@@ -35,12 +35,15 @@ caracteres especiales: `@` → `%40`, etc.).
 
 ## 3. Obtener las API keys (Auth / Storage)
 
-En **Project Settings → API**:
+En **Project Settings → API Keys**:
 
 - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
-- **anon public** key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- **service_role** key → `SUPABASE_SERVICE_ROLE_KEY`
-  - ⚠️ Es secreta. Solo server-side. NUNCA la pongas en un `NEXT_PUBLIC_*`.
+- **Publishable key** → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- **Secret key** → `SUPABASE_SECRET_KEY`
+  - ⚠️ Es secreta. Solo server-side. Nunca la pongas en un `NEXT_PUBLIC_*`.
+
+> Supabase también mantiene claves legacy como `anon` y `service_role`, pero en
+> este proyecto la configuración documentada usa **Publishable key** y **Secret key**.
 
 ---
 
@@ -48,20 +51,34 @@ En **Project Settings → API**:
 
 1. **Storage → New bucket**.
 2. Nombre: `apuntes`.
-3. Dejalo **privado** (los PDFs se sirven con URLs firmadas temporales,
-   ver `src/lib/storage.ts`).
+3. Dejalo **privado**.
 
 ---
 
-## 5. Crear el/los administradores
+## 5. Preparar el acceso administrativo
 
-No hay registro público. El admin se crea a mano:
+El campus no tiene registro público.
 
-1. **Authentication → Users → Add user** (email + password).
-   - Marcá **Auto Confirm User** (o confirmá el email).
-2. Ese email tiene que estar en `ADMIN_EMAILS` (paso 6). La autorización la
-   hace la app verificando el JWT (`getUser()`) contra esa allowlist —
-   `src/lib/auth.ts`. No hay tabla de admins.
+### AdminGeneral
+
+`ADMIN_EMAILS` funciona como bootstrap de **AdminGeneral**.
+
+1. En **Authentication → Users**, creá un usuario con email y contraseña.
+2. Confirmá el usuario si hace falta.
+3. Agregá ese email a `ADMIN_EMAILS` en el `.env`.
+4. Iniciá sesión en `/admin/login`.
+
+Ese primer acceso habilita al usuario como **AdminGeneral**, con acceso total.
+
+### AdminCampus
+
+Los usuarios **AdminCampus** no se cargan en `ADMIN_EMAILS`.
+Se gestionan desde **`/admin/users`**.
+
+- Los crea un **AdminGeneral**.
+- Se les puede asignar uno o varios años académicos.
+- Se les puede cambiar email, contraseña, estado y años asignados.
+- Si quedan **desactivados**, pierden acceso administrativo en la app.
 
 ---
 
@@ -77,11 +94,11 @@ DATABASE_URL="postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supab
 DIRECT_URL="postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres"
 
 NEXT_PUBLIC_SUPABASE_URL="https://<ref>.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="<anon-key>"
-SUPABASE_SERVICE_ROLE_KEY="<service-role-key>"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="<publishable-key>"
+SUPABASE_SECRET_KEY="<secret-key>"
 SUPABASE_STORAGE_BUCKET="apuntes"
 
-# Allowlist de admins (emails separados por coma, en minúscula)
+# Bootstrap de administradores generales (emails separados por coma, en minúscula)
 ADMIN_EMAILS="tu-email@ejemplo.com"
 ```
 
@@ -100,13 +117,26 @@ Verificación rápida:
 
 - `/` muestra la carrera y los 5 años → seed OK.
 - Navegás a una materia → ves Calendario / Quiz / Apuntes vacíos.
-- `/admin/login` → entrás con el usuario del paso 5 → `/admin` te deja
-  gestionar contenido. Un email fuera de `ADMIN_EMAILS` ve "No autorizado".
+- `/admin/login` → entrás con el usuario incluido en `ADMIN_EMAILS`.
+- `/admin/users` → un **AdminGeneral** puede crear y editar usuarios **AdminCampus**.
+- Un usuario **AdminCampus** desactivado ya no puede gestionar contenido.
 - Como anónimo no ves botones de edición ni podés escribir.
 
 ---
 
-## 8. Deploy en Vercel
+## 8. Cómo se crean y editan usuarios
+
+La sección **`/admin/users`** usa Supabase Auth del lado del servidor para:
+
+- crear usuarios con email y contraseña,
+- actualizar email,
+- cambiar contraseña cuando haga falta.
+
+Como la operación usa una clave secreta, no hace falta exponer credenciales en el navegador.
+
+---
+
+## 9. Deploy en Vercel
 
 1. Importá el repo en Vercel.
 2. Cargá **todas** las variables del paso 6 en
@@ -118,11 +148,9 @@ Verificación rápida:
 
 ---
 
-## Pendiente conocido
+## Pendientes conocidos
 
-- **Rate-limiting** en endpoints de escritura: NO implementado todavía
-  (estaba en el paso 7 del plan). Queda como deuda explícita.
-- RLS: la autorización real vive en la capa de servidor de Next, no en
-  RLS (el acceso a datos va por Prisma con un rol que bypassea RLS).
-  Si querés defensa en profundidad, agregá políticas RLS restrictivas;
-  no afectan a Prisma pero blindan la superficie anónima de Supabase.
+- **Rate-limiting** en endpoints de escritura: recomendado para producción.
+- RLS: el proyecto incluye una base de políticas restrictivas para tablas públicas.
+  Si más adelante ampliás la superficie expuesta, revisá esas políticas junto con
+  las nuevas rutas.

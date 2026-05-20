@@ -14,28 +14,64 @@ generator client {
 
 /// Carrera. Scope fijo: una sola carrera (Lic. en Sistemas), cargada por seed.
 model Career {
-  id          String        @id @default(cuid())
-  slug        String        @unique
+  id          String         @id @default(cuid())
+  slug        String         @unique
   nombre      String
-  descripcion String        @default("")
+  descripcion String         @default("")
   years       AcademicYear[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 }
 
 model AcademicYear {
-  id          String    @id @default(cuid())
-  career      Career    @relation(fields: [careerId], references: [id], onDelete: Cascade)
-  careerId    String
-  slug        String    @unique
-  nombre      String
-  descripcion String    @default("")
-  orden       Int
-  subjects    Subject[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id               String               @id @default(cuid())
+  career           Career               @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  careerId         String
+  slug             String               @unique
+  nombre           String
+  descripcion      String               @default("")
+  orden            Int
+  subjects         Subject[]
+  adminPermissions UserYearPermission[]
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
 
   @@index([careerId])
+}
+
+enum UserRole {
+  ADMIN_GENERAL
+  ADMIN_CAMPUS
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+model UserAccount {
+  id              String               @id @default(cuid())
+  authUserId      String               @unique
+  email           String               @unique
+  role            UserRole
+  status          UserStatus           @default(ACTIVE)
+  yearPermissions UserYearPermission[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([role])
+  @@index([status])
+}
+
+model UserYearPermission {
+  user      UserAccount  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  year      AcademicYear @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  yearId    String
+  createdAt DateTime     @default(now())
+
+  @@id([userId, yearId])
+  @@index([yearId])
 }
 
 model Subject {
@@ -75,17 +111,17 @@ model TipoEvento {
 }
 
 model Evento {
-  id           String     @id @default(cuid())
-  agenda       Agenda     @relation(fields: [agendaId], references: [id], onDelete: Cascade)
-  agendaId     String
-  tipoEvento   TipoEvento @relation(fields: [tipoEventoId], references: [id], onDelete: Restrict)
-  tipoEventoId String
-  titulo       String
+  id              String     @id @default(cuid())
+  agenda          Agenda     @relation(fields: [agendaId], references: [id], onDelete: Cascade)
+  agendaId        String
+  tipoEvento      TipoEvento @relation(fields: [tipoEventoId], references: [id], onDelete: Restrict)
+  tipoEventoId    String
+  titulo          String
   /// HTML enriquecido y SANITIZADO (hipervínculos, formato). Nunca crudo.
-  descripcionHtml String  @default("")
-  fecha        DateTime
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  descripcionHtml String     @default("")
+  fecha           DateTime
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   @@index([agendaId])
   @@index([tipoEventoId])
@@ -103,20 +139,20 @@ model Evento {
 // ---------------------------------------------------------------------------
 
 model Apunte {
-  id          String   @id @default(cuid())
-  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  subjectId   String
-  titulo      String
+  id              String   @id @default(cuid())
+  subject         Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subjectId       String
+  titulo          String
   /// HTML enriquecido y SANITIZADO (links a Drive/Docs, formato).
-  descripcionHtml String @default("")
+  descripcionHtml String   @default("")
   /// Object key del PDF en Supabase Storage (bucket `apuntes`). Null = sin PDF.
-  pdfObjectKey String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  pdfObjectKey    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([subjectId])
 }
 
-// Admins: NO hay tabla. La autorización vive en la capa de servidor de Next
-// (middleware + server actions verifican supabase.auth.getUser() y chequean
-// el email contra la allowlist ADMIN_EMAILS). Sin signup público.
+// Admins: ADMIN_EMAILS sigue siendo el bootstrap de AdminGeneral.
+// AdminCampus vive en UserAccount con permisos explícitos por año.
+// Sin signup público.

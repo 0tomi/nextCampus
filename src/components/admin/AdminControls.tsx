@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
+import { useAdminAccess } from './adminAccess'
 
 interface AdminControlsProps {
   /** Content to render only when the active session belongs to an admin. */
@@ -10,6 +11,10 @@ interface AdminControlsProps {
    * so there's no layout shift for regular visitors).
    */
   fallback?: ReactNode
+  yearId?: string
+  yearSlug?: string
+  requireGlobal?: boolean
+  requireUserManagement?: boolean
 }
 
 /**
@@ -19,34 +24,26 @@ interface AdminControlsProps {
  * This is a UI-only gate. All mutations are protected server-side by
  * requireAdmin() in the corresponding server actions.
  */
-export function AdminControls({ children, fallback = null }: AdminControlsProps) {
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-
-    fetch('/api/admin/me', { credentials: 'same-origin' })
-      .then((res) => {
-        if (!res.ok) return { isAdmin: false }
-        return res.json() as Promise<{ isAdmin: boolean }>
-      })
-      .then((data) => {
-        if (!cancelled) setIsAdmin(data.isAdmin)
-      })
-      .catch(() => {
-        if (!cancelled) setIsAdmin(false)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
+export function AdminControls({
+  children,
+  fallback = null,
+  yearId,
+  yearSlug,
+  requireGlobal = false,
+  requireUserManagement = false,
+}: AdminControlsProps) {
+  const hasAccess = useAdminAccess({
+    yearId,
+    yearSlug,
+    requireGlobal,
+    requireUserManagement,
+  })
 
   // Still loading — render fallback (nothing by default, no flash)
-  if (isAdmin === null) return <>{fallback}</>
+  if (hasAccess === null) return <>{fallback}</>
 
   // Not admin — render nothing
-  if (!isAdmin) return null
+  if (!hasAccess) return null
 
   return <div className="hidden lg:contents">{children}</div>
 }

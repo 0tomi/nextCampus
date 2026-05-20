@@ -155,7 +155,7 @@ export default async function HomePage() {
                 <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/40">
                   MATERIAS POR AÑO
                 </p>
-                <AdminControls>
+                <AdminControls requireGlobal>
                   <AddYearButton />
                 </AdminControls>
               </div>
@@ -198,7 +198,7 @@ export default async function HomePage() {
                               <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-white/60 transition-colors group-hover:text-white">
                                 {subject.nombre}
                               </span>
-                              <AdminControls>
+                              <AdminControls yearId={year.id}>
                                 <SubjectAdminRow
                                   subject={{
                                     id: subject.id,
@@ -213,14 +213,14 @@ export default async function HomePage() {
                             </Link>
                           </li>
                         ))}
-                        <AdminControls>
+                        <AdminControls yearId={year.id}>
                           <li>
                             <AddSubjectButton yearId={year.id} />
                           </li>
                         </AdminControls>
                       </ul>
 
-                      <AdminControls>
+                      <AdminControls requireGlobal>
                         <YearAdminBar
                           year={{
                             id: year.id,

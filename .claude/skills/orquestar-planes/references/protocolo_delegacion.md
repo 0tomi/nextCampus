@@ -7,33 +7,34 @@ Una delegación efectiva pasa al sub-agente lo necesario para ejecutar bien sin 
 ## Lo que sí debe llevar la delegación
 
 1. **Sub-agente objetivo** — backend / frontend / datos / infra / qa.
-2. **Qué hacer** — el contenido operativo de la fase, no solo el nombre. Tiene que poder ejecutarse leyendo solo este mensaje (con los IDs Engram como respaldo).
+2. **Qué hacer** — el contenido operativo de la fase, no solo el nombre. Tiene que poder ejecutarse leyendo solo este mensaje (con el archivo del plan como respaldo).
 3. **Archivos en alcance** — qué puede tocar y qué está fuera de alcance, con razón breve cuando importe.
 4. **Criterio de cierre** — condición verificable que marca la fase como terminada.
 5. **Criticidad** — crítica o estándar. Le dice al sub-agente qué nivel de rigor se va a aplicar al revisarlo.
-6. **IDs reales de Engram** (si aplica) — fase y restricciones globales, sustituidos por valores concretos antes de enviar. No mandar `{ID_fase_N}` literal: el sub-agente no lo puede consultar.
+6. **Ruta al archivo de plan + claves a consultar** (si aplica) — la ruta exacta del YAML (ej: `docs/plans/refactor-auth.yaml`) y las claves concretas que el sub-agente tiene que leer: la fase actual (`F2`) y las restricciones globales que aplican (`R1`, `R3`). Claves reales, no placeholders: no mandar `F{N}` literal.
 7. **Skills sugeridas** (si aplica) — las del entorno que aplican a la tarea, con razón concreta. Si no hay, omitir la sección.
 8. **Sub-agentes auxiliares disponibles** (si aplica) — sdd-explore / sdd-archive cuando la fase los puede aprovechar. Ver `auxiliares.md`.
 9. **Si es re-delegación tras rechazo**: motivo del rechazo previo, qué corregir, qué del intento anterior sí está bien.
 
-Lo que **no** hace falta agregar: prohibiciones obvias ("no rompas el repo"), restricciones administrativas que limitan al sub-agente sin necesidad ("no consultes otras observaciones"), ni listas de cosas que el sub-agente claramente entiende solo.
+Lo que **no** hace falta agregar: prohibiciones obvias ("no rompas el repo"), restricciones administrativas que limitan al sub-agente sin necesidad ("no consultes otras entradas del archivo"), ni listas de cosas que el sub-agente claramente entiende solo.
 
 ---
 
-## Bloque sugerido para acceso a Engram
+## Bloque sugerido para acceso al archivo de plan
 
 ```
-Antes de empezar, traé el contexto completo de esta fase desde Engram:
-  mem_get_observation id=<ID_REAL_DE_LA_FASE>
-  mem_get_observation id=<ID_REAL_DE_RESTRICCIONES>
+Antes de empezar, leé estas entradas del archivo del plan
+<RUTA_REAL_DEL_ARCHIVO>:
+  - <CLAVE_DE_ESTA_FASE> (esta fase)
+  - <CLAVES_DE_RESTRICCIONES> (restricciones globales que aplican)
 
-Este mensaje es un extracto. La observación en Engram es la fuente completa.
-Si lo que ves en Engram contradice este mensaje, reportá la discrepancia
-antes de seguir. Podés consultar otras observaciones del plan si te ayuda;
-no escribas estados de fase ni del plan global, eso lo hago yo.
+Este mensaje es un extracto. El archivo es la fuente completa.
+Si lo que leés en el archivo contradice este mensaje, reportá la
+discrepancia antes de seguir. Podés consultar otras entradas si te
+ayudan; no edites el archivo, eso lo hago yo al cerrar tu fase.
 ```
 
-Ejemplo de bloque preparado correctamente: `id=4827` y `id=4823`, no `id={ID_fase_N}`.
+Ejemplo de bloque preparado correctamente: ruta `docs/plans/refactor-auth.yaml`, claves `F2` y `R1, R3`. No dejar placeholders literales como `<CLAVE_DE_ESTA_FASE>`.
 
 ---
 
@@ -88,7 +89,7 @@ Una fase mezcla dominios solo cuando hay buena razón. Por defecto, una fase = u
 
 Tras un rechazo:
 
-1. Registrar el rechazo en Engram con motivo concreto.
+1. Registrar el rechazo en el archivo del plan con motivo concreto (estado de la fase a `rechazada` y evento en `historial`).
 2. Decidir si la falla fue de ejecución o de delegación insuficiente.
 3. Re-delegar con: motivo del rechazo, qué corregir, qué del intento previo está bien (si aplica).
 

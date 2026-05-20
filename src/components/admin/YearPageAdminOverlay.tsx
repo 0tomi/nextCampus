@@ -18,11 +18,13 @@ interface Subject {
 }
 
 interface YearPageAdminOverlayProps {
+  yearId?: string
   subjects: Subject[]
   tiposEvento: TipoEvento[]
 }
 
 export function YearPageAdminOverlay({
+  yearId,
   subjects,
   tiposEvento,
 }: YearPageAdminOverlayProps) {
@@ -37,7 +39,7 @@ export function YearPageAdminOverlay({
   }, [])
 
   return (
-    <AdminControls>
+    <AdminControls yearId={yearId}>
       {/* Floating button for year level actions */}
       <div className="fixed bottom-6 right-6 z-40">
         <button

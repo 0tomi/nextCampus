@@ -43,16 +43,17 @@ export function MobileShell({
 }: MobileShellProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const [open, setOpen] = useState(false)
+  const [drawer, setDrawer] = useState({ open: false, pathname })
+  const open = drawer.open && drawer.pathname === pathname
 
-  const openDrawer = useCallback(() => setOpen(true), [])
-  const closeDrawer = useCallback(() => setOpen(false), [])
+  const openDrawer = useCallback(() => setDrawer({ open: true, pathname }), [pathname])
+  const closeDrawer = useCallback(() => setDrawer({ open: false, pathname }), [pathname])
 
   useEffect(() => {
     if (!open) return
 
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape') closeDrawer()
     }
     document.addEventListener('keydown', handleKey)
     const previousOverflow = document.body.style.overflow
@@ -62,11 +63,7 @@ export function MobileShell({
       document.removeEventListener('keydown', handleKey)
       document.body.style.overflow = previousOverflow
     }
-  }, [open])
-
-  useEffect(() => {
-    setOpen(false)
-  }, [pathname])
+  }, [closeDrawer, open])
 
   return (
     <div className="min-h-screen bg-surface-0 text-white">

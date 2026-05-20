@@ -56,7 +56,7 @@ Decisión:
 
 ## Re-delegación tras rechazo
 
-1. **Registrar el rechazo en Engram** con motivo concreto antes de re-delegar. Esto deja huella si el contexto se compacta entre intentos.
+1. **Registrar el rechazo en el archivo del plan** con motivo concreto antes de re-delegar. Esto deja huella si el contexto se compacta entre intentos: estado de la fase pasa a `rechazada` y se agrega un evento al `historial` con el motivo.
 
 2. **Decidir el responsable**: ¿el sub-agente ejecutó mal o yo delegué mal? Cambia el approach del nuevo prompt y evita culpar al sub-agente cuando el problema es mío.
 
@@ -73,9 +73,9 @@ Decisión:
 
 ## Estados zombie
 
-Una fase queda zombie cuando está marcada `en_curso` en Engram pero no tiene observación de cierre correspondiente. Pasa por crashes, compactaciones, sesiones interrumpidas.
+Una fase queda zombie cuando está marcada `en_curso` en el archivo del plan pero no tiene bloque `cierre` correspondiente. Pasa por crashes, compactaciones, sesiones interrumpidas.
 
-Detección al recuperar sesión: por cada fase en `en_curso`, buscar su observación de cierre. Si no existe, es zombie.
+Detección al recuperar sesión: por cada fase en `en_curso`, verificar si existe su bloque `cierre`. Si no existe, es zombie.
 
 Resolución:
 
@@ -106,12 +106,12 @@ Cuando todas las fases reportan estado de cierre, **el plan no termina ahí**. A
 
 Si la auditoría detecta **inconsistencias bloqueantes**, no se cierra el plan: se abre fase de remediación o se escala al humano.
 
-Solo cuando la auditoría confirma cobertura + consistencia, el orquestador escribe el cierre y llama `mem_session_summary` + `mem_session_end`.
+Solo cuando la auditoría confirma cobertura + consistencia, el orquestador rellena el bloque `auditoria` del archivo, pasa `estado_global.estado` a `completado` y agrega el evento `plan_cerrado` al `historial`.
 
 ---
 
 ## Dry-run (opcional)
 
-Para planes complejos o sensibles, generar el preview completo de delegaciones planeadas (sub-agente, criticidad, archivos, criterio de cierre por cada fase) y presentarlo al humano antes de delegar la primera. Si el humano ajusta algo, actualizar las observaciones de fase en Engram antes de empezar.
+Para planes complejos o sensibles, generar el preview completo de delegaciones planeadas (sub-agente, criticidad, archivos, criterio de cierre por cada fase) y presentarlo al humano antes de delegar la primera. Si el humano ajusta algo, actualizar las entradas de fase en el archivo del plan antes de empezar.
 
 No es obligatorio. Útil cuando el costo de equivocarse es alto.

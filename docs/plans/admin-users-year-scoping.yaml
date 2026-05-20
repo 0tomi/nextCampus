@@ -1,0 +1,352 @@
+plan: admin-users-year-scoping
+meta:
+  objetivo: >
+    Implementar AdminGeneral y AdminCampus con permisos por año, más una sección
+    /admin/users para listar, crear y editar usuarios administradores del campus.
+  dominio: datos + backend + frontend + docs + qa
+  creado: 2026-05-20T00:00:00-03:00
+  fases_totales: 6
+  notas: >
+    El usuario pidió usar subagentes gpt-5.5 para fases críticas y gpt-5.4
+    para fases estándar. El orquestador valida cada fase y corrige deuda al final.
+
+restricciones:
+  R1:
+    titulo: Bootstrap de AdminGeneral
+    contenido: >
+      ADMIN_EMAILS sigue siendo la fuente bootstrap del administrador general.
+      Un AdminGeneral tiene acceso total como el admin actual y puede crear/editar
+      usuarios desde /admin/users.
+  R2:
+    titulo: Modelo relacional para AdminCampus
+    contenido: >
+      Los permisos de AdminCampus se modelan relacionalmente con un usuario de app
+      y una tabla puente hacia AcademicYear. Un AdminCampus puede administrar uno
+      o varios años.
+  R3:
+    titulo: Seguridad server-side
+    contenido: >
+      La autorización real vive en Server Actions/helpers. El frontend solo mejora
+      experiencia. No confiar en subjectSlug/yearSlug/campos ocultos para autorizar;
+      derivar el año desde DB antes de mutar DB o Storage.
+  R4:
+    titulo: Alcance de AdminCampus
+    contenido: >
+      AdminCampus puede gestionar materias, eventos, apuntes, Drive y quizzes solo
+      de sus años asignados. No puede crear/editar usuarios ni crear/editar/borrar
+      años académicos.
+  R5:
+    titulo: Gestion de usuarios v1
+    contenido: >
+      /admin/users es solo para AdminGeneral. V1 crea y edita usuarios AdminCampus.
+      Edit permite cambiar años, estado, email y contraseña opcional. No hay hard
+      delete; desactivar corta permisos de la app. No editar AdminGeneral desde esta UI.
+  R6:
+    titulo: Supabase Auth Admin
+    contenido: >
+      Crear/editar email/contraseña se hace solo server-side con el cliente secreto
+      de Supabase Auth Admin. Sincronizar email con Prisma UserAccount y manejar
+      errores con validaciones y rollback best-effort.
+  R7:
+    titulo: Frontend user-friendly
+    contenido: >
+      No mostrar textos técnicos ni referencias a infraestructura, backend,
+      Server Components, proxy o similares. Botones clickeables deben tener cursor pointer.
+  R8:
+    titulo: No tocar cambios ajenos
+    contenido: >
+      Hay cambios sin commit en archivos de skills bajo .agents/ y .claude/ hechos
+      por el usuario. No revertirlos ni modificarlos.
+
+fases:
+  F1:
+    nombre: Datos y auth base
+    dominio: datos + backend
+    criticidad: critica
+    objetivo: >
+      Agregar modelos/enums de usuario, resolver AdminGeneral/AdminCampus y actualizar
+      el contrato de /api/admin/me.
+    archivos_alcance:
+      permitidos:
+        - prisma/schema.prisma
+        - prisma/migrations/
+        - src/lib/auth.ts
+        - src/app/api/admin/me/route.ts
+        - src/lib/**/*.test.ts
+      prohibidos:
+        - .agents/
+        - .claude/
+    criterio_cierre: >
+      Existen modelos Prisma y helpers de auth para AdminGeneral/AdminCampus; /api/admin/me
+      devuelve rol, años y capabilities; tests o verificación cubren general, campus activo,
+      campus desactivado y usuario sin permisos.
+    dependencias: []
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - prisma/schema.prisma
+        - prisma/migrations/20260520153000_add_admin_users_year_permissions/migration.sql
+        - src/lib/auth.ts
+        - src/app/api/admin/me/route.ts
+        - src/lib/auth.test.ts
+      supuestos:
+        - ADMIN_EMAILS manda como bootstrap de AdminGeneral y hace upsert al autenticarse.
+        - requireAdmin queda como alias compatible de requireAnyAdmin hasta que F2 reemplace checks amplios.
+      deuda: []
+      notas: Validado con prisma validate, auth tests y tsc --noEmit.
+      timestamp: 2026-05-20T00:20:00-03:00
+
+  F2:
+    nombre: Autorizacion fina en acciones existentes
+    dominio: backend
+    criticidad: critica
+    objetivo: >
+      Reemplazar checks globales por requireGeneralAdmin o checks por año derivados desde DB
+      en todas las mutaciones admin existentes.
+    archivos_alcance:
+      permitidos:
+        - src/app/admin/actions.ts
+        - src/lib/auth.ts
+        - src/lib/queries.ts
+        - src/lib/**/*.test.ts
+      prohibidos:
+        - .agents/
+        - .claude/
+    criterio_cierre: >
+      Ninguna mutación de contenido permite operar fuera de años asignados; años y usuarios
+      son solo AdminGeneral; Storage se toca después del check de permisos.
+    dependencias: [F1]
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/app/admin/actions.ts
+        - src/lib/auth.ts
+      supuestos:
+        - AdminGeneral mantiene acceso total.
+        - AdminCampus opera solo sobre yearIds permitidos.
+      deuda: []
+      notas: Validado con eslint específico, tsc --noEmit y auth tests.
+      timestamp: 2026-05-20T00:45:00-03:00
+
+  F3:
+    nombre: Seccion /admin/users
+    dominio: backend + frontend
+    criticidad: critica
+    objetivo: >
+      Implementar listado, creación y edición de usuarios AdminCampus bajo /admin/users.
+    archivos_alcance:
+      permitidos:
+        - src/app/admin/users/
+        - src/components/admin/
+        - src/app/admin/actions.ts
+        - src/lib/auth.ts
+        - src/lib/supabase/admin.ts
+      prohibidos:
+        - .agents/
+        - .claude/
+    criterio_cierre: >
+      AdminGeneral puede listar, crear y editar AdminCampus; creación usa Supabase Auth Admin;
+      edición permite permisos, estado, email y contraseña opcional; AdminCampus no accede.
+    dependencias: [F1]
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/app/admin/users/actions.ts
+        - src/app/admin/users/UserForm.tsx
+        - src/app/admin/users/page.tsx
+        - src/app/admin/users/create/page.tsx
+        - src/app/admin/users/edit/[id]/page.tsx
+      supuestos:
+        - Un AdminCampus debe tener al menos un año asignado.
+        - Rollback de contraseña no es posible porque no se conserva la anterior.
+      deuda: []
+      notas: Validado con lint específico y tsc --noEmit.
+      timestamp: 2026-05-20T00:45:00-03:00
+
+  F4:
+    nombre: Gates UI por permisos
+    dominio: frontend
+    criticidad: estandar
+    objetivo: >
+      Cambiar gates frontend de boolean global a capabilities por rol/año.
+    archivos_alcance:
+      permitidos:
+        - src/components/admin/
+        - src/app/page.tsx
+        - src/app/year/
+        - src/app/materia/
+        - src/components/calendar/
+        - src/components/shell/
+      prohibidos:
+        - .agents/
+        - .claude/
+    criterio_cierre: >
+      AdminGeneral ve controles globales y /admin/users; AdminCampus solo ve controles de sus años;
+      visitantes no ven controles.
+    dependencias: [F1, F2, F3]
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/components/admin/adminAccess.ts
+        - src/components/admin/AdminControls.tsx
+        - src/components/calendar/EventCalendarAdmin.tsx
+        - src/components/admin/YearPageAdminOverlay.tsx
+        - src/components/admin/SubjectPageAdminOverlay.tsx
+        - src/components/admin/SubjectModal.tsx
+        - src/components/shell/DashboardShell.tsx
+        - src/app/page.tsx
+        - src/app/year/[slug]/page.tsx
+        - src/app/materia/[slug]/page.tsx
+        - src/lib/queries.ts
+      supuestos:
+        - Server actions siguen siendo la fuente de verdad; UI solo muestra u oculta controles.
+      deuda: []
+      notas: Se corrigió el uso de yearSlug en materia agregando year.id a la query. Validado con eslint específico y tsc.
+      timestamp: 2026-05-20T01:10:00-03:00
+
+  F5:
+    nombre: Docs y configuracion
+    dominio: docs
+    criticidad: estandar
+    objetivo: >
+      Actualizar documentación y env examples para el nuevo modelo AdminGeneral/AdminCampus.
+    archivos_alcance:
+      permitidos:
+        - .env.example
+        - docs/SETUP.md
+        - README.md
+        - prisma/schema.prisma
+      prohibidos:
+        - .agents/
+        - .claude/
+    criterio_cierre: >
+      Setup documenta ADMIN_EMAILS como bootstrap, /admin/users como gestión de usuarios y
+      Supabase Auth Admin para email/contraseña.
+    dependencias: [F1, F3]
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - README.md
+        - docs/SETUP.md
+        - .env.example
+      supuestos:
+        - Desactivar usuario corta permisos administrativos de la app sin borrar la cuenta de Supabase Auth.
+      deuda: []
+      notas: Documentación alineada con Publishable/Secret key actuales.
+      timestamp: 2026-05-20T01:10:00-03:00
+
+  F6:
+    nombre: QA y auditoria final
+    dominio: qa
+    criticidad: critica
+    objetivo: >
+      Validar lint/build/tests, flujo completo y corregir deuda acumulada.
+    archivos_alcance:
+      permitidos:
+        - src/
+        - prisma/
+        - docs/
+        - tests/
+      prohibidos:
+        - .agents/
+        - .claude/
+    criterio_cierre: >
+      Tests/verificaciones pasan; auditoría confirma cobertura, consistencia, sin deuda bloqueante
+      y sin checks amplios en mutaciones sensibles.
+    dependencias: [F1, F2, F3, F4, F5]
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - eslint.config.mjs
+        - src/components/admin/EventModal.tsx
+        - src/components/mobile/shell/MobileShell.tsx
+        - src/components/mobile/subject/SubjectTabs.tsx
+        - src/components/mobile/subject/MobileSubject.tsx
+        - src/components/ui/AlertDialog.tsx
+        - src/app/admin/actions.ts
+        - README.md
+        - docs/SETUP.md
+      supuestos: []
+      deuda: []
+      notas: Validado con pnpm lint, pnpm test, pnpm exec tsc --noEmit, pnpm exec prisma validate y pnpm build.
+      timestamp: 2026-05-20T01:35:00-03:00
+
+estado_global:
+  estado: completado
+  fases:
+    F1: completada
+    F2: completada
+    F3: completada
+    F4: completada
+    F5: completada
+    F6: completada
+
+auditoria:
+  cobertura: >
+    Cubiertas las seis fases: modelo/auth, autorizacion fina, seccion /admin/users,
+    gates UI, docs/configuracion y QA final.
+  consistencia: >
+    /api/admin/me, helpers server-side y gates frontend usan el mismo modelo de roles.
+    Las Server Actions derivan scope desde DB y el frontend solo oculta/muestra controles.
+  desvios: >
+    Se agrego exclusion de docs/MobileDesign en ESLint porque contiene prototipos fuera
+    del codigo productivo y bloqueaba lint global. Se corrigieron tambien warnings/errores
+    existentes en componentes productivos para dejar lint limpio.
+  deuda_final: []
+  validaciones:
+    - pnpm exec prisma validate
+    - pnpm test
+    - pnpm lint
+    - pnpm exec tsc --noEmit --pretty false
+    - pnpm build
+  resultado: completado_sin_deuda_bloqueante
+
+historial:
+  - timestamp: 2026-05-20T00:00:00-03:00
+    evento: plan_creado
+    detalle: Plan creado como YAML único según la nueva skill orquestar-planes.
+  - timestamp: 2026-05-20T00:05:00-03:00
+    evento: fase_iniciada
+    fase: F1
+  - timestamp: 2026-05-20T00:20:00-03:00
+    evento: fase_completada
+    fase: F1
+    validacion: aprobada
+  - timestamp: 2026-05-20T00:25:00-03:00
+    evento: fase_iniciada
+    fase: F2
+  - timestamp: 2026-05-20T00:25:00-03:00
+    evento: fase_iniciada
+    fase: F3
+  - timestamp: 2026-05-20T00:45:00-03:00
+    evento: fase_completada
+    fase: F2
+    validacion: aprobada
+  - timestamp: 2026-05-20T00:45:00-03:00
+    evento: fase_completada
+    fase: F3
+    validacion: aprobada
+  - timestamp: 2026-05-20T00:50:00-03:00
+    evento: fase_iniciada
+    fase: F4
+  - timestamp: 2026-05-20T00:50:00-03:00
+    evento: fase_iniciada
+    fase: F5
+  - timestamp: 2026-05-20T01:10:00-03:00
+    evento: fase_completada
+    fase: F4
+    validacion: aprobada
+  - timestamp: 2026-05-20T01:10:00-03:00
+    evento: fase_completada
+    fase: F5
+    validacion: aprobada
+  - timestamp: 2026-05-20T01:15:00-03:00
+    evento: fase_iniciada
+    fase: F6
+  - timestamp: 2026-05-20T01:35:00-03:00
+    evento: fase_completada
+    fase: F6
+    validacion: aprobada
+  - timestamp: 2026-05-20T01:36:00-03:00
+    evento: plan_cerrado
+    detalle: Auditoria final completada sin deuda bloqueante.

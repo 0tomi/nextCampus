@@ -75,7 +75,7 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
             <div
               key={y.id}
               ref={(el) => { slidesRef.current[idx] = el }}
-              className="snap-start px-[18px]"
+              className="snap-start snap-always px-[18px]"
               style={{ flex: '0 0 100%', minWidth: '100%' }}
             >
               <div className="bg-[#1a1a1a] border border-white/5 rounded-xl overflow-hidden flex flex-col">
