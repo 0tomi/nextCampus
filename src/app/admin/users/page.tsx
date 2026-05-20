@@ -30,6 +30,15 @@ export default async function AdminUsersPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mb-6">
+        <Link
+          href="/"
+          className="cursor-pointer text-sm font-semibold text-violet-200 transition hover:text-violet-100"
+        >
+          ← Volver al campus
+        </Link>
+      </div>
+
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-200/70">Administradores</p>
