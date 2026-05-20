@@ -6,6 +6,7 @@ export interface YearColorClasses {
   chipClassName: string
   progressClassName: string
   textClassName: string
+  tone: string
 }
 
 export type YearColorInput =
@@ -26,6 +27,7 @@ export const YEAR_COLOR_PALETTE = [
       'border-amber-400/20 bg-amber-500/10 text-amber-300 shadow-[0_0_24px_rgba(251,191,36,0.08)]',
     progressClassName: 'bg-gradient-to-r from-amber-400 to-orange-500',
     textClassName: 'text-amber-300',
+    tone: '#fbbf24',
   },
   {
     name: 'emerald',
@@ -34,6 +36,7 @@ export const YEAR_COLOR_PALETTE = [
       'border-emerald-400/20 bg-emerald-500/10 text-emerald-300 shadow-[0_0_24px_rgba(52,211,153,0.08)]',
     progressClassName: 'bg-gradient-to-r from-emerald-400 to-teal-500',
     textClassName: 'text-emerald-300',
+    tone: '#34d399',
   },
   {
     name: 'violet',
@@ -42,6 +45,7 @@ export const YEAR_COLOR_PALETTE = [
       'border-violet-400/20 bg-violet-500/10 text-violet-300 shadow-[0_0_24px_rgba(167,139,250,0.08)]',
     progressClassName: 'bg-gradient-to-r from-violet-400 to-purple-500',
     textClassName: 'text-violet-300',
+    tone: '#a78bfa',
   },
   {
     name: 'rose',
@@ -50,6 +54,7 @@ export const YEAR_COLOR_PALETTE = [
       'border-rose-400/20 bg-rose-500/10 text-rose-300 shadow-[0_0_24px_rgba(251,113,133,0.08)]',
     progressClassName: 'bg-gradient-to-r from-rose-400 to-pink-500',
     textClassName: 'text-rose-300',
+    tone: '#fb7185',
   },
   {
     name: 'cyan',
@@ -58,6 +63,7 @@ export const YEAR_COLOR_PALETTE = [
       'border-cyan-400/20 bg-cyan-500/10 text-cyan-300 shadow-[0_0_24px_rgba(34,211,238,0.08)]',
     progressClassName: 'bg-gradient-to-r from-cyan-400 to-blue-500',
     textClassName: 'text-cyan-300',
+    tone: '#22d3ee',
   },
 ] as const satisfies readonly YearColorClasses[]
 
@@ -116,4 +122,8 @@ export function getYearProgressClassName(input: YearColorInput): string {
 
 export function getYearTextClassName(input: YearColorInput): string {
   return getYearColorClasses(input).textClassName
+}
+
+export function getYearTone(input: YearColorInput): string {
+  return getYearColorClasses(input).tone
 }

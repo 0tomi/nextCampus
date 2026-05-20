@@ -11,8 +11,7 @@ import {
   Plus,
   Pencil,
 } from 'lucide-react'
-import { getCareer, getSubjectPageBySlug, getTiposEvento } from '@/lib/queries'
-import { MobileSubject } from '@/components/mobile/subject/MobileSubject'
+import { getSubjectPageBySlug, getTiposEvento } from '@/lib/queries'
 import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
 import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
@@ -66,18 +65,11 @@ export default async function SubjectPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const [subject, tiposEvento, career] = await Promise.all([
+  const [subject, tiposEvento] = await Promise.all([
     getSubjectPageBySlug(slug),
     getTiposEvento(),
-    getCareer(),
   ])
   if (!subject) notFound()
-
-  const allYears = (career?.years ?? []).map(y => ({
-    slug: y.slug,
-    nombre: y.nombre,
-    subjectsCount: y.subjects.length,
-  }))
 
   const agendaId = subject.agenda?.id ?? ''
   const eventos = subject.agenda?.eventos ?? []
@@ -118,8 +110,6 @@ export default async function SubjectPage({
   ]
 
   return (
-    <>
-    <div className="hidden lg:block">
     <DashboardShell
       brand={<DashboardBrand />}
       topbar={
@@ -437,10 +427,5 @@ export default async function SubjectPage({
         tiposEvento={tiposEvento}
       />
     </DashboardShell>
-    </div>
-    <div className="lg:hidden">
-      <MobileSubject subject={subject} allYears={allYears} />
-    </div>
-    </>
   )
 }

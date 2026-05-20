@@ -337,10 +337,3 @@ body {
 .calendar-editable .fc-daygrid-day * {
   cursor: pointer;
 }
-
-@utility scrollbar-none {
-  scrollbar-width: none;
-  &::-webkit-scrollbar {
-    display: none;
-  }
-}

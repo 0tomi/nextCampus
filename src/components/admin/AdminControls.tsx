@@ -48,5 +48,5 @@ export function AdminControls({ children, fallback = null }: AdminControlsProps)
   // Not admin — render nothing
   if (!isAdmin) return null
 
-  return <>{children}</>
+  return <div className="hidden lg:contents">{children}</div>
 }

@@ -149,6 +149,27 @@ export function getTiposEvento() {
   return prisma.tipoEvento.findMany({ orderBy: { nombre: 'asc' } })
 }
 
+export function getUpcomingEventsCrossYear(limit = 6) {
+  return prisma.evento.findMany({
+    where: { fecha: { gte: new Date() } },
+    orderBy: { fecha: 'asc' },
+    take: limit,
+    select: {
+      id: true,
+      titulo: true,
+      fecha: true,
+      tipoEvento: { select: { nombre: true } },
+      agenda: {
+        select: {
+          subject: {
+            select: { slug: true, nombre: true },
+          },
+        },
+      },
+    },
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Impacto de eliminación — usado por ConfirmDeleteModal para mostrar conteos
 // reales antes de que el admin confirme el borrado.
