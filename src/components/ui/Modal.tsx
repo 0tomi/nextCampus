@@ -93,7 +93,9 @@ export function Modal({
   }
 
   function handleOverlayKey(e: KeyboardEvent<HTMLDivElement>) {
-    if (e.key === 'Enter' || e.key === ' ') onClose()
+    if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+      onClose()
+    }
   }
 
   return (

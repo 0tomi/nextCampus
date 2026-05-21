@@ -47,7 +47,7 @@ export async function proxy(request: NextRequest) {
     "default-src 'self'",
     `script-src ${scriptSrc}`,
     `style-src ${styleSrc}`,
-    "font-src 'self'",
+    "font-src 'self' data:",
     "img-src 'self' data: blob: https://*.supabase.co",
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
     "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com",
