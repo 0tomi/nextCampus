@@ -31,6 +31,7 @@ interface NextEvent {
   tipo: string
   subjectSlug: string
   subjectNombre: string
+  descripcionHtml?: string | null
 }
 
 export function MobileYear({

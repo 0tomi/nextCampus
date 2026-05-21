@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useTransition } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Pencil, Trash2 } from 'lucide-react'
 import { EventCalendar, type EventCalendarEvent } from './EventCalendar'
 import { EventModal } from '@/components/admin/EventModal'
 import { useAdminAccess } from '@/components/admin/adminAccess'
 import { Sheet } from '@/components/ui/Sheet'
-import { updateEventoFechaAction } from '@/app/admin/actions'
+import { updateEventoFechaAction, deleteEvento } from '@/app/admin/actions'
 import { cn, formatDateTime } from '@/lib/utils'
 
 interface TipoEvento {
@@ -49,7 +51,10 @@ export function EventCalendarAdmin({
   subjects,
 }: EventCalendarAdminProps) {
   const canEdit = useAdminAccess({ yearId, yearSlug }) ?? false
+  const router = useRouter()
+  const [isDeleting, startTransition] = useTransition()
   const [eventModalOpen, setEventModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [initialDate, setInitialDate] = useState<string | undefined>()
   const [selectedEvent, setSelectedEvent] = useState<EventCalendarEvent | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -80,6 +85,24 @@ export function EventCalendarAdmin({
     setSelectedEvent(event)
     setSheetOpen(true)
   }, [])
+
+  const handleDelete = useCallback(() => {
+    if (!selectedEvent?.id) return
+    if (window.confirm('¿Estás seguro de que querés eliminar este evento?')) {
+      startTransition(async () => {
+        try {
+          const formData = new FormData()
+          formData.append('id', selectedEvent.id!)
+          await deleteEvento(formData)
+          setSheetOpen(false)
+          setSelectedEvent(null)
+          router.refresh()
+        } catch (err) {
+          console.error(err)
+        }
+      })
+    }
+  }, [selectedEvent, router])
 
   return (
     <>
@@ -190,6 +213,29 @@ export function EventCalendarAdmin({
                 </p>
               </div>
             )}
+
+            {/* Admin Actions */}
+            {canEdit && (
+              <div className="flex items-center gap-2 border-t border-white/6 pt-5">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="inline-flex items-center gap-2 rounded border border-white/10 bg-surface-1 px-3 py-2 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Editar evento
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleDelete}
+                  className="inline-flex items-center gap-2 rounded border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-400 shadow-lg transition-colors hover:bg-rose-500/20 hover:text-rose-300 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {isDeleting ? 'Eliminando...' : 'Eliminar evento'}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </Sheet>
@@ -207,6 +253,23 @@ export function EventCalendarAdmin({
           tiposEvento={tiposEvento}
           initialDate={initialDate}
           subjects={subjects}
+        />
+      )}
+
+      {canEdit && selectedEvent && (
+        <EventModal
+          key={`edit-${selectedEvent.id}`}
+          open={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false)
+            setSheetOpen(false)
+            setSelectedEvent(null)
+          }}
+          agendaId={agendaId}
+          subjectSlug={subjectSlug}
+          tiposEvento={tiposEvento}
+          subjects={subjects}
+          eventToEdit={selectedEvent}
         />
       )}
     </>

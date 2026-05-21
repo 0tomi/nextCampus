@@ -2,11 +2,14 @@
 
 import { useEffect, useActionState, useState } from 'react'
 import { flushSync } from 'react-dom'
+import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/ui/Modal'
 import {
   createEventoAction,
+  updateEventoAction,
   type EventoActionState,
 } from '@/app/admin/actions'
+import type { EventCalendarEvent } from '@/components/calendar/EventCalendar'
 
 interface TipoEvento {
   id: string
@@ -30,9 +33,23 @@ interface EventModalProps {
   initialDate?: string
   onSuccess?: () => void
   subjects?: EventModalSubject[]
+  /** Evento a editar si estamos en modo edición */
+  eventToEdit?: EventCalendarEvent
 }
 
 const emptyState: EventoActionState = { ok: false, message: '' }
+
+function formatForDatetimeLocal(dateInput?: string | Date): string {
+  if (!dateInput) return ''
+  const d = typeof dateInput === 'string' ? new Date(dateInput) : dateInput
+  if (isNaN(d.getTime())) return ''
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day}T${hours}:${minutes}`
+}
 
 export function EventModal({
   open,
@@ -51,11 +68,20 @@ function EventModalContent({
   initialDate,
   onSuccess,
   subjects,
+  eventToEdit,
 }: EventModalProps) {
-  const [state, formAction, pending] = useActionState(createEventoAction, emptyState)
-  const [titulo, setTitulo] = useState('')
-  const [selectedTipoId, setSelectedTipoId] = useState('')
-  const [selectedSubjectId, setSelectedSubjectId] = useState('')
+  const router = useRouter()
+  const actionToUse = eventToEdit ? updateEventoAction : createEventoAction
+  const [state, formAction, pending] = useActionState(actionToUse, emptyState)
+  const [titulo, setTitulo] = useState(
+    eventToEdit ? (eventToEdit.tituloOriginal ?? eventToEdit.title ?? eventToEdit.titulo ?? '') : ''
+  )
+  const [selectedTipoId, setSelectedTipoId] = useState(
+    eventToEdit?.tipoId ?? ''
+  )
+  const [selectedSubjectId, setSelectedSubjectId] = useState(
+    eventToEdit?.subjectId ?? ''
+  )
 
   // Determine current active agendaId and subjectSlug
   const isYearMode = subjects && subjects.length > 0
@@ -68,10 +94,11 @@ function EventModalContent({
 
   useEffect(() => {
     if (state.ok) {
+      router.refresh()
       onSuccess?.()
       onClose()
     }
-  }, [state.ok, onClose, onSuccess])
+  }, [state.ok, onClose, onSuccess, router])
 
 
   const detectEventType = (text: string): string | null => {
@@ -129,8 +156,9 @@ function EventModalContent({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Nuevo evento">
+    <Modal open={open} onClose={onClose} title={eventToEdit ? 'Editar evento' : 'Nuevo evento'}>
       <form onSubmit={handleSubmit} action={formAction} className="space-y-4">
+        {eventToEdit && <input type="hidden" name="id" value={eventToEdit.id} />}
         <input type="hidden" name="agendaId" value={activeAgendaId} />
         <input type="hidden" name="subjectSlug" value={activeSubjectSlug} />
 
@@ -219,7 +247,11 @@ function EventModalContent({
             type="datetime-local"
             name="fecha"
             required
-            defaultValue={initialDate ?? ''}
+            defaultValue={
+              eventToEdit
+                ? formatForDatetimeLocal(eventToEdit.fecha ?? eventToEdit.start ?? eventToEdit.date)
+                : (initialDate ?? '')
+            }
             className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
           />
         </div>
@@ -238,6 +270,7 @@ function EventModalContent({
             id="evento-descripcion"
             name="descripcionHtml"
             rows={3}
+            defaultValue={eventToEdit?.descripcionHtml ?? ''}
             placeholder="Detalles del evento"
             className="w-full resize-none rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
           />
@@ -262,7 +295,7 @@ function EventModalContent({
             disabled={pending}
             className="rounded bg-white px-4 py-2 text-sm font-semibold text-black transition-opacity disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
-            {pending ? 'Guardando…' : 'Crear evento'}
+            {pending ? 'Guardando…' : eventToEdit ? 'Guardar cambios' : 'Crear evento'}
           </button>
         </div>
       </form>

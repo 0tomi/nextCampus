@@ -8,9 +8,11 @@ import { Sidebar } from '@/components/shell/Sidebar'
 import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { AdminControls } from '@/components/admin/AdminControls'
-import { AdminTriggerButton } from '@/components/admin/SubjectPageAdminOverlay'
+import { AdminTriggerButton, DeleteEventoButton } from '@/components/admin/SubjectPageAdminOverlay'
 import { YearPageAdminOverlay } from '@/components/admin/YearPageAdminOverlay'
 import { MobileYear } from '@/components/mobile/year/MobileYear'
+import { formatDateTime } from '@/lib/utils'
+import { sanitizeRichHtml } from '@/lib/sanitize'
 
 export const revalidate = 300
 
@@ -61,10 +63,11 @@ export default async function YearPage({
       tipo: e.tipoEvento.nombre,
       subjectSlug: s.slug,
       subjectNombre: s.nombre,
+      descripcionHtml: e.descripcionHtml,
     })))
     .filter(e => new Date(e.fecha).getTime() >= now)
     .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
-    .slice(0, 3)
+    .slice(0, 5)
 
   const colors = getYearColorClasses(year.slug)
   const sidebarItems = year.subjects.map((subject, index) => ({
@@ -154,13 +157,63 @@ export default async function YearPage({
               </p>
             </div>
 
-            <EventCalendarAdmin
-              events={events}
-              emptyMessage="Todavía no hay eventos visibles a nivel año. Entrá a una materia para ver su agenda real."
-              yearId={year.id}
-              tiposEvento={tiposEvento}
-              subjects={modalSubjects}
-            />
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.85fr)]">
+              <EventCalendarAdmin
+                events={events}
+                emptyMessage="Todavía no hay eventos visibles a nivel año. Entrá a una materia para ver su agenda real."
+                yearId={year.id}
+                tiposEvento={tiposEvento}
+                subjects={modalSubjects}
+              />
+
+              <div className="space-y-3">
+                {nextEvents.length === 0 ? (
+                  <DarkCard className="p-5 text-sm leading-6 text-white/58">
+                    Por ahora no hay eventos próximos en este año.
+                  </DarkCard>
+                ) : (
+                  nextEvents.map((evento) => (
+                    <DarkCard key={evento.id} className="p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">
+                            <span>{evento.tipo}</span>
+                            <span>•</span>
+                            <Link href={`/materia/${evento.subjectSlug}`} className="hover:text-white transition-colors">
+                              {evento.subjectNombre}
+                            </Link>
+                          </div>
+                          <h3 className="mt-2 text-lg font-black tracking-tight text-white leading-snug">
+                            {evento.titulo}
+                          </h3>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className={`inline-flex border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${colors.chipClassName}`}
+                          >
+                            {formatDateTime(evento.fecha)}
+                          </span>
+                          <DeleteEventoButton
+                            eventoId={evento.id}
+                            subjectSlug={evento.subjectSlug}
+                            yearId={year.id}
+                          />
+                        </div>
+                      </div>
+
+                      {evento.descripcionHtml ? (
+                        <div
+                          className="mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
+                          dangerouslySetInnerHTML={{
+                            __html: sanitizeRichHtml(evento.descripcionHtml),
+                          }}
+                        />
+                      ) : null}
+                    </DarkCard>
+                  ))
+                )}
+              </div>
+            </div>
           </section>
 
           <section className="space-y-4">

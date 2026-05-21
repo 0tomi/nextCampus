@@ -20,8 +20,10 @@ export interface EventCalendarEvent {
   allDay?: boolean
   type?: string | null
   tipo?: string | null
+  tipoId?: string
   classNames?: string | string[]
   subjectSlug?: string
+  subjectId?: string
   materiaNombre?: string
   descripcionHtml?: string
   tituloOriginal?: string
