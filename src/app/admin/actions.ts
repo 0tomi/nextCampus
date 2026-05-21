@@ -42,6 +42,7 @@ async function revalidateSubjectContent(subjectSlug: string): Promise<void> {
   })
   if (subject?.year?.slug) {
     revalidatePath(`/year/${subject.year.slug}`)
+    revalidatePath(`/year/${subject.year.slug}/calendario`)
   }
 }
 
@@ -111,6 +112,41 @@ export async function updateEventoFechaAction(
   await prisma.evento.update({ where: { id: validId }, data: { fecha: validFecha } })
   await revalidateSubjectContent(scope.subjectSlug)
   return { ok: true }
+}
+
+export async function updateEventoAction(
+  _prev: EventoActionState,
+  formData: FormData,
+): Promise<EventoActionState> {
+  try {
+    const id = z.string().min(1).parse(formData.get('id'))
+    const data = eventoSchema.parse({
+      agendaId: formData.get('agendaId'),
+      tipoEventoId: formData.get('tipoEventoId'),
+      titulo: formData.get('titulo'),
+      descripcionHtml: formData.get('descripcionHtml') ?? '',
+      fecha: formData.get('fecha'),
+    })
+    const scope = await requireYearAdminForEventoId(id)
+    if (!scope) return { ok: false, message: 'No tenés permisos para modificar este evento.' }
+
+    await prisma.evento.update({
+      where: { id },
+      data: {
+        tipoEventoId: data.tipoEventoId,
+        titulo: data.titulo,
+        descripcionHtml: sanitizeRichHtml(data.descripcionHtml),
+        fecha: data.fecha,
+      },
+    })
+    await revalidateSubjectContent(scope.subjectSlug)
+    return { ok: true, message: 'Evento actualizado correctamente.' }
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return { ok: false, message: err.issues[0].message }
+    }
+    return { ok: false, message: 'No se pudo actualizar el evento. Intentá de nuevo.' }
+  }
 }
 
 export async function deleteEvento(formData: FormData): Promise<void> {
@@ -449,7 +485,11 @@ export async function updateYearAction(
 
   revalidatePath('/')
   revalidatePath(`/year/${oldSlug}`)
-  if (newSlug !== oldSlug) revalidatePath(`/year/${newSlug}`)
+  revalidatePath(`/year/${oldSlug}/calendario`)
+  if (newSlug !== oldSlug) {
+    revalidatePath(`/year/${newSlug}`)
+    revalidatePath(`/year/${newSlug}/calendario`)
+  }
   return { ok: true, message: 'Año actualizado correctamente.' }
 }
 
@@ -547,6 +587,7 @@ export async function createSubjectAction(
 
   revalidatePath('/')
   revalidatePath(`/year/${year.slug}`)
+  revalidatePath(`/year/${year.slug}/calendario`)
   return { ok: true, message: 'Materia creada correctamente.' }
 }
 
@@ -608,6 +649,7 @@ export async function updateSubjectAction(
 
   revalidatePath('/')
   revalidatePath(`/year/${scope.yearSlug}`)
+  revalidatePath(`/year/${scope.yearSlug}/calendario`)
   revalidatePath(`/materia/${oldSlug}`)
   if (newSlug !== oldSlug) revalidatePath(`/materia/${newSlug}`)
   return { ok: true, message: 'Materia actualizada correctamente.' }
@@ -632,6 +674,7 @@ export async function deleteSubjectAction(formData: FormData): Promise<void> {
 
   revalidatePath('/')
   revalidatePath(`/year/${yearSlug}`)
+  revalidatePath(`/year/${yearSlug}/calendario`)
   revalidatePath(`/materia/${subjectSlug}`)
 }
 
@@ -677,6 +720,7 @@ export async function updateSubjectDriveUrlAction(
 
   revalidatePath('/')
   revalidatePath(`/year/${scope.yearSlug}`)
+  revalidatePath(`/year/${scope.yearSlug}/calendario`)
   revalidatePath(`/materia/${scope.subjectSlug}`)
 
   return { ok: true, message: 'Enlace de Google Drive actualizado correctamente.' }
@@ -723,6 +767,7 @@ export async function updateSubjectPlaylistAction(
 
   revalidatePath('/')
   revalidatePath(`/year/${scope.yearSlug}`)
+  revalidatePath(`/year/${scope.yearSlug}/calendario`)
   revalidatePath(`/materia/${scope.subjectSlug}`)
 
   return { ok: true, message: 'Playlist actualizada correctamente.' }
