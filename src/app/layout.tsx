@@ -19,6 +19,14 @@ const sora = Sora({
 export const metadata: Metadata = {
   title: 'NextCampus — Campus Estudiantil',
   description: 'Calendario, quiz y apuntes por asignatura',
+  icons: {
+    icon: [
+      { url: '/education.svg', type: 'image/svg+xml' },
+      { url: '/education.png', type: 'image/png' },
+    ],
+    shortcut: '/education.png',
+    apple: '/education.png',
+  },
 }
 
 export default function RootLayout({
