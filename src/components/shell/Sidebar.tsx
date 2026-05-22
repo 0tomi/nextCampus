@@ -79,8 +79,9 @@ export function Sidebar({
                 >
                   <span
                     className={cn(
-                      'inline-flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded-sm bg-gradient-to-br text-xs font-black tracking-normal text-white',
+                      'inline-flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded-sm bg-gradient-to-br text-xs font-black tracking-normal',
                       item.badgeClassName ?? DEFAULT_BADGE_CLASSNAME,
+                      'text-white',
                     )}
                   >
                     {item.badge}
