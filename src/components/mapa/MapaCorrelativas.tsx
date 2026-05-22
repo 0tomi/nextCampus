@@ -325,8 +325,9 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                   yearSubjects.map((subject) => {
                     const status = subjectStatuses[subject.slug];
                     const isSelected = selectedSubjectSlug === subject.slug;
-                    const isRequirement = selectedSubject?.correlativas.includes(subject.slug);
-                    const isUnlock = selectedUnlocks.some((unlock) => unlock.slug === subject.slug);
+                    const isCompleted = status === 'COMPLETED';
+                    const isRequirement = !isCompleted && selectedSubject?.correlativas.includes(subject.slug);
+                    const isUnlock = !isCompleted && selectedUnlocks.some((unlock) => unlock.slug === subject.slug);
                     const missing = getMissingCorrelatives(subject, completed);
                     const hasPage = availableSlugs.size === 0 || availableSlugs.has(subject.slug);
 
@@ -346,7 +347,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                         onFocus={() => setSelectedSubjectSlug(subject.slug)}
                         className={cn(
                           'group relative flex min-h-[132px] w-full cursor-pointer flex-col justify-between rounded-md border p-3 text-left transition duration-200',
-                          status === 'COMPLETED' && 'border-emerald-300/35 bg-emerald-400/10 shadow-[0_0_18px_rgba(52,211,153,0.06)]',
+                          isCompleted && 'border-emerald-300/35 bg-emerald-400/10 shadow-[0_0_18px_rgba(52,211,153,0.06)]',
                           status === 'UNLOCKED' && 'border-white/10 bg-surface-1 hover:border-amber-300/45 hover:bg-white/6',
                           status === 'LOCKED' && 'cursor-not-allowed border-white/6 bg-black/15 opacity-55',
                           isSelected && 'ring-2 ring-amber-300/40',
