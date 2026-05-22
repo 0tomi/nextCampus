@@ -263,15 +263,54 @@ body {
 
 .fc .fc-daygrid-event {
   margin-top: 0.2rem;
-  white-space: normal;
+  white-space: nowrap;
+  min-height: 1.7rem;
 }
 
 .fc .fc-event-main {
   padding-block: 0.15rem;
 }
 
+.fc .fc-event-main-frame {
+  min-width: 0;
+}
+
 .fc .fc-event-title {
   font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc .fc-event-chip {
+  min-width: 0;
+}
+
+.fc .fc-event-chip__title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc .fc-daygrid-more-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.05);
+  text-decoration: none;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.fc .fc-daygrid-more-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .fc .fc-event-tone-slate {

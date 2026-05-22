@@ -199,10 +199,19 @@ export function EventCalendar({
         fixedWeekCount={false}
         showNonCurrentDates={false}
         displayEventTime={false}
-        dayMaxEventRows={3}
+        dayMaxEvents={2}
+        moreLinkContent={(args) => `+${args.num} más`}
         editable={editable}
         eventStartEditable={editable}
         eventDrop={editable ? handleEventDrop : undefined}
+        eventDidMount={(info) => {
+          info.el.setAttribute('title', info.event.title)
+        }}
+        eventContent={(info) => (
+          <div className="fc-event-chip">
+            <span className="fc-event-chip__title">{info.event.title}</span>
+          </div>
+        )}
         dateClick={editable ? handleDateClick : undefined}
         eventClick={(info) => {
           const clickedId = info.event.id
