@@ -199,7 +199,7 @@ export function EventCalendar({
         fixedWeekCount={false}
         showNonCurrentDates={false}
         displayEventTime={false}
-        dayMaxEvents={2}
+        dayMaxEvents={3}
         moreLinkContent={(args) => `+${args.num} más`}
         editable={editable}
         eventStartEditable={editable}
