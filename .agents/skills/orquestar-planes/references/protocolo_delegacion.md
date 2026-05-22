@@ -12,7 +12,7 @@ Una delegación efectiva pasa al sub-agente lo necesario para ejecutar bien sin 
 4. **Criterio de cierre** — condición verificable que marca la fase como terminada.
 5. **Criticidad** — crítica o estándar. Le dice al sub-agente qué nivel de rigor se va a aplicar al revisarlo.
 6. **Ruta al archivo de plan + claves a consultar** (si aplica) — la ruta exacta del YAML (ej: `docs/plans/refactor-auth.yaml`) y las claves concretas que el sub-agente tiene que leer: la fase actual (`F2`) y las restricciones globales que aplican (`R1`, `R3`). Claves reales, no placeholders: no mandar `F{N}` literal.
-7. **Skills sugeridas** (si aplica) — las del entorno que aplican a la tarea, con razón concreta. Si no hay, omitir la sección.
+7. **Skills sugeridas** (si aplica) — las que el plan original ya nombre para esta fase, o las que conozcas del entorno y apliquen a la tarea. Con razón concreta. Si nada aplica, omitir la sección. Ver el bloque abajo.
 8. **Sub-agentes auxiliares disponibles** (si aplica) — sdd-explore / sdd-archive cuando la fase los puede aprovechar. Ver `auxiliares.md`.
 9. **Si es re-delegación tras rechazo**: motivo del rechazo previo, qué corregir, qué del intento anterior sí está bien.
 
@@ -40,13 +40,21 @@ Ejemplo de bloque preparado correctamente: ruta `docs/plans/refactor-auth.yaml`,
 
 ## Bloque sugerido para skills
 
+Dos caminos según de dónde vengan:
+
+**Caso A — el plan ya trae skills sugeridas para la fase.** Transcribirlas con su razón a la delegación. El planificador ya hizo el trabajo de evaluar fit; no lo segundo-adivinés salvo que sospeches que la skill ya no existe o no aplica más al contexto real del repo.
+
+**Caso B — el plan no las trae.** Antes de empezar a delegar, dale una mirada a las skills disponibles del entorno (lo que el cliente exponga, o lo que viva en `.claude/skills/`, `.agents/skills/`, etc.). Una lectura rápida de nombres y descripciones alcanza. Después, por cada fase, preguntate si alguna calza con el trabajo a delegar. Si no encontrás nada que aplique de verdad, omití la sección en esa delegación.
+
+Formato cuando incluís el bloque:
+
 ```
 Skills aplicables a esta fase:
   - {nombre}: {por qué aplica acá}
   - {nombre}: {por qué aplica acá}
 ```
 
-Omitir si no hay skills conocidas. No inventar.
+Omitir el bloque entero si no hay skills que apliquen. No inventar. No sumar skills "por las dudas" — el sub-agente lee la lista como una sugerencia legítima del orquestador, y un nombre sin valor es ruido que inunda su contexto.
 
 Si la fase es de frontend y existe `DESIGN.md` en el repo:
 

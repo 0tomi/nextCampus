@@ -27,10 +27,13 @@ Use when work has true ordering and each step is worth pausing on.
 - Tasks: ...
 - Touches: ...
 - Validation: ...
+- Suggested skill: `<skill-name>` — <one-line why, only if a skill genuinely fits this phase>
 
 ## Execution notes
 Phase N+1 starts only after N validates. If validation fails, fix in place; if an assumption broke, update the plan before continuing.
 ```
+
+The `Suggested skill` line is optional. Include it on a phase only when a skill clearly helps the work that phase does; leave it out of phases where nothing fits. See `references/skills.md`.
 
 ---
 
