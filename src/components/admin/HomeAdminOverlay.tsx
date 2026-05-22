@@ -13,7 +13,7 @@ interface SubjectData {
   id: string
   slug: string
   nombre: string
-  descripcion?: string
+  descripcion?: string | null
   driveUrl?: string | null
 }
 
@@ -138,7 +138,7 @@ function SubjectAdminRow({
         subject={{
           id: subject.id,
           nombre: subject.nombre,
-          descripcion: subject.descripcion,
+          descripcion: subject.descripcion ?? undefined,
           driveUrl: subject.driveUrl,
         }}
         yearId={yearId}

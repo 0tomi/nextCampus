@@ -53,6 +53,8 @@ export default async function YearPage({
     subjectsCount: y.subjects.length,
   }))
 
+  const yearIndex = (career?.years ?? []).findIndex(y => y.id === year.id)
+
   // eslint-disable-next-line react-hooks/purity -- el corte "próximos eventos" depende del momento actual del render
   const now = Date.now()
   const nextEvents = year.subjects

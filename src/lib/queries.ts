@@ -128,7 +128,7 @@ export function getSubjectQuizMeta(slug: string) {
       id: true,
       slug: true,
       nombre: true,
-      year: { select: { slug: true } },
+      year: { select: { id: true, slug: true } },
     },
   })
 }
