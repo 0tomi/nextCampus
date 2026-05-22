@@ -10,6 +10,7 @@ import {
   Filter,
   GraduationCap,
   Lock,
+  Map,
   RefreshCw,
   Search,
   Sparkles,
@@ -203,18 +204,40 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                 </div>
               </div>
 
-              <div className="grid min-w-0 grid-cols-3 gap-2 sm:min-w-[360px]">
-                <div className="rounded-md border border-emerald-400/20 bg-emerald-500/8 p-3">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200/70">Marcadas</p>
-                  <p className="mt-2 text-2xl font-black text-emerald-200">{completedCount}</p>
-                </div>
-                <div className="rounded-md border border-amber-400/20 bg-amber-500/8 p-3">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-amber-200/70">Disponibles</p>
-                  <p className="mt-2 text-2xl font-black text-amber-200">{unlockedCount}</p>
-                </div>
-                <div className="rounded-md border border-white/10 bg-white/5 p-3">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-white/45">Avance</p>
-                  <p className="mt-2 text-2xl font-black text-white">{progressPercentage}%</p>
+              <div className="w-full space-y-2 sm:min-w-[360px] xl:w-auto">
+                <Link
+                  href="/mapa/visual"
+                  className="group flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-md border border-cyan-300/20 bg-cyan-300/8 px-3 py-2.5 text-left shadow-[0_0_22px_rgba(103,232,249,0.04)] transition hover:border-cyan-200/45 hover:bg-cyan-300/12"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded bg-cyan-200 text-black shadow-[0_0_18px_rgba(103,232,249,0.18)]">
+                      <Map className="h-4.5 w-4.5" />
+                    </span>
+                    <span>
+                      <span className="block text-xs font-black uppercase tracking-wider text-cyan-100">
+                        Vista visual
+                      </span>
+                      <span className="block text-[10px] font-semibold uppercase tracking-wider text-white/38">
+                        Recorrido animado
+                      </span>
+                    </span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 text-cyan-100/45 transition group-hover:translate-x-0.5 group-hover:text-cyan-100" />
+                </Link>
+
+                <div className="grid min-w-0 grid-cols-3 gap-2">
+                  <div className="rounded-md border border-emerald-400/20 bg-emerald-500/8 p-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200/70">Marcadas</p>
+                    <p className="mt-2 text-2xl font-black text-emerald-200">{completedCount}</p>
+                  </div>
+                  <div className="rounded-md border border-amber-400/20 bg-amber-500/8 p-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-200/70">Disponibles</p>
+                    <p className="mt-2 text-2xl font-black text-amber-200">{unlockedCount}</p>
+                  </div>
+                  <div className="rounded-md border border-white/10 bg-white/5 p-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/45">Avance</p>
+                    <p className="mt-2 text-2xl font-black text-white">{progressPercentage}%</p>
+                  </div>
                 </div>
               </div>
             </div>
