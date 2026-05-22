@@ -35,6 +35,14 @@ const YEAR_NAMES: Record<number, string> = {
   5: 'Quinto año',
 };
 
+const YEAR_ACTION_LABELS: Record<number, string> = {
+  1: '1er año',
+  2: '2do año',
+  3: '3er año',
+  4: '4to año',
+  5: '5to año',
+};
+
 const STATUS_LABELS: Record<SubjectStatus, string> = {
   COMPLETED: 'Marcada',
   UNLOCKED: 'Disponible',
@@ -116,9 +124,9 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
     }
   };
 
-  const handleAutocompleteFirstYear = () => {
-    const firstYearSlugs = subjectsData.filter((subject) => subject.year === 1).map((subject) => subject.slug);
-    saveProgress(Array.from(new Set([...completed, ...firstYearSlugs])));
+  const handleAutocompleteYear = (year: number) => {
+    const yearSlugs = subjectsData.filter((subject) => subject.year === year).map((subject) => subject.slug);
+    saveProgress(Array.from(new Set([...completed, ...yearSlugs])));
   };
 
   const filteredSubjects = useMemo(() => {
@@ -151,6 +159,18 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
     .map((slug) => subjectsData.find((subject) => subject.slug === slug))
     .filter((subject): subject is SubjectNode => Boolean(subject));
   const selectedDirectUnlocks = selectedUnlocks.slice(0, 4);
+  const suggestedYearToComplete = useMemo(() => {
+    for (let year = 1; year <= 5; year += 1) {
+      const yearSubjects = subjectsData.filter((subject) => subject.year === year);
+      const yearIsCompleted = yearSubjects.every((subject) => completed.includes(subject.slug));
+
+      if (!yearIsCompleted) {
+        return year > 1 ? year : null;
+      }
+    }
+
+    return null;
+  }, [completed]);
 
   if (!isHydrated) {
     return (
@@ -332,8 +352,8 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
             </div>
           </div>
 
-          <aside className="h-[520px] overflow-hidden border-t border-white/8 bg-black/18 p-5 lg:border-l lg:border-t-0">
-            <div className="h-full space-y-4 overflow-y-auto pr-1">
+          <aside className="flex h-[520px] flex-col overflow-hidden border-t border-white/8 bg-black/18 p-5 lg:border-l lg:border-t-0">
+            <div className="space-y-4 border-b border-white/8 pb-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">Materia seleccionada</p>
@@ -351,6 +371,61 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                 </span>
               </div>
 
+              <div className="flex flex-wrap gap-2">
+                {selectedSubject ? (
+                  <button
+                    type="button"
+                    onClick={() => handleToggleSubject(selectedSubject)}
+                    disabled={selectedStatus === 'LOCKED'}
+                    className={cn(
+                      'inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-35',
+                      selectedStatus === 'COMPLETED' &&
+                        'border-emerald-300/25 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/16',
+                      selectedStatus === 'UNLOCKED' &&
+                        'border-amber-300/25 bg-amber-400/10 text-amber-100 hover:bg-amber-400/16',
+                      selectedStatus === 'LOCKED' &&
+                        'border-white/10 bg-white/5 text-white/45',
+                    )}
+                  >
+                    {selectedStatus === 'COMPLETED' ? <RefreshCw className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+                    {selectedStatus === 'COMPLETED' && 'Quitar marca'}
+                    {selectedStatus === 'UNLOCKED' && 'Marcar avance'}
+                    {selectedStatus === 'LOCKED' && 'En espera'}
+                  </button>
+                ) : null}
+                {suggestedYearToComplete ? (
+                  <button
+                    type="button"
+                    onClick={() => handleAutocompleteYear(suggestedYearToComplete)}
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-emerald-300/20 bg-emerald-400/8 px-3 py-2 text-xs font-bold text-emerald-100 transition hover:bg-emerald-400/14"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Marcar {YEAR_ACTION_LABELS[suggestedYearToComplete]}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  disabled={completed.length === 0}
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-red-300/20 bg-red-400/8 px-3 py-2 text-xs font-bold text-red-100 transition hover:bg-red-400/14 disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Reiniciar
+                </button>
+              </div>
+            </div>
+
+            {suggestedYearToComplete ? (
+              <div className="mt-4 rounded-md border border-emerald-300/14 bg-emerald-400/6 px-3 py-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-100/60">Sugerencia</p>
+                <p className="mt-1 text-xs leading-5 text-emerald-50/90">
+                  Ya dejaste listo {YEAR_NAMES[suggestedYearToComplete - 1].toLowerCase()}. Si querés avanzar más rápido,
+                  podés marcar {YEAR_NAMES[suggestedYearToComplete].toLowerCase()} completo.
+                </p>
+              </div>
+            ) : null}
+
+            <div className="mt-4 flex-1 space-y-4 overflow-y-auto pr-1">
               {selectedSubject?.optativaActual ? (
                 <div className="rounded-md border border-cyan-300/18 bg-cyan-400/8 p-3">
                   <p className="text-[10px] font-black uppercase tracking-widest text-cyan-100/60">Optativa 2025</p>
@@ -377,47 +452,6 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                 <RelationList title="Para cursar" slugs={selectedSubject?.correlativas ?? []} empty="Sin requisitos previos." missing={selectedMissing} />
                 <RelationList title="Para rendir" slugs={selectedSubject?.paraRendir ?? []} empty="Sin requisitos extra cargados." />
                 <RelationList title="Habilita" slugs={selectedUnlocks.map((subject) => subject.slug)} empty="No destraba materias directas." />
-              </div>
-
-              <div className="flex flex-wrap gap-2 border-t border-white/8 pt-4">
-                {selectedSubject ? (
-                  <button
-                    type="button"
-                    onClick={() => handleToggleSubject(selectedSubject)}
-                    disabled={selectedStatus === 'LOCKED'}
-                    className={cn(
-                      'inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-35',
-                      selectedStatus === 'COMPLETED' &&
-                        'border-emerald-300/25 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/16',
-                      selectedStatus === 'UNLOCKED' &&
-                        'border-amber-300/25 bg-amber-400/10 text-amber-100 hover:bg-amber-400/16',
-                      selectedStatus === 'LOCKED' &&
-                        'border-white/10 bg-white/5 text-white/45',
-                    )}
-                  >
-                    {selectedStatus === 'COMPLETED' ? <RefreshCw className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
-                    {selectedStatus === 'COMPLETED' && 'Quitar marca'}
-                    {selectedStatus === 'UNLOCKED' && 'Marcar avance'}
-                    {selectedStatus === 'LOCKED' && 'En espera'}
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={handleAutocompleteFirstYear}
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-emerald-300/20 bg-emerald-400/8 px-3 py-2 text-xs font-bold text-emerald-100 transition hover:bg-emerald-400/14"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Marcar 1er año
-                </button>
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  disabled={completed.length === 0}
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-red-300/20 bg-red-400/8 px-3 py-2 text-xs font-bold text-red-100 transition hover:bg-red-400/14 disabled:cursor-not-allowed disabled:opacity-35"
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                  Reiniciar
-                </button>
               </div>
             </div>
           </aside>
