@@ -4,12 +4,24 @@ import { useCallback, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ChevronRight, Layers } from 'lucide-react'
 import { getYearColorClasses } from '@/lib/yearColors'
+import { AdminControls } from '@/components/admin/AdminControls'
+import {
+  YearAdminBar,
+  SubjectAdminRow,
+  AddSubjectButton,
+} from '@/components/admin/HomeAdminOverlay'
 
 interface CarouselYear {
   id: string
   slug: string
   nombre: string
-  subjects: Array<{ id: string; slug: string; nombre: string }>
+  subjects: Array<{
+    id: string
+    slug: string
+    nombre: string
+    descripcion: string | null
+    driveUrl: string | null
+  }>
 }
 
 export function YearCarousel({ years }: { years: CarouselYear[] }) {
@@ -110,17 +122,46 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
                     >
                       <Link
                         href={`/materia/${s.slug}`}
-                        className="flex items-center gap-3 px-[18px] py-3.5 cursor-pointer hover:bg-white/[0.03] transition-colors"
+                        className="group flex items-center gap-3 px-[18px] py-3.5 cursor-pointer hover:bg-white/[0.03] transition-colors"
                       >
                         <Layers size={14} className="text-white/25 shrink-0" />
                         <span className="flex-1 min-w-0 text-[13px] font-semibold text-white/75 leading-snug">
                           {s.nombre}
                         </span>
+                        <AdminControls yearId={y.id} noWrapper>
+                          <SubjectAdminRow
+                            subject={{
+                              id: s.id,
+                              slug: s.slug,
+                              nombre: s.nombre,
+                              descripcion: s.descripcion ?? undefined,
+                              driveUrl: s.driveUrl,
+                            }}
+                            yearId={y.id}
+                          />
+                        </AdminControls>
                         <ChevronRight size={14} className="text-white/30 shrink-0" />
                       </Link>
                     </li>
                   ))}
+                  <AdminControls yearId={y.id} noWrapper>
+                    <li className="border-t border-white/5">
+                      <AddSubjectButton yearId={y.id} />
+                    </li>
+                  </AdminControls>
                 </ul>
+
+                <AdminControls requireGlobal noWrapper>
+                  <YearAdminBar
+                    year={{
+                      id: y.id,
+                      slug: y.slug,
+                      nombre: y.nombre,
+                      orden: idx + 1,
+                      subjects: y.subjects,
+                    }}
+                  />
+                </AdminControls>
               </div>
             </div>
           )

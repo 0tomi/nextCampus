@@ -15,6 +15,7 @@ interface AdminControlsProps {
   yearSlug?: string
   requireGlobal?: boolean
   requireUserManagement?: boolean
+  noWrapper?: boolean
 }
 
 /**
@@ -31,6 +32,7 @@ export function AdminControls({
   yearSlug,
   requireGlobal = false,
   requireUserManagement = false,
+  noWrapper = false,
 }: AdminControlsProps) {
   const hasAccess = useAdminAccess({
     yearId,
@@ -44,6 +46,10 @@ export function AdminControls({
 
   // Not admin — render nothing
   if (!hasAccess) return null
+
+  if (noWrapper) {
+    return <>{children}</>
+  }
 
   return <div className="hidden lg:contents">{children}</div>
 }

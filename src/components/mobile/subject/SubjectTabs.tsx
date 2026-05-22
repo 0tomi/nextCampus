@@ -13,6 +13,7 @@ interface SubjectTabsProps {
   subjectSlug: string
   subjectName: string
   yearSlug: string
+  yearId: string
   events: Array<{ id: string; titulo: string; fecha: Date | string; tipo: string }>
   apuntes: Array<{ id: string; titulo: string; descripcionHtml: string | null; recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE'; url: string; orden: number }> }>
 }
@@ -29,7 +30,7 @@ const HASH_MAP: Record<string, TabKey> = {
   '#apuntes': 'apuntes',
 }
 
-export function SubjectTabs({ subjectSlug, subjectName, yearSlug, events, apuntes }: SubjectTabsProps) {
+export function SubjectTabs({ subjectSlug, subjectName, yearSlug, yearId, events, apuntes }: SubjectTabsProps) {
   const [active, setActive] = useState<TabKey>(() => {
     if (typeof window === 'undefined') return 'agenda'
     const hash = window.location.hash
@@ -73,9 +74,9 @@ export function SubjectTabs({ subjectSlug, subjectName, yearSlug, events, apunte
       </div>
 
       <div>
-        {active === 'agenda' && <AgendaTab events={events} accent={colors.tone} />}
-        {active === 'quiz' && <QuizTab subjectSlug={subjectSlug} subjectName={subjectName} yearSlug={yearSlug} />}
-        {active === 'apuntes' && <ApuntesTab apuntes={apuntes} />}
+        {active === 'agenda' && <AgendaTab events={events} accent={colors.tone} yearId={yearId} subjectSlug={subjectSlug} />}
+        {active === 'quiz' && <QuizTab subjectSlug={subjectSlug} subjectName={subjectName} yearSlug={yearSlug} yearId={yearId} />}
+        {active === 'apuntes' && <ApuntesTab apuntes={apuntes} yearId={yearId} subjectSlug={subjectSlug} />}
       </div>
     </div>
   )

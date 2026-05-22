@@ -107,7 +107,7 @@ function SubjectAdminRow({
 
   return (
     <>
-      <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="flex items-center justify-end gap-0.5 lg:opacity-0 transition-opacity lg:group-hover:opacity-100 opacity-100">
         <button
           type="button"
           onClick={(e) => {

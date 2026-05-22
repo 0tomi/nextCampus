@@ -148,9 +148,11 @@ export default async function YearCalendarPage({
                 fecha: e.fecha,
                 titulo: e.titulo,
                 tipo: e.tipo,
+                subjectSlug: e.subjectSlug,
               }))}
               accent={tone}
               initialDate={events[0]?.fecha}
+              yearId={year.id}
             />
           </div>
         </MobileShell>

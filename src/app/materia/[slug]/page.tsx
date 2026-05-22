@@ -471,25 +471,25 @@ export default async function SubjectPage({
           </div>
         )}
       </section>
-      <SubjectPageAdminOverlay
-        subject={{
-          id: subject.id,
-          slug: subject.slug,
-          nombre: subject.nombre,
-          descripcion: subject.descripcion || undefined,
-          driveUrl: subject.driveUrl,
-          playlistUrl: subject.playlistUrl,
-          playlistEnabled: subject.playlistEnabled,
-        }}
-        agendaId={agendaId}
-        yearId={subject.year.id}
-        tiposEvento={tiposEvento}
-      />
     </DashboardShell>
     </div>
     <div className="lg:hidden">
       <MobileSubject subject={subject} allYears={allYears} />
     </div>
+    <SubjectPageAdminOverlay
+      subject={{
+        id: subject.id,
+        slug: subject.slug,
+        nombre: subject.nombre,
+        descripcion: subject.descripcion || undefined,
+        driveUrl: subject.driveUrl,
+        playlistUrl: subject.playlistUrl,
+        playlistEnabled: subject.playlistEnabled,
+      }}
+      agendaId={agendaId}
+      yearId={subject.year.id}
+      tiposEvento={tiposEvento}
+    />
     </>
   )
 }

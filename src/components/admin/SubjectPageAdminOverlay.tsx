@@ -35,7 +35,7 @@ interface SubjectPageAdminOverlayProps {
 import { useEffect } from 'react'
 
 interface AdminTriggerButtonProps {
-  action: 'upload-bank' | 'new-apunte' | 'new-event' | 'edit-drive'
+  action: 'upload-bank' | 'new-apunte' | 'new-event' | 'edit-drive' | 'edit-subject'
   className?: string
   children: React.ReactNode
 }
@@ -81,6 +81,7 @@ export function SubjectPageAdminOverlay({
     const handleNewApunte = () => setNewApunteOpen(true)
     const handleNewEvent = () => setNewEventOpen(true)
     const handleEditDrive = () => setEditDriveOpen(true)
+    const handleEditSubject = () => setEditSubjectOpen(true)
     const handleEditApunte = (e: Event) => {
       const { apunte } = (e as CustomEvent<{ apunte: ApunteFull }>).detail
       setEditingApunte(apunte)
@@ -90,6 +91,7 @@ export function SubjectPageAdminOverlay({
     window.addEventListener('open-admin-modal-new-apunte', handleNewApunte)
     window.addEventListener('open-admin-modal-new-event', handleNewEvent)
     window.addEventListener('open-admin-modal-edit-drive', handleEditDrive)
+    window.addEventListener('open-admin-modal-edit-subject', handleEditSubject)
     window.addEventListener('open-admin-modal-edit-apunte', handleEditApunte)
 
     return () => {
@@ -97,14 +99,15 @@ export function SubjectPageAdminOverlay({
       window.removeEventListener('open-admin-modal-new-apunte', handleNewApunte)
       window.removeEventListener('open-admin-modal-new-event', handleNewEvent)
       window.removeEventListener('open-admin-modal-edit-drive', handleEditDrive)
+      window.removeEventListener('open-admin-modal-edit-subject', handleEditSubject)
       window.removeEventListener('open-admin-modal-edit-apunte', handleEditApunte)
     }
   }, [])
 
   return (
-    <AdminControls yearId={yearId} yearSlug={yearSlug}>
-      {/* Botones de acción flotante en la parte superior */}
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2">
+    <AdminControls yearId={yearId} yearSlug={yearSlug} noWrapper>
+      {/* Botones de acción flotante en la parte superior - Desktop only */}
+      <div className="fixed bottom-6 right-6 z-40 hidden lg:flex flex-col items-end gap-2">
         <button
           type="button"
           onClick={() => { setUploadBankOpen(true); setUploadBankKey((k) => k + 1) }}

@@ -261,12 +261,6 @@ export default async function YearPage({
               ))}
             </div>
           </section>
-
-          <YearPageAdminOverlay
-            yearId={year.id}
-            subjects={modalSubjects}
-            tiposEvento={tiposEvento}
-          />
         </DashboardShell>
       </div>
       <div className="lg:hidden">
@@ -277,6 +271,17 @@ export default async function YearPage({
           careerName={year.career.nombre}
         />
       </div>
+      <YearPageAdminOverlay
+        yearId={year.id}
+        subjects={modalSubjects}
+        tiposEvento={tiposEvento}
+        year={{
+          id: year.id,
+          slug: year.slug,
+          nombre: year.nombre,
+          orden: yearIndex >= 0 ? yearIndex + 1 : 1,
+        }}
+      />
     </>
   )
 }

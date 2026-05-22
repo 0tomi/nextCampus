@@ -1,9 +1,13 @@
+'use client'
+
 import Link from 'next/link'
-import { ArrowRight, ChevronRight, Calendar, Layers } from 'lucide-react'
+import { ArrowRight, ChevronRight, Calendar, Layers, Pencil, Trash2, Plus } from 'lucide-react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { YearSwitcherPill } from './YearSwitcherPill'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
 import { getYearColorClasses } from '@/lib/yearColors'
+import { AdminControls } from '@/components/admin/AdminControls'
+import { DeleteEventoButton } from '@/components/admin/SubjectPageAdminOverlay'
 
 interface YearForMobile {
   id: string
@@ -73,12 +77,36 @@ export function MobileYear({
           >
             <div className="absolute -top-12 -right-10 w-40 h-40 rounded-full bg-white/20 blur-3xl pointer-events-none" />
             <div className="relative">
-              <p className={['text-[10px] font-extrabold uppercase tracking-[0.22em]', (colors.name === 'violet' || colors.name === 'rose') ? 'text-white/70' : 'text-black/55'].join(' ')}>
-                Año {yearNumber} · {year.subjects.length} {year.subjects.length === 1 ? 'materia' : 'materias'}
-              </p>
-              <h1 className={['mt-2 text-2xl font-black tracking-tight leading-tight', (colors.name === 'violet' || colors.name === 'rose') ? 'text-white' : 'text-black'].join(' ')}>
-                {year.nombre}
-              </h1>
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className={['text-[10px] font-extrabold uppercase tracking-[0.22em]', (colors.name === 'violet' || colors.name === 'rose') ? 'text-white/70' : 'text-black/55'].join(' ')}>
+                    Año {yearNumber} · {year.subjects.length} {year.subjects.length === 1 ? 'materia' : 'materias'}
+                  </p>
+                  <h1 className={['mt-2 text-2xl font-black tracking-tight leading-tight truncate', (colors.name === 'violet' || colors.name === 'rose') ? 'text-white' : 'text-black'].join(' ')}>
+                    {year.nombre}
+                  </h1>
+                </div>
+                <AdminControls yearId={year.id} noWrapper>
+                  <div className="flex gap-1 shrink-0 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-year'))}
+                      className={['p-2 rounded bg-black/20 hover:bg-black/35 transition-colors cursor-pointer', (colors.name === 'violet' || colors.name === 'rose') ? 'text-white' : 'text-black'].join(' ')}
+                      title="Editar año"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-delete-year'))}
+                      className="p-2 rounded bg-rose-500/20 text-rose-300 hover:bg-rose-500/35 transition-colors cursor-pointer"
+                      title="Eliminar año"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </AdminControls>
+              </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/20 text-white text-[11px] font-bold">
                   <Calendar size={12} strokeWidth={2.5} />
@@ -98,9 +126,21 @@ export function MobileYear({
 
         {/* PRÓXIMOS 3 EVENTOS + CTA calendario */}
         <section className="flex flex-col gap-3">
-          <div className="px-[18px]">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">Agenda</p>
-            <h2 className="mt-1 text-lg font-black text-white">Próximos eventos</h2>
+          <div className="px-[18px] flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">Agenda</p>
+              <h2 className="mt-1 text-lg font-black text-white">Próximos eventos</h2>
+            </div>
+            <AdminControls yearId={year.id} noWrapper>
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-new-event'))}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded border border-white/10 bg-surface-1 text-xs font-semibold text-white/60 transition-colors hover:bg-white/5 hover:text-white cursor-pointer"
+              >
+                <Plus size={12} />
+                Agregar evento
+              </button>
+            </AdminControls>
           </div>
           <div className="px-[18px] flex flex-col gap-2.5">
             {nextEvents.length === 0 ? (
@@ -109,9 +149,23 @@ export function MobileYear({
               </div>
             ) : (
               nextEvents.map(e => (
-                <Link key={e.id} href={`/materia/${e.subjectSlug}`}>
-                  <AgendaCard fecha={e.fecha} tipo={e.tipo} titulo={`${e.titulo} · ${e.subjectNombre}`} />
-                </Link>
+                <div key={e.id} className="relative group">
+                  <Link href={`/materia/${e.subjectSlug}`} className="block">
+                    <AgendaCard fecha={e.fecha} tipo={e.tipo} titulo={`${e.titulo} · ${e.subjectNombre}`} />
+                  </Link>
+                  <AdminControls yearId={year.id} noWrapper>
+                    <div
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 z-10"
+                      onClick={(evt) => evt.stopPropagation()}
+                    >
+                      <DeleteEventoButton
+                        eventoId={e.id}
+                        subjectSlug={e.subjectSlug}
+                        yearId={year.id}
+                      />
+                    </div>
+                  </AdminControls>
+                </div>
               ))
             )}
           </div>

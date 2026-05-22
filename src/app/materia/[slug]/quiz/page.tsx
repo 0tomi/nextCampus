@@ -51,7 +51,12 @@ export default async function QuizPage({
           </p>
         </div>
 
-        <QuizRunner subjectSlug={slug} bancos={bancos} />
+        <QuizRunner
+          subjectSlug={slug}
+          bancos={bancos}
+          yearId={subject.year.id}
+          yearSlug={subject.year.slug}
+        />
       </main>
     </div>
   )
