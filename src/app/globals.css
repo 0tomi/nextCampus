@@ -505,6 +505,41 @@ body {
   cursor: pointer;
 }
 
+.year-calendar-expanded {
+  padding: 1.5rem;
+}
+
+.year-calendar-expanded .fc .fc-toolbar.fc-header-toolbar {
+  margin-bottom: 1.75rem;
+}
+
+.year-calendar-expanded .fc .fc-toolbar-title {
+  font-size: clamp(1.35rem, 2.3vw, 1.9rem);
+}
+
+.year-calendar-expanded .fc .fc-col-header-cell-cushion,
+.year-calendar-expanded .fc .fc-daygrid-day-number {
+  font-size: 1rem;
+}
+
+.year-calendar-expanded .fc .fc-daygrid-day-frame {
+  min-height: 8.75rem;
+}
+
+.year-calendar-expanded .fc .fc-daygrid-day-events {
+  min-height: 5.6rem;
+}
+
+@media (min-width: 1440px) {
+  .year-calendar-expanded .fc .fc-daygrid-day-frame {
+    min-height: 10rem;
+  }
+
+  .year-calendar-expanded .fc .fc-daygrid-day-events {
+    min-height: 6.5rem;
+  }
+}
+
 .scrollbar-none {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
