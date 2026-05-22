@@ -56,6 +56,7 @@ model UserAccount {
   role            UserRole
   status          UserStatus           @default(ACTIVE)
   yearPermissions UserYearPermission[]
+  auditLogs       AuditLog[]
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
 
@@ -175,3 +176,25 @@ model ApunteRecurso {
 // Admins: ADMIN_EMAILS sigue siendo el bootstrap de AdminGeneral.
 // AdminCampus vive en UserAccount con permisos explícitos por año.
 // Sin signup público.
+
+// ---------------------------------------------------------------------------
+// Auditoría: cada movimiento administrativo deja una entrada con quién, qué
+// y cuándo. `detail` guarda un snapshot del payload (nombres, slugs, ids) para
+// que el renderer pueda mostrar contexto humano aun si la entidad se borra.
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  user       UserAccount @relation(fields: [userId], references: [id], onDelete: Restrict)
+  userId     String
+  action     String
+  entityType String?
+  entityId   String?
+  detail     Json
+  createdAt  DateTime    @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
