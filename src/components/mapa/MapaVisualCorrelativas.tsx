@@ -19,6 +19,7 @@ import {
   RefreshCw,
   Sparkles,
   Unlock,
+  X,
 } from 'lucide-react';
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
 import { calculateSubjectStatuses } from '@/lib/domain/mapa/unlockLogic';
@@ -484,45 +485,14 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
         </div>
       </div>
 
-      <div data-map-control className="absolute left-4 top-4 z-20 w-[min(430px,calc(100vw-2rem))] rounded-md border border-white/10 bg-black/58 p-4 shadow-2xl backdrop-blur-xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <Link
-              href="/mapa"
-              className="inline-flex cursor-pointer items-center gap-2 text-[11px] font-black uppercase tracking-[0.16em] text-white/45 transition hover:text-white"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Volver
-            </Link>
-            <div className="mt-4 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-cyan-100">
-              <Sparkles className="h-4 w-4" />
-              Vista visual
-            </div>
-            <h1 className="mt-1 font-display text-3xl font-black tracking-normal text-white">
-              Recorrido de correlativas
-            </h1>
-          </div>
-          <button
-            type="button"
-            title={isPanelOpen ? 'Ocultar detalle' : 'Mostrar detalle'}
-            onClick={() => setIsPanelOpen((current) => !current)}
-            className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md border border-white/10 bg-white/6 text-white/70 transition hover:bg-white/10 hover:text-white"
-          >
-            {isPanelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
-          </button>
-        </div>
-
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          <Metric label="Completadas" value={completedCount} tone="emerald" />
-          <Metric label="Disponibles" value={unlockedCount} tone="cyan" />
-          <Metric label="Avance" value={`${progress}%`} tone="amber" />
-        </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/8">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-emerald-200 via-cyan-200 to-amber-200 transition-[width] duration-700"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+      <div data-map-control className="absolute left-4 top-4 z-20">
+        <Link
+          href="/mapa"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-black/58 px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-white/45 shadow-2xl backdrop-blur-xl transition hover:bg-white/10 hover:text-white"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Volver
+        </Link>
       </div>
 
       <div data-map-control className="absolute bottom-4 left-4 z-20 flex items-center overflow-hidden rounded-md border border-white/10 bg-black/58 shadow-2xl backdrop-blur-xl">
@@ -565,14 +535,23 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
           )}
         >
           <div className="space-y-4">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-100/55">
-                Materia enfocada
-              </p>
-              <h2 className="mt-2 text-2xl font-black leading-tight text-white">{selectedSubject.nombre}</h2>
-              <p className="mt-2 text-xs font-bold uppercase tracking-widest text-white/38">
-                {selectedSubject.codigo} · {selectedSubject.periodo}
-              </p>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-100/55">
+                  Materia enfocada
+                </p>
+                <h2 className="mt-2 text-2xl font-black leading-tight text-white">{selectedSubject.nombre}</h2>
+                <p className="mt-2 text-xs font-bold uppercase tracking-widest text-white/38">
+                  {selectedSubject.codigo} · {selectedSubject.periodo}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPanelOpen(false)}
+                className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-white/40 transition hover:bg-white/10 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
 
             <div className={cn('rounded-md border p-3 backdrop-blur', STATUS_STYLES[selectedStatus])}>
