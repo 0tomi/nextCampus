@@ -33,7 +33,7 @@ No activar para brainstorming, tareas de una sola capa, o cambios menores que no
 
 1. **Crear el archivo de plan** antes de delegar nada. Un único YAML indexado con meta, restricciones globales, fases (cada una con su clave estable tipo `F1`, `F2`, …) y estado global. Cada fase se clasifica como **crítica** o **estándar** (criterios en `supervision.md`). Ubicación y estructura en `archivo_plan.md`.
 
-2. **Delegar una fase a la vez**. La delegación lleva: contexto suficiente para ejecutar, ruta del archivo de plan + claves que el sub-agente debe consultar (ej: `F2`, `R1`, `R3`), skills aplicables que conozcas del entorno, y la criticidad declarada. Plantilla en `protocolo_delegacion.md`.
+2. **Delegar una fase a la vez**. La delegación lleva: contexto suficiente para ejecutar, ruta del archivo de plan + claves que el sub-agente debe consultar (ej: `F2`, `R1`, `R3`), skills aplicables si corresponde (las que el plan ya sugiera o las que detectes del entorno — ver más abajo), y la criticidad declarada. Plantilla en `protocolo_delegacion.md`.
 
 3. **Validar el entregable** según criticidad: las críticas se validan antes de delegar la siguiente; las estándar pueden agruparse de a 2. Detalle en `supervision.md`.
 
@@ -59,7 +59,11 @@ Si encuentra contradicciones entre lo que dice el archivo y lo que decís en el 
 
 ## Cuándo ofrecer skills y sub-agentes auxiliares
 
-- **Skills**: cuando conocés una skill del entorno que aplica a la fase, mencionala con razón concreta. No inventes skills.
+- **Skills**: dos caminos según de dónde vengan.
+  - *El plan ya trae skills sugeridas por fase* (algunos planificadores lo hacen, otros no). Si las trae, transcribilas a la delegación de esa fase con su razón — el planificador ya hizo el trabajo de evaluar fit.
+  - *El plan no las menciona, o no las conocés bien.* Antes de delegar la primera fase, dale una mirada a lo que esté disponible: el cliente puede exponer una lista (tipo `<available_skills>` con descripciones), o pueden vivir en `.claude/skills/`, `.agents/skills/`, o donde el repo las tenga. Una lectura rápida de nombres y descripciones alcanza. Después, por cada fase, evaluá si alguna calza con el trabajo a delegar.
+
+  Si ninguna aplica a la fase, omití la sección entera en esa delegación. Una skill irrelevante inunda el contexto del sub-agente sin aportar. Nunca inventes skills: si no estás seguro de que existe en el entorno, no la menciones.
 - **DESIGN.md**: si la fase es de frontend y existe `DESIGN.md` en el repo, incluilo como referencia obligatoria de estilo visual.
 - **sdd-explore / sdd-archive**: ofrecelos cuando la fase pinta candidata a necesitar exploración del repo o documentación de una decisión arquitectónica. Detalle en `auxiliares.md`.
 

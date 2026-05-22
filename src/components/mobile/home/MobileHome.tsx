@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { YearCarousel } from './YearCarousel'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
+import { AdminControls } from '@/components/admin/AdminControls'
+import { AddYearButton } from '@/components/admin/HomeAdminOverlay'
 
 interface CareerForMobile {
   nombre: string
@@ -10,7 +12,13 @@ interface CareerForMobile {
     id: string
     slug: string
     nombre: string
-    subjects: Array<{ id: string; slug: string; nombre: string }>
+    subjects: Array<{
+      id: string
+      slug: string
+      nombre: string
+      descripcion: string | null
+      driveUrl: string | null
+    }>
   }>
 }
 
@@ -62,7 +70,16 @@ export function MobileHome({
         </section>
 
         {/* CAROUSEL */}
-        <section>
+        <section className="flex flex-col gap-3">
+          <div className="px-[18px] flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">Nivel</p>
+              <h2 className="mt-1 text-lg font-black text-white">Años académicos</h2>
+            </div>
+            <AdminControls requireGlobal noWrapper>
+              <AddYearButton />
+            </AdminControls>
+          </div>
           <YearCarousel years={career.years} />
         </section>
 

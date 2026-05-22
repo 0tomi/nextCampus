@@ -7,10 +7,13 @@ import {
   ChevronRight,
   Layers,
   RotateCcw,
+  Trash2,
 } from 'lucide-react'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { cn } from '@/lib/utils'
 import { AlertDialog } from '@/components/ui/AlertDialog'
+import { AdminControls } from '@/components/admin/AdminControls'
+import { deleteQuizBankAction } from '@/app/admin/actions'
 
 type Mode = 'practica' | 'examen'
 
@@ -39,6 +42,8 @@ type UserAnswer = number | number[] | boolean | null
 interface QuizRunnerProps {
   subjectSlug: string
   bancos: BancoInfo[]
+  yearId?: string
+  yearSlug?: string
 }
 
 // Control hundido: más oscuro que la DarkCard (surface-1) que lo contiene.
@@ -47,7 +52,12 @@ const CONTROL =
   'border border-white/[0.06] bg-surface-3 transition-colors hover:border-white/12'
 const CONTROL_ACTIVE = 'border border-primary/45 bg-primary/12'
 
-export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
+export function QuizRunner({
+  subjectSlug,
+  bancos,
+  yearId,
+  yearSlug,
+}: QuizRunnerProps) {
   const [phase, setPhase] = useState<'config' | 'running' | 'done'>('config')
   const [mode, setMode] = useState<Mode>('practica')
   const [count, setCount] = useState(0)
@@ -330,35 +340,60 @@ export function QuizRunner({ subjectSlug, bancos }: QuizRunnerProps) {
             {bancos.map((b) => {
               const active = selectedBancos.includes(b.id)
               return (
-                <button
+                <div
                   key={b.id}
-                  type="button"
-                  onClick={() => toggleBanco(b.id)}
-                  aria-pressed={active}
                   className={cn(
-                    'flex items-center justify-between gap-3 px-4 py-3.5 text-left cursor-pointer',
+                    'group relative flex items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors',
                     active ? CONTROL_ACTIVE : CONTROL,
                   )}
                 >
-                  <span className="min-w-0">
+                  {/* Clickable area to toggle */}
+                  <button
+                    type="button"
+                    onClick={() => toggleBanco(b.id)}
+                    className="absolute inset-0 w-full h-full cursor-pointer text-left"
+                    aria-pressed={active}
+                  >
+                    <span className="sr-only">Seleccionar {b.nombre}</span>
+                  </button>
+
+                  {/* Text content */}
+                  <div className="relative min-w-0 pointer-events-none z-10">
                     <span className="block truncate text-sm font-semibold text-white">
                       {b.nombre}
                     </span>
                     <span className="mt-0.5 block text-xs text-white/44">
                       {b.totalPreguntas} preguntas
                     </span>
-                  </span>
-                  <span
-                    className={cn(
-                      'flex h-5 w-5 shrink-0 items-center justify-center transition-colors',
-                      active
-                        ? 'bg-primary text-white'
-                        : 'border border-white/15',
-                    )}
-                  >
-                    {active && <Check className="h-3 w-3" strokeWidth={3} />}
-                  </span>
-                </button>
+                  </div>
+
+                  {/* Actions (delete & check) */}
+                  <div className="relative flex items-center gap-2 z-10">
+                    <AdminControls yearId={yearId} noWrapper>
+                      <form action={deleteQuizBankAction} className="flex">
+                        <input type="hidden" name="subjectSlug" value={subjectSlug} />
+                        <input type="hidden" name="bankId" value={b.id} />
+                        <button
+                          type="submit"
+                          className="flex h-7 w-7 items-center justify-center rounded text-white/55 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+                          title="Eliminar banco de preguntas"
+                        >
+                          <Trash2 className="h-4 w-4 text-rose-400" />
+                        </button>
+                      </form>
+                    </AdminControls>
+                    <span
+                      className={cn(
+                        'flex h-5 w-5 shrink-0 items-center justify-center transition-colors pointer-events-none',
+                        active
+                          ? 'bg-primary text-white'
+                          : 'border border-white/15',
+                      )}
+                    >
+                      {active && <Check className="h-3 w-3" strokeWidth={3} />}
+                    </span>
+                  </div>
+                </div>
               )
             })}
           </div>

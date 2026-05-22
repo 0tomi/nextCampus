@@ -4,6 +4,8 @@ import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getEventTone } from '@/components/mobile/shared/tokens'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
+import { AdminControls } from '@/components/admin/AdminControls'
+import { DeleteEventoButton } from '@/components/admin/SubjectPageAdminOverlay'
 
 const MONTH_NAMES_ES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -24,6 +26,7 @@ export interface MobileCalendarEvent {
   fecha: Date | string
   titulo: string
   tipo: string
+  subjectSlug?: string
 }
 
 export interface MobileCalendarProps {
@@ -31,6 +34,8 @@ export interface MobileCalendarProps {
   accent: string
   initialDate?: Date | string
   initialSelected?: Date | string | null
+  yearId?: string
+  subjectSlug?: string
 }
 
 export function MobileCalendar({
@@ -38,6 +43,8 @@ export function MobileCalendar({
   accent,
   initialDate,
   initialSelected = null,
+  yearId,
+  subjectSlug,
 }: MobileCalendarProps) {
   const [cursor, setCursor] = useState<Date>(() => {
     if (initialDate) {
@@ -266,15 +273,28 @@ export function MobileCalendar({
                 })
               : `Todos los eventos · ${MONTH_NAMES_ES[cursor.getMonth()]}`}
           </p>
-          {selected && (
-            <button
-              onClick={() => setSelected(null)}
-              className="relative cursor-pointer rounded-full border border-white/10 bg-transparent text-[9px] font-extrabold uppercase tracking-[0.14em] text-white/70 before:absolute before:-inset-2 before:content-['']"
-              style={{ height: 24, padding: '0 10px' }}
-            >
-              Ver mes
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {yearId && (
+              <AdminControls yearId={yearId} noWrapper>
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-new-event'))}
+                  className="inline-flex items-center justify-center rounded border border-white/10 bg-surface-1 px-2.5 h-6 text-[10px] font-bold text-white/70 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                >
+                  + Agregar evento
+                </button>
+              </AdminControls>
+            )}
+            {selected && (
+              <button
+                onClick={() => setSelected(null)}
+                className="relative cursor-pointer rounded-full border border-white/10 bg-transparent text-[9px] font-extrabold uppercase tracking-[0.14em] text-white/70 before:absolute before:-inset-2 before:content-['']"
+                style={{ height: 24, padding: '0 10px' }}
+              >
+                Ver mes
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="mt-2.5 flex flex-col gap-2">
@@ -288,12 +308,25 @@ export function MobileCalendar({
               </div>
             ) : (
               selectedEvents.map((e) => (
-                <AgendaCard
-                  key={e.id}
-                  fecha={e.fecha}
-                  tipo={e.tipo}
-                  titulo={e.titulo}
-                />
+                <div key={e.id} className="relative group">
+                  <AgendaCard
+                    fecha={e.fecha}
+                    tipo={e.tipo}
+                    titulo={e.titulo}
+                  />
+                  {yearId && (e.subjectSlug || subjectSlug) && (
+                    <div
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 z-10"
+                      onClick={(evt) => evt.stopPropagation()}
+                    >
+                      <DeleteEventoButton
+                        eventoId={e.id}
+                        subjectSlug={e.subjectSlug || subjectSlug || ''}
+                        yearId={yearId}
+                      />
+                    </div>
+                  )}
+                </div>
               ))
             )
           ) : monthEventsSorted.length === 0 ? (
@@ -305,12 +338,25 @@ export function MobileCalendar({
             </div>
           ) : (
             monthEventsSorted.map((e) => (
-              <AgendaCard
-                key={e.id}
-                fecha={e.fecha}
-                tipo={e.tipo}
-                titulo={e.titulo}
-              />
+              <div key={e.id} className="relative group">
+                <AgendaCard
+                  fecha={e.fecha}
+                  tipo={e.tipo}
+                  titulo={e.titulo}
+                />
+                {yearId && (e.subjectSlug || subjectSlug) && (
+                  <div
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 z-10"
+                    onClick={(evt) => evt.stopPropagation()}
+                  >
+                    <DeleteEventoButton
+                      eventoId={e.id}
+                      subjectSlug={e.subjectSlug || subjectSlug || ''}
+                      yearId={yearId}
+                    />
+                  </div>
+                )}
+              </div>
             ))
           )}
         </div>

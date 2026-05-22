@@ -1,15 +1,20 @@
+'use client'
+
 import Link from 'next/link'
-import { Sparkles, ArrowRight } from 'lucide-react'
+import { Sparkles, ArrowRight, Plus } from 'lucide-react'
 import { getYearColorClasses } from '@/lib/yearColors'
+import { AdminControls } from '@/components/admin/AdminControls'
 
 export function QuizTab({
   subjectSlug,
   subjectName,
   yearSlug,
+  yearId,
 }: {
   subjectSlug: string
   subjectName: string
   yearSlug: string
+  yearId: string
 }) {
   const colors = getYearColorClasses(yearSlug)
   return (
@@ -35,6 +40,17 @@ export function QuizTab({
           Empezar quiz
           <ArrowRight size={16} strokeWidth={2.5} />
         </Link>
+
+        <AdminControls yearId={yearId} noWrapper>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-upload-bank'))}
+            className="flex items-center justify-center gap-2 h-11 rounded-md bg-white/[0.04] border border-white/10 text-sm font-bold text-white cursor-pointer hover:bg-white/10 transition-colors"
+          >
+            <Plus size={16} strokeWidth={2.5} />
+            Subir banco de preguntas
+          </button>
+        </AdminControls>
       </div>
     </div>
   )

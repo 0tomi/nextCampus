@@ -13,7 +13,7 @@ interface SubjectData {
   id: string
   slug: string
   nombre: string
-  descripcion?: string
+  descripcion?: string | null
   driveUrl?: string | null
 }
 
@@ -107,7 +107,7 @@ function SubjectAdminRow({
 
   return (
     <>
-      <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="flex items-center justify-end gap-0.5 lg:opacity-0 transition-opacity lg:group-hover:opacity-100 opacity-100">
         <button
           type="button"
           onClick={(e) => {
@@ -138,7 +138,7 @@ function SubjectAdminRow({
         subject={{
           id: subject.id,
           nombre: subject.nombre,
-          descripcion: subject.descripcion,
+          descripcion: subject.descripcion ?? undefined,
           driveUrl: subject.driveUrl,
         }}
         yearId={yearId}
