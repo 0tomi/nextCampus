@@ -2,6 +2,7 @@ import 'server-only'
 import { cache } from 'react'
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from './supabase/server'
+import { isAuthSessionMissingError, isInvalidRefreshTokenError } from './supabase/auth-errors'
 import { env } from '@/lib/env'
 import { prisma } from '@/lib/prisma'
 
@@ -119,12 +120,29 @@ export function buildAdminUser(account: DbUserAccount): AdminUser | null {
 const getAuthenticatedUser = cache(
   async (): Promise<SupabaseAuthUser | null> => {
     const supabase = await createSupabaseServerClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    try {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser()
 
-    if (!user?.email) return null
-    return { id: user.id, email: user.email }
+      if (error) {
+        if (isAuthSessionMissingError(error) || isInvalidRefreshTokenError(error)) {
+          return null
+        }
+
+        throw error
+      }
+
+      if (!user?.email) return null
+      return { id: user.id, email: user.email }
+    } catch (error) {
+      if (isAuthSessionMissingError(error) || isInvalidRefreshTokenError(error)) {
+        return null
+      }
+
+      throw error
+    }
   },
 )
 
