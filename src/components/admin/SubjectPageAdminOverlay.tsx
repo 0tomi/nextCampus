@@ -7,7 +7,6 @@ import { SubjectModal } from './SubjectModal'
 import { EventModal } from './EventModal'
 import { ApunteModal } from './ApunteModal'
 import { QuizBankModal } from './QuizBankModal'
-import { EditDriveModal } from './EditDriveModal'
 import { deleteEvento, deleteApunteAction } from '@/app/admin/actions'
 import type { ApunteFull } from './ApunteModal'
 
@@ -35,7 +34,7 @@ interface SubjectPageAdminOverlayProps {
 import { useEffect } from 'react'
 
 interface AdminTriggerButtonProps {
-  action: 'upload-bank' | 'new-apunte' | 'new-event' | 'edit-drive' | 'edit-subject'
+  action: 'upload-bank' | 'new-apunte' | 'new-event' | 'edit-subject'
   className?: string
   children: React.ReactNode
 }
@@ -71,7 +70,6 @@ export function SubjectPageAdminOverlay({
   const [editingApunte, setEditingApunte] = useState<ApunteFull | null>(null)
   const [uploadBankOpen, setUploadBankOpen] = useState(false)
   const [uploadBankKey, setUploadBankKey] = useState(0)
-  const [editDriveOpen, setEditDriveOpen] = useState(false)
 
   useEffect(() => {
     const handleUploadBank = () => {
@@ -80,7 +78,6 @@ export function SubjectPageAdminOverlay({
     }
     const handleNewApunte = () => setNewApunteOpen(true)
     const handleNewEvent = () => setNewEventOpen(true)
-    const handleEditDrive = () => setEditDriveOpen(true)
     const handleEditSubject = () => setEditSubjectOpen(true)
     const handleEditApunte = (e: Event) => {
       const { apunte } = (e as CustomEvent<{ apunte: ApunteFull }>).detail
@@ -90,7 +87,6 @@ export function SubjectPageAdminOverlay({
     window.addEventListener('open-admin-modal-upload-bank', handleUploadBank)
     window.addEventListener('open-admin-modal-new-apunte', handleNewApunte)
     window.addEventListener('open-admin-modal-new-event', handleNewEvent)
-    window.addEventListener('open-admin-modal-edit-drive', handleEditDrive)
     window.addEventListener('open-admin-modal-edit-subject', handleEditSubject)
     window.addEventListener('open-admin-modal-edit-apunte', handleEditApunte)
 
@@ -98,7 +94,6 @@ export function SubjectPageAdminOverlay({
       window.removeEventListener('open-admin-modal-upload-bank', handleUploadBank)
       window.removeEventListener('open-admin-modal-new-apunte', handleNewApunte)
       window.removeEventListener('open-admin-modal-new-event', handleNewEvent)
-      window.removeEventListener('open-admin-modal-edit-drive', handleEditDrive)
       window.removeEventListener('open-admin-modal-edit-subject', handleEditSubject)
       window.removeEventListener('open-admin-modal-edit-apunte', handleEditApunte)
     }
@@ -191,16 +186,6 @@ export function SubjectPageAdminOverlay({
         open={uploadBankOpen}
         onClose={() => setUploadBankOpen(false)}
         subjectSlug={subject.slug}
-      />
-
-      <EditDriveModal
-        key={`${subject.id}-${subject.driveUrl ?? ''}-${editDriveOpen}`}
-        open={editDriveOpen}
-        onClose={() => setEditDriveOpen(false)}
-        subjectId={subject.id}
-        subjectSlug={subject.slug}
-        subjectNombre={subject.nombre}
-        currentDriveUrl={subject.driveUrl}
       />
     </AdminControls>
   )

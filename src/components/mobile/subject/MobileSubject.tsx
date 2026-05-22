@@ -95,9 +95,9 @@ export function MobileSubject({
                   <AdminControls yearId={subject.year.id} noWrapper>
                     <button
                       type="button"
-                      onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-drive'))}
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-subject'))}
                       className="flex items-center justify-center w-11 h-11 shrink-0 rounded-md bg-white/[0.04] border border-white/10 text-white cursor-pointer hover:bg-white/10 transition-colors"
-                      title="Editar link de Drive"
+                      title="Editar materia"
                     >
                       <Pencil className="h-4 w-4 text-white/70" />
                     </button>
@@ -107,7 +107,7 @@ export function MobileSubject({
                 <AdminControls yearId={subject.year.id} noWrapper>
                   <button
                     type="button"
-                    onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-drive'))}
+                    onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-subject'))}
                     className="w-full flex items-center justify-center gap-2 h-11 rounded-md bg-white/[0.04] border border-white/10 text-sm font-bold text-white cursor-pointer hover:bg-white/10 transition-colors"
                   >
                     <Plus className="h-4 w-4 text-white/70" />

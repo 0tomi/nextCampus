@@ -207,12 +207,12 @@ export default async function SubjectPage({
 
               <AdminControls yearId={subject.year.id}>
                 <AdminTriggerButton
-                  action="edit-drive"
+                  action="edit-subject"
                   className="group relative inline-flex h-9 w-9 items-center justify-center rounded border border-white/10 bg-surface-1 text-white/50 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
                 >
                   <Pencil className="h-4 w-4" />
                   <span className="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 scale-0 rounded bg-black/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-white opacity-0 transition-all group-hover:scale-100 group-hover:opacity-100 whitespace-nowrap z-10 border border-white/5 shadow-md">
-                    Editar link del drive
+                    Editar materia
                   </span>
                 </AdminTriggerButton>
               </AdminControls>
