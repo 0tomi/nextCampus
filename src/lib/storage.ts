@@ -1,4 +1,5 @@
 import 'server-only'
+import { unstable_cache } from 'next/cache'
 import { createSupabaseAdminClient } from './supabase/admin'
 import { env } from '@/lib/env'
 import {
@@ -7,6 +8,10 @@ import {
   type QuizBankFile,
   type QuizBankMeta,
 } from '@/lib/domain/quiz-bank'
+
+export function quizBanksCacheTag(yearSlug: string, subjectSlug: string): string {
+  return `quiz-banks:${yearSlug}:${subjectSlug}`
+}
 
 const BUCKET = env.SUPABASE_STORAGE_BUCKET
 const MAX_BANK_BYTES = 1 * 1024 * 1024 // 1 MB de JSON es de sobra
@@ -44,7 +49,11 @@ function metaKey(yearSlug: string, subjectSlug: string, bankId: string): string 
 // Lista los bancos derivándolos del directorio: un list() para los nombres y
 // la descarga en paralelo de los .meta.json (diminutos). Huérfanos o metas
 // corruptos se saltean; nunca rompe la página.
-export async function listQuizBanks(
+//
+// Cacheado por (yearSlug, subjectSlug): la home del quiz consulta esto en cada
+// visita y los bancos cambian sólo cuando el admin sube o borra uno. Las
+// server actions de uploadQuizBank/deleteQuizBank invalidan el tag.
+async function listQuizBanksUncached(
   yearSlug: string,
   subjectSlug: string,
 ): Promise<QuizBankMeta[]> {
@@ -73,6 +82,17 @@ export async function listQuizBanks(
   return metas
     .filter((m): m is QuizBankMeta => m !== null)
     .sort((a, b) => a.subidoEl.localeCompare(b.subidoEl))
+}
+
+export function listQuizBanks(
+  yearSlug: string,
+  subjectSlug: string,
+): Promise<QuizBankMeta[]> {
+  return unstable_cache(
+    () => listQuizBanksUncached(yearSlug, subjectSlug),
+    ['quiz-banks', yearSlug, subjectSlug],
+    { tags: [quizBanksCacheTag(yearSlug, subjectSlug)], revalidate: 3600 },
+  )()
 }
 
 // Sube un banco ya validado. Escribe el banco primero y el .meta.json al

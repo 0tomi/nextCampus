@@ -5,7 +5,10 @@ import { getSubjectQuizMeta } from '@/lib/queries'
 import { listQuizBanks } from '@/lib/storage'
 import { QuizRunner } from './QuizRunner'
 
-export const dynamic = 'force-dynamic'
+// Datos cacheados por tag (subject:{slug} y quiz-banks:{year}:{subject}).
+// Las server actions de uploadQuizBank/deleteQuizBank disparan revalidateTag,
+// así que la página se mantiene fresca sin force-dynamic.
+export const revalidate = 3600
 
 export default async function QuizPage({
   params,

@@ -37,7 +37,10 @@ function DashboardBrand() {
 }
 
 export default async function HomePage() {
-  const career = await getCareer()
+  const [career, upcomingEventsRaw] = await Promise.all([
+    getCareer(),
+    getUpcomingEventsCrossYear(6),
+  ])
 
   if (!career) {
     return (
@@ -93,7 +96,6 @@ export default async function HomePage() {
     )
   }
 
-  const upcomingEventsRaw = await getUpcomingEventsCrossYear(6)
   const upcomingEvents = upcomingEventsRaw.map((e) => ({
     id: e.id,
     titulo: e.titulo,

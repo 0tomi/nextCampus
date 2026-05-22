@@ -1,44 +1,112 @@
 import 'server-only'
+import { unstable_cache } from 'next/cache'
 import { prisma } from './prisma'
 import { countSubjectQuizBanks } from './storage'
 
 // Lecturas públicas (anónimas). Sin datos sensibles.
+//
+// Cacheamos con unstable_cache + tags para deduplicar entre rutas y permitir
+// invalidación quirúrgica desde server actions con revalidateTag(). Es un
+// reemplazo intermedio del directivo "use cache" — funciona en 16.2 sin
+// activar cacheComponents.
 
-export function getCareer() {
-  return prisma.career.findFirst({
-    select: {
-      id: true,
-      nombre: true,
-      descripcion: true,
-      years: {
-        orderBy: { orden: 'asc' },
+const TAGS = {
+  career: 'career',
+  tiposEvento: 'tipos-evento',
+  year: (slug: string) => `year:${slug}`,
+  subject: (slug: string) => `subject:${slug}`,
+  upcomingEvents: 'upcoming-events',
+} as const
+
+export const queryTags = TAGS
+
+export const getCareer = unstable_cache(
+  () =>
+    prisma.career.findFirst({
+      select: {
+        id: true,
+        nombre: true,
+        descripcion: true,
+        years: {
+          orderBy: { orden: 'asc' },
+          select: {
+            id: true,
+            slug: true,
+            nombre: true,
+            subjects: {
+              orderBy: { nombre: 'asc' },
+              select: { id: true, slug: true, nombre: true, descripcion: true, driveUrl: true },
+            },
+          },
+        },
+      },
+    }),
+  ['career'],
+  { tags: [TAGS.career], revalidate: 3600 },
+)
+
+export function getYearBySlug(slug: string) {
+  return unstable_cache(
+    () =>
+      prisma.academicYear.findUnique({
+        where: { slug },
         select: {
           id: true,
           slug: true,
           nombre: true,
           subjects: {
             orderBy: { nombre: 'asc' },
-            select: { id: true, slug: true, nombre: true, descripcion: true, driveUrl: true },
+            select: {
+              id: true,
+              slug: true,
+              nombre: true,
+              agenda: {
+                select: {
+                  id: true,
+                  eventos: {
+                    orderBy: { fecha: 'asc' },
+                    select: {
+                      id: true,
+                      titulo: true,
+                      descripcionHtml: true,
+                      fecha: true,
+                      tipoEventoId: true,
+                      tipoEvento: { select: { nombre: true } },
+                    },
+                  },
+                },
+              },
+            },
           },
+          career: { select: { nombre: true } },
         },
-      },
-    },
-  })
+      }),
+    ['year', slug],
+    { tags: [TAGS.year(slug), TAGS.career], revalidate: 3600 },
+  )()
 }
 
-export function getYearBySlug(slug: string) {
-  return prisma.academicYear.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      slug: true,
-      nombre: true,
-      subjects: {
-        orderBy: { nombre: 'asc' },
+export function getSubjectPageBySlug(slug: string) {
+  return unstable_cache(
+    () =>
+      prisma.subject.findUnique({
+        where: { slug },
         select: {
           id: true,
           slug: true,
           nombre: true,
+          descripcion: true,
+          driveUrl: true,
+          playlistUrl: true,
+          playlistEnabled: true,
+          year: {
+            select: {
+              id: true,
+              slug: true,
+              nombre: true,
+              career: { select: { nombre: true } },
+            },
+          },
           agenda: {
             select: {
               id: true,
@@ -55,84 +123,51 @@ export function getYearBySlug(slug: string) {
               },
             },
           },
-        },
-      },
-      career: { select: { nombre: true } },
-    },
-  })
-}
-
-export async function getSubjectPageBySlug(slug: string) {
-  const result = await prisma.subject.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      slug: true,
-      nombre: true,
-      descripcion: true,
-      driveUrl: true,
-      playlistUrl: true,
-      playlistEnabled: true,
-      year: {
-        select: {
-          id: true,
-          slug: true,
-          nombre: true,
-          career: { select: { nombre: true } },
-        },
-      },
-      agenda: {
-        select: {
-          id: true,
-          eventos: {
-            orderBy: { fecha: 'asc' },
+          apuntes: {
+            orderBy: { createdAt: 'desc' },
             select: {
               id: true,
               titulo: true,
               descripcionHtml: true,
-              fecha: true,
-              tipoEventoId: true,
-              tipoEvento: { select: { nombre: true } },
+              recursos: {
+                orderBy: { orden: 'asc' },
+                select: {
+                  id: true,
+                  tipo: true,
+                  url: true,
+                  orden: true,
+                },
+              },
             },
           },
         },
-      },
-      apuntes: {
-        orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          titulo: true,
-          descripcionHtml: true,
-          recursos: {
-            orderBy: { orden: 'asc' },
-            select: {
-              id: true,
-              tipo: true,
-              url: true,
-              orden: true,
-            },
-          },
-        },
-      },
-    },
-  })
-  return result
+      }),
+    ['subject', slug],
+    { tags: [TAGS.subject(slug)], revalidate: 3600 },
+  )()
 }
 
 // Metadata mínima para resolver la key de Storage del banco de preguntas
 // (quizzes/{anioSlug}/{materiaSlug}/...) y los títulos de la UI de quiz.
 export function getSubjectQuizMeta(slug: string) {
-  return prisma.subject.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      slug: true,
-      nombre: true,
-      year: { select: { id: true, slug: true } },
-    },
-  })
+  return unstable_cache(
+    () =>
+      prisma.subject.findUnique({
+        where: { slug },
+        select: {
+          id: true,
+          slug: true,
+          nombre: true,
+          year: { select: { id: true, slug: true } },
+        },
+      }),
+    ['subject-quiz-meta', slug],
+    { tags: [TAGS.subject(slug)], revalidate: 3600 },
+  )()
 }
 
+// Sin cache: usa includes para campos de edición que cambian con cada
+// mutación admin. La lectura es del admin panel, no del frontend público.
 export function getAdminSubjectBySlug(slug: string) {
   return prisma.subject.findUnique({
     where: { slug },
@@ -156,34 +191,45 @@ export function getAdminSubjectBySlug(slug: string) {
   })
 }
 
-export function getTiposEvento() {
-  return prisma.tipoEvento.findMany({ orderBy: { nombre: 'asc' } })
-}
+export const getTiposEvento = unstable_cache(
+  () => prisma.tipoEvento.findMany({ orderBy: { nombre: 'asc' } }),
+  ['tipos-evento'],
+  { tags: [TAGS.tiposEvento], revalidate: 86400 },
+)
 
+// Cacheado 60s: el filtro "fecha >= ahora" se mueve con el reloj, pero a
+// nivel de la home con revalidate=300 ya estábamos sirviendo datos hasta
+// 5 min viejos. 60s es un buen balance entre frescura y carga a la DB.
 export function getUpcomingEventsCrossYear(limit = 6) {
-  return prisma.evento.findMany({
-    where: { fecha: { gte: new Date() } },
-    orderBy: { fecha: 'asc' },
-    take: limit,
-    select: {
-      id: true,
-      titulo: true,
-      fecha: true,
-      tipoEvento: { select: { nombre: true } },
-      agenda: {
+  return unstable_cache(
+    () =>
+      prisma.evento.findMany({
+        where: { fecha: { gte: new Date() } },
+        orderBy: { fecha: 'asc' },
+        take: limit,
         select: {
-          subject: {
-            select: { slug: true, nombre: true },
+          id: true,
+          titulo: true,
+          fecha: true,
+          tipoEvento: { select: { nombre: true } },
+          agenda: {
+            select: {
+              subject: {
+                select: { slug: true, nombre: true },
+              },
+            },
           },
         },
-      },
-    },
-  })
+      }),
+    ['upcoming-events', String(limit)],
+    { tags: [TAGS.upcomingEvents], revalidate: 60 },
+  )()
 }
 
 // ---------------------------------------------------------------------------
 // Impacto de eliminación — usado por ConfirmDeleteModal para mostrar conteos
-// reales antes de que el admin confirme el borrado.
+// reales antes de que el admin confirme el borrado. Sin cache: el admin
+// quiere ver los conteos vivos antes de decidir.
 // ---------------------------------------------------------------------------
 
 export interface SubjectDeleteImpact {

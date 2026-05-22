@@ -1,4 +1,5 @@
 import 'server-only'
+import { cache } from 'react'
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from './supabase/server'
 import { env } from '@/lib/env'
@@ -113,15 +114,19 @@ export function buildAdminUser(account: DbUserAccount): AdminUser | null {
   }
 }
 
-async function getAuthenticatedUser(): Promise<SupabaseAuthUser | null> {
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+// Dedup por request: si la misma request llama getAdminUser() varias veces
+// (layout, página, server actions), solo pegamos a Supabase una vez.
+const getAuthenticatedUser = cache(
+  async (): Promise<SupabaseAuthUser | null> => {
+    const supabase = await createSupabaseServerClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-  if (!user?.email) return null
-  return { id: user.id, email: user.email }
-}
+    if (!user?.email) return null
+    return { id: user.id, email: user.email }
+  },
+)
 
 async function upsertBootstrapGeneralAdmin(user: SupabaseAuthUser, email: string): Promise<AdminUser> {
   const db = prisma as PrismaWithUserAccounts
@@ -155,7 +160,9 @@ async function upsertBootstrapGeneralAdmin(user: SupabaseAuthUser, email: string
 
 // Devuelve el admin autenticado o null. Usa getUser() (verifica el JWT contra
 // Supabase), NUNCA getSession() (que confía en la cookie sin validar).
-export async function getAdminUser(): Promise<AdminUser | null> {
+// Cacheado por request con React.cache para evitar repegar Supabase + Prisma
+// cuando varios componentes del mismo render lo necesitan.
+export const getAdminUser = cache(async (): Promise<AdminUser | null> => {
   const user = await getAuthenticatedUser()
   if (!user?.email) return null
 
@@ -179,7 +186,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
 
   if (!account || account.role !== USER_ROLES.ADMIN_CAMPUS) return null
   return buildAdminUser(account)
-}
+})
 
 // Redirige a /admin/login si no hay admin. Para usar al inicio de toda server
 // action de escritura. Usa redirect() para un 302 limpio en lugar de un 500.
@@ -201,6 +208,41 @@ export async function requireGeneralAdmin(): Promise<AdminUser> {
     redirect('/admin/login')
   }
   return admin
+}
+
+// Shape pensada para hidratar el client provider del admin: lo que el
+// cliente necesita para evaluar hasAdminAccess() sin volver a pegarle al
+// server. Idéntico al payload de /api/admin/me, pero resuelto en el render.
+export interface AdminClientUser {
+  id: string
+  email: string
+  role: string
+  yearIds: string[]
+  yearSlugs: string[]
+  canManageAllYears: boolean
+  canCreateUsers: boolean
+}
+
+export interface AdminClientSession {
+  isAdmin: boolean
+  admin: AdminClientUser | null
+}
+
+export async function getAdminClientSession(): Promise<AdminClientSession> {
+  const admin = await getAdminUser()
+  if (!admin) return { isAdmin: false, admin: null }
+  return {
+    isAdmin: true,
+    admin: {
+      id: admin.id,
+      email: admin.email,
+      role: admin.role,
+      yearIds: admin.yearIds,
+      yearSlugs: admin.yearSlugs,
+      canManageAllYears: admin.canManageAllYears,
+      canCreateUsers: admin.canCreateUsers,
+    },
+  }
 }
 
 export function adminCanManageYear(admin: AdminUser, yearId: string): boolean {
