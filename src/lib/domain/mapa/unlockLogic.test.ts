@@ -25,34 +25,35 @@ describe('Pruebas unitarias de la lógica de desbloqueo de correlativas', () => 
     expect(statuses[`${P1}fundamentos-de-programacion`]).toBe('COMPLETED');
   });
 
-  it('debería desbloquear una materia de segundo año cuando se aprueba su correlativa', () => {
-    const completed = [`${P1}fundamentos-de-programacion`];
+  it('debería desbloquear una materia de segundo año cuando se completan todas sus correlativas', () => {
+    const completed = [`${P1}fundamentos-de-programacion`, `${P1}logica-y-algebra`];
     const statuses = calculateSubjectStatuses(completed);
 
-    // Algoritmos y Estructuras de Datos requiere Fundamentos de Programación
+    // Algoritmos y Estructura de Datos requiere Fundamentos de Programación y Lógica y Álgebra.
     expect(statuses[`${P2}algoritmos-y-estructuras-de-datos`]).toBe('UNLOCKED');
     
-    // Ingeniería de Software I sigue bloqueada porque requiere Sistemas y Organizaciones
+    // Ingeniería de Software I sigue bloqueada porque también requiere Sistemas y Organizaciones.
     expect(statuses[`${P2}ingenieria-de-software-i`]).toBe('LOCKED');
   });
 
   it('debería manejar múltiples correlativas para una materia', () => {
-    const P1_algebra = `${P1}logica-y-algebra`;
+    const P2_poo = `${P2}programacion-orientada-a-objetos`;
+    const P2_discreta = `${P2}matematica-discreta`;
     const P2_algoritmos = `${P2}algoritmos-y-estructuras-de-datos`;
     
-    // Bases de Datos requiere Lógica y Álgebra (Año 1) Y Algoritmos y Estructuras de Datos (Año 2)
+    // Bases de Datos requiere tres correlativas directas según Plande.
     const db_subject = `${P3}bases-de-datos`;
 
     // Caso 1: Ninguna aprobada
     let statuses = calculateSubjectStatuses([]);
     expect(statuses[db_subject]).toBe('LOCKED');
 
-    // Caso 2: Solo una de las dos aprobada
-    statuses = calculateSubjectStatuses([P1_algebra]);
+    // Caso 2: Solo una parte de las correlativas aprobada
+    statuses = calculateSubjectStatuses([P2_algoritmos, P2_poo]);
     expect(statuses[db_subject]).toBe('LOCKED');
 
-    // Caso 3: Ambas aprobadas
-    statuses = calculateSubjectStatuses([P1_algebra, P2_algoritmos]);
+    // Caso 3: Todas aprobadas
+    statuses = calculateSubjectStatuses([P2_algoritmos, P2_poo, P2_discreta]);
     expect(statuses[db_subject]).toBe('UNLOCKED');
   });
 });

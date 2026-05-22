@@ -1,12 +1,19 @@
 export type SubjectStatus = 'COMPLETED' | 'UNLOCKED' | 'LOCKED';
 
+export type SubjectPeriod = 'Anual' | 'Primer cuatrimestre' | 'Segundo cuatrimestre';
+
 export interface SubjectNode {
   slug: string;
   nombre: string;
-  year: number; // 1 to 5
-  correlativas: string[]; // List of subject slugs required to unlock this subject
+  year: number;
+  codigo: string;
+  horas: number;
+  periodo: SubjectPeriod;
+  correlativas: string[];
+  paraRendir?: string[];
+  optativaActual?: string;
 }
 
 export interface MapaState {
-  completed: string[]; // List of completed subject slugs
+  completed: string[];
 }

@@ -1,361 +1,465 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { 
-  CheckCircle2, 
-  Lock, 
-  Unlock, 
-  RefreshCw, 
-  Search, 
-  Award, 
-  Info,
+import {
   ArrowRight,
-  BookOpen
+  BookOpen,
+  CheckCircle2,
+  Filter,
+  GraduationCap,
+  Info,
+  Lock,
+  RefreshCw,
+  Search,
+  Sparkles,
+  Unlock,
 } from 'lucide-react';
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
 import { calculateSubjectStatuses } from '@/lib/domain/mapa/unlockLogic';
-import type { SubjectStatus } from '@/lib/domain/mapa/types';
+import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
 import { cn } from '@/lib/utils';
 
-export function MapaCorrelativas() {
+type StatusFilter = 'ALL' | SubjectStatus;
+
+type MapaCorrelativasProps = {
+  availableSubjectSlugs?: string[];
+};
+
+const YEAR_NAMES: Record<number, string> = {
+  1: 'Primer año',
+  2: 'Segundo año',
+  3: 'Tercer año',
+  4: 'Cuarto año',
+  5: 'Quinto año',
+};
+
+const STATUS_LABELS: Record<SubjectStatus, string> = {
+  COMPLETED: 'Marcada',
+  UNLOCKED: 'Disponible',
+  LOCKED: 'En espera',
+};
+
+function getSubjectName(slug: string) {
+  return subjectsData.find((subject) => subject.slug === slug)?.nombre ?? 'Materia';
+}
+
+function getUnlocks(slug: string) {
+  return subjectsData.filter((subject) => subject.correlativas.includes(slug));
+}
+
+function getMissingCorrelatives(subject: SubjectNode, completed: string[]) {
+  return subject.correlativas.filter((slug) => !completed.includes(slug));
+}
+
+export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativasProps) {
   const [completed, setCompleted] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [hoveredSubject, setHoveredSubject] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+  const [selectedSubjectSlug, setSelectedSubjectSlug] = useState(subjectsData[0]?.slug ?? '');
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Cargar progreso del localStorage en el cliente para evitar mismatch de RSC
   useEffect(() => {
     const saved = localStorage.getItem('nextcampus_progreso_materias');
     if (saved) {
       try {
+        const parsed = JSON.parse(saved) as string[];
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setCompleted(JSON.parse(saved));
-      } catch (e) {
-        console.error('Error parsing progress', e);
+        setCompleted(parsed.filter((slug) => subjectsData.some((subject) => subject.slug === slug)));
+      } catch {
+        localStorage.removeItem('nextcampus_progreso_materias');
       }
     }
     setIsHydrated(true);
   }, []);
 
-  // Guardar progreso
+  const availableSlugs = useMemo(() => new Set(availableSubjectSlugs), [availableSubjectSlugs]);
+  const subjectStatuses = useMemo(() => calculateSubjectStatuses(completed), [completed]);
+
   const saveProgress = (newCompleted: string[]) => {
     setCompleted(newCompleted);
     localStorage.setItem('nextcampus_progreso_materias', JSON.stringify(newCompleted));
   };
 
-  // Toggle estado de materia (aprobar / desaprobar)
-  const handleToggleSubject = (slug: string, currentStatus: SubjectStatus) => {
-    if (currentStatus === 'LOCKED') return; // Bloqueada, no se puede interactuar
-
-    let newCompleted: string[];
-    if (currentStatus === 'COMPLETED') {
-      // Si la desmarcamos, también tenemos que desmarcar recursivamente todas las que la requerían como correlativa
-      newCompleted = removeSubjectAndDependents(slug, completed);
-    } else {
-      // Marcar como completada
-      newCompleted = [...completed, slug];
-    }
-    
-    saveProgress(newCompleted);
-  };
-
-  // Función recursiva para desmarcar materias que dependen de la que se desmarcó
   const removeSubjectAndDependents = (slugToRemove: string, currentCompleted: string[]): string[] => {
-    let nextCompleted = currentCompleted.filter(s => s !== slugToRemove);
-    
-    // Buscar materias que tengan a slugToRemove en sus correlativas
-    const dependents = subjectsData.filter(s => 
-      s.correlativas.includes(slugToRemove) && nextCompleted.includes(s.slug)
+    let nextCompleted = currentCompleted.filter((slug) => slug !== slugToRemove);
+    const dependents = subjectsData.filter(
+      (subject) => subject.correlativas.includes(slugToRemove) && nextCompleted.includes(subject.slug),
     );
 
-    for (const dep of dependents) {
-      nextCompleted = removeSubjectAndDependents(dep.slug, nextCompleted);
+    for (const dependent of dependents) {
+      nextCompleted = removeSubjectAndDependents(dependent.slug, nextCompleted);
     }
 
     return nextCompleted;
   };
 
+  const handleToggleSubject = (subject: SubjectNode) => {
+    const currentStatus = subjectStatuses[subject.slug];
+    setSelectedSubjectSlug(subject.slug);
+
+    if (currentStatus === 'LOCKED') return;
+
+    if (currentStatus === 'COMPLETED') {
+      saveProgress(removeSubjectAndDependents(subject.slug, completed));
+      return;
+    }
+
+    saveProgress(Array.from(new Set([...completed, subject.slug])));
+  };
+
   const handleReset = () => {
-    if (window.confirm('¿Estás seguro de que querés reiniciar todo tu progreso? Esta acción no se puede deshacer.')) {
+    if (window.confirm('¿Reiniciar el progreso del mapa?')) {
       saveProgress([]);
+      setSelectedSubjectSlug(subjectsData[0]?.slug ?? '');
     }
   };
 
   const handleAutocompleteFirstYear = () => {
-    const firstYearSlugs = subjectsData.filter(s => s.year === 1).map(s => s.slug);
-    const newCompleted = Array.from(new Set([...completed, ...firstYearSlugs]));
-    saveProgress(newCompleted);
+    const firstYearSlugs = subjectsData.filter((subject) => subject.year === 1).map((subject) => subject.slug);
+    saveProgress(Array.from(new Set([...completed, ...firstYearSlugs])));
   };
 
-  // Calcular estados dinámicos
-  const subjectStatuses = calculateSubjectStatuses(completed);
+  const filteredSubjects = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
 
-  // Filtrar materias por búsqueda
-  const filteredSubjects = subjectsData.filter(s => 
-    s.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    return subjectsData.filter((subject) => {
+      const matchesSearch =
+        normalizedSearch.length === 0 ||
+        subject.nombre.toLowerCase().includes(normalizedSearch) ||
+        subject.codigo.includes(normalizedSearch);
+      const matchesStatus = statusFilter === 'ALL' || subjectStatuses[subject.slug] === statusFilter;
 
-  // Estadísticas
-  const totalSubjects = subjectsData.length;
+      return matchesSearch && matchesStatus;
+    });
+  }, [searchTerm, statusFilter, subjectStatuses]);
+
+  const selectedSubject = subjectsData.find((subject) => subject.slug === selectedSubjectSlug) ?? subjectsData[0];
+  const selectedStatus = selectedSubject ? subjectStatuses[selectedSubject.slug] : 'UNLOCKED';
+  const selectedMissing = selectedSubject ? getMissingCorrelatives(selectedSubject, completed) : [];
+  const selectedUnlocks = selectedSubject ? getUnlocks(selectedSubject.slug) : [];
   const completedCount = completed.length;
-  const progressPercentage = totalSubjects > 0 ? Math.round((completedCount / totalSubjects) * 100) : 0;
-
-  // Encontrar dependencias directas para resaltar en el hover
-  const getSubjectRelations = (slug: string) => {
-    const subject = subjectsData.find(s => s.slug === slug);
-    if (!subject) return { requires: [], unlocks: [] };
-
-    const requires = subject.correlativas;
-    const unlocks = subjectsData
-      .filter(s => s.correlativas.includes(slug))
-      .map(s => s.slug);
-
-    return { requires, unlocks };
-  };
-
-  const hoveredRelations = hoveredSubject ? getSubjectRelations(hoveredSubject) : { requires: [], unlocks: [] };
+  const totalSubjects = subjectsData.length;
+  const unlockedCount = Object.values(subjectStatuses).filter((status) => status === 'UNLOCKED').length;
+  const progressPercentage = Math.round((completedCount / totalSubjects) * 100);
 
   if (!isHydrated) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <div className="text-center space-y-4">
-          <RefreshCw className="h-8 w-8 animate-spin text-amber-500 mx-auto" />
-          <p className="text-white/40 text-sm font-semibold tracking-wider">CARGANDO MAPA CURRICULAR...</p>
+        <div className="space-y-4 text-center">
+          <RefreshCw className="mx-auto h-8 w-8 animate-spin text-amber-500" />
+          <p className="text-sm font-semibold tracking-wider text-white/40">Cargando mapa curricular...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header & Stats Card */}
-      <div className="relative overflow-hidden rounded bg-surface-1 p-6 border border-white/5 shadow-2xl">
-        <div className="absolute right-0 top-0 -mr-16 -mt-16 h-48 w-48 rounded-full bg-amber-500/10 blur-3xl" />
-        
-        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Award className="h-5 w-5 text-amber-400" />
-              <span className="text-xs font-black uppercase tracking-[0.2em] text-amber-400">HERRAMIENTA ACADÉMICA</span>
-            </div>
-            <h1 className="text-3xl font-black tracking-tight text-white md:text-4xl">
-              Mapa de Correlatividades
-            </h1>
-            <p className="text-sm text-white/60 max-w-2xl leading-relaxed">
-              Hacé clic sobre las materias que tengas aprobadas para registrar tu progreso. Las correlativas habilitadas se desbloquearán automáticamente en tiempo real.
-            </p>
-          </div>
+    <div className="space-y-6">
+      <section className="overflow-hidden rounded-md border border-white/8 bg-surface-1 shadow-2xl">
+        <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="p-5 sm:p-6">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+              <div className="max-w-3xl space-y-3">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-amber-300">
+                  <GraduationCap className="h-4 w-4" />
+                  Plan 2010 · FCYT UADER
+                </div>
+                <div>
+                  <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
+                    Mapa de correlativas
+                  </h1>
+                  <p className="mt-3 max-w-2xl text-sm leading-6 text-white/62">
+                    Marcá las materias que ya tenés regularizadas o aprobadas. El mapa usa las correlativas para cursar y te muestra qué se habilita después.
+                  </p>
+                </div>
+              </div>
 
-          <div className="bg-surface-2 p-5 rounded border border-white/5 min-w-[240px] space-y-3">
-            <div className="flex items-center justify-between text-xs font-bold text-white/50 uppercase tracking-widest">
-              <span>PROGRESO TOTAL</span>
-              <span className="text-amber-400 font-extrabold">{progressPercentage}%</span>
+              <div className="grid min-w-0 grid-cols-3 gap-2 sm:min-w-[360px]">
+                <div className="rounded-md border border-emerald-400/20 bg-emerald-500/8 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200/70">Marcadas</p>
+                  <p className="mt-2 text-2xl font-black text-emerald-200">{completedCount}</p>
+                </div>
+                <div className="rounded-md border border-amber-400/20 bg-amber-500/8 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-amber-200/70">Disponibles</p>
+                  <p className="mt-2 text-2xl font-black text-amber-200">{unlockedCount}</p>
+                </div>
+                <div className="rounded-md border border-white/10 bg-white/5 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white/45">Avance</p>
+                  <p className="mt-2 text-2xl font-black text-white">{progressPercentage}%</p>
+                </div>
+              </div>
             </div>
-            <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full transition-all duration-500 ease-out" 
+
+            <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/6">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-amber-300 to-orange-400 transition-all duration-500"
                 style={{ width: `${progressPercentage}%` }}
               />
             </div>
-            <div className="flex justify-between text-xs text-white/70">
-              <span>{completedCount} de {totalSubjects} materias</span>
-              <span className="font-semibold text-white/40">Lic. en Sistemas</span>
-            </div>
-          </div>
-        </div>
 
-        {/* Action Controls */}
-        <div className="mt-8 flex flex-wrap gap-4 items-center justify-between border-t border-white/5 pt-6">
-          <div className="relative w-full max-w-md">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-white/30">
-              <Search className="h-4 w-4" />
-            </span>
-            <input
-              type="text"
-              placeholder="Buscar materia por nombre..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded border border-white/10 bg-white/5 py-2.5 pl-10 pr-4 text-sm text-white placeholder-white/30 transition-all focus:border-amber-500/50 focus:bg-white/10 focus:outline-none"
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={handleAutocompleteFirstYear}
-              className="rounded bg-white/5 border border-white/10 px-4 py-2 text-xs font-bold text-white/80 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
-            >
-              🚀 Aprobar todo 1º Año
-            </button>
-            <button
-              onClick={handleReset}
-              disabled={completed.length === 0}
-              className="inline-flex items-center gap-2 rounded border border-red-500/20 bg-red-500/5 px-4 py-2 text-xs font-bold text-red-400/90 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-30 disabled:hover:bg-red-500/5 disabled:cursor-not-allowed cursor-pointer"
-            >
-              <RefreshCw className="h-3 w-3" />
-              Reiniciar Progreso
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Grid of Years */}
-      <div className="stagger-children grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-5">
-        {[1, 2, 3, 4, 5].map((yearNum) => {
-          const yearSubjects = filteredSubjects.filter(s => s.year === yearNum);
-          
-          return (
-            <div key={yearNum} className="flex flex-col space-y-4 bg-surface-2/40 p-4 rounded border border-white/5">
-              <div className="border-b border-white/5 pb-3">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">FCYT · UADER</p>
-                <h3 className="text-base font-black text-white flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/10 text-amber-400 text-xs font-black">
-                    {yearNum}
-                  </span>
-                  {yearNum === 1 && 'Primer Año'}
-                  {yearNum === 2 && 'Segundo Año'}
-                  {yearNum === 3 && 'Tercer Año'}
-                  {yearNum === 4 && 'Cuarto Año'}
-                  {yearNum === 5 && 'Quinto Año'}
-                </h3>
+            <div className="mt-6 flex flex-col gap-3 border-t border-white/6 pt-5 xl:flex-row xl:items-center xl:justify-between">
+              <div className="relative w-full xl:max-w-md">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
+                <input
+                  type="search"
+                  placeholder="Buscar por materia o código"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  className="w-full rounded-md border border-white/10 bg-black/20 py-2.5 pl-10 pr-4 text-sm text-white outline-none transition focus:border-amber-300/55 focus:bg-white/7 placeholder:text-white/30"
+                />
               </div>
 
-              {yearSubjects.length === 0 ? (
-                <div className="text-center py-6 text-xs text-white/20">
-                  Ninguna materia coincide con la búsqueda.
+              <div className="flex flex-wrap gap-2">
+                {(['ALL', 'UNLOCKED', 'LOCKED', 'COMPLETED'] as const).map((filter) => (
+                  <button
+                    key={filter}
+                    type="button"
+                    onClick={() => setStatusFilter(filter)}
+                    className={cn(
+                      'inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-xs font-bold transition',
+                      statusFilter === filter
+                        ? 'border-amber-300/50 bg-amber-300/12 text-amber-100'
+                        : 'border-white/10 bg-white/5 text-white/60 hover:bg-white/8 hover:text-white',
+                    )}
+                  >
+                    <Filter className="h-3.5 w-3.5" />
+                    {filter === 'ALL' ? 'Todas' : STATUS_LABELS[filter]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <aside className="border-t border-white/8 bg-black/18 p-5 lg:border-l lg:border-t-0">
+            <div className="space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">Materia seleccionada</p>
+                  <h2 className="mt-2 text-lg font-black leading-tight text-white">{selectedSubject?.nombre}</h2>
                 </div>
-              ) : (
-                <div className="flex-1 flex flex-col gap-3">
-                  {yearSubjects.map((subject) => {
+                <span
+                  className={cn(
+                    'rounded-md border px-2 py-1 text-[10px] font-black uppercase tracking-widest',
+                    selectedStatus === 'COMPLETED' && 'border-emerald-300/30 bg-emerald-400/10 text-emerald-200',
+                    selectedStatus === 'UNLOCKED' && 'border-amber-300/30 bg-amber-400/10 text-amber-200',
+                    selectedStatus === 'LOCKED' && 'border-white/10 bg-white/5 text-white/45',
+                  )}
+                >
+                  {STATUS_LABELS[selectedStatus]}
+                </span>
+              </div>
+
+              {selectedSubject?.optativaActual ? (
+                <div className="rounded-md border border-cyan-300/18 bg-cyan-400/8 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-cyan-100/60">Optativa 2025</p>
+                  <p className="mt-1 text-sm font-semibold leading-5 text-cyan-50">{selectedSubject.optativaActual}</p>
+                </div>
+              ) : null}
+
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-md bg-white/5 p-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/35">Código</p>
+                  <p className="mt-1 text-sm font-black text-white">{selectedSubject?.codigo}</p>
+                </div>
+                <div className="rounded-md bg-white/5 p-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/35">Horas</p>
+                  <p className="mt-1 text-sm font-black text-white">{selectedSubject?.horas}</p>
+                </div>
+                <div className="rounded-md bg-white/5 p-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/35">Año</p>
+                  <p className="mt-1 text-sm font-black text-white">{selectedSubject?.year}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <RelationList title="Para cursar" slugs={selectedSubject?.correlativas ?? []} empty="Sin requisitos previos." missing={selectedMissing} />
+                <RelationList title="Para rendir" slugs={selectedSubject?.paraRendir ?? []} empty="Sin requisitos extra cargados." />
+                <RelationList title="Habilita" slugs={selectedUnlocks.map((subject) => subject.slug)} empty="No destraba materias directas." />
+              </div>
+
+              <div className="flex flex-wrap gap-2 border-t border-white/8 pt-4">
+                <button
+                  type="button"
+                  onClick={handleAutocompleteFirstYear}
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-emerald-300/20 bg-emerald-400/8 px-3 py-2 text-xs font-bold text-emerald-100 transition hover:bg-emerald-400/14"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Marcar 1er año
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  disabled={completed.length === 0}
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-red-300/20 bg-red-400/8 px-3 py-2 text-xs font-bold text-red-100 transition hover:bg-red-400/14 disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Reiniciar
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-5">
+        {[1, 2, 3, 4, 5].map((year) => {
+          const yearSubjects = filteredSubjects.filter((subject) => subject.year === year);
+
+          return (
+            <div key={year} className="rounded-md border border-white/8 bg-surface-2/50 p-3">
+              <div className="mb-3 flex items-center justify-between border-b border-white/8 pb-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">Año {year}</p>
+                  <h3 className="text-sm font-black text-white">{YEAR_NAMES[year]}</h3>
+                </div>
+                <span className="rounded-md bg-white/6 px-2 py-1 text-[10px] font-black text-white/55">
+                  {yearSubjects.length}
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {yearSubjects.length === 0 ? (
+                  <p className="py-6 text-center text-xs text-white/30">Sin resultados.</p>
+                ) : (
+                  yearSubjects.map((subject) => {
                     const status = subjectStatuses[subject.slug];
-                    const isHovered = hoveredSubject === subject.slug;
-                    const isRelatedPrerequisite = hoveredRelations.requires.includes(subject.slug);
-                    const isRelatedUnlock = hoveredRelations.unlocks.includes(subject.slug);
+                    const isSelected = selectedSubjectSlug === subject.slug;
+                    const isRequirement = selectedSubject?.correlativas.includes(subject.slug);
+                    const isUnlock = selectedUnlocks.some((unlock) => unlock.slug === subject.slug);
+                    const missing = getMissingCorrelatives(subject, completed);
+                    const hasPage = availableSlugs.size === 0 || availableSlugs.has(subject.slug);
 
                     return (
                       <div
                         key={subject.slug}
-                        onMouseEnter={() => setHoveredSubject(subject.slug)}
-                        onMouseLeave={() => setHoveredSubject(null)}
-                        onClick={() => handleToggleSubject(subject.slug, status)}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleToggleSubject(subject)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            handleToggleSubject(subject);
+                          }
+                        }}
+                        onMouseEnter={() => setSelectedSubjectSlug(subject.slug)}
                         className={cn(
-                          "group relative p-4 rounded text-left border transition-all duration-300 select-none flex flex-col justify-between min-h-[120px]",
-                          // State-specific styling with harmony palettes and glowing borders
-                          status === 'COMPLETED' && "bg-emerald-950/20 border-emerald-500/40 hover:border-emerald-400 cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.05)]",
-                          status === 'UNLOCKED' && "bg-surface-1 border-white/10 hover:border-amber-500/40 hover:bg-white/5 cursor-pointer",
-                          status === 'LOCKED' && "bg-surface-0 border-white/5 opacity-40 cursor-not-allowed",
-                          
-                          // Hover relations visualization for premium micro-interactions
-                          isHovered && "ring-1 ring-amber-500/50 scale-[1.02] shadow-lg z-10",
-                          isRelatedPrerequisite && "ring-1 ring-red-500/50 border-red-500/40 scale-[1.01] bg-red-950/5",
-                          isRelatedUnlock && "ring-1 ring-blue-500/50 border-blue-500/40 scale-[1.01] bg-blue-950/5"
+                          'group relative flex min-h-[132px] w-full cursor-pointer flex-col justify-between rounded-md border p-3 text-left transition duration-200',
+                          status === 'COMPLETED' && 'border-emerald-300/35 bg-emerald-400/10 shadow-[0_0_18px_rgba(52,211,153,0.06)]',
+                          status === 'UNLOCKED' && 'border-white/10 bg-surface-1 hover:border-amber-300/45 hover:bg-white/6',
+                          status === 'LOCKED' && 'cursor-not-allowed border-white/6 bg-black/15 opacity-55',
+                          isSelected && 'ring-2 ring-amber-300/40',
+                          isRequirement && 'border-rose-300/45 bg-rose-400/8',
+                          isUnlock && 'border-cyan-300/45 bg-cyan-400/8',
                         )}
                       >
-                        {/* Status Icon Indicator */}
-                        <div className="absolute right-3 top-3">
-                          {status === 'COMPLETED' && <CheckCircle2 className="h-4.5 w-4.5 text-emerald-400" />}
-                          {status === 'UNLOCKED' && <Unlock className="h-4 w-4 text-amber-500/40 group-hover:text-amber-400" />}
-                          {status === 'LOCKED' && <Lock className="h-4 w-4 text-white/20" />}
-                        </div>
-
-                        {/* Title and details */}
                         <div className="space-y-2 pr-5">
-                          <h4 className={cn(
-                            "text-sm font-bold leading-snug transition-colors",
-                            status === 'COMPLETED' && "text-emerald-300",
-                            status === 'UNLOCKED' && "text-white group-hover:text-amber-400",
-                            status === 'LOCKED' && "text-white/60"
-                          )}>
-                            {subject.nombre}
-                          </h4>
-                          
-                          {/* Prerequisite Tags */}
-                          {subject.correlativas.length > 0 && (
-                            <div className="flex flex-wrap gap-1 items-center text-[10px] text-white/30">
-                              <span>Requiere:</span>
-                              <span className="font-semibold text-white/50">{subject.correlativas.length} correlativa{subject.correlativas.length > 1 ? 's' : ''}</span>
-                            </div>
-                          )}
+                          <div className="absolute right-3 top-3">
+                            {status === 'COMPLETED' ? <CheckCircle2 className="h-4 w-4 text-emerald-200" /> : null}
+                            {status === 'UNLOCKED' ? <Unlock className="h-4 w-4 text-amber-200/70" /> : null}
+                            {status === 'LOCKED' ? <Lock className="h-4 w-4 text-white/30" /> : null}
+                          </div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-white/35">
+                            {subject.codigo} · {subject.periodo}
+                          </p>
+                          <h4 className="text-sm font-black leading-snug text-white">{subject.nombre}</h4>
+                          {subject.optativaActual ? (
+                            <p className="line-clamp-2 text-[11px] font-semibold leading-4 text-cyan-100/70">{subject.optativaActual}</p>
+                          ) : null}
                         </div>
 
-                        {/* Card bottom navigation / actions */}
-                        <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-2">
-                          <span className={cn(
-                            "text-[10px] font-bold uppercase tracking-widest",
-                            status === 'COMPLETED' && "text-emerald-400",
-                            status === 'UNLOCKED' && "text-amber-500/80",
-                            status === 'LOCKED' && "text-white/20"
-                          )}>
-                            {status === 'COMPLETED' && 'Aprobada'}
-                            {status === 'UNLOCKED' && 'Habilitada'}
-                            {status === 'LOCKED' && 'Bloqueada'}
-                          </span>
+                        <div className="mt-3 space-y-2 border-t border-white/8 pt-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span
+                              className={cn(
+                                'text-[10px] font-black uppercase tracking-widest',
+                                status === 'COMPLETED' && 'text-emerald-200',
+                                status === 'UNLOCKED' && 'text-amber-200',
+                                status === 'LOCKED' && 'text-white/35',
+                              )}
+                            >
+                              {STATUS_LABELS[status]}
+                            </span>
+                            <span className="text-[10px] font-semibold text-white/35">
+                              {subject.correlativas.length === 0 ? 'Sin correlativas' : `${subject.correlativas.length} requisito${subject.correlativas.length > 1 ? 's' : ''}`}
+                            </span>
+                          </div>
 
-                          {status !== 'LOCKED' && (
+                          {missing.length > 0 ? (
+                            <p className="truncate text-[10px] font-semibold text-rose-100/70">
+                              Falta: {missing.map(getSubjectName).join(', ')}
+                            </p>
+                          ) : null}
+
+                          {hasPage && status !== 'LOCKED' ? (
                             <Link
                               href={`/materia/${subject.slug}`}
-                              onClick={(e) => e.stopPropagation()} // Evitar toggle al navegar
-                              className="text-[10px] font-bold text-white/30 hover:text-white flex items-center gap-1 group/link"
+                              onClick={(event) => event.stopPropagation()}
+                              className="inline-flex w-fit items-center gap-1 text-[10px] font-bold text-white/40 transition hover:text-white"
                             >
                               <BookOpen className="h-3 w-3" />
-                              Ver apuntes
-                              <ArrowRight className="h-2.5 w-2.5 transition-transform group-hover/link:translate-x-0.5" />
+                              Abrir materia
+                              <ArrowRight className="h-3 w-3" />
                             </Link>
-                          )}
+                          ) : null}
                         </div>
-
-                        {/* Relation helper tooltips */}
-                        {isHovered && subject.correlativas.length > 0 && (
-                          <div className="absolute bottom-full left-0 right-0 mb-2 p-2 bg-surface-2 border border-white/10 rounded text-[10px] text-white/80 shadow-2xl z-20 space-y-1">
-                            <div className="font-black text-red-400/90 uppercase tracking-widest flex items-center gap-1">
-                              <span className="h-1 w-1 bg-red-400 rounded-full" />
-                              Requisitos obligatorios:
-                            </div>
-                            <ul className="list-disc list-inside space-y-0.5 pl-1">
-                              {subject.correlativas.map(corrSlug => {
-                                const name = subjectsData.find(s => s.slug === corrSlug)?.nombre ?? '';
-                                return <li key={corrSlug} className="truncate">{name}</li>;
-                              })}
-                            </ul>
-                          </div>
-                        )}
                       </div>
                     );
-                  })}
-                </div>
-              )}
+                  })
+                )}
+              </div>
             </div>
           );
         })}
-      </div>
+      </section>
 
-      {/* Legend & Info panel */}
-      <div className="bg-surface-1 p-5 rounded border border-white/5 flex flex-col md:flex-row gap-6 items-start justify-between text-xs text-white/50 leading-relaxed max-w-4xl">
-        <div className="flex gap-3 items-start">
-          <Info className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <span className="font-bold text-white uppercase tracking-wider block">GUÍA RÁPIDA DE USO</span>
-            <p>
-              Hacé hover sobre cualquier materia para visualizar con quién se conecta: las que se resalten en <span className="text-red-400 font-bold">Rojo</span> son sus correlativas directas necesarias para cursarla. Las que se resalten en <span className="text-blue-400 font-bold">Azul</span> son las materias futuras que vas a destrabar al aprobarla.
-            </p>
-          </div>
-        </div>
+      <section className="flex max-w-4xl flex-col gap-4 rounded-md border border-white/8 bg-surface-1 p-4 text-xs leading-6 text-white/55 md:flex-row">
+        <Info className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
+        <p>
+          Los desbloqueos se calculan con las correlativas para cursar del plan leído en Plande. Las correlativas para rendir aparecen en el panel lateral cuando existen, porque aplican a otra instancia de la materia.
+        </p>
+      </section>
+    </div>
+  );
+}
 
-        <div className="flex flex-wrap gap-4 shrink-0 bg-surface-2 p-3 rounded border border-white/5">
-          <div className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-full bg-emerald-500/20 border border-emerald-500/50" />
-            <span className="text-white/80 font-semibold">Aprobada</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-full bg-surface-1 border border-white/15" />
-            <span className="text-white/80 font-semibold">Habilitada</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-full bg-surface-0 border border-white/5 opacity-55" />
-            <span className="text-white/80 font-semibold">Bloqueada</span>
-          </div>
+function RelationList({
+  title,
+  slugs,
+  empty,
+  missing = [],
+}: {
+  title: string;
+  slugs: string[];
+  empty: string;
+  missing?: string[];
+}) {
+  return (
+    <div>
+      <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/35">{title}</p>
+      {slugs.length === 0 ? (
+        <p className="rounded-md bg-white/5 px-3 py-2 text-xs text-white/45">{empty}</p>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {slugs.map((slug) => {
+            const isMissing = missing.includes(slug);
+
+            return (
+              <span
+                key={slug}
+                className={cn(
+                  'rounded-md border px-2 py-1 text-[11px] font-semibold leading-4',
+                  isMissing
+                    ? 'border-rose-300/25 bg-rose-400/10 text-rose-100'
+                    : 'border-white/10 bg-white/5 text-white/70',
+                )}
+              >
+                {getSubjectName(slug)}
+              </span>
+            );
+          })}
         </div>
-      </div>
+      )}
     </div>
   );
 }

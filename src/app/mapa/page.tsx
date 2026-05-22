@@ -77,6 +77,9 @@ export default async function MapaPage() {
       badgeClassName: colors.progressClassName + ' text-white',
     };
   });
+  const availableSubjectSlugs = career.years.flatMap((year) =>
+    year.subjects.map((subject) => subject.slug),
+  );
 
   return (
     <DashboardShell
@@ -100,7 +103,7 @@ export default async function MapaPage() {
       }
     >
       <AnimateIn className="space-y-6">
-        <MapaCorrelativas />
+        <MapaCorrelativas availableSubjectSlugs={availableSubjectSlugs} />
       </AnimateIn>
     </DashboardShell>
   );

@@ -35,10 +35,10 @@ const YEAR_NAMES = [
 
 const SUBJECTS_BY_YEAR: string[][] = [
   ['Sistemas y Organizaciones', 'Fundamentos de Programación', 'Cálculo Diferencial e Integral', 'Lógica y Álgebra', 'Lecto-Comprensión en Inglés', 'Derechos Humanos y Tecnología', 'Fundamentos de Computación'],
-  ['Ingeniería de Software I', 'Algoritmos y Estructuras de Datos', 'Programación Orientada a Objetos', 'Matemática Discreta', 'Ecuaciones Diferenciales y Cálculo Multivariado', 'Arquitectura de Computadoras'],
-  ['Ingeniería de Software II', 'Bases de Datos', 'Sistemas Operativos', 'Probabilidad y Estadística', 'Paradigmas y Lenguajes', 'Ética Profesional', 'Programación Avanzada', 'Taller de Integración'],
-  ['Inteligencia Artificial', 'Bases de Datos Avanzadas', 'Comunicaciones y Redes', 'Metodología de la Investigación', 'Investigación Operativa', 'Optativa 1', 'Computación Avanzada', 'Optativa 2'],
-  ['Seguridad y Auditoria', 'Administración de Recursos', 'Teoría de Computabilidad', 'Tesina de Grado', 'Interfaz Hombre Máquina', 'Optativa 3'],
+  ['Ingeniería de Software I', 'Algoritmos y Estructuras de Datos', 'Programación Orientada a Objetos', 'Matemática Discreta', 'Ecuaciones Diferenciales y Cálculo Multivariado', 'Arquitectura de Computadoras', 'Optativa I'],
+  ['Ingeniería de Software II', 'Bases de Datos', 'Sistemas Operativos', 'Probabilidad y Estadística', 'Paradigmas y Lenguajes', 'Ética Profesional', 'Programación Avanzada', 'Optativa II', 'Taller de Integración'],
+  ['Inteligencia Artificial', 'Bases de Datos Avanzadas', 'Comunicaciones y Redes', 'Metodología de la Investigación', 'Investigación Operativa', 'Optativa III', 'Computación Avanzada', 'Optativa IV'],
+  ['Seguridad y Auditoría', 'Administración de Recursos', 'Teoría de Computabilidad', 'Tesina de Grado', 'Interfaz Hombre Máquina', 'Optativa V'],
 ]
 
 const TIPOS_EVENTO = [
