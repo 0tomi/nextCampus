@@ -170,7 +170,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                     Mapa de correlativas
                   </h1>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-white/62">
-                    Marcá las materias que ya tenés regularizadas o aprobadas. El mapa usa las correlativas para cursar y te muestra qué se habilita después.
+                    Marcá las materias que ya tenés regularizadas o aprobadas. Seleccioná una materia para ver sus requisitos y qué se habilita después.
                   </p>
                 </div>
               </div>
@@ -342,7 +342,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                             handleToggleSubject(subject);
                           }
                         }}
-                        onMouseEnter={() => setSelectedSubjectSlug(subject.slug)}
+                        onFocus={() => setSelectedSubjectSlug(subject.slug)}
                         className={cn(
                           'group relative flex min-h-[132px] w-full cursor-pointer flex-col justify-between rounded-md border p-3 text-left transition duration-200',
                           status === 'COMPLETED' && 'border-emerald-300/35 bg-emerald-400/10 shadow-[0_0_18px_rgba(52,211,153,0.06)]',
