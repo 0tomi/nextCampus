@@ -117,6 +117,14 @@ function buildEventId(
   return `event-${index}-${slugify(title) || 'sin-titulo'}-${serializedDate}`
 }
 
+function buildDayKey(dateValue: EventCalendarDateInput): string {
+  if (typeof dateValue === 'string') {
+    return dateValue.slice(0, 10)
+  }
+
+  return dateValue.toISOString().slice(0, 10)
+}
+
 export function EventCalendar({
   events = [],
   emptyMessage = 'Sin eventos cargados por ahora.',
@@ -142,6 +150,19 @@ export function EventCalendar({
     onDateClick?.(info.dateStr)
   }
 
+  const eventCountByDay = events.reduce<Record<string, number>>((acc, event) => {
+    const startValue = event.start ?? event.date ?? event.fecha
+    const title = (event.title ?? event.titulo ?? '').trim()
+
+    if (!startValue || !title) {
+      return acc
+    }
+
+    const dayKey = buildDayKey(startValue)
+    acc[dayKey] = (acc[dayKey] ?? 0) + 1
+    return acc
+  }, {})
+
   const calendarEvents = events.flatMap((event, index) => {
     const title = (event.title ?? event.titulo ?? '').trim()
     const startValue = event.start ?? event.date ?? event.fecha
@@ -155,7 +176,12 @@ export function EventCalendar({
       {
         id: buildEventId(event, index, title, startValue),
         title,
-        classNames: resolveEventClassNames(event),
+        classNames: [
+          ...resolveEventClassNames(event),
+          (eventCountByDay[buildDayKey(startValue)] ?? 0) === 1
+            ? 'fc-event-single'
+            : 'fc-event-multi',
+        ],
         start: startValue,
         end: event.end,
         allDay: usesExplicitStart ? event.allDay : event.allDay ?? true,

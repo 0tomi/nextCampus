@@ -328,11 +328,6 @@ body {
   line-height: 1.2;
 }
 
-.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-daygrid-event {
-  white-space: normal;
-  min-height: auto;
-}
-
 .fc .fc-event-main {
   padding-block: 0.22rem;
 }
@@ -379,47 +374,52 @@ body {
   display: none;
 }
 
-.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-event-main,
-.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-event-chip,
-.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-event-main-frame {
+.fc .fc-daygrid-event.fc-event-single {
+  white-space: normal;
+  min-height: auto;
+}
+
+.fc .fc-daygrid-event.fc-event-single .fc-event-main,
+.fc .fc-daygrid-event.fc-event-single .fc-event-chip,
+.fc .fc-daygrid-event.fc-event-single .fc-event-main-frame {
   width: 100%;
 }
 
-.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-event-chip__viewport {
+.fc .fc-daygrid-event.fc-event-single .fc-event-chip__viewport {
   overflow: visible;
 }
 
-.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-event-chip__track {
+.fc .fc-daygrid-event.fc-event-single .fc-event-chip__track {
   display: block;
   max-width: none;
 }
 
-.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-event-chip__title,
-.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-event-title {
+.fc .fc-daygrid-event.fc-event-single .fc-event-chip__title,
+.fc .fc-daygrid-event.fc-event-single .fc-event-title {
   overflow: visible;
   text-overflow: initial;
   white-space: normal;
   line-height: 1.35;
 }
 
-.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-event-chip__title--duplicate {
+.fc .fc-daygrid-event.fc-event-single .fc-event-chip__title--duplicate {
   display: none !important;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .fc .fc-daygrid-event:hover .fc-event-chip__track,
-  .fc .fc-daygrid-event:focus-visible .fc-event-chip__track {
+  .fc .fc-daygrid-event.fc-event-multi:hover .fc-event-chip__track,
+  .fc .fc-daygrid-event.fc-event-multi:focus-visible .fc-event-chip__track {
     animation: fc-event-marquee 4.2s linear 0.2s infinite;
   }
 
-  .fc .fc-daygrid-event:hover .fc-event-chip__title,
-  .fc .fc-daygrid-event:focus-visible .fc-event-chip__title {
+  .fc .fc-daygrid-event.fc-event-multi:hover .fc-event-chip__title,
+  .fc .fc-daygrid-event.fc-event-multi:focus-visible .fc-event-chip__title {
     overflow: visible;
     text-overflow: clip;
   }
 
-  .fc .fc-daygrid-event:hover .fc-event-chip__title--duplicate,
-  .fc .fc-daygrid-event:focus-visible .fc-event-chip__title--duplicate {
+  .fc .fc-daygrid-event.fc-event-multi:hover .fc-event-chip__title--duplicate,
+  .fc .fc-daygrid-event.fc-event-multi:focus-visible .fc-event-chip__title--duplicate {
     display: block;
   }
 }
