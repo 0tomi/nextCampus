@@ -43,7 +43,6 @@ interface QuizRunnerProps {
   subjectSlug: string
   bancos: BancoInfo[]
   yearId?: string
-  yearSlug?: string
 }
 
 // Control hundido: más oscuro que la DarkCard (surface-1) que lo contiene.
@@ -56,7 +55,6 @@ export function QuizRunner({
   subjectSlug,
   bancos,
   yearId,
-  yearSlug,
 }: QuizRunnerProps) {
   const [phase, setPhase] = useState<'config' | 'running' | 'done'>('config')
   const [mode, setMode] = useState<Mode>('practica')
