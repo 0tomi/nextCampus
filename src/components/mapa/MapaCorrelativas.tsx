@@ -231,8 +231,8 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
             </div>
           </div>
 
-          <aside className="border-t border-white/8 bg-black/18 p-5 lg:border-l lg:border-t-0">
-            <div className="space-y-4">
+          <aside className="h-[520px] overflow-hidden border-t border-white/8 bg-black/18 p-5 lg:border-l lg:border-t-0">
+            <div className="h-full space-y-4 overflow-y-auto pr-1">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">Materia seleccionada</p>
@@ -335,6 +335,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                         key={subject.slug}
                         role="button"
                         tabIndex={0}
+                        onMouseDown={(event) => event.preventDefault()}
                         onClick={() => handleToggleSubject(subject)}
                         onKeyDown={(event) => {
                           if (event.key === 'Enter' || event.key === ' ') {

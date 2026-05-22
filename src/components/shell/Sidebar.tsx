@@ -36,7 +36,7 @@ export function Sidebar({
   secondaryEyebrow,
 }: SidebarProps) {
   return (
-    <div className={cn('flex h-full flex-col', className)}>
+    <div className={cn('flex h-full min-h-0 flex-col', className)}>
       {title || eyebrow ? (
         <div className="border-b border-white/5 px-5 py-5">
           {eyebrow ? (
@@ -52,7 +52,7 @@ export function Sidebar({
         </div>
       ) : null}
 
-      <nav aria-label={ariaLabel} className="flex-1 px-3 py-4">
+      <nav aria-label={ariaLabel} className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
         {secondaryEyebrow ? (
           <div className="mb-4 px-3">
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
