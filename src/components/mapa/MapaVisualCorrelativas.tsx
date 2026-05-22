@@ -36,16 +36,16 @@ type Camera = {
 };
 
 const STORAGE_KEY = 'nextcampus_progreso_materias';
-const NODE_WIDTH = 276;
-const NODE_HEIGHT = 118;
-const YEAR_GAP = 410;
-const ROW_GAP = 158;
-const START_X = 110;
-const START_Y = 190;
-const WORLD_WIDTH = 2180;
-const MIN_SCALE = 0.48;
+const NODE_WIDTH = 296;
+const NODE_HEIGHT = 138;
+const YEAR_GAP = 470;
+const ROW_GAP = 182;
+const START_X = 130;
+const START_Y = 220;
+const WORLD_WIDTH = 2520;
+const MIN_SCALE = 0.38;
 const MAX_SCALE = 1.36;
-const INITIAL_CAMERA: Camera = { x: -56, y: -66, scale: 0.66 };
+const INITIAL_CAMERA: Camera = { x: -40, y: -50, scale: 0.58 };
 
 const STATUS_COPY: Record<SubjectStatus, string> = {
   COMPLETED: 'Completada',
@@ -111,14 +111,17 @@ function getNodePosition(subject: SubjectNode) {
   };
 }
 
+const ARROW_INSET = 18;
+
 function createPath(from: SubjectNode, to: SubjectNode) {
   const start = getNodePosition(from);
   const end = getNodePosition(to);
   const sx = start.x + NODE_WIDTH;
   const sy = start.y + NODE_HEIGHT / 2;
-  const ex = end.x;
+  const ex = end.x - ARROW_INSET;
   const ey = end.y + NODE_HEIGHT / 2;
-  const curve = Math.max(88, (ex - sx) * 0.46);
+  const dx = ex - sx;
+  const curve = Math.max(100, dx * 0.48);
 
   return `M ${sx} ${sy} C ${sx + curve} ${sy}, ${ex - curve} ${ey}, ${ex} ${ey}`;
 }
@@ -328,26 +331,74 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
                   <feMergeNode in="SourceGraphic" />
                 </feMerge>
               </filter>
+              <marker
+                id="arrowActive"
+                viewBox="0 0 12 10"
+                refX="10"
+                refY="5"
+                markerWidth="10"
+                markerHeight="8"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 1 L 10 5 L 0 9 Z" fill="#67e8f9" />
+              </marker>
+              <marker
+                id="arrowComplete"
+                viewBox="0 0 12 10"
+                refX="10"
+                refY="5"
+                markerWidth="8"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="#6ee7b7" opacity="0.55" />
+              </marker>
+              <marker
+                id="arrowDefault"
+                viewBox="0 0 12 10"
+                refX="10"
+                refY="5"
+                markerWidth="7"
+                markerHeight="5"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 2 L 8 5 L 0 8 Z" fill="#ffffff" opacity="0.22" />
+              </marker>
             </defs>
             {allEdges.map(({ source, target }, index) => {
               const sourceStatus = subjectStatuses[source.slug];
               const isActive = activeChain.has(source.slug) && activeChain.has(target.slug);
               const isCompletePath = sourceStatus === 'COMPLETED';
+              const markerId = isActive ? 'arrowActive' : isCompletePath ? 'arrowComplete' : 'arrowDefault';
 
               return (
-                <path
-                  key={`${source.slug}-${target.slug}`}
-                  d={createPath(source, target)}
-                  pathLength={1}
-                  className={cn('mapa-visual-trace transition duration-300', isActive && 'mapa-visual-trace-active')}
-                  stroke={isActive ? '#67e8f9' : isCompletePath ? '#6ee7b7' : '#ffffff'}
-                  strokeWidth={isActive ? 4 : 1.7}
-                  strokeLinecap="round"
-                  fill="none"
-                  filter={isActive ? 'url(#mapaVisualGlow)' : undefined}
-                  opacity={isActive ? 1 : isCompletePath ? 0.38 : 0.14}
-                  style={{ animationDelay: `${index * 16}ms` }}
-                />
+                <g key={`${source.slug}-${target.slug}`}>
+                  <path
+                    d={createPath(source, target)}
+                    pathLength={1}
+                    className={cn('mapa-visual-trace transition duration-300', isActive && 'mapa-visual-trace-active')}
+                    stroke={isActive ? '#67e8f9' : isCompletePath ? '#6ee7b7' : '#ffffff'}
+                    strokeWidth={isActive ? 3.5 : isCompletePath ? 2 : 1.5}
+                    strokeLinecap="round"
+                    fill="none"
+                    filter={isActive ? 'url(#mapaVisualGlow)' : undefined}
+                    opacity={isActive ? 1 : isCompletePath ? 0.42 : 0.16}
+                    markerEnd={`url(#${markerId})`}
+                    style={{ animationDelay: `${index * 16}ms` }}
+                  />
+                  {isActive ? (
+                    <path
+                      d={createPath(source, target)}
+                      className="mapa-visual-flow"
+                      stroke="#67e8f9"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeDasharray="8 16"
+                      fill="none"
+                      opacity={0.6}
+                    />
+                  ) : null}
+                </g>
               );
             })}
           </svg>
@@ -355,11 +406,12 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
           {[1, 2, 3, 4, 5].map((year) => (
             <div
               key={year}
-              className="absolute top-9 w-[276px] border-b border-white/12 pb-3"
+              className="absolute top-8 w-[296px] pb-4"
               style={{ left: START_X + (year - 1) * YEAR_GAP }}
             >
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-white/32">Año {year}</p>
-              <p className="mt-1 text-base font-black text-white">{YEAR_LABELS[year]}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-200/40">Año {year}</p>
+              <p className="mt-1.5 text-lg font-black tracking-tight text-white">{YEAR_LABELS[year]}</p>
+              <div className="mt-3 h-px bg-gradient-to-r from-white/20 via-white/8 to-transparent" />
             </div>
           ))}
 
@@ -383,7 +435,7 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
                 onMouseEnter={() => setHoveredSlug(subject.slug)}
                 onMouseLeave={() => setHoveredSlug(null)}
                 className={cn(
-                  'mapa-visual-node group absolute flex cursor-pointer flex-col justify-between border px-5 py-4 text-left backdrop-blur-md transition duration-300',
+                  'mapa-visual-node group absolute flex cursor-pointer flex-col justify-between border px-6 py-5 text-left backdrop-blur-md transition duration-300',
                   STATUS_STYLES[status],
                   isSelected && 'ring-2 ring-cyan-100/70',
                   isActive && 'scale-[1.035]',

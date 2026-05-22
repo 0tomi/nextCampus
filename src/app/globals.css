@@ -250,10 +250,25 @@ body {
   }
 }
 
+.mapa-visual-flow {
+  animation: mapaVisualFlow 1.4s linear infinite;
+}
+
+@keyframes mapaVisualFlow {
+  from {
+    stroke-dashoffset: 0;
+  }
+
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mapa-visual-node,
   .mapa-visual-trace,
-  .mapa-visual-trace-active {
+  .mapa-visual-trace-active,
+  .mapa-visual-flow {
     animation: none;
   }
 }
