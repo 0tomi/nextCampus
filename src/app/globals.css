@@ -375,30 +375,44 @@ body {
 }
 
 .fc .fc-daygrid-event.fc-event-single {
+  display: block;
   white-space: normal;
   min-height: auto;
+  width: 100%;
+  max-width: 100%;
 }
 
 .fc .fc-daygrid-event.fc-event-single .fc-event-main,
 .fc .fc-daygrid-event.fc-event-single .fc-event-chip,
 .fc .fc-daygrid-event.fc-event-single .fc-event-main-frame {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .fc .fc-daygrid-event.fc-event-single .fc-event-chip__viewport {
-  overflow: visible;
+  display: block;
+  overflow: hidden;
+  width: 100%;
 }
 
 .fc .fc-daygrid-event.fc-event-single .fc-event-chip__track {
   display: block;
-  max-width: none;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .fc .fc-daygrid-event.fc-event-single .fc-event-chip__title,
 .fc .fc-daygrid-event.fc-event-single .fc-event-title {
-  overflow: visible;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
   text-overflow: initial;
   white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   line-height: 1.35;
 }
 
