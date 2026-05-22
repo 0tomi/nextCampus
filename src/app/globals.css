@@ -286,11 +286,61 @@ body {
   min-width: 0;
 }
 
+.fc .fc-event-chip__viewport {
+  display: block;
+  overflow: hidden;
+  width: 100%;
+}
+
+.fc .fc-event-chip__track {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.25rem;
+  min-width: max-content;
+  max-width: 100%;
+}
+
 .fc .fc-event-chip__title {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.fc .fc-event-chip__title--duplicate {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fc .fc-daygrid-event:hover .fc-event-chip__track,
+  .fc .fc-daygrid-event:focus-visible .fc-event-chip__track {
+    animation: fc-event-marquee 7s linear 0.9s infinite;
+  }
+
+  .fc .fc-daygrid-event:hover .fc-event-chip__title,
+  .fc .fc-daygrid-event:focus-visible .fc-event-chip__title {
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .fc .fc-daygrid-event:hover .fc-event-chip__title--duplicate,
+  .fc .fc-daygrid-event:focus-visible .fc-event-chip__title--duplicate {
+    display: block;
+  }
+}
+
+@keyframes fc-event-marquee {
+  0%,
+  12% {
+    transform: translateX(0);
+  }
+
+  88%,
+  100% {
+    transform: translateX(calc(-50% - 0.625rem));
+  }
 }
 
 .fc .fc-daygrid-more-link {
@@ -376,6 +426,19 @@ body {
   text-overflow: initial;
   white-space: normal;
   line-height: 1.35;
+}
+
+.fc .fc-popover .fc-event-chip__viewport {
+  overflow: visible;
+}
+
+.fc .fc-popover .fc-event-chip__track {
+  display: block;
+  max-width: none;
+}
+
+.fc .fc-popover .fc-event-chip__title--duplicate {
+  display: none !important;
 }
 
 .fc .fc-event-tone-slate {

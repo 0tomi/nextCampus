@@ -209,7 +209,17 @@ export function EventCalendar({
         }}
         eventContent={(info) => (
           <div className="fc-event-chip">
-            <span className="fc-event-chip__title">{info.event.title}</span>
+            <span className="fc-event-chip__viewport">
+              <span className="fc-event-chip__track">
+                <span className="fc-event-chip__title">{info.event.title}</span>
+                <span
+                  aria-hidden="true"
+                  className="fc-event-chip__title fc-event-chip__title--duplicate"
+                >
+                  {info.event.title}
+                </span>
+              </span>
+            </span>
           </div>
         )}
         dateClick={editable ? handleDateClick : undefined}
