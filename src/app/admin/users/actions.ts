@@ -6,6 +6,7 @@ import { UserRole, UserStatus } from '../../../../prisma/generated/client/enums'
 import { prisma } from '@/lib/prisma'
 import { requireGeneralAdmin } from '@/lib/auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
 
 export interface AdminUserActionState {
   ok: boolean
@@ -79,7 +80,7 @@ export async function createAdminCampusAction(
   formData: FormData,
 ): Promise<AdminUserActionState> {
   try {
-    await requireGeneralAdmin()
+    const admin = await requireGeneralAdmin()
     const data = createAdminCampusSchema.parse({
       email: formData.get('email'),
       password: formData.get('password'),
@@ -99,8 +100,9 @@ export async function createAdminCampusAction(
       throw new Error(createError?.message ?? 'No pudimos crear la cuenta.')
     }
 
+    let createdUserId: string
     try {
-      await prisma.$transaction(async (tx) => {
+      createdUserId = await prisma.$transaction(async (tx) => {
         const user = await tx.userAccount.create({
           data: {
             authUserId: created.user.id,
@@ -115,6 +117,7 @@ export async function createAdminCampusAction(
           data: yearIds.map((yearId) => ({ userId: user.id, yearId })),
           skipDuplicates: true,
         })
+        return user.id
       })
     } catch (error) {
       try {
@@ -126,6 +129,17 @@ export async function createAdminCampusAction(
     }
 
     revalidatePath('/admin/users')
+    await recordAudit({
+      userId: admin.id,
+      action: AUDIT_ACTIONS.USER_CREATED,
+      entityType: 'user',
+      entityId: createdUserId,
+      detail: {
+        email: data.email,
+        role: UserRole.ADMIN_CAMPUS,
+        yearsCount: yearIds.length,
+      },
+    })
     return { ok: true, message: 'Administrador creado correctamente.' }
   } catch (error) {
     return friendlyError(error)
@@ -137,7 +151,7 @@ export async function updateAdminCampusAction(
   formData: FormData,
 ): Promise<AdminUserActionState> {
   try {
-    await requireGeneralAdmin()
+    const admin = await requireGeneralAdmin()
     const data = editAdminCampusSchema.parse({
       id: formData.get('id'),
       email: formData.get('email'),
@@ -207,6 +221,19 @@ export async function updateAdminCampusAction(
 
     revalidatePath('/admin/users')
     revalidatePath(`/admin/users/edit/${current.id}`)
+    await recordAudit({
+      userId: admin.id,
+      action: AUDIT_ACTIONS.USER_UPDATED,
+      entityType: 'user',
+      entityId: current.id,
+      detail: {
+        email: data.email,
+        emailChanged,
+        status: data.status,
+        passwordChanged: Boolean(data.password),
+        yearsCount: yearIds.length,
+      },
+    })
     return { ok: true, message: 'Cambios guardados correctamente.' }
   } catch (error) {
     return friendlyError(error)

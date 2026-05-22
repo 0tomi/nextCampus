@@ -32,6 +32,7 @@ import {
 } from '@/lib/queries'
 import { parseQuizBank } from '@/lib/domain/quiz-bank'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
 
 // Next 16 exige un perfil de cacheLife como segundo argumento de
 // revalidateTag. Usamos "max" (stale-while-revalidate) en todas las
@@ -81,7 +82,7 @@ export async function createEvento(formData: FormData): Promise<void> {
   const scope = await requireYearAdminForAgendaId(data.agendaId)
   if (!scope) throw new Error('Agenda no encontrada')
 
-  await prisma.evento.create({
+  const evento = await prisma.evento.create({
     data: {
       agendaId: data.agendaId,
       tipoEventoId: data.tipoEventoId,
@@ -91,6 +92,18 @@ export async function createEvento(formData: FormData): Promise<void> {
     },
   })
   await revalidateSubjectContent(scope.subjectSlug)
+  await recordAudit({
+    userId: scope.admin.id,
+    action: AUDIT_ACTIONS.EVENTO_CREATED,
+    entityType: 'evento',
+    entityId: evento.id,
+    detail: {
+      titulo: evento.titulo,
+      fecha: evento.fecha.toISOString(),
+      subjectSlug: scope.subjectSlug,
+      yearSlug: scope.yearSlug,
+    },
+  })
 }
 
 // Wrapper para useActionState en modales cliente
@@ -125,8 +138,23 @@ export async function updateEventoFechaAction(
   const scope = await requireYearAdminForEventoId(validId)
   if (!scope) return { ok: false }
 
-  await prisma.evento.update({ where: { id: validId }, data: { fecha: validFecha } })
+  const updated = await prisma.evento.update({
+    where: { id: validId },
+    data: { fecha: validFecha },
+    select: { titulo: true },
+  })
   await revalidateSubjectContent(scope.subjectSlug)
+  await recordAudit({
+    userId: scope.admin.id,
+    action: AUDIT_ACTIONS.EVENTO_DATE_UPDATED,
+    entityType: 'evento',
+    entityId: validId,
+    detail: {
+      titulo: updated.titulo,
+      fecha: validFecha.toISOString(),
+      subjectSlug: scope.subjectSlug,
+    },
+  })
   return { ok: true }
 }
 
@@ -156,6 +184,17 @@ export async function updateEventoAction(
       },
     })
     await revalidateSubjectContent(scope.subjectSlug)
+    await recordAudit({
+      userId: scope.admin.id,
+      action: AUDIT_ACTIONS.EVENTO_UPDATED,
+      entityType: 'evento',
+      entityId: id,
+      detail: {
+        titulo: data.titulo,
+        fecha: data.fecha.toISOString(),
+        subjectSlug: scope.subjectSlug,
+      },
+    })
     return { ok: true, message: 'Evento actualizado correctamente.' }
   } catch (err) {
     if (err instanceof z.ZodError) {
@@ -170,8 +209,26 @@ export async function deleteEvento(formData: FormData): Promise<void> {
   const scope = await requireYearAdminForEventoId(id)
   if (!scope) return
 
+  const evento = await prisma.evento.findUnique({
+    where: { id },
+    select: { titulo: true, fecha: true },
+  })
+
   await prisma.evento.delete({ where: { id } })
   await revalidateSubjectContent(scope.subjectSlug)
+  if (evento) {
+    await recordAudit({
+      userId: scope.admin.id,
+      action: AUDIT_ACTIONS.EVENTO_DELETED,
+      entityType: 'evento',
+      entityId: id,
+      detail: {
+        titulo: evento.titulo,
+        fecha: evento.fecha.toISOString(),
+        subjectSlug: scope.subjectSlug,
+      },
+    })
+  }
 }
 
 // Wrapper para useActionState en modal cliente
@@ -247,8 +304,9 @@ export async function createApunteAction(
 
   const { titulo, descripcionHtml, recursos } = parsed.data
 
+  let apunteId: string
   try {
-    await prisma.apunte.create({
+    const apunte = await prisma.apunte.create({
       data: {
         subjectId: subjectId.data,
         titulo,
@@ -261,12 +319,26 @@ export async function createApunteAction(
           })),
         },
       },
+      select: { id: true },
     })
+    apunteId = apunte.id
   } catch {
     return { ok: false, message: 'No se pudo crear el apunte. Intentá de nuevo.' }
   }
 
   await revalidateSubjectContent(scope.subjectSlug)
+  await recordAudit({
+    userId: scope.admin.id,
+    action: AUDIT_ACTIONS.APUNTE_CREATED,
+    entityType: 'apunte',
+    entityId: apunteId,
+    detail: {
+      titulo,
+      subjectSlug: scope.subjectSlug,
+      yearSlug: scope.yearSlug,
+      recursosCount: recursos.length,
+    },
+  })
   return { ok: true, message: 'Apunte creado correctamente.' }
 }
 
@@ -322,6 +394,17 @@ export async function updateApunteAction(
   }
 
   await revalidateSubjectContent(scope.subjectSlug)
+  await recordAudit({
+    userId: scope.admin.id,
+    action: AUDIT_ACTIONS.APUNTE_UPDATED,
+    entityType: 'apunte',
+    entityId: apunteId.data,
+    detail: {
+      titulo,
+      subjectSlug: scope.subjectSlug,
+      recursosCount: recursos.length,
+    },
+  })
   return { ok: true, message: 'Apunte actualizado correctamente.' }
 }
 
@@ -330,10 +413,27 @@ export async function deleteApunteAction(formData: FormData): Promise<void> {
   const scope = await requireYearAdminForApunteId(id)
   if (!scope) return
 
+  const apunte = await prisma.apunte.findUnique({
+    where: { id },
+    select: { titulo: true },
+  })
+
   // La FK con onDelete: Cascade borra los ApunteRecurso automáticamente.
   await prisma.apunte.delete({ where: { id } })
 
   await revalidateSubjectContent(scope.subjectSlug)
+  if (apunte) {
+    await recordAudit({
+      userId: scope.admin.id,
+      action: AUDIT_ACTIONS.APUNTE_DELETED,
+      entityType: 'apunte',
+      entityId: id,
+      detail: {
+        titulo: apunte.titulo,
+        subjectSlug: scope.subjectSlug,
+      },
+    })
+  }
 }
 
 // --- Banco de preguntas (quiz JSON-en-bucket) ------------------------------
@@ -396,6 +496,17 @@ export async function uploadQuizBankAction(
 
   revalidateTag(quizBanksCacheTag(scope.yearSlug, scope.subjectSlug))
   await revalidateSubjectContent(scope.subjectSlug)
+  await recordAudit({
+    userId: scope.admin.id,
+    action: AUDIT_ACTIONS.QUIZ_BANK_UPLOADED,
+    entityType: 'quizBank',
+    detail: {
+      nombre,
+      totalPreguntas: bank.totalPreguntas,
+      subjectSlug: scope.subjectSlug,
+      yearSlug: scope.yearSlug,
+    },
+  })
   return {
     ok: true,
     message: `Banco "${nombre}" cargado (${bank.totalPreguntas} preguntas).`,
@@ -411,6 +522,17 @@ export async function deleteQuizBankAction(formData: FormData): Promise<void> {
   await deleteQuizBank(scope.yearSlug, scope.subjectSlug, bankId)
   revalidateTag(quizBanksCacheTag(scope.yearSlug, scope.subjectSlug))
   await revalidateSubjectContent(scope.subjectSlug)
+  await recordAudit({
+    userId: scope.admin.id,
+    action: AUDIT_ACTIONS.QUIZ_BANK_DELETED,
+    entityType: 'quizBank',
+    entityId: bankId,
+    detail: {
+      bankId,
+      subjectSlug: scope.subjectSlug,
+      yearSlug: scope.yearSlug,
+    },
+  })
 }
 
 // --- ABM Años académicos ---------------------------------------------------
@@ -432,7 +554,7 @@ export async function createYearAction(
   _prev: YearActionState,
   formData: FormData,
 ): Promise<YearActionState> {
-  await requireGeneralAdmin()
+  const admin = await requireGeneralAdmin()
 
   const parsed = yearSchema.safeParse({
     nombre: formData.get('nombre'),
@@ -455,12 +577,20 @@ export async function createYearAction(
   const base = slugify(nombre)
   const slug = uniqueSlug(base, takenSlugs)
 
-  await prisma.academicYear.create({
+  const year = await prisma.academicYear.create({
     data: { nombre, slug, orden, careerId: career.id },
+    select: { id: true },
   })
 
   revalidateTag(queryTags.career)
   revalidatePath('/')
+  await recordAudit({
+    userId: admin.id,
+    action: AUDIT_ACTIONS.YEAR_CREATED,
+    entityType: 'year',
+    entityId: year.id,
+    detail: { nombre, slug, orden },
+  })
   return { ok: true, message: 'Año creado correctamente.' }
 }
 
@@ -468,7 +598,7 @@ export async function updateYearAction(
   _prev: YearActionState,
   formData: FormData,
 ): Promise<YearActionState> {
-  await requireGeneralAdmin()
+  const admin = await requireGeneralAdmin()
 
   const id = z.string().min(1).parse(formData.get('id'))
 
@@ -512,11 +642,18 @@ export async function updateYearAction(
     revalidatePath(`/year/${newSlug}`)
     revalidatePath(`/year/${newSlug}/calendario`)
   }
+  await recordAudit({
+    userId: admin.id,
+    action: AUDIT_ACTIONS.YEAR_UPDATED,
+    entityType: 'year',
+    entityId: id,
+    detail: { nombre, oldSlug, newSlug, orden },
+  })
   return { ok: true, message: 'Año actualizado correctamente.' }
 }
 
 export async function deleteYearAction(formData: FormData): Promise<void> {
-  await requireGeneralAdmin()
+  const admin = await requireGeneralAdmin()
   const id = z.string().min(1).parse(formData.get('id'))
 
   // Capturar toda la info ANTES de borrar (la cascada elimina los registros)
@@ -524,6 +661,7 @@ export async function deleteYearAction(formData: FormData): Promise<void> {
     where: { id },
     select: {
       slug: true,
+      nombre: true,
       subjects: { select: { slug: true } },
     },
   })
@@ -550,6 +688,17 @@ export async function deleteYearAction(formData: FormData): Promise<void> {
   }
   revalidatePath('/')
   revalidatePath(`/year/${year.slug}`)
+  await recordAudit({
+    userId: admin.id,
+    action: AUDIT_ACTIONS.YEAR_DELETED,
+    entityType: 'year',
+    entityId: id,
+    detail: {
+      nombre: year.nombre,
+      slug: year.slug,
+      subjectsCount: year.subjects.length,
+    },
+  })
 }
 
 // Acción para obtener el impacto de eliminar un año (usada por el modal)
@@ -579,7 +728,7 @@ export async function createSubjectAction(
   formData: FormData,
 ): Promise<SubjectActionState> {
   const yearId = z.string().min(1).parse(formData.get('yearId'))
-  await requireYearAdminForYearId(yearId)
+  const admin = await requireYearAdminForYearId(yearId)
 
   const parsed = subjectSchema.safeParse({
     nombre: formData.get('nombre'),
@@ -605,11 +754,13 @@ export async function createSubjectAction(
   const slug = uniqueSlug(base, takenSlugs)
 
   // Crear materia + Agenda 1:1 en una transacción
-  await prisma.$transaction(async (tx) => {
-    const subject = await tx.subject.create({
+  const subject = await prisma.$transaction(async (tx) => {
+    const created = await tx.subject.create({
       data: { nombre, slug, descripcion, driveUrl: driveUrl || null, yearId },
+      select: { id: true },
     })
-    await tx.agenda.create({ data: { subjectId: subject.id } })
+    await tx.agenda.create({ data: { subjectId: created.id } })
+    return created
   })
 
   revalidateTag(queryTags.career)
@@ -617,6 +768,13 @@ export async function createSubjectAction(
   revalidatePath('/')
   revalidatePath(`/year/${year.slug}`)
   revalidatePath(`/year/${year.slug}/calendario`)
+  await recordAudit({
+    userId: admin.id,
+    action: AUDIT_ACTIONS.SUBJECT_CREATED,
+    entityType: 'subject',
+    entityId: subject.id,
+    detail: { nombre, slug, yearSlug: year.slug },
+  })
   return { ok: true, message: 'Materia creada correctamente.' }
 }
 
@@ -685,6 +843,13 @@ export async function updateSubjectAction(
   revalidatePath(`/year/${scope.yearSlug}/calendario`)
   revalidatePath(`/materia/${oldSlug}`)
   if (newSlug !== oldSlug) revalidatePath(`/materia/${newSlug}`)
+  await recordAudit({
+    userId: scope.admin.id,
+    action: AUDIT_ACTIONS.SUBJECT_UPDATED,
+    entityType: 'subject',
+    entityId: id,
+    detail: { nombre, oldSlug, newSlug, yearSlug: scope.yearSlug },
+  })
   return { ok: true, message: 'Materia actualizada correctamente.' }
 }
 
@@ -695,6 +860,11 @@ export async function deleteSubjectAction(formData: FormData): Promise<void> {
   if (!scope) return
 
   const { subjectSlug, yearSlug } = scope
+
+  const subject = await prisma.subject.findUnique({
+    where: { id },
+    select: { nombre: true },
+  })
 
   // Limpiar Storage ANTES de borrar en BD
   try {
@@ -713,6 +883,15 @@ export async function deleteSubjectAction(formData: FormData): Promise<void> {
   revalidatePath(`/year/${yearSlug}`)
   revalidatePath(`/year/${yearSlug}/calendario`)
   revalidatePath(`/materia/${subjectSlug}`)
+  if (subject) {
+    await recordAudit({
+      userId: scope.admin.id,
+      action: AUDIT_ACTIONS.SUBJECT_DELETED,
+      entityType: 'subject',
+      entityId: id,
+      detail: { nombre: subject.nombre, slug: subjectSlug, yearSlug },
+    })
+  }
 }
 
 // Acción para obtener el impacto de eliminar una materia (usada por el modal)
@@ -763,6 +942,17 @@ export async function updateSubjectDriveUrlAction(
   revalidatePath(`/year/${scope.yearSlug}/calendario`)
   revalidatePath(`/materia/${scope.subjectSlug}`)
 
+  await recordAudit({
+    userId: scope.admin.id,
+    action: AUDIT_ACTIONS.SUBJECT_DRIVE_UPDATED,
+    entityType: 'subject',
+    entityId: validSubjectId,
+    detail: {
+      driveUrl: normalizedDriveUrl,
+      subjectSlug: scope.subjectSlug,
+    },
+  })
+
   return { ok: true, message: 'Enlace de Google Drive actualizado correctamente.' }
 }
 
@@ -811,6 +1001,18 @@ export async function updateSubjectPlaylistAction(
   revalidatePath(`/year/${scope.yearSlug}`)
   revalidatePath(`/year/${scope.yearSlug}/calendario`)
   revalidatePath(`/materia/${scope.subjectSlug}`)
+
+  await recordAudit({
+    userId: scope.admin.id,
+    action: AUDIT_ACTIONS.SUBJECT_PLAYLIST_UPDATED,
+    entityType: 'subject',
+    entityId: validSubjectId,
+    detail: {
+      playlistUrl: normalizedPlaylistUrl,
+      playlistEnabled,
+      subjectSlug: scope.subjectSlug,
+    },
+  })
 
   return { ok: true, message: 'Playlist actualizada correctamente.' }
 }
