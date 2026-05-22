@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   Filter,
   GraduationCap,
-  Info,
   Lock,
   RefreshCw,
   Search,
@@ -605,12 +604,6 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
         })}
       </section>
 
-      <section className="flex max-w-4xl flex-col gap-4 rounded-md border border-white/8 bg-surface-1 p-4 text-xs leading-6 text-white/55 md:flex-row">
-        <Info className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
-        <p>
-          Los desbloqueos se calculan con las correlativas para cursar del plan leído en Plande. Las correlativas para rendir aparecen en el panel lateral cuando existen, porque aplican a otra instancia de la materia.
-        </p>
-      </section>
     </div>
   );
 }
