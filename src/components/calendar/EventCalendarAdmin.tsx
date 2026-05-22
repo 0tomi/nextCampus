@@ -20,6 +20,7 @@ interface EventCalendarAdminProps {
   events: readonly EventCalendarEvent[]
   emptyMessage?: string
   className?: string
+  dayMaxEvents?: number
   agendaId?: string
   subjectSlug?: string
   yearId?: string
@@ -43,6 +44,7 @@ export function EventCalendarAdmin({
   events,
   emptyMessage,
   className,
+  dayMaxEvents,
   agendaId = '',
   subjectSlug = '',
   yearId,
@@ -110,6 +112,7 @@ export function EventCalendarAdmin({
         events={events}
         emptyMessage={emptyMessage}
         className={className}
+        dayMaxEvents={dayMaxEvents}
         editable={canEdit}
         onEventDrop={canEdit ? handleEventDrop : undefined}
         onDateClick={canEdit ? handleDateClick : undefined}

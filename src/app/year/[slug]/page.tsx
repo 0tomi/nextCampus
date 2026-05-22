@@ -140,7 +140,7 @@ export default async function YearPage({
               </p>
             </div>
 
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.85fr)]">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.72fr)_minmax(324px,0.8fr)] 2xl:grid-cols-[minmax(0,1.82fr)_minmax(344px,0.78fr)]">
               <EventCalendarAdmin
                 events={events}
                 emptyMessage="Todavía no hay eventos visibles a nivel año. Entrá a una materia para ver su agenda real."
@@ -149,44 +149,46 @@ export default async function YearPage({
                 subjects={modalSubjects}
               />
 
-              <div className="space-y-3">
+              <div className="space-y-3 xl:min-w-[324px] 2xl:min-w-[344px]">
                 {nextEvents.length === 0 ? (
                   <DarkCard className="p-5 text-sm leading-6 text-white/58">
                     Por ahora no hay eventos próximos en este año.
                   </DarkCard>
                 ) : (
                   nextEvents.map((evento) => (
-                    <DarkCard key={evento.id} className="p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">
-                            <span>{evento.tipo}</span>
-                            <span>•</span>
-                            <Link href={`/materia/${evento.subjectSlug}`} className="hover:text-white transition-colors">
-                              {evento.subjectNombre}
-                            </Link>
+                    <DarkCard key={evento.id} className="p-4 2xl:p-[18px]">
+                      <div className="flex flex-col gap-3">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">
+                              <span>{evento.tipo}</span>
+                              <span>•</span>
+                              <Link href={`/materia/${evento.subjectSlug}`} className="hover:text-white transition-colors">
+                                {evento.subjectNombre}
+                              </Link>
+                            </div>
+                            <h3 className="mt-2 text-base font-black tracking-tight text-white leading-snug 2xl:text-lg">
+                              {evento.titulo}
+                            </h3>
                           </div>
-                          <h3 className="mt-2 text-lg font-black tracking-tight text-white leading-snug">
-                            {evento.titulo}
-                          </h3>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span
-                            className={`inline-flex border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${colors.chipClassName}`}
-                          >
-                            {formatDateTime(evento.fecha)}
-                          </span>
-                          <DeleteEventoButton
-                            eventoId={evento.id}
-                            subjectSlug={evento.subjectSlug}
-                            yearId={year.id}
-                          />
+                          <div className="flex shrink-0 items-center gap-2">
+                            <span
+                              className={`inline-flex max-w-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${colors.chipClassName}`}
+                            >
+                              {formatDateTime(evento.fecha)}
+                            </span>
+                            <DeleteEventoButton
+                              eventoId={evento.id}
+                              subjectSlug={evento.subjectSlug}
+                              yearId={year.id}
+                            />
+                          </div>
                         </div>
                       </div>
 
                       {evento.descripcionHtml ? (
                         <div
-                          className="mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
+                          className="space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
                           dangerouslySetInnerHTML={{
                             __html: sanitizeRichHtml(evento.descripcionHtml),
                           }}

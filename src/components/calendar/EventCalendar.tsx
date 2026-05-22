@@ -33,6 +33,7 @@ interface EventCalendarProps {
   events?: readonly EventCalendarEvent[]
   emptyMessage?: string
   className?: string
+  dayMaxEvents?: number
   /** Habilita drag-and-drop y dateClick para el admin. Anónimos siempre read-only. */
   editable?: boolean
   /** Callback cuando se arrastra un evento a otra fecha. Si retorna false o lanza, el drag se revierte. */
@@ -116,10 +117,19 @@ function buildEventId(
   return `event-${index}-${slugify(title) || 'sin-titulo'}-${serializedDate}`
 }
 
+function buildDayKey(dateValue: EventCalendarDateInput): string {
+  if (typeof dateValue === 'string') {
+    return dateValue.slice(0, 10)
+  }
+
+  return dateValue.toISOString().slice(0, 10)
+}
+
 export function EventCalendar({
   events = [],
   emptyMessage = 'Sin eventos cargados por ahora.',
   className,
+  dayMaxEvents = 3,
   editable = false,
   onEventDrop,
   onDateClick,
@@ -140,6 +150,19 @@ export function EventCalendar({
     onDateClick?.(info.dateStr)
   }
 
+  const eventCountByDay = events.reduce<Record<string, number>>((acc, event) => {
+    const startValue = event.start ?? event.date ?? event.fecha
+    const title = (event.title ?? event.titulo ?? '').trim()
+
+    if (!startValue || !title) {
+      return acc
+    }
+
+    const dayKey = buildDayKey(startValue)
+    acc[dayKey] = (acc[dayKey] ?? 0) + 1
+    return acc
+  }, {})
+
   const calendarEvents = events.flatMap((event, index) => {
     const title = (event.title ?? event.titulo ?? '').trim()
     const startValue = event.start ?? event.date ?? event.fecha
@@ -153,7 +176,12 @@ export function EventCalendar({
       {
         id: buildEventId(event, index, title, startValue),
         title,
-        classNames: resolveEventClassNames(event),
+        classNames: [
+          ...resolveEventClassNames(event),
+          (eventCountByDay[buildDayKey(startValue)] ?? 0) === 1
+            ? 'fc-event-single'
+            : 'fc-event-multi',
+        ],
         start: startValue,
         end: event.end,
         allDay: usesExplicitStart ? event.allDay : event.allDay ?? true,
@@ -199,10 +227,29 @@ export function EventCalendar({
         fixedWeekCount={false}
         showNonCurrentDates={false}
         displayEventTime={false}
-        dayMaxEventRows={3}
+        dayMaxEvents={dayMaxEvents}
+        moreLinkContent={(args) => `+${args.num} más`}
         editable={editable}
         eventStartEditable={editable}
         eventDrop={editable ? handleEventDrop : undefined}
+        eventDidMount={(info) => {
+          info.el.setAttribute('title', info.event.title)
+        }}
+        eventContent={(info) => (
+          <div className="fc-event-chip">
+            <span className="fc-event-chip__viewport">
+              <span className="fc-event-chip__track">
+                <span className="fc-event-chip__title">{info.event.title}</span>
+                <span
+                  aria-hidden="true"
+                  className="fc-event-chip__title fc-event-chip__title--duplicate"
+                >
+                  {info.event.title}
+                </span>
+              </span>
+            </span>
+          </div>
+        )}
         dateClick={editable ? handleDateClick : undefined}
         eventClick={(info) => {
           const clickedId = info.event.id

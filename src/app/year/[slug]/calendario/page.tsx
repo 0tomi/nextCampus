@@ -105,6 +105,8 @@ export default async function YearCalendarPage({
             <EventCalendarAdmin
               events={events}
               emptyMessage="Todavía no hay eventos cargados en este año."
+              className="year-calendar-expanded"
+              dayMaxEvents={4}
               tiposEvento={tiposEvento}
               subjects={modalSubjects}
             />
