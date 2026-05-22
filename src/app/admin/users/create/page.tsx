@@ -15,19 +15,19 @@ export default async function CreateAdminUserPage() {
   })
 
   return (
-    <main className="mx-auto min-h-screen max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-4xl">
       <div className="mb-8">
         <Link href="/admin/users" className="cursor-pointer text-sm font-semibold text-violet-200 transition hover:text-violet-100">
           ← Volver a usuarios
         </Link>
         <p className="mt-6 text-xs font-bold uppercase tracking-[0.22em] text-violet-200/70">Nuevo usuario</p>
-        <h1 className="mt-3 text-3xl font-black tracking-tight text-white">Crear administrador del campus</h1>
+        <h1 className="mt-3 font-display text-3xl font-black tracking-tight text-white">Crear administrador del campus</h1>
         <p className="mt-2 text-sm leading-6 text-white/55">
           Cargá el email, una contraseña inicial y los años que va a poder gestionar.
         </p>
       </div>
 
       <AdminUserForm mode="create" years={years} action={createAdminCampusAction} />
-    </main>
+    </div>
   )
 }
