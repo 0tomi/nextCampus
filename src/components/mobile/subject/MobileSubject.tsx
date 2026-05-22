@@ -1,3 +1,5 @@
+'use client'
+
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { SubjectTabs } from './SubjectTabs'
 import { getYearColorClasses } from '@/lib/yearColors'

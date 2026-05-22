@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { Sparkles, ArrowRight, Plus } from 'lucide-react'
 import { getYearColorClasses } from '@/lib/yearColors'

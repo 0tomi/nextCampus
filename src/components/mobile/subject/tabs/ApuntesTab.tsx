@@ -1,3 +1,5 @@
+'use client'
+
 import { ApunteRecursoView } from '@/components/apuntes/ApunteRecursoView'
 import type { RecursoTipo } from '@/lib/recursos'
 import { AdminControls } from '@/components/admin/AdminControls'
