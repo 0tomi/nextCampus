@@ -157,7 +157,7 @@ export default async function YearPage({
               </p>
             </div>
 
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.85fr)]">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.82fr)_minmax(280px,0.68fr)] 2xl:grid-cols-[minmax(0,1.95fr)_minmax(300px,0.62fr)]">
               <EventCalendarAdmin
                 events={events}
                 emptyMessage="Todavía no hay eventos visibles a nivel año. Entrá a una materia para ver su agenda real."
@@ -166,14 +166,14 @@ export default async function YearPage({
                 subjects={modalSubjects}
               />
 
-              <div className="space-y-3">
+              <div className="space-y-3 xl:max-w-[320px] 2xl:max-w-[340px]">
                 {nextEvents.length === 0 ? (
                   <DarkCard className="p-5 text-sm leading-6 text-white/58">
                     Por ahora no hay eventos próximos en este año.
                   </DarkCard>
                 ) : (
                   nextEvents.map((evento) => (
-                    <DarkCard key={evento.id} className="p-5">
+                    <DarkCard key={evento.id} className="p-4 2xl:p-5">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">
@@ -183,13 +183,13 @@ export default async function YearPage({
                               {evento.subjectNombre}
                             </Link>
                           </div>
-                          <h3 className="mt-2 text-lg font-black tracking-tight text-white leading-snug">
+                          <h3 className="mt-2 text-base font-black tracking-tight text-white leading-snug 2xl:text-lg">
                             {evento.titulo}
                           </h3>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <span
-                            className={`inline-flex border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${colors.chipClassName}`}
+                            className={`inline-flex border px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] ${colors.chipClassName} 2xl:px-2.5 2xl:text-[10px]`}
                           >
                             {formatDateTime(evento.fecha)}
                           </span>
@@ -203,7 +203,7 @@ export default async function YearPage({
 
                       {evento.descripcionHtml ? (
                         <div
-                          className="mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
+                          className="mt-3 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
                           dangerouslySetInnerHTML={{
                             __html: sanitizeRichHtml(evento.descripcionHtml),
                           }}

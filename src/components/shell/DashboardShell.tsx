@@ -53,7 +53,7 @@ export function DashboardShell({
       </header>
 
       <div className="flex min-h-[calc(100vh-4rem)] items-start">
-        <aside className="sticky top-16 h-[calc(100vh-4rem)] w-64 shrink-0 overflow-hidden border-r border-white/5 bg-surface-2 xl:w-60">
+        <aside className="sticky top-16 h-[calc(100vh-4rem)] w-72 shrink-0 overflow-hidden border-r border-white/5 bg-surface-2">
           {sidebar}
         </aside>
 
