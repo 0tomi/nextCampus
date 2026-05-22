@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Plus_Jakarta_Sans, Sora } from 'next/font/google'
 import './globals.css'
+import { getAdminClientSession } from '@/lib/auth'
+import { AdminSessionProvider } from '@/components/admin/AdminSessionProvider'
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -29,9 +31,11 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const session = await getAdminClientSession()
+
   return (
     <html
       lang="es"
@@ -39,7 +43,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full bg-surface-0 font-sans text-white antialiased">
-        {children}
+        <AdminSessionProvider session={session}>{children}</AdminSessionProvider>
       </body>
     </html>
   )

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowRight, GraduationCap, Plus } from 'lucide-react'
+import { ArrowRight, Plus } from 'lucide-react'
 import { getYearBySlug, getTiposEvento, getCareer } from '@/lib/queries'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { DashboardShell } from '@/components/shell/DashboardShell'
@@ -15,24 +15,6 @@ import { formatDateTime } from '@/lib/utils'
 import { sanitizeRichHtml } from '@/lib/sanitize'
 
 export const revalidate = 300
-
-function DashboardBrand() {
-  return (
-    <Link href="/" className="flex items-center gap-3 text-left">
-      <span className="inline-flex h-11 w-11 items-center justify-center rounded-none bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 text-black shadow-[0_0_30px_rgba(249,115,22,0.22)]">
-        <GraduationCap className="h-5 w-5" />
-      </span>
-      <span>
-        <span className="block text-[11px] font-semibold uppercase tracking-[0.24em] text-white/40">
-          Año académico
-        </span>
-        <span className="block text-lg font-black tracking-tight text-white">
-          NextCampus
-        </span>
-      </span>
-    </Link>
-  )
-}
 
 export default async function YearPage({
   params,
@@ -112,7 +94,6 @@ export default async function YearPage({
     <>
       <div className="hidden lg:block">
         <DashboardShell
-          brand={<DashboardBrand />}
           topbar={
             <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/42">
               <Link href="/" className="transition-colors hover:text-white/72">

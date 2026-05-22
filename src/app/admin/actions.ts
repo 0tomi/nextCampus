@@ -1,7 +1,7 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
-
+import { revalidatePath, revalidateTag as revalidateTagRaw } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import {
@@ -20,7 +20,9 @@ import {
   deleteQuizBank,
   deleteSubjectStorage,
   deleteYearStorage,
+  quizBanksCacheTag,
 } from '@/lib/storage'
+import { queryTags } from '@/lib/queries'
 import { detectarRecurso } from '@/lib/recursos'
 import {
   getSubjectDeleteImpact,
@@ -31,9 +33,22 @@ import {
 import { parseQuizBank } from '@/lib/domain/quiz-bank'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
+// Next 16 exige un perfil de cacheLife como segundo argumento de
+// revalidateTag. Usamos "max" (stale-while-revalidate) en todas las
+// invalidaciones admin: el siguiente request sirve la versión vieja y
+// dispara la regeneración en background.
+function revalidateTag(tag: string): void {
+  revalidateTagRaw(tag, 'max')
+}
+
 // Toda escritura: auth específico (general o por año) -> Zod -> sanitize.
 
 async function revalidateSubjectContent(subjectSlug: string): Promise<void> {
+  // Invalida los caches granulares (unstable_cache) por tag. Los revalidatePath
+  // quedan como red de seguridad para la ISR de página completa.
+  revalidateTag(queryTags.subject(subjectSlug))
+  revalidateTag(queryTags.upcomingEvents)
+
   revalidatePath(`/materia/${subjectSlug}`)
   revalidatePath(`/materia/${subjectSlug}/quiz`)
   const subject = await prisma.subject.findUnique({
@@ -41,6 +56,7 @@ async function revalidateSubjectContent(subjectSlug: string): Promise<void> {
     select: { year: { select: { slug: true } } },
   })
   if (subject?.year?.slug) {
+    revalidateTag(queryTags.year(subject.year.slug))
     revalidatePath(`/year/${subject.year.slug}`)
     revalidatePath(`/year/${subject.year.slug}/calendario`)
   }
@@ -378,6 +394,7 @@ export async function uploadQuizBankAction(
     }
   }
 
+  revalidateTag(quizBanksCacheTag(scope.yearSlug, scope.subjectSlug))
   await revalidateSubjectContent(scope.subjectSlug)
   return {
     ok: true,
@@ -392,6 +409,7 @@ export async function deleteQuizBankAction(formData: FormData): Promise<void> {
   if (!scope) return
 
   await deleteQuizBank(scope.yearSlug, scope.subjectSlug, bankId)
+  revalidateTag(quizBanksCacheTag(scope.yearSlug, scope.subjectSlug))
   await revalidateSubjectContent(scope.subjectSlug)
 }
 
@@ -441,6 +459,7 @@ export async function createYearAction(
     data: { nombre, slug, orden, careerId: career.id },
   })
 
+  revalidateTag(queryTags.career)
   revalidatePath('/')
   return { ok: true, message: 'Año creado correctamente.' }
 }
@@ -483,6 +502,9 @@ export async function updateYearAction(
     data: { nombre, slug: newSlug, orden },
   })
 
+  revalidateTag(queryTags.career)
+  revalidateTag(queryTags.year(oldSlug))
+  if (newSlug !== oldSlug) revalidateTag(queryTags.year(newSlug))
   revalidatePath('/')
   revalidatePath(`/year/${oldSlug}`)
   revalidatePath(`/year/${oldSlug}/calendario`)
@@ -521,6 +543,11 @@ export async function deleteYearAction(formData: FormData): Promise<void> {
 
   await prisma.academicYear.delete({ where: { id } })
 
+  revalidateTag(queryTags.career)
+  revalidateTag(queryTags.year(year.slug))
+  for (const s of year.subjects) {
+    revalidateTag(queryTags.subject(s.slug))
+  }
   revalidatePath('/')
   revalidatePath(`/year/${year.slug}`)
 }
@@ -585,6 +612,8 @@ export async function createSubjectAction(
     await tx.agenda.create({ data: { subjectId: subject.id } })
   })
 
+  revalidateTag(queryTags.career)
+  revalidateTag(queryTags.year(year.slug))
   revalidatePath('/')
   revalidatePath(`/year/${year.slug}`)
   revalidatePath(`/year/${year.slug}/calendario`)
@@ -647,6 +676,10 @@ export async function updateSubjectAction(
     },
   })
 
+  revalidateTag(queryTags.career)
+  revalidateTag(queryTags.year(scope.yearSlug))
+  revalidateTag(queryTags.subject(oldSlug))
+  if (newSlug !== oldSlug) revalidateTag(queryTags.subject(newSlug))
   revalidatePath('/')
   revalidatePath(`/year/${scope.yearSlug}`)
   revalidatePath(`/year/${scope.yearSlug}/calendario`)
@@ -672,6 +705,10 @@ export async function deleteSubjectAction(formData: FormData): Promise<void> {
 
   await prisma.subject.delete({ where: { id } })
 
+  revalidateTag(queryTags.career)
+  revalidateTag(queryTags.year(yearSlug))
+  revalidateTag(queryTags.subject(subjectSlug))
+  revalidateTag(quizBanksCacheTag(yearSlug, subjectSlug))
   revalidatePath('/')
   revalidatePath(`/year/${yearSlug}`)
   revalidatePath(`/year/${yearSlug}/calendario`)
@@ -718,6 +755,9 @@ export async function updateSubjectDriveUrlAction(
     data: { driveUrl: normalizedDriveUrl },
   })
 
+  revalidateTag(queryTags.career)
+  revalidateTag(queryTags.year(scope.yearSlug))
+  revalidateTag(queryTags.subject(scope.subjectSlug))
   revalidatePath('/')
   revalidatePath(`/year/${scope.yearSlug}`)
   revalidatePath(`/year/${scope.yearSlug}/calendario`)
@@ -765,6 +805,8 @@ export async function updateSubjectPlaylistAction(
     data: { playlistUrl: normalizedPlaylistUrl, playlistEnabled },
   })
 
+  revalidateTag(queryTags.year(scope.yearSlug))
+  revalidateTag(queryTags.subject(scope.subjectSlug))
   revalidatePath('/')
   revalidatePath(`/year/${scope.yearSlug}`)
   revalidatePath(`/year/${scope.yearSlug}/calendario`)

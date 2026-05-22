@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { GraduationCap, Shield, Layers } from 'lucide-react'
+import { Shield, Layers } from 'lucide-react'
 import { getCareer, getUpcomingEventsCrossYear } from '@/lib/queries'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { DashboardShell } from '@/components/shell/DashboardShell'
@@ -15,36 +15,19 @@ import {
 } from '@/components/admin/HomeAdminOverlay'
 import { MobileHome } from '@/components/mobile/home/MobileHome'
 import { MobileShell } from '@/components/mobile/shell/MobileShell'
-
 export const revalidate = 300
 
-function DashboardBrand() {
-  return (
-    <Link href="/" className="flex items-center gap-3 text-left">
-      <span className="inline-flex h-9 w-9 items-center justify-center rounded bg-gradient-to-br from-amber-400 to-orange-500 text-black shadow-[0_0_15px_rgba(249,115,22,0.2)]">
-        <GraduationCap className="h-5 w-5" />
-      </span>
-      <div className="flex items-baseline gap-2">
-        <span className="text-xl font-bold tracking-tight text-white">
-          Campus Virtual
-        </span>
-        <span className="text-xs font-semibold uppercase tracking-widest text-white/40">
-          FCYT - UADER
-        </span>
-      </div>
-    </Link>
-  )
-}
-
 export default async function HomePage() {
-  const career = await getCareer()
+  const [career, upcomingEventsRaw] = await Promise.all([
+    getCareer(),
+    getUpcomingEventsCrossYear(6),
+  ])
 
   if (!career) {
     return (
       <>
         <div className="hidden lg:block">
           <DashboardShell
-            brand={<DashboardBrand />}
             topbar={
               <Link
                 href="/admin"
@@ -93,7 +76,6 @@ export default async function HomePage() {
     )
   }
 
-  const upcomingEventsRaw = await getUpcomingEventsCrossYear(6)
   const upcomingEvents = upcomingEventsRaw.map((e) => ({
     id: e.id,
     titulo: e.titulo,
@@ -120,7 +102,6 @@ export default async function HomePage() {
     <>
       <div className="hidden lg:block">
         <DashboardShell
-          brand={<DashboardBrand />}
           topbar={
             <Link
               href="/admin"
