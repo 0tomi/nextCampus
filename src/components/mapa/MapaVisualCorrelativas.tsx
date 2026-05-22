@@ -36,13 +36,13 @@ type Camera = {
 };
 
 const STORAGE_KEY = 'nextcampus_progreso_materias';
-const NODE_WIDTH = 296;
+const NODE_WIDTH = 326;
 const NODE_HEIGHT = 138;
 const YEAR_GAP = 470;
 const ROW_GAP = 182;
 const START_X = 130;
 const START_Y = 220;
-const WORLD_WIDTH = 2520;
+const WORLD_WIDTH = 2680;
 const MIN_SCALE = 0.38;
 const MAX_SCALE = 1.36;
 const INITIAL_CAMERA: Camera = { x: -40, y: -50, scale: 0.58 };
@@ -406,7 +406,7 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
           {[1, 2, 3, 4, 5].map((year) => (
             <div
               key={year}
-              className="absolute top-8 w-[296px] pb-4"
+              className="absolute top-8 w-[326px] pb-4"
               style={{ left: START_X + (year - 1) * YEAR_GAP }}
             >
               <p className="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-200/40">Año {year}</p>
@@ -435,7 +435,7 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
                 onMouseEnter={() => setHoveredSlug(subject.slug)}
                 onMouseLeave={() => setHoveredSlug(null)}
                 className={cn(
-                  'mapa-visual-node group absolute flex cursor-pointer flex-col justify-between border px-6 py-5 text-left backdrop-blur-md transition duration-300',
+                  'mapa-visual-node group absolute flex cursor-pointer flex-col justify-between border px-8 py-5 text-left backdrop-blur-md transition duration-300',
                   STATUS_STYLES[status],
                   isSelected && 'ring-2 ring-cyan-100/70',
                   isActive && 'scale-[1.035]',
