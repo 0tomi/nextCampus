@@ -29,20 +29,11 @@ export default async function AdminUsersPage() {
   })
 
   return (
-    <main className="mx-auto min-h-screen max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mb-6">
-        <Link
-          href="/"
-          className="cursor-pointer text-sm font-semibold text-violet-200 transition hover:text-violet-100"
-        >
-          ← Volver al campus
-        </Link>
-      </div>
-
+    <div className="mx-auto w-full max-w-6xl">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-200/70">Administradores</p>
-          <h1 className="mt-3 text-3xl font-black tracking-tight text-white">Usuarios del campus</h1>
+          <h1 className="mt-3 font-display text-3xl font-black tracking-tight text-white">Usuarios del campus</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
             Gestioná quiénes pueden colaborar y en qué años académicos.
           </p>
@@ -103,6 +94,6 @@ export default async function AdminUsersPage() {
           </div>
         )}
       </section>
-    </main>
+    </div>
   )
 }
