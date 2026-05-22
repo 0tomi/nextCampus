@@ -30,6 +30,7 @@ import {
 import { AdminControls } from '@/components/admin/AdminControls'
 import { ApunteRecursoView } from '@/components/apuntes/ApunteRecursoView'
 import { EditApunteButton } from '@/components/admin/EditApunteButton'
+import { formatDescription } from '@/lib/text'
 
 export const revalidate = 300
 
@@ -170,22 +171,29 @@ export default async function SubjectPage({
               {subject.nombre}
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-white/64 sm:text-base">
-              {subject.descripcion.trim() || 'Materia sin descripción aún. Los administradores pueden agregarla desde el modo edición.'}
+              {subject.descripcion?.trim() ? (
+                formatDescription(subject.descripcion.trim())
+              ) : (
+                'Materia sin descripción aún. Los administradores pueden agregarla desde el modo edición.'
+              )}
             </p>
 
             <div className="mt-6 flex flex-wrap items-center gap-2">
-              <a
-                href={subject.driveUrl || `https://drive.google.com/drive/u/0/search?q=${encodeURIComponent(subject.nombre)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
-              >
-                <GoogleDriveIcon className="h-5 w-5" />
-                Drive con contenido de la materia
-              </a>
+              {/* Botón Drive - solo si tiene enlace puesto */}
+              {subject.driveUrl && (
+                <a
+                  href={subject.driveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+                >
+                  <GoogleDriveIcon className="h-5 w-5" />
+                  Drive con contenido de la materia
+                </a>
+              )}
 
-              {/* Botón Playlist */}
-              {subject.playlistUrl && subject.playlistEnabled && (
+              {/* Botón Playlist - solo si tiene enlace puesto (independiente de playlistEnabled) */}
+              {subject.playlistUrl && (
                 <a
                   href={subject.playlistUrl}
                   target="_blank"
@@ -195,24 +203,6 @@ export default async function SubjectPage({
                   <CirclePlay className="h-5 w-5 text-red-400" />
                   Playlist de clases
                 </a>
-              )}
-
-              {/* Botón Playlist para admins cuando está oculta */}
-              {subject.playlistUrl && !subject.playlistEnabled && (
-                <AdminControls yearId={subject.year.id}>
-                  <a
-                    href={subject.playlistUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/40 transition-colors hover:bg-white/10 hover:text-white/80 cursor-pointer"
-                  >
-                    <CirclePlay className="h-5 w-5 text-red-400/50" />
-                    Playlist de clases
-                    <span className="rounded border border-white/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/40">
-                      Oculta
-                    </span>
-                  </a>
-                </AdminControls>
               )}
 
               <AdminControls yearId={subject.year.id}>

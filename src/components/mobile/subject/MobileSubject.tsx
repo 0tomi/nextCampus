@@ -5,6 +5,7 @@ import { SubjectTabs } from './SubjectTabs'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { CirclePlay, Pencil, Plus } from 'lucide-react'
 import { AdminControls } from '@/components/admin/AdminControls'
+import { formatDescription } from '@/lib/text'
 
 interface SubjectForMobile {
   id: string
@@ -35,9 +36,6 @@ export function MobileSubject({
 }) {
   const colors = getYearColorClasses(subject.year.slug)
   const eventos = subject.agenda?.eventos ?? []
-  const driveUrl = subject.driveUrl ||
-    `https://drive.google.com/drive/u/0/search?q=${encodeURIComponent(subject.nombre)}`
-
   const drawerYears: MobileShellDrawerYear[] = allYears
 
   return (
@@ -74,37 +72,52 @@ export function MobileSubject({
               {subject.nombre}
             </h1>
             {subject.descripcion ? (
-              <p className="mt-2 text-sm leading-relaxed text-white/55">{subject.descripcion}</p>
+              <p className="mt-2 text-sm leading-relaxed text-white/55">
+                {formatDescription(subject.descripcion)}
+              </p>
             ) : (
               <p className="mt-2 text-sm leading-relaxed text-white/55">
                 Agenda, unidades y apuntes organizados para que puedas estudiar y practicar en una sola vista.
               </p>
             )}
             <div className="mt-4 flex flex-col gap-2">
-              <div className="flex gap-2 w-full">
-                <a
-                  href={driveUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 flex items-center justify-center gap-2 h-11 rounded-md bg-white/[0.04] border border-white/10 text-sm font-bold text-white cursor-pointer hover:bg-white/10 transition-colors"
-                >
-                  <GoogleDriveIcon className="h-5 w-5" />
-                  Drive con contenido
-                </a>
+              {subject.driveUrl ? (
+                <div className="flex gap-2 w-full">
+                  <a
+                    href={subject.driveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-2 h-11 rounded-md bg-white/[0.04] border border-white/10 text-sm font-bold text-white cursor-pointer hover:bg-white/10 transition-colors"
+                  >
+                    <GoogleDriveIcon className="h-5 w-5" />
+                    Drive con contenido
+                  </a>
+                  <AdminControls yearId={subject.year.id} noWrapper>
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-drive'))}
+                      className="flex items-center justify-center w-11 h-11 shrink-0 rounded-md bg-white/[0.04] border border-white/10 text-white cursor-pointer hover:bg-white/10 transition-colors"
+                      title="Editar link de Drive"
+                    >
+                      <Pencil className="h-4 w-4 text-white/70" />
+                    </button>
+                  </AdminControls>
+                </div>
+              ) : (
                 <AdminControls yearId={subject.year.id} noWrapper>
                   <button
                     type="button"
                     onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-drive'))}
-                    className="flex items-center justify-center w-11 h-11 shrink-0 rounded-md bg-white/[0.04] border border-white/10 text-white cursor-pointer hover:bg-white/10 transition-colors"
-                    title="Editar link de Drive"
+                    className="w-full flex items-center justify-center gap-2 h-11 rounded-md bg-white/[0.04] border border-white/10 text-sm font-bold text-white cursor-pointer hover:bg-white/10 transition-colors"
                   >
-                    <Pencil className="h-4 w-4 text-white/70" />
+                    <Plus className="h-4 w-4 text-white/70" />
+                    Vincular carpeta de Google Drive
                   </button>
                 </AdminControls>
-              </div>
+              )}
 
-              {/* Playlist visible para todos */}
-              {subject.playlistEnabled && subject.playlistUrl && (
+              {/* Playlist - solo si tiene enlace puesto (independiente de playlistEnabled) */}
+              {subject.playlistUrl && (
                 <a
                   href={subject.playlistUrl}
                   target="_blank"
@@ -114,24 +127,6 @@ export function MobileSubject({
                   <CirclePlay className="h-5 w-5 text-red-400" />
                   Playlist de clases
                 </a>
-              )}
-
-              {/* Playlist oculta — visible solo para admin */}
-              {!subject.playlistEnabled && subject.playlistUrl && (
-                <AdminControls yearId={subject.year.id} noWrapper>
-                  <a
-                    href={subject.playlistUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full h-11 rounded-md bg-white/[0.04] border border-white/10 text-sm font-bold text-white/50 cursor-pointer hover:bg-white/10 transition-colors"
-                  >
-                    <CirclePlay className="h-5 w-5 text-red-400/60" />
-                    Playlist de clases
-                    <span className="ml-1 rounded border border-white/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white/40">
-                      Oculta
-                    </span>
-                  </a>
-                </AdminControls>
               )}
             </div>
             <div className="mt-4 grid grid-cols-2 divide-x divide-white/5">

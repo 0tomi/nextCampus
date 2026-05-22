@@ -163,15 +163,7 @@ export function SubjectModal({
           )}
         </div>
 
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-white/70">
-          <input
-            type="checkbox"
-            name="playlistEnabled"
-            defaultChecked={subject?.playlistEnabled ?? false}
-            className="h-4 w-4 rounded border border-white/20 bg-surface-0 accent-red-500 cursor-pointer"
-          />
-          Mostrar playlist a los estudiantes
-        </label>
+        <input type="hidden" name="playlistEnabled" value="true" />
 
         {state.message && !state.ok && (
           <p className="rounded border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
