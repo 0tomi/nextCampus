@@ -328,6 +328,11 @@ body {
   line-height: 1.2;
 }
 
+.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-daygrid-event {
+  white-space: normal;
+  min-height: auto;
+}
+
 .fc .fc-event-main {
   padding-block: 0.22rem;
 }
@@ -372,6 +377,33 @@ body {
 
 .fc .fc-event-chip__title--duplicate {
   display: none;
+}
+
+.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-event-main,
+.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-event-chip,
+.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-event-main-frame {
+  width: 100%;
+}
+
+.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-event-chip__viewport {
+  overflow: visible;
+}
+
+.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-event-chip__track {
+  display: block;
+  max-width: none;
+}
+
+.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-event-chip__title,
+.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-event-title {
+  overflow: visible;
+  text-overflow: initial;
+  white-space: normal;
+  line-height: 1.35;
+}
+
+.fc .fc-daygrid-day-events:has(> .fc-daygrid-event-harness:only-child) .fc-event-chip__title--duplicate {
+  display: none !important;
 }
 
 @media (prefers-reduced-motion: no-preference) {
