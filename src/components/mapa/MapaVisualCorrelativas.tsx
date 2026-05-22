@@ -384,7 +384,7 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
                     filter={isActive ? 'url(#mapaVisualGlow)' : undefined}
                     opacity={isActive ? 1 : isCompletePath ? 0.42 : 0.16}
                     markerEnd={`url(#${markerId})`}
-                    style={{ animationDelay: `${index * 16}ms` }}
+                    style={{ '--trace-delay': `${index * 16}ms` } as CSSProperties}
                   />
                   {isActive ? (
                     <path
