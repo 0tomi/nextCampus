@@ -157,7 +157,7 @@ export default async function YearPage({
               </p>
             </div>
 
-            <div className="grid gap-5 xl:grid-cols-[minmax(0,1.68fr)_minmax(340px,0.84fr)] 2xl:grid-cols-[minmax(0,1.78fr)_minmax(360px,0.82fr)]">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.72fr)_minmax(324px,0.8fr)] 2xl:grid-cols-[minmax(0,1.82fr)_minmax(344px,0.78fr)]">
               <EventCalendarAdmin
                 events={events}
                 emptyMessage="Todavía no hay eventos visibles a nivel año. Entrá a una materia para ver su agenda real."
@@ -166,14 +166,14 @@ export default async function YearPage({
                 subjects={modalSubjects}
               />
 
-              <div className="space-y-3 xl:min-w-[340px] 2xl:min-w-[360px]">
+              <div className="space-y-3 xl:min-w-[324px] 2xl:min-w-[344px]">
                 {nextEvents.length === 0 ? (
                   <DarkCard className="p-5 text-sm leading-6 text-white/58">
                     Por ahora no hay eventos próximos en este año.
                   </DarkCard>
                 ) : (
                   nextEvents.map((evento) => (
-                    <DarkCard key={evento.id} className="p-4 2xl:p-5">
+                    <DarkCard key={evento.id} className="p-4 2xl:p-[18px]">
                       <div className="flex flex-col gap-3">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
