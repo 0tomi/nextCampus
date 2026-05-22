@@ -176,6 +176,61 @@ body {
   animation-delay: 550ms;
 }
 
+.mapa-visual-node {
+  animation: mapaVisualNodeIn 0.58s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: center;
+}
+
+.mapa-visual-trace {
+  animation: mapaVisualTraceIn 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  stroke-dasharray: 1;
+}
+
+.mapa-visual-trace-active {
+  animation: mapaVisualTraceIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both, mapaVisualPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes mapaVisualNodeIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes mapaVisualTraceIn {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes mapaVisualPulse {
+  0%,
+  100% {
+    stroke-opacity: 0.58;
+  }
+
+  50% {
+    stroke-opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mapa-visual-node,
+  .mapa-visual-trace,
+  .mapa-visual-trace-active {
+    animation: none;
+  }
+}
+
 .fc {
   --fc-border-color: rgba(255, 255, 255, 0.08);
   --fc-page-bg-color: var(--color-surface-1);
