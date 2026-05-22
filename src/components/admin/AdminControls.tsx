@@ -6,11 +6,6 @@ import { useAdminAccess } from './adminAccess'
 interface AdminControlsProps {
   /** Content to render only when the active session belongs to an admin. */
   children: ReactNode
-  /**
-   * What to render while the check is in flight (defaults to nothing,
-   * so there's no layout shift for regular visitors).
-   */
-  fallback?: ReactNode
   yearId?: string
   yearSlug?: string
   requireGlobal?: boolean
@@ -19,15 +14,15 @@ interface AdminControlsProps {
 }
 
 /**
- * Client-side gate: renders `children` only when /api/admin/me confirms
- * the current session has admin access.
+ * UI gate: muestra `children` sólo si la sesión es de un admin con los
+ * permisos requeridos. La sesión llega resuelta desde el server (provider
+ * en el root layout), así que no hay flash ni fetch en cliente.
  *
- * This is a UI-only gate. All mutations are protected server-side by
- * requireAdmin() in the corresponding server actions.
+ * Todas las mutaciones reales están protegidas server-side por requireAdmin()
+ * en las server actions; esto es estrictamente cosmético.
  */
 export function AdminControls({
   children,
-  fallback = null,
   yearId,
   yearSlug,
   requireGlobal = false,
@@ -41,10 +36,6 @@ export function AdminControls({
     requireUserManagement,
   })
 
-  // Still loading — render fallback (nothing by default, no flash)
-  if (hasAccess === null) return <>{fallback}</>
-
-  // Not admin — render nothing
   if (!hasAccess) return null
 
   if (noWrapper) {

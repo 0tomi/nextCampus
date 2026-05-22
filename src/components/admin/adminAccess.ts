@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useAdminSessionContext } from './AdminSessionProvider'
 
 export interface AdminSessionUser {
   id: string
@@ -24,62 +24,6 @@ export interface AdminAccessRequirements {
   requireUserManagement?: boolean
 }
 
-const VISITOR_SESSION: AdminSessionState = {
-  isAdmin: false,
-  admin: null,
-}
-
-let cachedAdminSession: AdminSessionState | null = null
-let adminSessionPromise: Promise<AdminSessionState> | null = null
-
-function normalizeAdminSession(payload: unknown): AdminSessionState {
-  if (!payload || typeof payload !== 'object') return VISITOR_SESSION
-
-  const data = payload as {
-    isAdmin?: boolean
-    admin?: Partial<AdminSessionUser> | null
-  }
-
-  if (!data.isAdmin || !data.admin) return VISITOR_SESSION
-
-  return {
-    isAdmin: true,
-    admin: {
-      id: data.admin.id ?? '',
-      email: data.admin.email ?? '',
-      role: data.admin.role ?? '',
-      yearIds: Array.isArray(data.admin.yearIds) ? data.admin.yearIds : [],
-      yearSlugs: Array.isArray(data.admin.yearSlugs) ? data.admin.yearSlugs : [],
-      canManageAllYears: Boolean(data.admin.canManageAllYears),
-      canCreateUsers: Boolean(data.admin.canCreateUsers),
-    },
-  }
-}
-
-export async function fetchAdminSession(): Promise<AdminSessionState> {
-  if (cachedAdminSession) return cachedAdminSession
-  if (adminSessionPromise) return adminSessionPromise
-
-  adminSessionPromise = fetch('/api/admin/me', {
-    credentials: 'same-origin',
-  })
-    .then((res) => (res.ok ? res.json() : VISITOR_SESSION))
-    .then((payload) => {
-      const normalized = normalizeAdminSession(payload)
-      cachedAdminSession = normalized
-      return normalized
-    })
-    .catch(() => {
-      cachedAdminSession = VISITOR_SESSION
-      return VISITOR_SESSION
-    })
-    .finally(() => {
-      adminSessionPromise = null
-    })
-
-  return adminSessionPromise
-}
-
 export function hasAdminAccess(
   session: AdminSessionState | null,
   requirements: AdminAccessRequirements = {},
@@ -91,8 +35,7 @@ export function hasAdminAccess(
     yearSlug,
     requireGlobal = false,
     requireUserManagement = false,
-  } =
-    requirements
+  } = requirements
 
   if (requireUserManagement) return session.admin.canCreateUsers
   if (requireGlobal) return session.admin.canManageAllYears
@@ -113,30 +56,16 @@ export function hasAdminAccess(
   return true
 }
 
+// Hook que lee la sesión del provider (resuelta server-side en el layout).
+// Sin fetch, sin flash, sin estado de carga: durante el render inicial el
+// valor ya está disponible.
 export function useAdminSession(): AdminSessionState | null {
-  const [session, setSession] = useState<AdminSessionState | null>(
-    cachedAdminSession,
-  )
-
-  useEffect(() => {
-    let cancelled = false
-
-    fetchAdminSession().then((nextSession) => {
-      if (!cancelled) setSession(nextSession)
-    })
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  return session
+  return useAdminSessionContext()
 }
 
 export function useAdminAccess(
   requirements: AdminAccessRequirements = {},
-): boolean | null {
+): boolean {
   const session = useAdminSession()
-  if (session === null) return null
   return hasAdminAccess(session, requirements)
 }
