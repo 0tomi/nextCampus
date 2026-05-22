@@ -29,7 +29,10 @@ export function LoginForm() {
       return
     }
     const raw = searchParams.get('redirectTo') ?? '/'
-    const safe = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/'
+    let safe = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/'
+    if (safe === '/admin' || safe === '/admin/') {
+      safe = '/'
+    }
     router.push(safe)
     router.refresh()
   }
