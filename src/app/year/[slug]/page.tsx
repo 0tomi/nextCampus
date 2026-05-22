@@ -231,7 +231,7 @@ export default async function YearPage({
                       </div>
 
                       <span
-                        className={`inline-flex h-10 min-w-10 shrink-0 items-center justify-center bg-gradient-to-r px-3 text-xs font-black tracking-[0.16em] ${colors.progressClassName}`}
+                        className={`inline-flex h-10 min-w-10 shrink-0 items-center justify-center bg-gradient-to-r px-3 text-xs font-black tracking-[0.16em] text-white ${colors.progressClassName}`}
                       >
                         {String(index + 1).padStart(2, '0')}
                       </span>
