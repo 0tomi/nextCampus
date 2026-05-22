@@ -76,6 +76,7 @@ export default async function MapaVisualPage() {
   return (
     <DashboardShell
       brand={<DashboardBrand />}
+      mainClassName="p-0"
       topbar={
         <Link
           href="/admin"
