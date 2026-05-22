@@ -143,6 +143,14 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
   const totalSubjects = subjectsData.length;
   const unlockedCount = Object.values(subjectStatuses).filter((status) => status === 'UNLOCKED').length;
   const progressPercentage = Math.round((completedCount / totalSubjects) * 100);
+  const suggestedSubjects = subjectsData
+    .filter((subject) => subjectStatuses[subject.slug] === 'UNLOCKED')
+    .sort((a, b) => getUnlocks(b.slug).length - getUnlocks(a.slug).length)
+    .slice(0, 4);
+  const selectedMissingSubjects = selectedMissing
+    .map((slug) => subjectsData.find((subject) => subject.slug === slug))
+    .filter((subject): subject is SubjectNode => Boolean(subject));
+  const selectedDirectUnlocks = selectedUnlocks.slice(0, 4);
 
   if (!isHydrated) {
     return (
@@ -228,6 +236,98 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                     {filter === 'ALL' ? 'Todas' : STATUS_LABELS[filter]}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+              <div className="rounded-md border border-white/8 bg-black/18 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">Siguiente paso</p>
+                    <h2 className="mt-1 text-sm font-black text-white">Disponibles con más impacto</h2>
+                  </div>
+                  <span className="rounded-md border border-amber-300/20 bg-amber-400/8 px-2 py-1 text-[10px] font-black text-amber-100">
+                    {suggestedSubjects.length}
+                  </span>
+                </div>
+
+                {suggestedSubjects.length === 0 ? (
+                  <p className="rounded-md bg-white/5 px-3 py-3 text-xs leading-5 text-white/45">
+                    No hay materias disponibles con el progreso actual.
+                  </p>
+                ) : (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {suggestedSubjects.map((subject) => {
+                      const unlockCount = getUnlocks(subject.slug).length;
+
+                      return (
+                        <button
+                          key={subject.slug}
+                          type="button"
+                          onClick={() => setSelectedSubjectSlug(subject.slug)}
+                          className="cursor-pointer rounded-md border border-white/8 bg-white/5 px-3 py-2 text-left transition hover:border-amber-300/35 hover:bg-amber-400/8"
+                        >
+                          <span className="block truncate text-xs font-black text-white">{subject.nombre}</span>
+                          <span className="mt-1 block text-[10px] font-bold uppercase tracking-wider text-amber-100/65">
+                            Año {subject.year} · habilita {unlockCount}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-md border border-white/8 bg-black/18 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">Lectura rápida</p>
+                    <h2 className="mt-1 text-sm font-black text-white">{selectedSubject?.nombre}</h2>
+                  </div>
+                  <span
+                    className={cn(
+                      'rounded-md border px-2 py-1 text-[10px] font-black uppercase tracking-widest',
+                      selectedStatus === 'COMPLETED' && 'border-emerald-300/25 bg-emerald-400/10 text-emerald-100',
+                      selectedStatus === 'UNLOCKED' && 'border-amber-300/25 bg-amber-400/10 text-amber-100',
+                      selectedStatus === 'LOCKED' && 'border-white/10 bg-white/5 text-white/42',
+                    )}
+                  >
+                    {STATUS_LABELS[selectedStatus]}
+                  </span>
+                </div>
+
+                {selectedMissingSubjects.length > 0 ? (
+                  <div>
+                    <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-rose-100/55">Falta para cursar</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedMissingSubjects.slice(0, 5).map((subject) => (
+                        <span key={subject.slug} className="rounded-md border border-rose-300/20 bg-rose-400/10 px-2 py-1 text-[11px] font-semibold text-rose-100">
+                          {subject.nombre}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-100/55">Habilita directamente</p>
+                    {selectedDirectUnlocks.length === 0 ? (
+                      <p className="rounded-md bg-white/5 px-3 py-2 text-xs text-white/45">No destraba materias directas.</p>
+                    ) : (
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {selectedDirectUnlocks.map((subject) => (
+                          <button
+                            key={subject.slug}
+                            type="button"
+                            onClick={() => setSelectedSubjectSlug(subject.slug)}
+                            className="cursor-pointer rounded-md border border-cyan-300/14 bg-cyan-400/8 px-3 py-2 text-left text-xs font-bold text-cyan-50 transition hover:border-cyan-300/30 hover:bg-cyan-400/12"
+                          >
+                            {subject.nombre}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
