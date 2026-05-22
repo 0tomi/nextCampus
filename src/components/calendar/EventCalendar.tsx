@@ -33,6 +33,7 @@ interface EventCalendarProps {
   events?: readonly EventCalendarEvent[]
   emptyMessage?: string
   className?: string
+  dayMaxEvents?: number
   /** Habilita drag-and-drop y dateClick para el admin. Anónimos siempre read-only. */
   editable?: boolean
   /** Callback cuando se arrastra un evento a otra fecha. Si retorna false o lanza, el drag se revierte. */
@@ -120,6 +121,7 @@ export function EventCalendar({
   events = [],
   emptyMessage = 'Sin eventos cargados por ahora.',
   className,
+  dayMaxEvents = 3,
   editable = false,
   onEventDrop,
   onDateClick,
@@ -199,7 +201,7 @@ export function EventCalendar({
         fixedWeekCount={false}
         showNonCurrentDates={false}
         displayEventTime={false}
-        dayMaxEvents={3}
+        dayMaxEvents={dayMaxEvents}
         moreLinkContent={(args) => `+${args.num} más`}
         editable={editable}
         eventStartEditable={editable}
