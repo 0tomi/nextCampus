@@ -177,8 +177,35 @@ body {
 }
 
 .mapa-visual-node {
+  clip-path: polygon(0 18px, 18px 0, calc(100% - 22px) 0, 100% 22px, 100% calc(100% - 18px), calc(100% - 18px) 100%, 22px 100%, 0 calc(100% - 22px));
   animation: mapaVisualNodeIn 0.58s cubic-bezier(0.16, 1, 0.3, 1) both;
   transform-origin: center;
+}
+
+.mapa-visual-node::before,
+.mapa-visual-node::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.mapa-visual-node::before {
+  inset: 1px;
+  clip-path: inherit;
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--node-accent) 22%, transparent), transparent 34%),
+    radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--node-accent) 28%, transparent), transparent 34%);
+  opacity: 0.62;
+}
+
+.mapa-visual-node::after {
+  left: 18px;
+  right: 18px;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--node-accent), transparent);
+  opacity: 0.72;
+  box-shadow: 0 0 18px var(--node-accent);
 }
 
 .mapa-visual-trace {

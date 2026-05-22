@@ -1,5 +1,6 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
@@ -35,16 +36,16 @@ type Camera = {
 };
 
 const STORAGE_KEY = 'nextcampus_progreso_materias';
-const NODE_WIDTH = 230;
-const NODE_HEIGHT = 88;
-const YEAR_GAP = 340;
-const ROW_GAP = 122;
+const NODE_WIDTH = 276;
+const NODE_HEIGHT = 118;
+const YEAR_GAP = 410;
+const ROW_GAP = 158;
 const START_X = 110;
-const START_Y = 172;
-const WORLD_WIDTH = 1740;
+const START_Y = 190;
+const WORLD_WIDTH = 2180;
 const MIN_SCALE = 0.48;
 const MAX_SCALE = 1.36;
-const INITIAL_CAMERA: Camera = { x: -56, y: -54, scale: 0.82 };
+const INITIAL_CAMERA: Camera = { x: -56, y: -66, scale: 0.66 };
 
 const STATUS_COPY: Record<SubjectStatus, string> = {
   COMPLETED: 'Completada',
@@ -53,9 +54,15 @@ const STATUS_COPY: Record<SubjectStatus, string> = {
 };
 
 const STATUS_STYLES: Record<SubjectStatus, string> = {
-  COMPLETED: 'border-emerald-200/48 bg-emerald-300/16 text-emerald-50 shadow-[0_0_34px_rgba(52,211,153,0.2)]',
-  UNLOCKED: 'border-amber-200/48 bg-amber-300/14 text-amber-50 shadow-[0_0_34px_rgba(251,191,36,0.16)]',
-  LOCKED: 'border-white/12 bg-black/42 text-white/54 shadow-none',
+  COMPLETED: 'border-emerald-200/52 bg-emerald-300/16 text-emerald-50 shadow-[0_0_42px_rgba(52,211,153,0.22)]',
+  UNLOCKED: 'border-amber-200/52 bg-amber-300/14 text-amber-50 shadow-[0_0_42px_rgba(251,191,36,0.18)]',
+  LOCKED: 'border-white/12 bg-black/44 text-white/54 shadow-none',
+};
+
+const STATUS_ACCENTS: Record<SubjectStatus, string> = {
+  COMPLETED: '#6ee7b7',
+  UNLOCKED: '#fde68a',
+  LOCKED: '#64748b',
 };
 
 const YEAR_LABELS: Record<number, string> = {
@@ -348,7 +355,7 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
           {[1, 2, 3, 4, 5].map((year) => (
             <div
               key={year}
-              className="absolute top-9 w-[230px] border-b border-white/12 pb-3"
+              className="absolute top-9 w-[276px] border-b border-white/12 pb-3"
               style={{ left: START_X + (year - 1) * YEAR_GAP }}
             >
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-white/32">Año {year}</p>
@@ -376,7 +383,7 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
                 onMouseEnter={() => setHoveredSlug(subject.slug)}
                 onMouseLeave={() => setHoveredSlug(null)}
                 className={cn(
-                  'mapa-visual-node group absolute flex cursor-pointer flex-col justify-between rounded-md border p-3 text-left backdrop-blur-md transition duration-300',
+                  'mapa-visual-node group absolute flex cursor-pointer flex-col justify-between border px-5 py-4 text-left backdrop-blur-md transition duration-300',
                   STATUS_STYLES[status],
                   isSelected && 'ring-2 ring-cyan-100/70',
                   isActive && 'scale-[1.035]',
@@ -388,28 +395,33 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
                   width: NODE_WIDTH,
                   height: NODE_HEIGHT,
                   animationDelay: `${index * 32}ms`,
-                }}
+                  '--node-accent': STATUS_ACCENTS[status],
+                } as CSSProperties}
                 aria-label={`Ver ${subject.nombre}`}
               >
-                <span className="flex items-start justify-between gap-3">
-                  <span className="min-w-0">
-                    <span className="block text-[10px] font-black uppercase tracking-widest text-white/38">
-                      {subject.codigo}
+                <span className="pointer-events-none absolute left-[-7px] top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full border border-[var(--node-accent)] bg-[#060808] shadow-[0_0_14px_var(--node-accent)]" />
+                <span className="pointer-events-none absolute right-[-7px] top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full border border-[var(--node-accent)] bg-[#060808] shadow-[0_0_14px_var(--node-accent)]" />
+                <span className="relative z-10 flex items-start justify-between gap-4">
+                  <span className="min-w-0 flex-1">
+                    <span className="inline-flex min-h-6 items-center border border-white/10 bg-black/22 px-2 text-[10px] font-black uppercase tracking-widest text-white/46">
+                      {subject.codigo} · Año {subject.year}
                     </span>
-                    <span className="mt-1 line-clamp-2 block text-[14px] font-black leading-5 text-white">
+                    <span className="mt-2 line-clamp-2 block text-[15px] font-black leading-5 text-white">
                       {subject.nombre}
                     </span>
                   </span>
-                  {status === 'COMPLETED' ? <CheckCircle2 className="h-4.5 w-4.5 shrink-0 text-emerald-100" /> : null}
-                  {status === 'UNLOCKED' ? <Unlock className="h-4.5 w-4.5 shrink-0 text-amber-100" /> : null}
-                  {status === 'LOCKED' ? <Lock className="h-4.5 w-4.5 shrink-0 text-white/28" /> : null}
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-white/10 bg-black/24 text-white">
+                    {status === 'COMPLETED' ? <CheckCircle2 className="h-4.5 w-4.5 text-emerald-100" /> : null}
+                    {status === 'UNLOCKED' ? <Unlock className="h-4.5 w-4.5 text-amber-100" /> : null}
+                    {status === 'LOCKED' ? <Lock className="h-4.5 w-4.5 text-white/28" /> : null}
+                  </span>
                 </span>
-                <span className="flex items-center justify-between gap-2 border-t border-white/10 pt-2">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-white/45">
+                <span className="relative z-10 flex items-center justify-between gap-3 border-t border-white/10 pt-3">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/48">
                     {STATUS_COPY[status]}
                   </span>
                   {missingCount > 0 ? (
-                    <span className="text-[9px] font-black uppercase tracking-widest text-rose-100/70">
+                    <span className="border border-rose-200/20 bg-rose-300/10 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-rose-100/75">
                       Faltan {missingCount}
                     </span>
                   ) : null}
