@@ -4,6 +4,7 @@ import { Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { SignOutButton } from '@/components/admin/SignOutButton'
+import { CampusHeaderBrand } from '@/components/shell/CampusHeaderBrand'
 
 interface DashboardShellProps {
   brand?: ReactNode
@@ -27,12 +28,7 @@ export function DashboardShell({
       <header className="sticky top-0 z-40 h-16 border-b border-white/5 bg-surface-1">
         <div className="flex h-full items-center justify-between gap-4 px-6">
           {brand ?? (
-            <div className="flex items-center gap-3">
-              <span className="h-2.5 w-2.5 bg-gradient-to-br from-red-500 to-orange-400" />
-              <span className="text-xs font-black uppercase tracking-[0.24em] text-white/72">
-                NextCampus
-              </span>
-            </div>
+            <CampusHeaderBrand />
           )}
           <div className="flex items-center gap-3">
             {topbar}

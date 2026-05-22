@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { getSubjectQuizMeta } from '@/lib/queries'
 import { listQuizBanks } from '@/lib/storage'
+import { CampusHeaderBrand } from '@/components/shell/CampusHeaderBrand'
 import { QuizRunner } from './QuizRunner'
 
 export const dynamic = 'force-dynamic'
@@ -26,7 +27,8 @@ export default async function QuizPage({
   return (
     <div className="min-h-screen bg-surface-0">
       <header className="sticky top-0 z-40 border-b border-white/5 bg-surface-1/80 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-3xl items-center px-6">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-6">
+          <CampusHeaderBrand />
           <Link
             href={`/materia/${slug}`}
             className="inline-flex items-center gap-2 text-sm font-semibold text-white/56 transition-colors hover:text-white"

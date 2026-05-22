@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   ArrowRight,
   CalendarDays,
-  GraduationCap,
   NotebookTabs,
   Sparkles,
   Plus,
@@ -33,24 +32,6 @@ import { EditApunteButton } from '@/components/admin/EditApunteButton'
 import { formatDescription } from '@/lib/text'
 
 export const revalidate = 300
-
-function DashboardBrand() {
-  return (
-    <Link href="/" className="flex items-center gap-3 text-left">
-      <span className="inline-flex h-11 w-11 items-center justify-center rounded-none bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 text-black shadow-[0_0_30px_rgba(249,115,22,0.22)]">
-        <GraduationCap className="h-5 w-5" />
-      </span>
-      <span>
-        <span className="block text-[11px] font-semibold uppercase tracking-[0.24em] text-white/40">
-          Materia
-        </span>
-        <span className="block text-lg font-black tracking-tight text-white">
-          NextCampus
-        </span>
-      </span>
-    </Link>
-  )
-}
 
 function GoogleDriveIcon({ className }: { className?: string }) {
   return (
@@ -124,7 +105,6 @@ export default async function SubjectPage({
     <>
     <div className="hidden lg:block">
     <DashboardShell
-      brand={<DashboardBrand />}
       topbar={
         <Link
           href={`/year/${subject.year.slug}`}
