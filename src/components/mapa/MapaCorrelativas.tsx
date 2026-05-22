@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {
   ArrowRight,
   BookOpen,
+  Check,
   CheckCircle2,
   Filter,
   GraduationCap,
@@ -170,7 +171,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                     Mapa de correlativas
                   </h1>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-white/62">
-                    Marcá las materias que ya tenés regularizadas o aprobadas. Seleccioná una materia para ver sus requisitos y qué se habilita después.
+                    Seleccioná una materia para ver sus requisitos. Usá el botón de cada materia para marcar tu avance.
                   </p>
                 </div>
               </div>
@@ -279,6 +280,27 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
               </div>
 
               <div className="flex flex-wrap gap-2 border-t border-white/8 pt-4">
+                {selectedSubject ? (
+                  <button
+                    type="button"
+                    onClick={() => handleToggleSubject(selectedSubject)}
+                    disabled={selectedStatus === 'LOCKED'}
+                    className={cn(
+                      'inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-35',
+                      selectedStatus === 'COMPLETED' &&
+                        'border-emerald-300/25 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/16',
+                      selectedStatus === 'UNLOCKED' &&
+                        'border-amber-300/25 bg-amber-400/10 text-amber-100 hover:bg-amber-400/16',
+                      selectedStatus === 'LOCKED' &&
+                        'border-white/10 bg-white/5 text-white/45',
+                    )}
+                  >
+                    {selectedStatus === 'COMPLETED' ? <RefreshCw className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+                    {selectedStatus === 'COMPLETED' && 'Quitar marca'}
+                    {selectedStatus === 'UNLOCKED' && 'Marcar avance'}
+                    {selectedStatus === 'LOCKED' && 'En espera'}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={handleAutocompleteFirstYear}
@@ -334,17 +356,17 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                     return (
                       <div
                         key={subject.slug}
-                        role="button"
                         tabIndex={0}
                         onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => handleToggleSubject(subject)}
+                        onClick={() => setSelectedSubjectSlug(subject.slug)}
                         onKeyDown={(event) => {
                           if (event.key === 'Enter' || event.key === ' ') {
                             event.preventDefault();
-                            handleToggleSubject(subject);
+                            setSelectedSubjectSlug(subject.slug);
                           }
                         }}
                         onFocus={() => setSelectedSubjectSlug(subject.slug)}
+                        aria-label={`Ver detalles de ${subject.nombre}`}
                         className={cn(
                           'group relative flex min-h-[132px] w-full cursor-pointer flex-col justify-between rounded-md border p-3 text-left transition duration-200',
                           isCompleted && 'border-emerald-300/35 bg-emerald-400/10 shadow-[0_0_18px_rgba(52,211,153,0.06)]',
@@ -393,16 +415,50 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                             </p>
                           ) : null}
 
-                          {hasPage && status !== 'LOCKED' ? (
-                            <Link
-                              href={`/materia/${subject.slug}`}
-                              onClick={(event) => event.stopPropagation()}
-                              className="inline-flex w-fit items-center gap-1 text-[10px] font-bold text-white/40 transition hover:text-white"
+                          {status !== 'LOCKED' ? (
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              {hasPage ? (
+                                <Link
+                                  href={`/materia/${subject.slug}`}
+                                  onClick={(event) => event.stopPropagation()}
+                                  className="inline-flex w-fit items-center gap-1 text-[10px] font-bold text-white/40 transition hover:text-white"
+                                >
+                                  <BookOpen className="h-3 w-3" />
+                                  Abrir materia
+                                  <ArrowRight className="h-3 w-3" />
+                                </Link>
+                              ) : (
+                                <span className="text-[10px] font-bold text-white/28">Ver detalle</span>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  handleToggleSubject(subject);
+                                }}
+                                className={cn(
+                                  'inline-flex cursor-pointer items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-black uppercase tracking-wider transition',
+                                  isCompleted
+                                    ? 'border-emerald-300/25 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/16'
+                                    : 'border-amber-300/25 bg-amber-400/10 text-amber-100 hover:bg-amber-400/16',
+                                )}
+                              >
+                                {isCompleted ? <RefreshCw className="h-3 w-3" /> : <Check className="h-3 w-3" />}
+                                {isCompleted ? 'Quitar' : 'Marcar'}
+                              </button>
+                            </div>
+                          ) : null}
+
+                          {status === 'LOCKED' ? (
+                            <button
+                              type="button"
+                              disabled
+                              className="inline-flex cursor-not-allowed items-center gap-1 rounded-md border border-white/8 bg-white/5 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-white/28"
                             >
-                              <BookOpen className="h-3 w-3" />
-                              Abrir materia
-                              <ArrowRight className="h-3 w-3" />
-                            </Link>
+                              <Lock className="h-3 w-3" />
+                              En espera
+                            </button>
                           ) : null}
                         </div>
                       </div>
