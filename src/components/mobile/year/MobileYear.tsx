@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { ArrowRight, ChevronRight, Calendar, Layers, Pencil, Trash2, Plus } from 'lucide-react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { YearSwitcherPill } from './YearSwitcherPill'
@@ -10,13 +10,9 @@ import { getYearColorClasses } from '@/lib/yearColors'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { DeleteEventoButton } from '@/components/admin/SubjectPageAdminOverlay'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
-import { CommissionSelectField } from '@/components/commissions/CommissionSelectField'
 import {
-  ALL_COMMISSIONS_VALUE,
   filterEventsByPreferredCommission,
-  normalizePreferredCommissionId,
   type CommissionOption,
-  writePreferredCommissionId,
 } from '@/lib/commission-preferences'
 import { usePreferredCommissionMap } from '@/components/commissions/usePreferredCommission'
 
@@ -67,7 +63,6 @@ export function MobileYear({
   careerName: string
 }) {
   const colors = getYearColorClasses(year.slug)
-  const [selectedSubjectId, setSelectedSubjectId] = useState(year.subjects[0]?.id ?? '')
   const preferredBySubject = usePreferredCommissionMap(year.subjects)
   const yearIndex = allYears.findIndex(y => y.slug === year.slug)
   const yearNumber = yearIndex >= 0 ? yearIndex + 1 : 1
@@ -80,11 +75,6 @@ export function MobileYear({
     () => new Map(year.subjects.map((subject) => [subject.slug, subject] as const)),
     [year.subjects],
   )
-  const selectedSubject =
-    year.subjects.find((subject) => subject.id === selectedSubjectId) ?? year.subjects[0] ?? null
-  const selectedCommissionId = selectedSubject
-    ? preferredBySubject[selectedSubject.slug] ?? null
-    : null
 
   const filteredSubjects = useMemo(
     () =>
@@ -189,7 +179,7 @@ export function MobileYear({
             </div>
           </div>
         </section>
-
+        
         {/* SWITCHER */}
         <YearSwitcherPill years={allYears} currentSlug={year.slug} />
 
@@ -211,43 +201,6 @@ export function MobileYear({
               </button>
             </AdminControls>
           </div>
-          {selectedSubject ? (
-            <div className="px-[18px] space-y-3">
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="mobile-year-preference-subject"
-                  className="block text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40"
-                >
-                  Materia
-                </label>
-                <select
-                  id="mobile-year-preference-subject"
-                  value={selectedSubject.id}
-                  onChange={(event) => setSelectedSubjectId(event.target.value)}
-                  className="w-full cursor-pointer rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:outline-none"
-                >
-                  {year.subjects.map((subject) => (
-                    <option key={subject.id} value={subject.id}>
-                      {subject.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <CommissionSelectField
-                id="mobile-year-preference-commission"
-                label="Comisión"
-                value={selectedCommissionId ?? ALL_COMMISSIONS_VALUE}
-                commissions={selectedSubject.commissions}
-                onChange={(value) =>
-                  writePreferredCommissionId(
-                    selectedSubject.slug,
-                    normalizePreferredCommissionId(value),
-                  )
-                }
-                helperText="Ajustá las fechas de la materia que te interesa."
-              />
-            </div>
-          ) : null}
           <div className="px-[18px] flex flex-col gap-2.5">
             {filteredNextEvents.length === 0 ? (
               <div className="bg-[#1a1a1a] border border-dashed border-white/10 rounded-lg p-4 text-sm text-white/45 text-center">

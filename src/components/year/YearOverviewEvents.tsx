@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
@@ -14,13 +14,9 @@ import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { formatDateTime } from '@/lib/utils'
 import { sanitizeRichHtml } from '@/lib/sanitize'
 import {
-  ALL_COMMISSIONS_VALUE,
   filterEventsByPreferredCommission,
-  normalizePreferredCommissionId,
   type CommissionOption,
-  writePreferredCommissionId,
 } from '@/lib/commission-preferences'
-import { CommissionSelectField } from '@/components/commissions/CommissionSelectField'
 import { usePreferredCommissionMap } from '@/components/commissions/usePreferredCommission'
 
 interface TipoEvento {
@@ -70,7 +66,6 @@ export function YearOverviewEvents({
   events,
   nextEvents,
 }: YearOverviewEventsProps) {
-  const [selectedSubjectId, setSelectedSubjectId] = useState(subjects[0]?.id ?? '')
   const preferredBySubject = usePreferredCommissionMap(subjects)
 
   const subjectsById = useMemo(
@@ -81,11 +76,6 @@ export function YearOverviewEvents({
     () => new Map(subjects.map((subject) => [subject.slug, subject] as const)),
     [subjects],
   )
-  const selectedSubject =
-    subjects.find((subject) => subject.id === selectedSubjectId) ?? subjects[0] ?? null
-  const selectedCommissionId = selectedSubject
-    ? preferredBySubject[selectedSubject.slug] ?? null
-    : null
 
   const filteredEvents = useMemo(
     () =>
@@ -143,45 +133,6 @@ export function YearOverviewEvents({
             </AdminControls>
           </div>
         </div>
-
-        {selectedSubject ? (
-          <div className="w-full max-w-sm space-y-3">
-            <div className="space-y-1.5">
-              <label
-                htmlFor="year-preference-subject"
-                className="block text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40"
-              >
-                Materia
-              </label>
-              <select
-                id="year-preference-subject"
-                value={selectedSubject.id}
-                onChange={(event) => setSelectedSubjectId(event.target.value)}
-                className="w-full cursor-pointer rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:outline-none"
-              >
-                {subjects.map((subject) => (
-                  <option key={subject.id} value={subject.id}>
-                    {subject.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <CommissionSelectField
-              id="year-preference-commission"
-              label="Comisión"
-                value={selectedCommissionId ?? ALL_COMMISSIONS_VALUE}
-                commissions={selectedSubject.commissions}
-                onChange={(value) =>
-                  writePreferredCommissionId(
-                    selectedSubject.slug,
-                    normalizePreferredCommissionId(value),
-                  )
-                }
-                helperText="Esta elección ajusta las fechas de esta materia también en el calendario anual."
-              />
-          </div>
-        ) : null}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.72fr)_minmax(324px,0.8fr)] 2xl:grid-cols-[minmax(0,1.82fr)_minmax(344px,0.78fr)]">

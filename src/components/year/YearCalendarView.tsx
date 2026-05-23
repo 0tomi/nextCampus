@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { DashboardShell } from '@/components/shell/DashboardShell'
@@ -9,13 +9,9 @@ import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { MobileCalendarLazy } from '@/components/mobile/calendar/MobileCalendarLazy'
 import {
-  ALL_COMMISSIONS_VALUE,
   filterEventsByPreferredCommission,
-  normalizePreferredCommissionId,
   type CommissionOption,
-  writePreferredCommissionId,
 } from '@/lib/commission-preferences'
-import { CommissionSelectField } from '@/components/commissions/CommissionSelectField'
 import { usePreferredCommissionMap } from '@/components/commissions/usePreferredCommission'
 
 interface TipoEvento {
@@ -80,7 +76,6 @@ export function YearCalendarView({
   subjects,
   events,
 }: YearCalendarViewProps) {
-  const [selectedSubjectId, setSelectedSubjectId] = useState(subjects[0]?.id ?? '')
   const preferredBySubject = usePreferredCommissionMap(subjects)
 
   const subjectsById = useMemo(
@@ -91,11 +86,6 @@ export function YearCalendarView({
     () => new Map(subjects.map((subject) => [subject.slug, subject] as const)),
     [subjects],
   )
-  const selectedSubject =
-    subjects.find((subject) => subject.id === selectedSubjectId) ?? subjects[0] ?? null
-  const selectedCommissionId = selectedSubject
-    ? preferredBySubject[selectedSubject.slug] ?? null
-    : null
 
   const filteredEvents = useMemo(
     () =>
@@ -112,49 +102,6 @@ export function YearCalendarView({
       }),
     [events, preferredBySubject, subjectsById, subjectsBySlug],
   )
-
-  const renderControls = (idPrefix: string) => {
-    if (!selectedSubject) return null
-
-    return (
-      <div className="space-y-3">
-        <div className="space-y-1.5">
-          <label
-            htmlFor={`${idPrefix}-subject`}
-            className="block text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40"
-          >
-            Materia
-          </label>
-          <select
-            id={`${idPrefix}-subject`}
-            value={selectedSubject.id}
-            onChange={(event) => setSelectedSubjectId(event.target.value)}
-            className="w-full cursor-pointer rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:outline-none"
-          >
-            {subjects.map((subject) => (
-              <option key={subject.id} value={subject.id}>
-                {subject.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <CommissionSelectField
-          id={`${idPrefix}-commission`}
-          label="Comisión"
-          value={selectedCommissionId ?? ALL_COMMISSIONS_VALUE}
-          commissions={selectedSubject.commissions}
-          onChange={(value) =>
-            writePreferredCommissionId(
-              selectedSubject.slug,
-              normalizePreferredCommissionId(value),
-            )
-          }
-          helperText="Esto ajusta las fechas visibles de la materia elegida en este calendario."
-        />
-      </div>
-    )
-  }
 
   return (
     <>
@@ -188,7 +135,6 @@ export function YearCalendarView({
                   Calendario completo · {year.nombre}
                 </h1>
               </div>
-              <div className="w-full max-w-sm">{renderControls('desktop-year-calendar-preference')}</div>
             </div>
             <EventCalendarAdmin
               events={filteredEvents}
@@ -212,9 +158,6 @@ export function YearCalendarView({
           careerName={year.career.nombre}
           currentYearSlug={year.slug}
         >
-          <div className="space-y-4 px-[18px] pt-4">
-            {renderControls('mobile-year-calendar-preference')}
-          </div>
           <div className="pt-4">
             <MobileCalendarLazy
               events={filteredEvents.map((event) => ({
