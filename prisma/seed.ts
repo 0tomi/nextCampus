@@ -47,6 +47,11 @@ const TIPOS_EVENTO = [
   { slug: 'exposicion', nombre: 'Exposición' },
 ]
 
+const DEFAULT_COMMISSION = {
+  slug: 'comision-1',
+  nombre: 'Comisión 1',
+}
+
 async function main(): Promise<void> {
   for (const tipo of TIPOS_EVENTO) {
     await prisma.tipoEvento.upsert({
@@ -82,16 +87,45 @@ async function main(): Promise<void> {
         update: { nombre: subjectName },
         create: { yearId: year.id, slug: subjectSlug, nombre: subjectName },
       })
-      // Cada materia tiene su agenda (1:1).
-      await prisma.agenda.upsert({
-        where: { subjectId: subject.id },
-        update: {},
-        create: { subjectId: subject.id },
+
+      const generalAgenda = await prisma.agenda.findFirst({
+        where: { subjectId: subject.id, commissionId: null },
+        select: { id: true },
       })
+      if (!generalAgenda) {
+        await prisma.agenda.create({ data: { subjectId: subject.id } })
+      }
+
+      let commission = await prisma.commission.findFirst({
+        where: { subjectId: subject.id },
+        orderBy: [{ createdAt: 'asc' }, { slug: 'asc' }],
+      })
+      if (!commission) {
+        commission = await prisma.commission.create({
+          data: {
+            subjectId: subject.id,
+            slug: DEFAULT_COMMISSION.slug,
+            nombre: DEFAULT_COMMISSION.nombre,
+          },
+        })
+      }
+
+      const specificAgenda = await prisma.agenda.findUnique({
+        where: { commissionId: commission.id },
+        select: { id: true },
+      })
+      if (!specificAgenda) {
+        await prisma.agenda.create({
+          data: {
+            subjectId: subject.id,
+            commissionId: commission.id,
+          },
+        })
+      }
     }
   }
 
-  console.log('Seed completo: carrera, años, materias, agendas y tipos de evento.')
+  console.log('Seed completo: carrera, años, materias, comisiones, agendas y tipos de evento.')
 }
 
 main()

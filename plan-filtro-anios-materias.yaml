@@ -1,0 +1,351 @@
+plan: filtro-anios-materias
+
+meta:
+  objetivo: |
+    Permitir al usuario elegir qué años y materias ver, persistido en LocalStorage
+    (sin login), con un botón en el header global que lleva a /configurar.
+    Frontend siguiendo DESIGN.md.
+  dominio: frontend
+  creado: 2026-05-22T00:00
+  fases_totales: 4
+  plan_origen: /home/tomi/.claude/plans/planifica-la-funcionalidad-de-proud-tome.md
+
+restricciones:
+  R1:
+    titulo: Vocabulario user-friendly en frontend
+    contenido: |
+      Regla del proyecto (CLAUDE.md): el frontend NUNCA debe referenciar
+      conceptos técnicos. Prohibido decir "localStorage", "client component",
+      "server component", "hidratación", "navegador", "framework", etc. en
+      copy visible al usuario. Usar lenguaje natural de estudiante.
+      Ejemplo aceptable: "Esta configuración se guarda en este dispositivo".
+
+  R2:
+    titulo: Consistencia con DESIGN.md
+    contenido: |
+      Surfaces: surface-0 (bg general), surface-1 (cards/contenedores).
+      Bordes: border-white/5 a border-white/10.
+      Texto eyebrows: text-[11px] font-bold uppercase tracking-[0.15em] text-white/40.
+      Radios: rounded (8px), rounded-md (8px), rounded-lg (12px).
+      Acentos por año: getYearColorClasses(year.slug) de src/lib/yearColors.ts.
+      Botones primarios: bg-uader-red. cursor-pointer obligatorio en todo botón
+      clickeable (regla CLAUDE.md).
+
+  R3:
+    titulo: Identificadores y default behavior
+    contenido: |
+      Identificación de años/materias por SLUG (no por id). Slugs son estables
+      y human-readable, y son lo que ya usan los Links del home.
+      LocalStorage vacío => mostrar TODO (opt-in). No forzar selecciones.
+      Storage key: nextcampus_user_preferences_v1.
+      Tipo: { hiddenYears: string[]; hiddenSubjects: string[] } — guardar lo
+      OCULTO (no lo visible), así el default vacío deriva en "todo visible".
+
+  R4:
+    titulo: Conventional Commits sin atribución
+    contenido: |
+      Cada fase termina con UN commit siguiendo Conventional Commits.
+      Prohibido agregar "Co-Authored-By" o cualquier atribución a IA.
+      Ejemplo: feat(prefs): add user preferences storage and hook
+
+  R5:
+    titulo: Patrón anti-flash hidratación
+    contenido: |
+      El patrón usado en src/components/mapa/MapaCorrelativas.tsx es la
+      referencia: useState + useEffect que setea isHydrated en mount.
+      Hasta isHydrated=true, renderizar el dataset COMPLETO (sin filtrar)
+      para que coincida con el HTML del server. Tras hidratar, aplicar filtro.
+
+  R6:
+    titulo: No tocar rutas /year/[slug] ni /materia/[slug]
+    contenido: |
+      El filtro aplica SOLO a la grilla del home (desktop y mobile) y al
+      sidebar/carousel de años. Las páginas individuales siguen accesibles
+      por URL directa aunque la materia/año esté oculto. Tampoco tocar
+      queries en src/lib/queries.ts ni el schema Prisma.
+
+fases:
+  F1:
+    nombre: Capa de preferencias (lib + hook)
+    dominio: frontend
+    criticidad: critica
+    objetivo: |
+      Crear src/lib/preferences.ts (helpers puros, sin React) y
+      src/hooks/usePreferences.ts (hook client con flag isHydrated).
+      Base reutilizada por todas las fases posteriores.
+    archivos_alcance:
+      permitidos:
+        - src/lib/preferences.ts
+        - src/hooks/usePreferences.ts
+      prohibidos:
+        - src/app/**
+        - src/components/**
+        - src/lib/queries.ts
+        - prisma/**
+    criterio_cierre: |
+      preferences.ts exporta UserPreferences, PREFERENCES_KEY,
+      readPreferences, writePreferences, clearPreferences, isYearVisible,
+      isSubjectVisible. usePreferences devuelve { prefs, isHydrated,
+      setPrefs, clear }. tsc --noEmit pasa. Commit creado.
+    dependencias: []
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/lib/preferences.ts
+        - src/hooks/usePreferences.ts
+      supuestos:
+        - Helper privado isValidPreferences valida shape (arrays de string) antes de devolver del read.
+        - readPreferences devuelve null cuando el storage está vacío o inválido (consistente con default "todo visible").
+      deuda: []
+      notas: |
+        Hook expone { prefs, isHydrated, setPrefs, clear }. Patrón isHydrated alineado con MapaCorrelativas.
+        Importar como `import { usePreferences } from '@/hooks/usePreferences'`.
+      commit: a5fa125
+      timestamp: 2026-05-22T00:10
+
+  F2:
+    nombre: Página /configurar (UI de elección)
+    dominio: frontend
+    criticidad: estandar
+    objetivo: |
+      Crear src/app/configurar/page.tsx (Server Component que await getCareer())
+      y src/app/configurar/ConfigurarForm.tsx (Client Component con checkboxes
+      por año + materias anidadas, botones Guardar / Mostrar todo / Cancelar).
+      Visual fiel a DESIGN.md y a la estética del home actual.
+    archivos_alcance:
+      permitidos:
+        - src/app/configurar/page.tsx
+        - src/app/configurar/ConfigurarForm.tsx
+      prohibidos:
+        - src/lib/queries.ts
+        - src/lib/preferences.ts
+        - src/hooks/usePreferences.ts
+        - prisma/**
+    criterio_cierre: |
+      Navegar a /configurar muestra todos los años con sus materias y
+      checkboxes funcionales. Guardar persiste vía hook usePreferences
+      y redirige a /. Mostrar todo limpia. Cancelar vuelve sin guardar.
+      Copy sin referencias técnicas (R1). Accesible por teclado.
+      tsc --noEmit pasa. Commit creado.
+    dependencias: [F1]
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/app/configurar/page.tsx
+        - src/app/configurar/ConfigurarForm.tsx
+      supuestos:
+        - El Server Component mapea getCareer al shape mínimo YearForConfig antes de pasar props al Client (evita payload innecesario).
+        - Checkboxes accesibles vía input sr-only + peer-focus-visible.
+        - Contador "(N de M)" cuenta subjects no ocultos individualmente, incluso si el año está deshabilitado.
+      deuda: []
+      notas: |
+        Ruta /configurar accesible. Form usa usePreferences correctamente.
+        Año deshabilitado opaca su lista (pointer-events-none + opacity-40) sin perder selección.
+        Footer sticky con Guardar / Mostrar todo / Cancelar.
+      commit: 2f65423
+      timestamp: 2026-05-22T00:20
+
+  F3:
+    nombre: Botón Configurar en header global (desktop + mobile)
+    dominio: frontend
+    criticidad: estandar
+    objetivo: |
+      Crear src/components/shell/ConfigButton.tsx (Link a /configurar con
+      ícono SlidersHorizontal y estética idéntica al botón Admin existente).
+      Insertarlo en el topbar de DashboardShell (src/app/page.tsx) ANTES
+      del botón Admin. Insertarlo también en el header de
+      src/components/mobile/shell/MobileShell.tsx al lado del Shield
+      existente. Público — NO envuelto en AdminControls.
+    archivos_alcance:
+      permitidos:
+        - src/components/shell/ConfigButton.tsx
+        - src/app/page.tsx
+        - src/components/mobile/shell/MobileShell.tsx
+      prohibidos:
+        - src/components/admin/**
+    criterio_cierre: |
+      En desktop el topbar muestra "Configurar" + "Admin" lado a lado.
+      En mobile el header muestra los dos íconos. Click navega a /configurar.
+      Cualquier visitante (sin login) lo ve. tsc --noEmit pasa. Commit creado.
+    dependencias: [F2]
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/components/shell/ConfigButton.tsx
+        - src/app/page.tsx
+        - src/components/mobile/shell/MobileShell.tsx
+      supuestos:
+        - ConfigButton acepta iconOnly + className. En mobile se sobreescriben clases para alinear visualmente con el Shield (h-10 w-10 rounded-lg border-0).
+        - Topbar de DashboardShell ahora envuelve los dos botones en flex gap-2.
+      deuda: []
+      notas: |
+        Botón público (no envuelto en AdminControls). Click navega a /configurar.
+        Para F4: ConfigButton se importa desde '@/components/shell/ConfigButton'.
+      commit: 89eeeff
+      timestamp: 2026-05-22T00:30
+
+  F4:
+    nombre: Aplicar filtro en home (desktop + mobile)
+    dominio: frontend
+    criticidad: critica
+    objetivo: |
+      Crear src/components/home/HomeYearsGrid.tsx (Client Component) que
+      reciba years y filtre con usePreferences. Mover el .map de tarjetas
+      de año desde src/app/page.tsx (líneas 172-253) a este componente,
+      conservando AdminControls / YearAdminBar / SubjectAdminRow.
+      Para mobile, crear un wrapper Client en src/components/mobile/home
+      (sugerido: MobileHomeContent.tsx) que filtre years y upcomingEvents
+      antes de pasarlos a YearCarousel y a la sección Próximos eventos.
+      Convertir MobileHome.tsx en thin wrapper o adaptarlo para usar el
+      wrapper client.
+      Filtrar también el sidebar de DashboardShell:
+        opción recomendada — pasar years completos a un client component
+        HomeSidebar.tsx que construya los items filtrados (no construir
+        sidebarItems en server).
+      Filtrar upcomingEvents por yearSlug + subjectSlug en mobile.
+      Empty state si no hay años visibles: copy claro + link a /configurar.
+    archivos_alcance:
+      permitidos:
+        - src/components/home/HomeYearsGrid.tsx
+        - src/components/home/HomeSidebar.tsx
+        - src/app/page.tsx
+        - src/components/mobile/home/MobileHome.tsx
+        - src/components/mobile/home/MobileHomeContent.tsx
+        - src/components/mobile/home/YearCarousel.tsx
+      prohibidos:
+        - src/lib/queries.ts
+        - src/lib/preferences.ts
+        - src/hooks/usePreferences.ts
+        - src/app/year/**
+        - src/app/materia/**
+        - prisma/**
+    criterio_cierre: |
+      LocalStorage vacío => home idéntico al actual (golden path).
+      Con preferencias seteadas: grid desktop, sidebar desktop, carousel
+      mobile y feed de próximos eventos mobile reflejan el filtro.
+      Hidratación sin mismatch (R5). AdminControls siguen funcionando.
+      Empty state visible cuando todo está oculto.
+      tsc --noEmit pasa. Commit creado.
+    dependencias: [F1, F3]
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/components/home/HomeYearsGrid.tsx
+        - src/components/home/HomeSidebar.tsx
+        - src/app/page.tsx
+        - src/components/mobile/home/MobileHome.tsx
+      supuestos:
+        - HomeSidebar mantiene el conteo TOTAL de subjects (no filtrado) para coherencia con /year/[slug] que no se filtra (R6).
+        - originalIndex se preserva para "Año N" tras filtrar (no usar el index del array filtrado).
+        - MobileHome se convirtió a client component (use client) en vez de wrapper extra — más simple.
+        - Drawer del MobileShell también muestra solo años visibles.
+      deuda:
+        - Error TS pre-existente en src/components/subject/SubjectEventsSection.tsx (feature de comisiones, no relacionado con este plan). No introducido aquí, no corregido aquí.
+      notas: |
+        Patrón anti-flash R5 respetado: hasta isHydrated, dataset completo.
+        Empty state desktop + mobile: copy idéntico, link a /configurar.
+        UpcomingEvents mobile filtrados por yearSlug + subjectSlug.
+        AdminControls/YearAdminBar/SubjectAdminRow preservados.
+      commit: c7493ef
+      timestamp: 2026-05-22T00:50
+
+estado_global:
+  estado: completado
+  fases:
+    F1: completada
+    F2: completada
+    F3: completada
+    F4: completada
+
+auditoria:
+  cobertura_objetivo:
+    estado: cumplido
+    evidencia:
+      - "Filtrado de años y materias usando LocalStorage: F1 implementa la capa de storage + hook, F4 aplica el filtro en home desktop y mobile."
+      - "Botón en root header: F3 agrega ConfigButton al topbar desktop (DashboardShell) y al header mobile (MobileShell), público (sin AdminControls)."
+      - "Página /configurar dedicada: F2 con checkboxes por año + materias anidadas, botones Guardar / Mostrar todo / Cancelar."
+      - "Inicio sin contaminar: el único control visible en el home es el botón Configurar del header; toda la config vive en su propia página."
+      - "DESIGN.md respetado: surface-0/1, border-white/5, eyebrows uppercase tracking, getYearColorClasses por año, uader-red para acentos primarios, cursor-pointer en clickeables, fuentes Jakarta/Sora."
+      - "R1 cumplido: copy sin jerga técnica ('Esta configuración se guarda en este dispositivo')."
+  consistencia_inter_fases:
+    estado: cumplido
+    evidencia:
+      - "F2, F4 importan correctamente desde @/hooks/usePreferences y @/lib/preferences (APIs creadas por F1)."
+      - "F3 enlaza a /configurar (ruta creada por F2). Empty state de F4 también enlaza a /configurar."
+      - "Patrón isHydrated aplicado consistentemente en usePreferences, HomeYearsGrid, HomeSidebar, MobileHome (R5)."
+      - "Slugs como identificadores únicos en todas las capas (R3)."
+      - "Schema Prisma, queries en src/lib/queries.ts y rutas /year, /materia no tocados (R6)."
+  desvios:
+    detectados: []
+    nota: |
+      En git log aparecen dos commits intercalados (0835572, e25f5bc) sobre
+      CommissionSelectField, MobileYear, YearCalendarView, YearOverviewEvents
+      y SubjectEventsSection. NO son del plan ni de ninguno de los
+      sub-agentes orquestados acá: provienen de otro agente trabajando en
+      paralelo en la feature "comisiones materia". Quedan fuera del scope
+      de esta auditoría.
+  deuda_acumulada:
+    bloqueante: []
+    postergable:
+      - id: ninguna_del_plan
+        descripcion: |
+          El plan no dejó deuda técnica. Lo único uncommitted al cierre
+          es trabajo de otro agente sobre la feature comisiones
+          (SubjectEventsSection.tsx modificado, error TS pre-existente).
+          Fuera de scope.
+  validaciones_realizadas:
+    - "Lectura completa de cada archivo creado/modificado por cada fase."
+    - "Diff inspection de archivos modificados en F3 y F4."
+    - "pnpm tsc --noEmit tras F4: 0 errores nuevos; solo el error pre-existente de SubjectEventsSection."
+    - "Verificación de commits: 4 commits (a5fa125, 2f65423, 89eeeff, c7493ef), uno por fase, conventional commits sin Co-Authored-By (R4)."
+  commits_del_plan:
+    F1: a5fa125
+    F2: 2f65423
+    F3: 89eeeff
+    F4: c7493ef
+  veredicto: aprobado
+  timestamp: 2026-05-22T01:00
+
+historial:
+  - timestamp: 2026-05-22T00:00
+    evento: plan_creado
+    detalle: Plan inicializado con 4 fases (lib+hook, página configurar, botón shell, filtro en home).
+  - timestamp: 2026-05-22T00:05
+    evento: fase_iniciada
+    fase: F1
+  - timestamp: 2026-05-22T00:10
+    evento: fase_completada
+    fase: F1
+    validacion: aprobada
+    commit: a5fa125
+  - timestamp: 2026-05-22T00:12
+    evento: fase_iniciada
+    fase: F2
+  - timestamp: 2026-05-22T00:20
+    evento: fase_completada
+    fase: F2
+    validacion: aprobada
+    commit: 2f65423
+  - timestamp: 2026-05-22T00:22
+    evento: fase_iniciada
+    fase: F3
+  - timestamp: 2026-05-22T00:30
+    evento: fase_completada
+    fase: F3
+    validacion: aprobada
+    commit: 89eeeff
+  - timestamp: 2026-05-22T00:32
+    evento: fase_iniciada
+    fase: F4
+  - timestamp: 2026-05-22T00:50
+    evento: fase_completada
+    fase: F4
+    validacion: aprobada
+    commit: c7493ef
+  - timestamp: 2026-05-22T01:00
+    evento: plan_cerrado
+    veredicto: aprobado
+    detalle: |
+      4/4 fases completadas. Auditoría aprobada. Sin deuda del plan.
+      Commits 0835572/e25f5bc en el log pertenecen a OTRO agente
+      trabajando en paralelo (feature comisiones); registrados fuera de scope.

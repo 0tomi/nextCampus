@@ -1,0 +1,335 @@
+plan: comisiones-materia
+meta:
+  objetivo: >
+    Integrar comisiones por materia con calendarios generales y específicos,
+    reestructurar rutas a /year/[yearSlug]/[subjectSlug]/[commissionSlug],
+    mantener apuntes y quiz por materia, y persistir la comisión preferida en
+    localStorage hasta que existan usuarios formales.
+  dominio: datos + backend + frontend
+  creado: 2026-05-22T00:00:00-03:00
+  fases_totales: 4
+
+restricciones:
+  R1:
+    titulo: Semántica de agenda
+    contenido: >
+      Agenda es una tabla con FK a Subject. La agenda con commissionId null es
+      el calendario general de la materia. La agenda con commissionId asignado
+      es el calendario específico de esa comisión. Evento sigue perteneciendo a
+      Agenda, no directamente a Commission.
+  R2:
+    titulo: Alcance de comisión
+    contenido: >
+      La comisión solo condiciona qué eventos se ven. Apuntes y quiz siguen
+      siendo contenido de la materia y no se duplican por comisión.
+  R3:
+    titulo: Rutas convencionales
+    contenido: >
+      La navegación principal debe quedar bajo /year/[yearSlug]. La materia vive
+      en /year/[yearSlug]/[subjectSlug]. La comisión vive en
+      /year/[yearSlug]/[subjectSlug]/[commissionSlug]. Las rutas antiguas de
+      /materia deben redirigir o mantenerse como compatibilidad mínima.
+  R4:
+    titulo: Diseño y lenguaje
+    contenido: >
+      El frontend debe respetar DESIGN.md: modo oscuro, superficies, tipografías
+      y lenguaje user friendly de estudiante a estudiante. No exponer detalles
+      técnicos de infraestructura en la UI. Botones clickeables con cursor.
+  R5:
+    titulo: Verificación
+    contenido: >
+      No ejecutar build. Sí se puede ejecutar lint, tests y generación Prisma si
+      hace falta. Todo cambio funcional debe terminar con commit Conventional
+      Commit sin atribución IA.
+
+fases:
+  F1:
+    nombre: Modelo de comisiones y agendas
+    dominio: datos
+    criticidad: critica
+    objetivo: >
+      Agregar Commission, permitir múltiples agendas por materia y preservar la
+      agenda general actual como commissionId null.
+    skills:
+      - prisma-cli: crear/ajustar migración y regenerar cliente si hace falta.
+      - prisma-client-api: mantener relaciones Prisma correctas.
+      - supabase-postgres-best-practices: constraints e índices seguros en Postgres.
+    archivos_alcance:
+      permitidos:
+        - prisma/schema.prisma
+        - prisma/migrations/
+        - prisma/seed.ts
+      prohibidos:
+        - src/app/
+        - src/components/
+    criterio_cierre: >
+      Schema y migración representan Commission y Agenda.commissionId nullable;
+      seed asegura comisión inicial y agenda específica sin romper agenda general.
+    dependencias: []
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - prisma/schema.prisma
+        - prisma/seed.ts
+        - prisma/migrations/20260522133000_add_commissions_and_multi_agendas/migration.sql
+      supuestos:
+        - La comisión inicial por materia se llama Comisión 1 y usa slug comision-1.
+        - La unicidad de agenda general por materia se garantiza con índice parcial SQL.
+      deuda: []
+      notas: >
+        Se corrigió la migración para habilitar RLS en Commission. Prisma schema
+        validado y formateado con prisma validate/format.
+      timestamp: 2026-05-22T00:20:00-03:00
+
+  F2:
+    nombre: Backend de eventos y comisiones
+    dominio: backend
+    criticidad: critica
+    objetivo: >
+      Actualizar queries públicas/admin, permisos y server actions para exponer
+      comisiones, agendas generales/específicas y crear/editar eventos en la
+      agenda correcta.
+    skills:
+      - prisma-client-api: adaptar selects/includes y mutaciones.
+      - zod: validar inputs de comisión/agenda.
+      - next-best-practices: mantener revalidaciones y server actions alineadas.
+    archivos_alcance:
+      permitidos:
+        - src/lib/queries.ts
+        - src/lib/auth.ts
+        - src/app/admin/actions.ts
+        - src/lib/generated/
+        - prisma/generated/
+      prohibidos:
+        - src/components/
+        - src/app/year/
+        - src/app/materia/
+    criterio_cierre: >
+      Las lecturas devuelven comisiones/agendas y las actions pueden crear y
+      editar eventos generales o por comisión validando permisos por año.
+    dependencias: [F1]
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/lib/queries.ts
+        - src/lib/auth.ts
+        - src/app/admin/actions.ts
+        - src/lib/audit.ts
+        - prisma/generated/client
+      supuestos:
+        - subject.agenda se mantiene temporalmente como alias de la agenda general para no romper frontend previo a F3.
+        - commissionId opcional en acciones de evento selecciona la agenda específica de esa comisión dentro de la misma materia.
+      deuda: []
+      notas: >
+        Se rechazó y corrigió la fase dos veces: primero para asegurar comisión
+        inicial al crear materias nuevas, luego para exponer createCommissionAction.
+        El backend ya permite crear comisiones adicionales con agenda específica.
+      timestamp: 2026-05-22T01:25:00-03:00
+
+  F3:
+    nombre: Rutas convencionales y navegación
+    dominio: frontend
+    criticidad: critica
+    objetivo: >
+      Reorganizar rutas a /year/[yearSlug]/[subjectSlug] y
+      /year/[yearSlug]/[subjectSlug]/[commissionSlug], manteniendo quiz y
+      apuntes por materia y redirects desde /materia.
+    skills:
+      - next-best-practices: App Router, redirects y params async.
+      - nextjs-app-router-patterns: composición de rutas anidadas.
+      - frontend-design: mantener lenguaje y diseño fiel a DESIGN.md.
+    archivos_alcance:
+      permitidos:
+        - src/app/year/
+        - src/app/materia/
+        - src/app/page.tsx
+        - src/components/calendar/
+        - src/components/mobile/
+        - src/components/mapa/
+      prohibidos:
+        - prisma/
+    criterio_cierre: >
+      Links principales usan rutas nuevas, las rutas antiguas redirigen, y la
+      ruta de comisión reutiliza la materia filtrando solo eventos.
+    dependencias: [F2]
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/app/year/[slug]/[subjectSlug]/SubjectRoutePage.tsx
+        - src/app/year/[slug]/[subjectSlug]/subject-route-context.ts
+        - src/app/year/[slug]/[subjectSlug]/page.tsx
+        - src/app/year/[slug]/[subjectSlug]/[commissionSlug]/page.tsx
+        - src/app/year/[slug]/[subjectSlug]/quiz/page.tsx
+        - src/app/materia/[slug]/page.tsx
+        - src/app/materia/[slug]/quiz/page.tsx
+        - src/app/page.tsx
+        - src/app/year/[slug]/page.tsx
+        - src/app/year/[slug]/calendario/page.tsx
+        - src/components/calendar/EventCalendarAdmin.tsx
+        - src/components/mobile/home/MobileHome.tsx
+        - src/components/mobile/home/YearCarousel.tsx
+        - src/components/mobile/year/MobileYear.tsx
+        - src/components/mobile/subject/MobileSubject.tsx
+        - src/components/mobile/subject/tabs/QuizTab.tsx
+        - src/components/mobile/shared/subjectRoutes.ts
+        - src/lib/queries.ts
+      supuestos:
+        - Ruta base de materia y año representan Todas las comisiones y muestran eventos de todas las agendas.
+        - Ruta de comisión muestra eventos generales más eventos de la comisión activa.
+        - Links de mapa estático quedan en /materia y usan redirects legacy porque no tienen yearSlug en su dataset.
+      deuda: []
+      notas: >
+        La primera entrega se rechazó porque solo agregaba agenda general en
+        vistas base. La corrección cambió base materia/año a todas las agendas.
+      timestamp: 2026-05-22T02:15:00-03:00
+
+  F4:
+    nombre: Selector de comisión y preferencia local
+    dominio: frontend
+    criticidad: estandar
+    objetivo: >
+      Agregar selector user friendly de comisión al crear eventos y selector de
+      preferencia persistido en localStorage para calendario anual/materia.
+    skills:
+      - frontend-design: UI consistente con DESIGN.md.
+      - tailwind-css-patterns: estilos responsivos y dark surfaces.
+      - accessibility: labels, controles y navegación usable.
+      - vercel-react-best-practices: evitar hydration mismatch con localStorage.
+      - react-doctor: revisión final de cambios React.
+    archivos_alcance:
+      permitidos:
+        - src/components/
+        - src/app/year/
+        - src/app/materia/
+        - src/lib/
+      prohibidos:
+        - prisma/migrations/
+    criterio_cierre: >
+      Los formularios default a Todas las comisiones, permiten elegir comisión,
+      y la preferencia local filtra eventos sin afectar apuntes ni quiz.
+    dependencias: [F3]
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/components/admin/EventModal.tsx
+        - src/components/admin/CommissionModal.tsx
+        - src/components/admin/SubjectPageAdminOverlay.tsx
+        - src/components/admin/YearPageAdminOverlay.tsx
+        - src/components/calendar/EventCalendar.tsx
+        - src/components/calendar/EventCalendarAdmin.tsx
+        - src/components/commissions/CommissionSelectField.tsx
+        - src/components/commissions/usePreferredCommission.ts
+        - src/components/subject/SubjectEventsSection.tsx
+        - src/components/subject/SubjectEventSummaryCard.tsx
+        - src/components/year/YearOverviewEvents.tsx
+        - src/components/year/YearCalendarView.tsx
+        - src/components/mobile/subject/MobileSubject.tsx
+        - src/components/mobile/year/MobileYear.tsx
+        - src/app/year/[slug]/page.tsx
+        - src/app/year/[slug]/calendario/page.tsx
+        - src/app/year/[slug]/[subjectSlug]/SubjectRoutePage.tsx
+        - src/app/year/[slug]/[subjectSlug]/subject-route-context.ts
+        - src/lib/commission-preferences.ts
+      supuestos:
+        - En ruta explícita de comisión manda la ruta activa, no la preferencia local.
+        - La preferencia local se guarda por materia y filtra eventos generales + específicos de la comisión elegida.
+      deuda: []
+      notas: >
+        El entregable inicial dejó errores TypeScript por tipo de mapa de
+        preferencias, descripcionHtml nullable e import faltante. El orquestador
+        los resolvió antes de cerrar la fase y tsc --noEmit quedó verde.
+      timestamp: 2026-05-22T02:45:00-03:00
+
+estado_global:
+  estado: completado
+  fases:
+    F1: completada
+    F2: completada
+    F3: completada
+    F4: completada
+
+auditoria:
+  cobertura: >
+    El objetivo queda cubierto: modelo de comisiones, agendas generales y por
+    comisión, backend de eventos/comisiones, rutas convencionales, redirects,
+    selector de comisión y preferencia local por materia.
+  consistencia: >
+    Evento sigue dependiendo de Agenda. Agenda general usa commissionId null.
+    Las rutas base muestran todas las agendas y las rutas de comisión muestran
+    agenda general más agenda específica.
+  desvios: >
+    El árbol de App Router conserva internamente el segmento [slug] para el año
+    por cambio mínimo, aunque semánticamente representa yearSlug.
+  deuda_final: []
+  validacion: >
+    prisma validate verde, TypeScript verde, tests vitest verdes. ESLint queda
+    sin errores y con warnings preexistentes en QuizRunner/MapaVisualCorrelativas.
+
+historial:
+  - timestamp: 2026-05-22T00:00:00-03:00
+    evento: plan_creado
+    detalle: Plan orquestado creado antes de delegar fases a sdd-apply.
+  - timestamp: 2026-05-22T00:05:00-03:00
+    evento: fase_iniciada
+    fase: F1
+  - timestamp: 2026-05-22T00:20:00-03:00
+    evento: fase_completada
+    fase: F1
+    validacion: aprobada
+  - timestamp: 2026-05-22T00:25:00-03:00
+    evento: fase_iniciada
+    fase: F2
+  - timestamp: 2026-05-22T00:45:00-03:00
+    evento: fase_rechazada
+    fase: F2
+    motivo: >
+      La fase adaptó queries/actions de eventos, pero createSubjectAction sigue
+      creando solo agenda general y no asegura comisión inicial ni agenda
+      específica para materias nuevas.
+  - timestamp: 2026-05-22T00:50:00-03:00
+    evento: fase_iniciada
+    fase: F2
+    detalle: Re-delegación acotada tras rechazo.
+  - timestamp: 2026-05-22T01:05:00-03:00
+    evento: fase_rechazada
+    fase: F2
+    motivo: >
+      La corrección cubrió altas de materia, pero F2 todavía no expone una
+      server action para crear nuevas comisiones con su agenda específica.
+  - timestamp: 2026-05-22T01:10:00-03:00
+    evento: fase_iniciada
+    fase: F2
+    detalle: Re-delegación acotada para crear comisiones.
+  - timestamp: 2026-05-22T01:25:00-03:00
+    evento: fase_completada
+    fase: F2
+    validacion: aprobada
+  - timestamp: 2026-05-22T01:30:00-03:00
+    evento: fase_iniciada
+    fase: F3
+  - timestamp: 2026-05-22T01:55:00-03:00
+    evento: fase_rechazada
+    fase: F3
+    motivo: >
+      La estructura de rutas quedó implementada, pero las vistas base de año y
+      materia siguen usando solo la agenda general. La vista Todas las
+      comisiones debe incluir eventos generales y eventos específicos de todas
+      las comisiones.
+  - timestamp: 2026-05-22T02:00:00-03:00
+    evento: fase_iniciada
+    fase: F3
+    detalle: Re-delegación acotada para corregir agregación de eventos.
+  - timestamp: 2026-05-22T02:15:00-03:00
+    evento: fase_completada
+    fase: F3
+    validacion: aprobada
+  - timestamp: 2026-05-22T02:20:00-03:00
+    evento: fase_iniciada
+    fase: F4
+  - timestamp: 2026-05-22T02:45:00-03:00
+    evento: fase_completada
+    fase: F4
+    validacion: aprobada_con_correcciones_del_orquestador
+  - timestamp: 2026-05-22T03:00:00-03:00
+    evento: plan_cerrado
+    detalle: Auditoría final aprobada; deuda técnica bloqueante resuelta por el orquestador.

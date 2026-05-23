@@ -2,6 +2,7 @@ import 'server-only'
 import { cache } from 'react'
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from './supabase/server'
+import { isAuthSessionMissingError, isInvalidRefreshTokenError } from './supabase/auth-errors'
 import { env } from '@/lib/env'
 import { prisma } from '@/lib/prisma'
 
@@ -119,12 +120,29 @@ export function buildAdminUser(account: DbUserAccount): AdminUser | null {
 const getAuthenticatedUser = cache(
   async (): Promise<SupabaseAuthUser | null> => {
     const supabase = await createSupabaseServerClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    try {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser()
 
-    if (!user?.email) return null
-    return { id: user.id, email: user.email }
+      if (error) {
+        if (isAuthSessionMissingError(error) || isInvalidRefreshTokenError(error)) {
+          return null
+        }
+
+        throw error
+      }
+
+      if (!user?.email) return null
+      return { id: user.id, email: user.email }
+    } catch (error) {
+      if (isAuthSessionMissingError(error) || isInvalidRefreshTokenError(error)) {
+        return null
+      }
+
+      throw error
+    }
   },
 )
 
@@ -270,8 +288,15 @@ export interface SubjectAdminScope extends YearAdminScope {
   subjectSlug: string
 }
 
+export interface CommissionAdminScope extends SubjectAdminScope {
+  commissionId: string
+  commissionSlug: string
+}
+
 export interface AgendaAdminScope extends SubjectAdminScope {
   agendaId: string
+  commissionId: string | null
+  commissionSlug: string | null
 }
 
 export interface EventoAdminScope extends AgendaAdminScope {
@@ -358,6 +383,12 @@ export async function requireYearAdminForAgendaId(
     where: { id: agendaId },
     select: {
       id: true,
+      commissionId: true,
+      commission: {
+        select: {
+          slug: true,
+        },
+      },
       subject: {
         select: {
           id: true,
@@ -373,6 +404,8 @@ export async function requireYearAdminForAgendaId(
     agenda
       ? {
           agendaId: agenda.id,
+          commissionId: agenda.commissionId,
+          commissionSlug: agenda.commission?.slug ?? null,
           subjectId: agenda.subject.id,
           subjectSlug: agenda.subject.slug,
           yearId: agenda.subject.year.id,
@@ -393,6 +426,12 @@ export async function requireYearAdminForEventoId(
       agenda: {
         select: {
           id: true,
+          commissionId: true,
+          commission: {
+            select: {
+              slug: true,
+            },
+          },
           subject: {
             select: {
               id: true,
@@ -411,10 +450,46 @@ export async function requireYearAdminForEventoId(
       ? {
           eventoId: evento.id,
           agendaId: evento.agenda.id,
+          commissionId: evento.agenda.commissionId,
+          commissionSlug: evento.agenda.commission?.slug ?? null,
           subjectId: evento.agenda.subject.id,
           subjectSlug: evento.agenda.subject.slug,
           yearId: evento.agenda.subject.year.id,
           yearSlug: evento.agenda.subject.year.slug,
+        }
+      : null,
+  )
+}
+
+export async function requireYearAdminForCommissionId(
+  commissionId: string,
+): Promise<CommissionAdminScope | null> {
+  const admin = await requireAnyAdmin()
+  const commission = await prisma.commission.findUnique({
+    where: { id: commissionId },
+    select: {
+      id: true,
+      slug: true,
+      subject: {
+        select: {
+          id: true,
+          slug: true,
+          year: { select: { id: true, slug: true } },
+        },
+      },
+    },
+  })
+
+  return requireYearAdminForScope(
+    admin,
+    commission
+      ? {
+          commissionId: commission.id,
+          commissionSlug: commission.slug,
+          subjectId: commission.subject.id,
+          subjectSlug: commission.subject.slug,
+          yearId: commission.subject.year.id,
+          yearSlug: commission.subject.year.slug,
         }
       : null,
   )

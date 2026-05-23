@@ -1,20 +1,16 @@
 import Link from 'next/link'
-import { Shield, Layers } from 'lucide-react'
+import { Shield } from 'lucide-react'
+import { ConfigButton } from '@/components/shell/ConfigButton'
 import { getCareer, getUpcomingEventsCrossYear } from '@/lib/queries'
-import { getYearColorClasses } from '@/lib/yearColors'
 import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
 import { AnimateIn } from '@/components/ui/AnimateIn'
-import { cn } from '@/lib/utils'
 import { AdminControls } from '@/components/admin/AdminControls'
-import {
-  AddYearButton,
-  YearAdminBar,
-  SubjectAdminRow,
-  AddSubjectButton,
-} from '@/components/admin/HomeAdminOverlay'
+import { AddYearButton } from '@/components/admin/HomeAdminOverlay'
 import { MobileHome } from '@/components/mobile/home/MobileHome'
 import { MobileShell } from '@/components/mobile/shell/MobileShell'
+import { HomeYearsGrid } from '@/components/home/HomeYearsGrid'
+import { HomeSidebar } from '@/components/home/HomeSidebar'
 export const revalidate = 300
 
 export default async function HomePage() {
@@ -29,13 +25,16 @@ export default async function HomePage() {
         <div className="hidden lg:block">
           <DashboardShell
             topbar={
-              <Link
-                href="/admin"
-                className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-              >
-                <Shield className="h-4 w-4" />
-                Admin
-              </Link>
+              <div className="flex items-center gap-2">
+                <ConfigButton />
+                <Link
+                  href="/admin"
+                  className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+                >
+                  <Shield className="h-4 w-4" />
+                  Admin
+                </Link>
+              </div>
             }
             sidebar={
               <Sidebar
@@ -76,48 +75,60 @@ export default async function HomePage() {
     )
   }
 
-  const upcomingEvents = upcomingEventsRaw.map((e) => ({
-    id: e.id,
-    titulo: e.titulo,
-    fecha: e.fecha,
-    tipo: e.tipoEvento.nombre,
-    subjectSlug: e.agenda?.subject?.slug ?? '',
-    subjectNombre: e.agenda?.subject?.nombre ?? '',
-  })).filter((e) => e.subjectSlug)
+  const subjectYearSlugBySlug = new Map(
+    career.years.flatMap((year) =>
+      year.subjects.map((subject) => [subject.slug, year.slug] as const),
+    ),
+  )
 
-  const sidebarItems = career.years.map((year, index) => {
-    const colors = getYearColorClasses(year.slug)
+  const upcomingEvents = upcomingEventsRaw.reduce<
+    Array<{
+      id: string
+      titulo: string
+      fecha: Date
+      tipo: string
+      subjectSlug: string
+      subjectNombre: string
+      yearSlug: string | null
+    }>
+  >((acc, event) => {
+    const subjectSlug = event.agenda?.subject?.slug ?? ''
 
-    return {
-      id: year.id,
-      href: `/year/${year.slug}`,
-      label: year.nombre,
-      badge: String(index + 1),
-      meta: `${year.subjects.length} materias`,
-      badgeClassName: colors.progressClassName + ' text-white',
+    if (!subjectSlug) {
+      return acc
     }
-  })
+
+    acc.push({
+      id: event.id,
+      titulo: event.titulo,
+      fecha: event.fecha,
+      tipo: event.tipoEvento.nombre,
+      subjectSlug,
+      subjectNombre: event.agenda?.subject?.nombre ?? '',
+      yearSlug: subjectYearSlugBySlug.get(subjectSlug) ?? null,
+    })
+
+    return acc
+  }, [])
 
   return (
     <>
       <div className="hidden lg:block">
         <DashboardShell
           topbar={
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-            >
-              <Shield className="h-4 w-4" />
-              Admin
-            </Link>
+            <div className="flex items-center gap-2">
+              <ConfigButton />
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+              >
+                <Shield className="h-4 w-4" />
+                Admin
+              </Link>
+            </div>
           }
           sidebar={
-            <Sidebar
-              eyebrow="CARRERA"
-              title={career.nombre}
-              secondaryEyebrow="AÑOS ACADÉMICOS"
-              items={sidebarItems}
-            />
+            <HomeSidebar careerName={career.nombre} years={career.years} />
           }
           mainClassName="space-y-12"
         >
@@ -141,85 +152,7 @@ export default async function HomePage() {
                 </AdminControls>
               </div>
 
-              <div className="stagger-children grid gap-4 md:grid-cols-3 xl:grid-cols-5">
-                {career.years.map((year, index) => {
-                  const colors = getYearColorClasses(year.slug)
-
-                  return (
-                    <div
-                      key={year.id}
-                      id={`year-${year.slug}`}
-                      className="flex flex-col overflow-hidden rounded bg-surface-1"
-                    >
-                      <Link href={`/year/${year.slug}`} className="group block">
-                        <div className={cn('px-5 py-4 transition-opacity group-hover:opacity-90', colors.progressClassName)}>
-                          <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-white/90">
-                            Año {index + 1}
-                          </p>
-                          <h3 className="mt-1 text-base font-bold text-white">
-                            {year.nombre}
-                          </h3>
-                        </div>
-                      </Link>
-
-                      <ul className="flex flex-col">
-                        {year.subjects.map((subject, subjectIndex) => (
-                          <li
-                            key={subject.id}
-                            className={cn(
-                              subjectIndex !== year.subjects.length - 1 &&
-                                'border-b border-white/5',
-                            )}
-                          >
-                            <Link
-                              href={`/materia/${subject.slug}`}
-                              className="group flex items-center gap-3 px-5 py-4 transition-colors hover:bg-white/5"
-                            >
-                              <Layers className="h-[14px] w-[14px] shrink-0 text-white/20 transition-colors group-hover:text-white/40" />
-                              <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-white/60 transition-colors group-hover:text-white">
-                                {subject.nombre}
-                              </span>
-                              <AdminControls yearId={year.id}>
-                                <SubjectAdminRow
-                                  subject={{
-                                    id: subject.id,
-                                    slug: subject.slug,
-                                    nombre: subject.nombre,
-                                    descripcion: subject.descripcion,
-                                    driveUrl: subject.driveUrl,
-                                  }}
-                                  yearId={year.id}
-                                />
-                              </AdminControls>
-                            </Link>
-                          </li>
-                        ))}
-                        <AdminControls yearId={year.id}>
-                          <li>
-                            <AddSubjectButton yearId={year.id} />
-                          </li>
-                        </AdminControls>
-                      </ul>
-
-                      <AdminControls requireGlobal>
-                        <YearAdminBar
-                          year={{
-                            id: year.id,
-                            slug: year.slug,
-                            nombre: year.nombre,
-                            orden: index + 1,
-                            subjects: year.subjects.map((s) => ({
-                              id: s.id,
-                              slug: s.slug,
-                              nombre: s.nombre,
-                            })),
-                          }}
-                        />
-                      </AdminControls>
-                    </div>
-                  )
-                })}
-              </div>
+              <HomeYearsGrid years={career.years} />
             </section>
           </AnimateIn>
         </DashboardShell>

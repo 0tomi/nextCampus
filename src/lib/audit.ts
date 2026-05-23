@@ -7,6 +7,8 @@ export const AUDIT_ACTIONS = {
   SUBJECT_DRIVE_UPDATED: 'SUBJECT_DRIVE_UPDATED',
   SUBJECT_PLAYLIST_UPDATED: 'SUBJECT_PLAYLIST_UPDATED',
 
+  COMMISSION_CREATED: 'COMMISSION_CREATED',
+
   APUNTE_CREATED: 'APUNTE_CREATED',
   APUNTE_UPDATED: 'APUNTE_UPDATED',
   APUNTE_DELETED: 'APUNTE_DELETED',
@@ -31,6 +33,7 @@ export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
 
 export type AuditEntityType =
   | 'subject'
+  | 'commission'
   | 'apunte'
   | 'evento'
   | 'year'

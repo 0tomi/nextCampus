@@ -6,6 +6,7 @@ import { AdminControls } from './AdminControls'
 import { EventModal } from './EventModal'
 import { YearModal } from './YearModal'
 import { ConfirmDeleteYearModal } from './ConfirmDeleteModal'
+import type { CommissionOption } from '@/lib/commission-preferences'
 
 interface TipoEvento {
   id: string
@@ -17,6 +18,7 @@ interface Subject {
   slug: string
   nombre: string
   agendaId: string
+  commissions: readonly CommissionOption[]
 }
 
 interface YearData {

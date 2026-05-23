@@ -1,13 +1,13 @@
 'use server'
 
 import { revalidatePath, revalidateTag as revalidateTagRaw } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import {
   requireGeneralAdmin,
   requireYearAdminForAgendaId,
   requireYearAdminForApunteId,
+  requireYearAdminForCommissionId,
   requireYearAdminForEventoId,
   requireYearAdminForSubjectId,
   requireYearAdminForSubjectSlug,
@@ -54,37 +54,113 @@ async function revalidateSubjectContent(subjectSlug: string): Promise<void> {
   revalidatePath(`/materia/${subjectSlug}/quiz`)
   const subject = await prisma.subject.findUnique({
     where: { slug: subjectSlug },
-    select: { year: { select: { slug: true } } },
+    select: {
+      year: { select: { slug: true } },
+      commissions: {
+        select: { slug: true },
+      },
+    },
   })
   if (subject?.year?.slug) {
     revalidateTag(queryTags.year(subject.year.slug))
     revalidatePath(`/year/${subject.year.slug}`)
     revalidatePath(`/year/${subject.year.slug}/calendario`)
+    revalidatePath(`/year/${subject.year.slug}/${subjectSlug}`)
+
+    for (const commission of subject.commissions) {
+      revalidatePath(`/year/${subject.year.slug}/${subjectSlug}/${commission.slug}`)
+    }
   }
 }
 
+class ActionInputError extends Error {}
+
+const optionalEntityIdSchema = z.preprocess(
+  (value) => {
+    if (typeof value !== 'string') return value
+
+    const trimmed = value.trim()
+    return trimmed === '' ? null : trimmed
+  },
+  z.string().min(1).nullable(),
+)
+
 const eventoSchema = z.object({
-  agendaId: z.string().min(1),
-  tipoEventoId: z.string().min(1),
-  titulo: z.string().min(1).max(200),
+  agendaId: z.string().trim().min(1),
+  commissionId: optionalEntityIdSchema,
+  tipoEventoId: z.string().trim().min(1),
+  titulo: z.string().trim().min(1).max(200),
   descripcionHtml: z.string().max(20000).default(''),
   fecha: z.coerce.date(),
 })
 
+async function resolveAgendaTarget(input: {
+  agendaId: string
+  commissionId: string | null
+}) {
+  const agendaScope = await requireYearAdminForAgendaId(input.agendaId)
+  if (!agendaScope) {
+    throw new ActionInputError('No encontramos la agenda seleccionada.')
+  }
+
+  if (!input.commissionId) {
+    return agendaScope
+  }
+
+  const commissionScope = await requireYearAdminForCommissionId(input.commissionId)
+  if (!commissionScope) {
+    throw new ActionInputError('No encontramos la comisión seleccionada.')
+  }
+
+  if (commissionScope.subjectId !== agendaScope.subjectId) {
+    throw new ActionInputError('La comisión elegida no pertenece a esta materia.')
+  }
+
+  const targetAgenda = await prisma.agenda.findFirst({
+    where: {
+      subjectId: agendaScope.subjectId,
+      commissionId: commissionScope.commissionId,
+    },
+    select: {
+      id: true,
+      commissionId: true,
+      commission: {
+        select: {
+          slug: true,
+        },
+      },
+    },
+  })
+
+  if (!targetAgenda) {
+    throw new ActionInputError('La comisión elegida todavía no tiene agenda propia.')
+  }
+
+  return {
+    ...agendaScope,
+    agendaId: targetAgenda.id,
+    commissionId: targetAgenda.commissionId,
+    commissionSlug: targetAgenda.commission?.slug ?? commissionScope.commissionSlug,
+  }
+}
+
 export async function createEvento(formData: FormData): Promise<void> {
   const data = eventoSchema.parse({
     agendaId: formData.get('agendaId'),
+    commissionId: formData.get('commissionId'),
     tipoEventoId: formData.get('tipoEventoId'),
     titulo: formData.get('titulo'),
     descripcionHtml: formData.get('descripcionHtml') ?? '',
     fecha: formData.get('fecha'),
   })
-  const scope = await requireYearAdminForAgendaId(data.agendaId)
-  if (!scope) throw new Error('Agenda no encontrada')
+  const scope = await resolveAgendaTarget({
+    agendaId: data.agendaId,
+    commissionId: data.commissionId,
+  })
 
   const evento = await prisma.evento.create({
     data: {
-      agendaId: data.agendaId,
+      agendaId: scope.agendaId,
       tipoEventoId: data.tipoEventoId,
       titulo: data.titulo,
       descripcionHtml: sanitizeRichHtml(data.descripcionHtml),
@@ -102,6 +178,7 @@ export async function createEvento(formData: FormData): Promise<void> {
       fecha: evento.fecha.toISOString(),
       subjectSlug: scope.subjectSlug,
       yearSlug: scope.yearSlug,
+      ...(scope.commissionSlug ? { commissionSlug: scope.commissionSlug } : {}),
     },
   })
 }
@@ -122,6 +199,9 @@ export async function createEventoAction(
   } catch (err) {
     if (err instanceof z.ZodError) {
       return { ok: false, message: err.issues[0].message }
+    }
+    if (err instanceof ActionInputError) {
+      return { ok: false, message: err.message }
     }
     return { ok: false, message: 'No se pudo crear el evento. Intentá de nuevo.' }
   }
@@ -166,39 +246,54 @@ export async function updateEventoAction(
     const id = z.string().min(1).parse(formData.get('id'))
     const data = eventoSchema.parse({
       agendaId: formData.get('agendaId'),
+      commissionId: formData.get('commissionId'),
       tipoEventoId: formData.get('tipoEventoId'),
       titulo: formData.get('titulo'),
       descripcionHtml: formData.get('descripcionHtml') ?? '',
       fecha: formData.get('fecha'),
     })
-    const scope = await requireYearAdminForEventoId(id)
-    if (!scope) return { ok: false, message: 'No tenés permisos para modificar este evento.' }
+    const currentScope = await requireYearAdminForEventoId(id)
+    if (!currentScope) return { ok: false, message: 'No encontramos el evento que querés editar.' }
+
+    const targetScope = await resolveAgendaTarget({
+      agendaId: data.agendaId,
+      commissionId: data.commissionId,
+    })
+
+    if (targetScope.subjectId !== currentScope.subjectId) {
+      return { ok: false, message: 'No podés mover un evento a otra materia.' }
+    }
 
     await prisma.evento.update({
       where: { id },
       data: {
+        agendaId: targetScope.agendaId,
         tipoEventoId: data.tipoEventoId,
         titulo: data.titulo,
         descripcionHtml: sanitizeRichHtml(data.descripcionHtml),
         fecha: data.fecha,
       },
     })
-    await revalidateSubjectContent(scope.subjectSlug)
+    await revalidateSubjectContent(currentScope.subjectSlug)
     await recordAudit({
-      userId: scope.admin.id,
+      userId: currentScope.admin.id,
       action: AUDIT_ACTIONS.EVENTO_UPDATED,
       entityType: 'evento',
       entityId: id,
       detail: {
         titulo: data.titulo,
         fecha: data.fecha.toISOString(),
-        subjectSlug: scope.subjectSlug,
+        subjectSlug: currentScope.subjectSlug,
+        ...(targetScope.commissionSlug ? { commissionSlug: targetScope.commissionSlug } : {}),
       },
     })
     return { ok: true, message: 'Evento actualizado correctamente.' }
   } catch (err) {
     if (err instanceof z.ZodError) {
       return { ok: false, message: err.issues[0].message }
+    }
+    if (err instanceof ActionInputError) {
+      return { ok: false, message: err.message }
     }
     return { ok: false, message: 'No se pudo actualizar el evento. Intentá de nuevo.' }
   }
@@ -717,11 +812,26 @@ export interface SubjectActionState {
   message: string
 }
 
+export interface CommissionActionState {
+  ok: boolean
+  message: string
+}
+
 const subjectSchema = z.object({
   nombre: z.string().trim().min(1, 'El nombre es obligatorio').max(200),
   descripcion: z.string().trim().max(500).default(''),
   driveUrl: z.string().trim().url('El enlace de Drive debe ser una URL válida').or(z.literal('')).nullable().optional(),
 })
+
+const commissionSchema = z.object({
+  subjectId: z.string().trim().min(1, 'La materia es obligatoria.'),
+  nombre: z.string().trim().min(1, 'El nombre de la comisión es obligatorio.').max(120),
+})
+
+const DEFAULT_SUBJECT_COMMISSION = {
+  slug: 'comision-1',
+  nombre: 'Comisión 1',
+} as const
 
 export async function createSubjectAction(
   _prev: SubjectActionState,
@@ -753,13 +863,31 @@ export async function createSubjectAction(
   const base = slugify(nombre)
   const slug = uniqueSlug(base, takenSlugs)
 
-  // Crear materia + Agenda 1:1 en una transacción
+  // Crear materia + agenda general + comisión inicial + agenda específica en una transacción
   const subject = await prisma.$transaction(async (tx) => {
     const created = await tx.subject.create({
       data: { nombre, slug, descripcion, driveUrl: driveUrl || null, yearId },
       select: { id: true },
     })
+
     await tx.agenda.create({ data: { subjectId: created.id } })
+
+    const commission = await tx.commission.create({
+      data: {
+        subjectId: created.id,
+        slug: DEFAULT_SUBJECT_COMMISSION.slug,
+        nombre: DEFAULT_SUBJECT_COMMISSION.nombre,
+      },
+      select: { id: true },
+    })
+
+    await tx.agenda.create({
+      data: {
+        subjectId: created.id,
+        commissionId: commission.id,
+      },
+    })
+
     return created
   })
 
@@ -776,6 +904,71 @@ export async function createSubjectAction(
     detail: { nombre, slug, yearSlug: year.slug },
   })
   return { ok: true, message: 'Materia creada correctamente.' }
+}
+
+export async function createCommissionAction(
+  _prev: CommissionActionState,
+  formData: FormData,
+): Promise<CommissionActionState> {
+  const parsed = commissionSchema.safeParse({
+    subjectId: formData.get('subjectId'),
+    nombre: formData.get('nombre'),
+  })
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0].message }
+  }
+
+  const { subjectId, nombre } = parsed.data
+  const scope = await requireYearAdminForSubjectId(subjectId)
+  if (!scope) return { ok: false, message: 'Materia no encontrada.' }
+
+  const commission = await prisma.$transaction(async (tx) => {
+    const existingSlugs = await tx.commission.findMany({
+      where: { subjectId },
+      select: { slug: true },
+    })
+    const takenSlugs = new Set(existingSlugs.map((item) => item.slug))
+    const base = slugify(nombre)
+    const slug = uniqueSlug(base, takenSlugs)
+
+    const created = await tx.commission.create({
+      data: {
+        subjectId,
+        nombre,
+        slug,
+      },
+      select: {
+        id: true,
+        slug: true,
+        nombre: true,
+      },
+    })
+
+    await tx.agenda.create({
+      data: {
+        subjectId,
+        commissionId: created.id,
+      },
+    })
+
+    return created
+  })
+
+  await revalidateSubjectContent(scope.subjectSlug)
+  await recordAudit({
+    userId: scope.admin.id,
+    action: AUDIT_ACTIONS.COMMISSION_CREATED,
+    entityType: 'commission',
+    entityId: commission.id,
+    detail: {
+      nombre: commission.nombre,
+      slug: commission.slug,
+      subjectSlug: scope.subjectSlug,
+      yearSlug: scope.yearSlug,
+    },
+  })
+
+  return { ok: true, message: 'Comisión creada correctamente.' }
 }
 
 const updateSubjectSchema = subjectSchema.extend({

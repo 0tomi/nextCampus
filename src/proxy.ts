@@ -1,7 +1,21 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { env } from '@/lib/env'
+import {
+  isAuthSessionMissingError,
+  isInvalidRefreshTokenError,
+  isSupabaseAuthCookie,
+} from '@/lib/supabase/auth-errors'
 import { apiRatelimit, loginRatelimit, getClientIp } from '@/lib/ratelimit'
+
+function clearSupabaseAuthCookies(request: NextRequest, response: NextResponse) {
+  for (const cookie of request.cookies.getAll()) {
+    if (!isSupabaseAuthCookie(cookie.name)) continue
+
+    request.cookies.delete(cookie.name)
+    response.cookies.delete(cookie.name)
+  }
+}
 
 // Inyecta CSP compatible con SRI, aplica rate limiting en /admin y /api,
 // y protege /admin/** (salvo /admin/login) con auth check de Supabase.
@@ -59,9 +73,14 @@ export async function proxy(request: NextRequest) {
 
   let response = NextResponse.next()
 
-  // El check de Supabase solo corre en /admin/** para evitar latencia en rutas
-  // públicas. La CSP y el rate limit ya se aplicaron arriba.
-  if (pathname.startsWith('/admin')) {
+  // Solo consultamos Supabase en /admin/** o cuando ya hay cookies auth de
+  // Supabase presentes. Eso permite limpiar sesiones rotas también en rutas
+  // públicas sin pagar el costo en visitantes anónimos.
+  const hasSupabaseAuthCookies = request.cookies.getAll().some((cookie) =>
+    isSupabaseAuthCookie(cookie.name),
+  )
+
+  if (pathname.startsWith('/admin') || hasSupabaseAuthCookies) {
     const supabase = createServerClient(
       env.NEXT_PUBLIC_SUPABASE_URL,
       env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
@@ -83,9 +102,30 @@ export async function proxy(request: NextRequest) {
       },
     )
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    let user = null
+    try {
+      const result = await supabase.auth.getUser()
+
+      if (result.error) {
+        if (isAuthSessionMissingError(result.error)) {
+          user = null
+        } else if (isInvalidRefreshTokenError(result.error)) {
+          clearSupabaseAuthCookies(request, response)
+        } else {
+          throw result.error
+        }
+      }
+
+      user = result.data.user
+    } catch (error) {
+      if (isAuthSessionMissingError(error)) {
+        user = null
+      } else if (isInvalidRefreshTokenError(error)) {
+        clearSupabaseAuthCookies(request, response)
+      } else {
+        throw error
+      }
+    }
 
     const isAdminArea = pathname !== '/admin/login'
     if (isAdminArea && !user) {

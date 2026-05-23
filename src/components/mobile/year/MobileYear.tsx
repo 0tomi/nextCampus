@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useMemo } from 'react'
 import { ArrowRight, ChevronRight, Calendar, Layers, Pencil, Trash2, Plus } from 'lucide-react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { YearSwitcherPill } from './YearSwitcherPill'
@@ -8,6 +9,12 @@ import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { DeleteEventoButton } from '@/components/admin/SubjectPageAdminOverlay'
+import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
+import {
+  filterEventsByPreferredCommission,
+  type CommissionOption,
+} from '@/lib/commission-preferences'
+import { usePreferredCommissionMap } from '@/components/commissions/usePreferredCommission'
 
 interface YearForMobile {
   id: string
@@ -17,7 +24,8 @@ interface YearForMobile {
     id: string
     slug: string
     nombre: string
-    agenda: { eventos: Array<{ id: string; titulo: string; fecha: Date | string; tipoEvento: { nombre: string } }> } | null
+    commissions: CommissionOption[]
+    agenda: { eventos: Array<{ id: string; titulo: string; fecha: Date | string; tipoEvento: { nombre: string }; commissionId: string | null; commissionSlug: string | null; commissionNombre: string | null }> } | null
   }>
   career: { nombre: string }
 }
@@ -33,9 +41,14 @@ interface NextEvent {
   titulo: string
   fecha: Date | string
   tipo: string
+  subjectId: string
   subjectSlug: string
   subjectNombre: string
+  materiaNombre: string
   descripcionHtml?: string | null
+  commissionId?: string | null
+  commissionSlug?: string | null
+  commissionNombre?: string | null
 }
 
 export function MobileYear({
@@ -50,9 +63,55 @@ export function MobileYear({
   careerName: string
 }) {
   const colors = getYearColorClasses(year.slug)
+  const preferredBySubject = usePreferredCommissionMap(year.subjects)
   const yearIndex = allYears.findIndex(y => y.slug === year.slug)
   const yearNumber = yearIndex >= 0 ? yearIndex + 1 : 1
-  const eventCount = year.subjects.reduce((acc, s) => acc + (s.agenda?.eventos.length ?? 0), 0)
+
+  const subjectsById = useMemo(
+    () => new Map(year.subjects.map((subject) => [subject.id, subject] as const)),
+    [year.subjects],
+  )
+  const subjectsBySlug = useMemo(
+    () => new Map(year.subjects.map((subject) => [subject.slug, subject] as const)),
+    [year.subjects],
+  )
+
+  const filteredSubjects = useMemo(
+    () =>
+      year.subjects.map((subject) => ({
+        ...subject,
+        agenda: subject.agenda
+          ? {
+              ...subject.agenda,
+              eventos: filterEventsByPreferredCommission(
+                subject.agenda.eventos,
+                preferredBySubject[subject.slug] ?? null,
+              ),
+            }
+          : null,
+      })),
+    [preferredBySubject, year.subjects],
+  )
+
+  const filteredNextEvents = useMemo(
+    () =>
+      nextEvents
+        .filter((event) => {
+          const subject =
+            subjectsById.get(event.subjectId) ?? subjectsBySlug.get(event.subjectSlug) ?? null
+
+          if (!subject) return true
+
+          return filterEventsByPreferredCommission(
+            [event],
+            preferredBySubject[subject.slug] ?? null,
+          ).length > 0
+        })
+        .slice(0, 5),
+    [nextEvents, preferredBySubject, subjectsById, subjectsBySlug],
+  )
+
+  const eventCount = filteredSubjects.reduce((acc, subject) => acc + (subject.agenda?.eventos.length ?? 0), 0)
 
   const drawerYears: MobileShellDrawerYear[] = allYears.map(y => ({
     slug: y.slug,
@@ -120,7 +179,7 @@ export function MobileYear({
             </div>
           </div>
         </section>
-
+        
         {/* SWITCHER */}
         <YearSwitcherPill years={allYears} currentSlug={year.slug} />
 
@@ -143,14 +202,21 @@ export function MobileYear({
             </AdminControls>
           </div>
           <div className="px-[18px] flex flex-col gap-2.5">
-            {nextEvents.length === 0 ? (
+            {filteredNextEvents.length === 0 ? (
               <div className="bg-[#1a1a1a] border border-dashed border-white/10 rounded-lg p-4 text-sm text-white/45 text-center">
-                Por ahora no hay eventos próximos en este año.
+                Por ahora no hay eventos próximos con la selección actual.
               </div>
             ) : (
-              nextEvents.map(e => (
+              filteredNextEvents.map(e => (
                 <div key={e.id} className="relative group">
-                  <Link href={`/materia/${e.subjectSlug}`} className="block">
+                  <Link
+                    href={buildSubjectHref({
+                      yearSlug: year.slug,
+                      subjectSlug: e.subjectSlug,
+                      commissionSlug: e.commissionSlug,
+                    })}
+                    className="block"
+                  >
                     <AgendaCard fecha={e.fecha} tipo={e.tipo} titulo={`${e.titulo} · ${e.subjectNombre}`} />
                   </Link>
                   <AdminControls yearId={year.id} noWrapper>
@@ -204,10 +270,13 @@ export function MobileYear({
                 Este año todavía no tiene materias.
               </div>
             ) : (
-              year.subjects.map((s, idx) => (
+              filteredSubjects.map((s, idx) => (
                 <Link
                   key={s.id}
-                  href={`/materia/${s.slug}`}
+                  href={buildSubjectHref({
+                    yearSlug: year.slug,
+                    subjectSlug: s.slug,
+                  })}
                   className="flex items-center gap-3 p-3 rounded-xl bg-[#1a1a1a] border border-white/5 cursor-pointer hover:bg-[#1f1f1f] transition-colors"
                 >
                   <span

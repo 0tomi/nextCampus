@@ -85,7 +85,8 @@ model Subject {
   driveUrl        String?
   playlistUrl     String?
   playlistEnabled Boolean      @default(false)
-  agenda          Agenda?
+  commissions     Commission[]
+  agendas         Agenda[]
   apuntes         Apunte[]
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
@@ -94,15 +95,33 @@ model Subject {
 }
 
 // ---------------------------------------------------------------------------
-// Calendario: Agenda (1:1 materia) -> Evento -> TipoEvento
+// Calendario: Agenda (general o específica por comisión) -> Evento -> TipoEvento
 // ---------------------------------------------------------------------------
 
-model Agenda {
+model Commission {
   id        String   @id @default(cuid())
   subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  subjectId String   @unique
-  eventos   Evento[]
+  subjectId String
+  slug      String
+  nombre    String
+  agenda    Agenda?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([subjectId, slug])
+  @@index([subjectId])
+}
+
+model Agenda {
+  id           String      @id @default(cuid())
+  subject      Subject     @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subjectId    String
+  commission   Commission? @relation(fields: [commissionId], references: [id], onDelete: Cascade)
+  commissionId String?     @unique
+  eventos      Evento[]
+  createdAt    DateTime    @default(now())
+
+  @@index([subjectId])
 }
 
 /// Tipo de evento. Seed: Examen, Trabajo Práctico, Exposición. Expandible.

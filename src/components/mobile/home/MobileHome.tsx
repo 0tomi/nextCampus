@@ -1,9 +1,15 @@
+'use client'
+
 import Link from 'next/link'
+import { SlidersHorizontal } from 'lucide-react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { YearCarousel } from './YearCarousel'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { AddYearButton } from '@/components/admin/HomeAdminOverlay'
+import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
+import { usePreferences } from '@/hooks/usePreferences'
+import { isYearVisible, isSubjectVisible } from '@/lib/preferences'
 
 interface CareerForMobile {
   nombre: string
@@ -29,6 +35,7 @@ interface UpcomingEvent {
   tipo: string
   subjectSlug: string
   subjectNombre: string
+  yearSlug: string | null
 }
 
 export function MobileHome({
@@ -38,12 +45,63 @@ export function MobileHome({
   career: CareerForMobile
   upcomingEvents: UpcomingEvent[]
 }) {
-  const totalSubjects = career.years.reduce((acc, y) => acc + y.subjects.length, 0)
-  const drawerYears: MobileShellDrawerYear[] = career.years.map((y) => ({
+  const { prefs, isHydrated } = usePreferences()
+
+  const visibleYears = !isHydrated
+    ? career.years
+    : career.years
+        .filter((y) => isYearVisible(y.slug, prefs))
+        .map((y) => ({
+          ...y,
+          subjects: y.subjects.filter((s) => isSubjectVisible(y.slug, s.slug, prefs)),
+        }))
+
+  const filteredUpcomingEvents = !isHydrated
+    ? upcomingEvents
+    : upcomingEvents.filter((e) => {
+        if (!e.yearSlug) return false
+        if (!isYearVisible(e.yearSlug, prefs)) return false
+        if (!isSubjectVisible(e.yearSlug, e.subjectSlug, prefs)) return false
+        return true
+      })
+
+  const totalSubjects = visibleYears.reduce((acc, y) => acc + y.subjects.length, 0)
+
+  const drawerYears: MobileShellDrawerYear[] = visibleYears.map((y) => ({
     slug: y.slug,
     nombre: y.nombre,
     subjectsCount: y.subjects.length,
   }))
+
+  if (isHydrated && visibleYears.length === 0) {
+    return (
+      <MobileShell
+        title="NextCampus"
+        subtitle={career.nombre}
+        drawerYears={[]}
+        careerName={career.nombre}
+      >
+        <div className="px-[18px] pt-6 flex flex-col gap-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
+            Inicio personalizado
+          </p>
+          <h2 className="text-2xl font-bold text-white">
+            No tenés años o materias visibles
+          </h2>
+          <p className="text-sm leading-relaxed text-white/55">
+            Elegí los que querés ver en tu inicio desde la pantalla de personalización.
+          </p>
+          <Link
+            href="/configurar"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-uader-red px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-uader-red-light self-start"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            Configurar
+          </Link>
+        </div>
+      </MobileShell>
+    )
+  }
 
   return (
     <MobileShell
@@ -64,9 +122,9 @@ export function MobileHome({
 
         {/* STATS — 3 cards 1fr */}
         <section className="px-[18px] grid grid-cols-3 gap-2">
-          <StatTile label="Años" value={career.years.length} />
+          <StatTile label="Años" value={visibleYears.length} />
           <StatTile label="Materias" value={totalSubjects} />
-          <StatTile label="Próximos" value={upcomingEvents.length} />
+          <StatTile label="Próximos" value={filteredUpcomingEvents.length} />
         </section>
 
         {/* CAROUSEL */}
@@ -80,7 +138,7 @@ export function MobileHome({
               <AddYearButton />
             </AdminControls>
           </div>
-          <YearCarousel years={career.years} />
+          <YearCarousel years={visibleYears} />
         </section>
 
         {/* PRÓXIMOS EVENTOS */}
@@ -90,11 +148,17 @@ export function MobileHome({
             <h2 className="mt-1 text-lg font-black text-white">Próximos eventos</h2>
           </div>
           <div className="px-[18px] flex flex-col gap-2.5">
-            {upcomingEvents.length === 0 ? (
+            {filteredUpcomingEvents.length === 0 ? (
               <EmptyAgenda />
             ) : (
-              upcomingEvents.map((e) => (
-                <Link key={e.id} href={`/materia/${e.subjectSlug}`}>
+              filteredUpcomingEvents.map((e) => (
+                <Link
+                  key={e.id}
+                  href={buildSubjectHref({
+                    yearSlug: e.yearSlug,
+                    subjectSlug: e.subjectSlug,
+                  })}
+                >
                   <AgendaCard
                     fecha={e.fecha}
                     tipo={e.tipo}
