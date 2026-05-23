@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { SignOutButton } from '@/components/admin/SignOutButton'
 import { CampusHeaderBrand } from '@/components/shell/CampusHeaderBrand'
+import { Mascot } from '@/components/ui/Mascot'
 
 interface DashboardShellProps {
   brand?: ReactNode
@@ -23,10 +24,16 @@ export function DashboardShell({
   className,
   mainClassName,
 }: DashboardShellProps) {
+  const resolvedHeaderOverlay = headerOverlay === undefined ? (
+    <div className="pointer-events-none absolute bottom-[-1px] left-[332px] z-10 hidden lg:block">
+      <Mascot size={60} />
+    </div>
+  ) : headerOverlay
+
   return (
     <div className={cn('min-h-screen bg-surface-0 text-white', className)}>
       <header className="sticky top-0 z-40 h-16 border-b border-white/5 bg-surface-1">
-        {headerOverlay}
+        {resolvedHeaderOverlay}
         <div className="flex h-full items-center justify-between gap-4 px-6">
           {brand ?? (
             <CampusHeaderBrand />
