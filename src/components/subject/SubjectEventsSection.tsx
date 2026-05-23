@@ -118,19 +118,27 @@ export function SubjectEventsSection({
               </AdminTriggerButton>
             </AdminControls>
             {!activeCommission ? (
-              <CommissionSelectField
-                id="subject-preferred-commission"
-                value={preferredCommissionId ?? ALL_COMMISSIONS_VALUE}
-                commissions={commissions}
-                onChange={(value) => {
-                  const nextCommissionId = normalizePreferredCommissionId(value)
-                  writePreferredCommissionId(subject.slug, nextCommissionId)
-                }}
-              />
+              <>
+                <div className="hidden sm:block h-4 w-px bg-white/10" />
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-semibold text-white/40">
+                    Seleccionar comisión:
+                  </span>
+                  <CommissionSelectField
+                    id="subject-preferred-commission"
+                    value={preferredCommissionId ?? ALL_COMMISSIONS_VALUE}
+                    commissions={commissions}
+                    onChange={(value) => {
+                      const nextCommissionId = normalizePreferredCommissionId(value)
+                      writePreferredCommissionId(subject.slug, nextCommissionId)
+                    }}
+                  />
+                </div>
+              </>
             ) : null}
           </div>
         </div>
-        <div className="w-full max-w-sm sm:text-right">
+        <div className="flex flex-col gap-2 items-start sm:items-end">
           <p className="text-sm text-white/48">{description}</p>
         </div>
       </div>
