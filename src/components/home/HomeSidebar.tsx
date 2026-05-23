@@ -3,10 +3,11 @@
 import { Sidebar } from '@/components/shell/Sidebar'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { usePreferences } from '@/hooks/usePreferences'
-import { isYearVisible } from '@/lib/preferences'
+import { isYearVisible, type UserPreferences } from '@/lib/preferences'
 
 interface HomeSidebarProps {
   careerName: string
+  initialPrefs: UserPreferences | null
   years: Array<{
     id: string
     slug: string
@@ -15,14 +16,13 @@ interface HomeSidebarProps {
   }>
 }
 
-export function HomeSidebar({ careerName, years }: HomeSidebarProps) {
-  const { prefs, isHydrated } = usePreferences()
+export function HomeSidebar({ careerName, initialPrefs, years }: HomeSidebarProps) {
+  const { prefs, isHydrated } = usePreferences(initialPrefs)
+  const effectivePrefs = isHydrated ? prefs : initialPrefs
 
-  const visibleYears = !isHydrated
-    ? years.map((y, i) => ({ year: y, originalIndex: i }))
-    : years
-        .map((y, i) => ({ year: y, originalIndex: i }))
-        .filter(({ year }) => isYearVisible(year.slug, prefs))
+  const visibleYears = years
+    .map((y, i) => ({ year: y, originalIndex: i }))
+    .filter(({ year }) => isYearVisible(year.slug, effectivePrefs))
 
   const items = visibleYears.map(({ year, originalIndex }) => {
     const colors = getYearColorClasses(year.slug)

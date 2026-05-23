@@ -5,6 +5,7 @@ export type UserPreferences = {
 }
 
 export const PREFERENCES_KEY = 'nextcampus_user_preferences_v1'
+const PREFERENCES_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 export const EMPTY_PREFERENCES: UserPreferences = {
   hiddenYears: [],
@@ -45,6 +46,26 @@ function parsePreferences(raw: string | null): UserPreferences | null {
   }
 }
 
+export function readPreferencesFromCookie(raw: string | null): UserPreferences | null {
+  if (!raw) return null
+
+  try {
+    return parsePreferences(decodeURIComponent(raw))
+  } catch {
+    return null
+  }
+}
+
+function writePreferencesCookie(raw: string): void {
+  if (typeof document === 'undefined') return
+  document.cookie = `${PREFERENCES_KEY}=${encodeURIComponent(raw)}; Path=/; Max-Age=${PREFERENCES_COOKIE_MAX_AGE}; SameSite=Lax`
+}
+
+function clearPreferencesCookie(): void {
+  if (typeof document === 'undefined') return
+  document.cookie = `${PREFERENCES_KEY}=; Path=/; Max-Age=0; SameSite=Lax`
+}
+
 export function readPreferences(): UserPreferences | null {
   if (typeof window === 'undefined') return null
 
@@ -69,6 +90,7 @@ export function writePreferences(prefs: UserPreferences): void {
   try {
     const raw = JSON.stringify(prefs)
     localStorage.setItem(PREFERENCES_KEY, raw)
+    writePreferencesCookie(raw)
     cachedRawPreferences = raw
     cachedPreferences = prefs
   } catch {}
@@ -77,6 +99,7 @@ export function writePreferences(prefs: UserPreferences): void {
 export function clearPreferences(): void {
   if (typeof window === 'undefined') return
   localStorage.removeItem(PREFERENCES_KEY)
+  clearPreferencesCookie()
   cachedRawPreferences = null
   cachedPreferences = null
 }

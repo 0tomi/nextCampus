@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { Shield } from 'lucide-react'
 import { ConfigButton } from '@/components/shell/ConfigButton'
@@ -12,9 +13,15 @@ import { MobileShell } from '@/components/mobile/shell/MobileShell'
 import { HomeYearsGrid } from '@/components/home/HomeYearsGrid'
 import { HomeSidebar } from '@/components/home/HomeSidebar'
 import { Mascot } from '@/components/ui/Mascot'
+import { PREFERENCES_KEY, readPreferencesFromCookie } from '@/lib/preferences'
 export const revalidate = 300
 
 export default async function HomePage() {
+  const cookieStore = await cookies()
+  const initialPrefs = readPreferencesFromCookie(
+    cookieStore.get(PREFERENCES_KEY)?.value ?? null,
+  )
+
   const [career, upcomingEventsRaw] = await Promise.all([
     getCareer(),
     getUpcomingEventsCrossYear(6),
@@ -134,7 +141,7 @@ export default async function HomePage() {
             </div>
           }
           sidebar={
-            <HomeSidebar careerName={career.nombre} years={career.years} />
+            <HomeSidebar careerName={career.nombre} initialPrefs={initialPrefs} years={career.years} />
           }
           headerOverlay={
             <div className="pointer-events-none absolute bottom-[-1px] left-[332px] z-10 hidden lg:block">
@@ -165,13 +172,13 @@ export default async function HomePage() {
                 </AdminControls>
               </div>
 
-              <HomeYearsGrid years={career.years} />
+              <HomeYearsGrid initialPrefs={initialPrefs} years={career.years} />
             </section>
           </AnimateIn>
         </DashboardShell>
       </div>
       <div className="lg:hidden">
-        <MobileHome career={career} upcomingEvents={upcomingEvents} />
+        <MobileHome career={career} initialPrefs={initialPrefs} upcomingEvents={upcomingEvents} />
       </div>
     </>
   )

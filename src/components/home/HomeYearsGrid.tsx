@@ -5,7 +5,7 @@ import { Layers, SlidersHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { usePreferences } from '@/hooks/usePreferences'
-import { isYearVisible, isSubjectVisible } from '@/lib/preferences'
+import { isYearVisible, isSubjectVisible, type UserPreferences } from '@/lib/preferences'
 import { AdminControls } from '@/components/admin/AdminControls'
 import {
   YearAdminBar,
@@ -15,6 +15,7 @@ import {
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 
 interface HomeYearsGridProps {
+  initialPrefs: UserPreferences | null
   years: Array<{
     id: string
     slug: string
@@ -29,26 +30,25 @@ interface HomeYearsGridProps {
   }>
 }
 
-export function HomeYearsGrid({ years }: HomeYearsGridProps) {
-  const { prefs, isHydrated } = usePreferences()
+export function HomeYearsGrid({ initialPrefs, years }: HomeYearsGridProps) {
+  const { prefs, isHydrated } = usePreferences(initialPrefs)
+  const effectivePrefs = isHydrated ? prefs : initialPrefs
 
   const yearsWithIndex = years.map((y, i) => ({ year: y, originalIndex: i }))
 
-  const visibleYears = !isHydrated
-    ? yearsWithIndex
-    : yearsWithIndex
-        .filter(({ year }) => isYearVisible(year.slug, prefs))
+  const visibleYears = yearsWithIndex
+        .filter(({ year }) => isYearVisible(year.slug, effectivePrefs))
         .map(({ year, originalIndex }) => ({
           year: {
             ...year,
             subjects: year.subjects.filter((s) =>
-              isSubjectVisible(year.slug, s.slug, prefs),
+              isSubjectVisible(year.slug, s.slug, effectivePrefs),
             ),
           },
           originalIndex,
         }))
 
-  if (isHydrated && visibleYears.length === 0) {
+  if (visibleYears.length === 0) {
     return (
       <div className="flex flex-col items-start gap-4 rounded-md border border-dashed border-white/10 bg-surface-1 px-6 py-10">
         <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/40">

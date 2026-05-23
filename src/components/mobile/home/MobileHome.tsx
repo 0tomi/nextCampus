@@ -9,7 +9,7 @@ import { AdminControls } from '@/components/admin/AdminControls'
 import { AddYearButton } from '@/components/admin/HomeAdminOverlay'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { usePreferences } from '@/hooks/usePreferences'
-import { isYearVisible, isSubjectVisible } from '@/lib/preferences'
+import { isYearVisible, isSubjectVisible, type UserPreferences } from '@/lib/preferences'
 
 interface CareerForMobile {
   nombre: string
@@ -40,28 +40,27 @@ interface UpcomingEvent {
 
 export function MobileHome({
   career,
+  initialPrefs,
   upcomingEvents,
 }: {
   career: CareerForMobile
+  initialPrefs: UserPreferences | null
   upcomingEvents: UpcomingEvent[]
 }) {
-  const { prefs, isHydrated } = usePreferences()
+  const { prefs, isHydrated } = usePreferences(initialPrefs)
+  const effectivePrefs = isHydrated ? prefs : initialPrefs
 
-  const visibleYears = !isHydrated
-    ? career.years
-    : career.years
-        .filter((y) => isYearVisible(y.slug, prefs))
+  const visibleYears = career.years
+        .filter((y) => isYearVisible(y.slug, effectivePrefs))
         .map((y) => ({
           ...y,
-          subjects: y.subjects.filter((s) => isSubjectVisible(y.slug, s.slug, prefs)),
+          subjects: y.subjects.filter((s) => isSubjectVisible(y.slug, s.slug, effectivePrefs)),
         }))
 
-  const filteredUpcomingEvents = !isHydrated
-    ? upcomingEvents
-    : upcomingEvents.filter((e) => {
+  const filteredUpcomingEvents = upcomingEvents.filter((e) => {
         if (!e.yearSlug) return false
-        if (!isYearVisible(e.yearSlug, prefs)) return false
-        if (!isSubjectVisible(e.yearSlug, e.subjectSlug, prefs)) return false
+        if (!isYearVisible(e.yearSlug, effectivePrefs)) return false
+        if (!isSubjectVisible(e.yearSlug, e.subjectSlug, effectivePrefs)) return false
         return true
       })
 
@@ -73,7 +72,7 @@ export function MobileHome({
     subjectsCount: y.subjects.length,
   }))
 
-  if (isHydrated && visibleYears.length === 0) {
+  if (visibleYears.length === 0) {
     return (
       <MobileShell
         title="NextCampus"

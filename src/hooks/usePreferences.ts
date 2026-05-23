@@ -34,12 +34,8 @@ function getSnapshot(): UserPreferences | null {
   return readPreferences()
 }
 
-function getServerSnapshot(): UserPreferences | null {
-  return null
-}
-
-export function usePreferences() {
-  const prefs = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+export function usePreferences(initialPrefs: UserPreferences | null = null) {
+  const prefs = useSyncExternalStore(subscribe, getSnapshot, () => initialPrefs)
 
   const isHydrated = useSyncExternalStore(
     subscribeToHydration,
