@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Shield, Layers } from 'lucide-react'
+import { ConfigButton } from '@/components/shell/ConfigButton'
 import { getCareer, getUpcomingEventsCrossYear } from '@/lib/queries'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { DashboardShell } from '@/components/shell/DashboardShell'
@@ -30,13 +31,16 @@ export default async function HomePage() {
         <div className="hidden lg:block">
           <DashboardShell
             topbar={
-              <Link
-                href="/admin"
-                className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-              >
-                <Shield className="h-4 w-4" />
-                Admin
-              </Link>
+              <div className="flex items-center gap-2">
+                <ConfigButton />
+                <Link
+                  href="/admin"
+                  className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+                >
+                  <Shield className="h-4 w-4" />
+                  Admin
+                </Link>
+              </div>
             }
             sidebar={
               <Sidebar
@@ -131,13 +135,16 @@ export default async function HomePage() {
       <div className="hidden lg:block">
         <DashboardShell
           topbar={
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-            >
-              <Shield className="h-4 w-4" />
-              Admin
-            </Link>
+            <div className="flex items-center gap-2">
+              <ConfigButton />
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+              >
+                <Shield className="h-4 w-4" />
+                Admin
+              </Link>
+            </div>
           }
           sidebar={
             <Sidebar

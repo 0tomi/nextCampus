@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getYearColorClasses } from '@/lib/yearColors'
+import { ConfigButton } from '@/components/shell/ConfigButton'
 
 export interface MobileShellDrawerYear {
   slug: string
@@ -110,13 +111,19 @@ export function MobileShell({
             </div>
           </Link>
 
-          <Link
-            href="/admin"
-            aria-label="Administración"
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/5 hover:text-white/70"
-          >
-            <Shield size={17} strokeWidth={2} />
-          </Link>
+          <div className="flex items-center gap-1">
+            <ConfigButton
+              iconOnly
+              className="h-10 w-10 rounded-lg border-0 text-white/40 hover:text-white/70"
+            />
+            <Link
+              href="/admin"
+              aria-label="Administración"
+              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/5 hover:text-white/70"
+            >
+              <Shield size={17} strokeWidth={2} />
+            </Link>
+          </div>
         </div>
       </header>
 
