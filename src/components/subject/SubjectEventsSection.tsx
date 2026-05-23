@@ -117,22 +117,20 @@ export function SubjectEventsSection({
                 Agregar nuevo evento
               </AdminTriggerButton>
             </AdminControls>
+            {!activeCommission ? (
+              <CommissionSelectField
+                id="subject-preferred-commission"
+                value={preferredCommissionId ?? ALL_COMMISSIONS_VALUE}
+                commissions={commissions}
+                onChange={(value) => {
+                  const nextCommissionId = normalizePreferredCommissionId(value)
+                  writePreferredCommissionId(subject.slug, nextCommissionId)
+                }}
+              />
+            ) : null}
           </div>
         </div>
-        <div className="w-full max-w-sm space-y-3">
-          {!activeCommission ? (
-            <CommissionSelectField
-              id="subject-preferred-commission"
-              label="Comisión"
-              value={preferredCommissionId ?? ALL_COMMISSIONS_VALUE}
-              commissions={commissions}
-              onChange={(value) => {
-                const nextCommissionId = normalizePreferredCommissionId(value)
-                writePreferredCommissionId(subject.slug, nextCommissionId)
-              }}
-              helperText="Esta elección solo ajusta las fechas que ves acá."
-            />
-          ) : null}
+        <div className="w-full max-w-sm sm:text-right">
           <p className="text-sm text-white/48">{description}</p>
         </div>
       </div>
