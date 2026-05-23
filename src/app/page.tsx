@@ -11,6 +11,7 @@ import { MobileHome } from '@/components/mobile/home/MobileHome'
 import { MobileShell } from '@/components/mobile/shell/MobileShell'
 import { HomeYearsGrid } from '@/components/home/HomeYearsGrid'
 import { HomeSidebar } from '@/components/home/HomeSidebar'
+import { Mascot } from '@/components/ui/Mascot'
 export const revalidate = 300
 
 export default async function HomePage() {
@@ -50,14 +51,19 @@ export default async function HomePage() {
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/40">
                 Estado inicial
               </p>
-              <div className="max-w-2xl rounded-md bg-surface-1 p-6">
-                <h1 className="text-3xl font-black tracking-tight text-white">
-                  No hay datos cargados todavía.
-                </h1>
-                <p className="mt-3 text-sm leading-6 text-white/64">
-                  Todavía no se cargó la información de la carrera. Cuando esté
-                  lista, vas a ver acá los años y materias disponibles.
-                </p>
+              <div className="flex flex-col md:flex-row items-center gap-8 max-w-3xl rounded-xl border border-white/5 bg-surface-1 p-8 shadow-[0_4px_30px_rgba(0,0,0,0.3)]">
+                <div className="shrink-0">
+                  <Mascot size={150} />
+                </div>
+                <div className="space-y-3 text-center md:text-left">
+                  <h1 className="text-3xl font-black tracking-tight text-white">
+                    No hay datos cargados todavía.
+                  </h1>
+                  <p className="text-sm leading-relaxed text-white/60">
+                    Todavía no se cargó la información de la carrera. Cuando esté
+                    lista, vas a ver acá los años y materias disponibles.
+                  </p>
+                </div>
               </div>
             </AnimateIn>
           </DashboardShell>
@@ -133,13 +139,29 @@ export default async function HomePage() {
           mainClassName="space-y-12"
         >
           <AnimateIn className="space-y-10">
-            <section className="px-1 pt-2">
-              <h1 className="max-w-4xl text-4xl font-bold tracking-tight text-white sm:text-5xl">
-                {career.nombre}
-              </h1>
-              <p className="mt-4 text-base font-medium text-white/50">
-                {career.descripcion}
-              </p>
+            <section className="relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-surface-1 to-surface-2 p-6 md:p-8 shadow-[0_4px_30px_rgba(0,0,0,0.4)]">
+              {/* Luces de fondo decorativas */}
+              <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-orange-500/10 blur-[60px]" />
+              <div className="absolute -left-16 -bottom-16 h-48 w-48 rounded-full bg-amber-500/10 blur-[60px]" />
+              
+              <div className="relative flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+                <div className="max-w-2xl space-y-3">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-amber-400">
+                    FCYT · UADER
+                  </span>
+                  <h1 className="font-display text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl leading-tight">
+                    {career.nombre}
+                  </h1>
+                  {career.descripcion && (
+                    <p className="text-sm font-medium leading-relaxed text-white/50 md:text-base">
+                      {career.descripcion}
+                    </p>
+                  )}
+                </div>
+                <div className="relative shrink-0 self-center md:self-auto">
+                  <Mascot size={160} />
+                </div>
+              </div>
             </section>
 
             <section className="space-y-5">
