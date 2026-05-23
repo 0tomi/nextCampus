@@ -136,6 +136,11 @@ export default async function HomePage() {
           sidebar={
             <HomeSidebar careerName={career.nombre} years={career.years} />
           }
+          headerOverlay={
+            <div className="pointer-events-none absolute bottom-[-1px] left-[328px] z-10 hidden lg:block">
+              <Mascot size={60} />
+            </div>
+          }
           mainClassName="space-y-12"
         >
           <AnimateIn className="space-y-10">
@@ -150,7 +155,7 @@ export default async function HomePage() {
               </div>
             </section>
 
-            <section className="relative space-y-5">
+            <section className="space-y-5">
               <div className="flex items-center justify-between px-1">
                 <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/40">
                   MATERIAS POR AÑO
@@ -158,10 +163,6 @@ export default async function HomePage() {
                 <AdminControls requireGlobal>
                   <AddYearButton />
                 </AdminControls>
-              </div>
-
-              <div className="pointer-events-none absolute -top-14 right-7 z-10 hidden 2xl:block">
-                <Mascot size={86} />
               </div>
 
               <HomeYearsGrid years={career.years} />

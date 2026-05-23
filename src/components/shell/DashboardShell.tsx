@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { AdminControls } from '@/components/admin/AdminControls'
@@ -10,6 +9,7 @@ interface DashboardShellProps {
   sidebar: ReactNode
   children: ReactNode
   topbar?: ReactNode
+  headerOverlay?: ReactNode
   className?: string
   mainClassName?: string
 }
@@ -19,12 +19,14 @@ export function DashboardShell({
   sidebar,
   children,
   topbar,
+  headerOverlay,
   className,
   mainClassName,
 }: DashboardShellProps) {
   return (
     <div className={cn('min-h-screen bg-surface-0 text-white', className)}>
       <header className="sticky top-0 z-40 h-16 border-b border-white/5 bg-surface-1">
+        {headerOverlay}
         <div className="flex h-full items-center justify-between gap-4 px-6">
           {brand ?? (
             <CampusHeaderBrand />
