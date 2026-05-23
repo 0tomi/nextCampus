@@ -1,32 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
   <defs>
-    <!-- Gradiente para el cuerpo del búho (Branding del Campus) -->
+    <!-- Gradiente para el cuerpo del búho (UADER FCyT Blue) -->
     <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FBBF24" /> <!-- Amber-400 -->
-      <stop offset="100%" stop-color="#F97316" /> <!-- Orange-500 -->
+      <stop offset="0%" stop-color="#1E5A8F" /> <!-- UADER Blue Light -->
+      <stop offset="100%" stop-color="#002D5A" /> <!-- UADER Blue Dark -->
     </linearGradient>
 
-    <!-- Gradiente para la pancita -->
+    <!-- Gradiente para la pancita (Gris claro/Blanco suave en contraste) -->
     <linearGradient id="bellyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFBEB" />
-      <stop offset="100%" stop-color="#FDE68A" />
+      <stop offset="0%" stop-color="#F8FAFC" /> <!-- Slate-50 -->
+      <stop offset="100%" stop-color="#E2E8F0" /> <!-- Slate-200 -->
     </linearGradient>
 
-    <!-- Gradiente para el Birrete (Negro Premium Metálico) -->
+    <!-- Gradiente para el Birrete (Negro Metálico Premium) -->
     <linearGradient id="capBoardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#3F3F46" />
       <stop offset="100%" stop-color="#111827" />
     </linearGradient>
 
-    <!-- Gradiente para el pico -->
+    <!-- Gradiente para el pico y detalles (UADER Crimson Red) -->
     <linearGradient id="beakGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F59E0B" />
-      <stop offset="100%" stop-color="#D97706" />
+      <stop offset="0%" stop-color="#EF4444" /> <!-- Red-500 -->
+      <stop offset="100%" stop-color="#B91C1C" /> <!-- Red-700 / UADER Red -->
     </linearGradient>
 
     <!-- Filtro de Sombra Suave (Efecto Floating 3D) -->
     <filter id="soft-shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="10" stdDeviation="6" flood-color="#000000" flood-opacity="0.15" />
+      <feDropShadow dx="0" dy="10" stdDeviation="6" flood-color="#000000" flood-opacity="0.18" />
     </filter>
   </defs>
 
@@ -183,24 +183,24 @@
     <path d="M 110 120 L 70 85 L 140 108 Z" fill="url(#bodyGradient)" />
     <path d="M 290 120 L 330 85 L 260 108 Z" fill="url(#bodyGradient)" />
 
-    <!-- Patitas Lindas -->
+    <!-- Patitas Lindas (UADER Red) -->
     <!-- Pata Izquierda -->
     <g>
-      <ellipse cx="155" cy="328" rx="10" ry="6" fill="#F97316" />
-      <ellipse cx="165" cy="328" rx="10" ry="6" fill="#F97316" />
-      <ellipse cx="145" cy="326" rx="9" ry="6" fill="#EA580C" />
+      <ellipse cx="155" cy="328" rx="10" ry="6" fill="#CC0000" />
+      <ellipse cx="165" cy="328" rx="10" ry="6" fill="#CC0000" />
+      <ellipse cx="145" cy="326" rx="9" ry="6" fill="#990000" />
     </g>
     <!-- Pata Derecha -->
     <g>
-      <ellipse cx="235" cy="328" rx="10" ry="6" fill="#F97316" />
-      <ellipse cx="245" cy="328" rx="10" ry="6" fill="#F97316" />
-      <ellipse cx="255" cy="326" rx="9" ry="6" fill="#EA580C" />
+      <ellipse cx="235" cy="328" rx="10" ry="6" fill="#CC0000" />
+      <ellipse cx="245" cy="328" rx="10" ry="6" fill="#CC0000" />
+      <ellipse cx="255" cy="326" rx="9" ry="6" fill="#990000" />
     </g>
 
     <!-- Cuerpo Redondito/Cachón (Capsule) -->
     <rect x="90" y="110" width="220" height="220" rx="110" ry="110" fill="url(#bodyGradient)" />
 
-    <!-- Pancita de color crema -->
+    <!-- Pancita de color crema/blanco suave -->
     <ellipse cx="200" cy="245" rx="75" ry="60" fill="url(#bellyGradient)" />
 
     <!-- Alitas Felices -->
@@ -210,8 +210,8 @@
     <path class="right-wing" d="M 305 190 C 335 190, 355 230, 325 260 C 310 270, 295 240, 295 210 Z" fill="url(#bodyGradient)" />
 
     <!-- Parches del contorno de ojos estilo Búho Anime -->
-    <ellipse cx="148" cy="180" rx="42" ry="46" fill="#FFFBEB" opacity="0.9" />
-    <ellipse cx="252" cy="180" rx="42" ry="46" fill="#FFFBEB" opacity="0.9" />
+    <ellipse cx="148" cy="180" rx="42" ry="46" fill="#FFFBEB" opacity="0.95" />
+    <ellipse cx="252" cy="180" rx="42" ry="46" fill="#FFFBEB" opacity="0.95" />
 
     <!-- Mejillas Sonrosadas (Blush) -->
     <circle class="cheek-blush-left" cx="108" cy="210" r="10" fill="#F87171" opacity="0.25" />
@@ -221,7 +221,7 @@
     <polygon points="200,186 212,200 200,212 188,200" fill="url(#beakGradient)" />
 
     <!-- Boca / Sonrisa Morfeable (SMIL Animation) -->
-    <path d="M 192 212 Q 200 215 208 212" fill="none" stroke="#EA580C" stroke-width="3" stroke-linecap="round">
+    <path d="M 192 212 Q 200 215 208 212" fill="none" stroke="#990000" stroke-width="3" stroke-linecap="round">
       <animate 
         attributeName="d" 
         dur="6s" 
@@ -236,24 +236,24 @@
     <!-- Ojos Que Parpadean (Pupilas + Brillos) -->
     <!-- Ojo Izquierdo -->
     <g class="blink-eye-left">
-      <circle cx="148" cy="180" r="26" fill="#1E293B" />
+      <circle cx="148" cy="180" r="26" fill="#0F172A" />
       <circle cx="138" cy="170" r="8" fill="#FFFFFF" />
       <circle cx="158" cy="190" r="4" fill="#FFFFFF" />
     </g>
     <!-- Ojo Derecho -->
     <g class="blink-eye-right">
-      <circle cx="252" cy="180" r="26" fill="#1E293B" />
+      <circle cx="252" cy="180" r="26" fill="#0F172A" />
       <circle cx="242" cy="170" r="8" fill="#FFFFFF" />
       <circle cx="262" cy="190" r="4" fill="#FFFFFF" />
     </g>
 
     <!-- Ojos Felices que se muestran al sonreír (Inverted Arcs ^ ^) -->
     <!-- Ojo Izquierdo Feliz -->
-    <path class="happy-eye-left" d="M 130 185 Q 148 160 166 185" fill="none" stroke="#1E293B" stroke-width="6" stroke-linecap="round" />
+    <path class="happy-eye-left" d="M 130 185 Q 148 160 166 185" fill="none" stroke="#0F172A" stroke-width="6" stroke-linecap="round" />
     <!-- Ojo Derecho Feliz -->
-    <path class="happy-eye-right" d="M 234 185 Q 252 160 270 185" fill="none" stroke="#1E293B" stroke-width="6" stroke-linecap="round" />
+    <path class="happy-eye-right" d="M 234 185 Q 252 160 270 185" fill="none" stroke="#0F172A" stroke-width="6" stroke-linecap="round" />
 
-    <!-- Birrete (Sombrero de Egresado del Logo del Campus) -->
+    <!-- Birrete (Sombrero de Egresado adaptado a colores de la UADER FCyT) -->
     <!-- Base del Birrete -->
     <path d="M 148 92 L 148 112 C 148 126, 252 126, 252 112 L 252 92 Z" fill="#18181B" />
     <path d="M 152 112 C 152 120, 248 120, 248 112" fill="none" stroke="#27272A" stroke-width="1.5" />
@@ -261,14 +261,14 @@
     <!-- Rombo de arriba del Birrete -->
     <polygon points="200,55 310,85 200,115 90,85" fill="url(#capBoardGradient)" stroke="#27272A" stroke-width="1.5" />
 
-    <!-- Botón Dorado del Centro -->
-    <circle cx="200" cy="85" r="6" fill="#FBBF24" />
+    <!-- Botón UADER Crimson Red del Centro -->
+    <circle cx="200" cy="85" r="6" fill="#EF4444" />
 
-    <!-- Cinta Amarilla -->
-    <path d="M 200 85 Q 265 92 280 120" fill="none" stroke="#FBBF24" stroke-width="3" stroke-linecap="round" />
+    <!-- Cinta UADER Crimson Red -->
+    <path d="M 200 85 Q 265 92 280 120" fill="none" stroke="#EF4444" stroke-width="3" stroke-linecap="round" />
 
-    <!-- Borla/Tassel Colgante Naranja -->
-    <path class="tassel-sway" d="M 280 120 L 275 145 C 275 150, 285 150, 285 145 Z" fill="#F97316" />
+    <!-- Borla/Tassel Colgante UADER Red -->
+    <path class="tassel-sway" d="M 280 120 L 275 145 C 275 150, 285 150, 285 145 Z" fill="#B91C1C" />
 
   </g>
 </svg>

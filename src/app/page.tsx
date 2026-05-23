@@ -140,13 +140,13 @@ export default async function HomePage() {
         >
           <AnimateIn className="space-y-10">
             <section className="relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-surface-1 to-surface-2 p-6 md:p-8 shadow-[0_4px_30px_rgba(0,0,0,0.4)]">
-              {/* Luces de fondo decorativas */}
-              <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-orange-500/10 blur-[60px]" />
-              <div className="absolute -left-16 -bottom-16 h-48 w-48 rounded-full bg-amber-500/10 blur-[60px]" />
+              {/* Luces de fondo decorativas con los colores oficiales de UADER (Rojo y Azul) */}
+              <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-red-600/10 blur-[60px]" />
+              <div className="absolute -left-16 -bottom-16 h-48 w-48 rounded-full bg-blue-600/15 blur-[60px]" />
               
               <div className="relative flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
                 <div className="max-w-2xl space-y-3">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-amber-400">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-red-400">
                     FCYT · UADER
                   </span>
                   <h1 className="font-display text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl leading-tight">
