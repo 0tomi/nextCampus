@@ -48,7 +48,21 @@ export function MobileHome({
   upcomingEvents: UpcomingEvent[]
 }) {
   const { prefs, isHydrated } = usePreferences(initialPrefs)
+  const shouldWaitForStoredPrefs = !isHydrated && initialPrefs === null
   const effectivePrefs = isHydrated ? prefs : initialPrefs
+
+  if (shouldWaitForStoredPrefs) {
+    return (
+      <MobileShell
+        title="NextCampus"
+        subtitle={career.nombre}
+        drawerYears={[]}
+        careerName={career.nombre}
+      >
+        <MobileHomeSkeleton />
+      </MobileShell>
+    )
+  }
 
   const visibleYears = career.years
         .filter((y) => isYearVisible(y.slug, effectivePrefs))
@@ -178,6 +192,31 @@ function StatTile({ label, value }: { label: string; value: number }) {
     <div className="bg-[#1a1a1a] border border-white/5 rounded-lg p-3 flex flex-col gap-1">
       <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">{label}</span>
       <span className="text-xl font-black text-white">{value}</span>
+    </div>
+  )
+}
+
+function MobileHomeSkeleton() {
+  return (
+    <div className="flex flex-col gap-7 px-[18px] pt-4" aria-hidden="true">
+      <section>
+        <div className="h-3 w-20 animate-pulse rounded bg-white/[0.06]" />
+        <div className="mt-3 h-8 w-4/5 animate-pulse rounded bg-white/[0.06]" />
+        <div className="mt-4 h-4 w-full animate-pulse rounded bg-white/[0.06]" />
+        <div className="mt-2 h-4 w-2/3 animate-pulse rounded bg-white/[0.06]" />
+      </section>
+      <section className="grid grid-cols-3 gap-2">
+        {[0, 1, 2].map((item) => (
+          <div
+            key={item}
+            className="h-[70px] animate-pulse rounded-lg border border-white/5 bg-[#1a1a1a]"
+          />
+        ))}
+      </section>
+      <section>
+        <div className="h-3 w-16 animate-pulse rounded bg-white/[0.06]" />
+        <div className="mt-3 h-[260px] animate-pulse rounded-xl border border-white/5 bg-[#1a1a1a]" />
+      </section>
     </div>
   )
 }

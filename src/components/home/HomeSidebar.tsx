@@ -18,11 +18,14 @@ interface HomeSidebarProps {
 
 export function HomeSidebar({ careerName, initialPrefs, years }: HomeSidebarProps) {
   const { prefs, isHydrated } = usePreferences(initialPrefs)
+  const shouldWaitForStoredPrefs = !isHydrated && initialPrefs === null
   const effectivePrefs = isHydrated ? prefs : initialPrefs
 
   const visibleYears = years
     .map((y, i) => ({ year: y, originalIndex: i }))
-    .filter(({ year }) => isYearVisible(year.slug, effectivePrefs))
+    .filter(({ year }) =>
+      shouldWaitForStoredPrefs ? false : isYearVisible(year.slug, effectivePrefs),
+    )
 
   const items = visibleYears.map(({ year, originalIndex }) => {
     const colors = getYearColorClasses(year.slug)

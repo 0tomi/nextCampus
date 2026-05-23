@@ -32,9 +32,14 @@ interface HomeYearsGridProps {
 
 export function HomeYearsGrid({ initialPrefs, years }: HomeYearsGridProps) {
   const { prefs, isHydrated } = usePreferences(initialPrefs)
+  const shouldWaitForStoredPrefs = !isHydrated && initialPrefs === null
   const effectivePrefs = isHydrated ? prefs : initialPrefs
 
   const yearsWithIndex = years.map((y, i) => ({ year: y, originalIndex: i }))
+
+  if (shouldWaitForStoredPrefs) {
+    return <HomeYearsGridSkeleton yearsCount={years.length} />
+  }
 
   const visibleYears = yearsWithIndex
         .filter(({ year }) => isYearVisible(year.slug, effectivePrefs))
@@ -153,6 +158,28 @@ export function HomeYearsGrid({ initialPrefs, years }: HomeYearsGridProps) {
           </div>
         )
       })}
+    </div>
+  )
+}
+
+function HomeYearsGridSkeleton({ yearsCount }: { yearsCount: number }) {
+  const items = Array.from({ length: Math.max(1, yearsCount) })
+
+  return (
+    <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5" aria-hidden="true">
+      {items.map((_, index) => (
+        <div
+          key={index}
+          className="flex min-h-[250px] flex-col overflow-hidden rounded bg-surface-1"
+        >
+          <div className="h-[84px] animate-pulse bg-white/[0.06]" />
+          <div className="flex flex-col gap-3 px-5 py-4">
+            <div className="h-3 w-2/3 animate-pulse rounded bg-white/[0.06]" />
+            <div className="h-3 w-5/6 animate-pulse rounded bg-white/[0.06]" />
+            <div className="h-3 w-1/2 animate-pulse rounded bg-white/[0.06]" />
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
