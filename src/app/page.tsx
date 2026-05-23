@@ -139,8 +139,8 @@ export default async function HomePage() {
           mainClassName="space-y-12"
         >
           <AnimateIn className="space-y-10">
-            <section className="flex flex-col md:flex-row items-start justify-between gap-6 px-1 pt-2">
-              <div className="max-w-4xl">
+            <section className="relative px-1 pt-2">
+              <div className="max-w-3xl pr-36 lg:pr-44">
                 <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
                   {career.nombre}
                 </h1>
@@ -148,8 +148,8 @@ export default async function HomePage() {
                   {career.descripcion}
                 </p>
               </div>
-              <div className="shrink-0 self-center md:self-auto -mt-6">
-                <Mascot size={150} />
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden md:block">
+                <Mascot size={130} />
               </div>
             </section>
 
