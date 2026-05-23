@@ -7,7 +7,7 @@ import {
 
 interface CommissionSelectFieldProps {
   id: string
-  label: string
+  label?: string
   value: string
   commissions: readonly CommissionOption[]
   onChange: (value: string) => void
