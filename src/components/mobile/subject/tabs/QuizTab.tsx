@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Sparkles, ArrowRight, Plus } from 'lucide-react'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { AdminControls } from '@/components/admin/AdminControls'
+import { buildSubjectQuizHref } from '@/components/mobile/shared/subjectRoutes'
 
 export function QuizTab({
   subjectSlug,
@@ -34,7 +35,7 @@ export function QuizTab({
           </div>
         </div>
         <Link
-          href={`/materia/${subjectSlug}/quiz`}
+          href={buildSubjectQuizHref({ yearSlug, subjectSlug })}
           className={['flex items-center justify-center gap-2 h-11 rounded-md text-sm font-bold text-black cursor-pointer bg-gradient-to-r', colors.badgeClassName].join(' ')}
         >
           Empezar quiz

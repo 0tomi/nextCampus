@@ -1,11 +1,21 @@
 'use client'
 
+import { useMemo } from 'react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { SubjectTabs } from './SubjectTabs'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { CirclePlay, Pencil, Plus } from 'lucide-react'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { formatDescription } from '@/lib/text'
+import { CommissionSelectField } from '@/components/commissions/CommissionSelectField'
+import {
+  ALL_COMMISSIONS_VALUE,
+  filterEventsByPreferredCommission,
+  normalizePreferredCommissionId,
+  type CommissionOption,
+  writePreferredCommissionId,
+} from '@/lib/commission-preferences'
+import { usePreferredCommissionId } from '@/components/commissions/usePreferredCommission'
 
 interface SubjectForMobile {
   id: string
@@ -16,11 +26,21 @@ interface SubjectForMobile {
   playlistUrl: string | null
   playlistEnabled: boolean
   year: { id: string; slug: string; nombre: string; career: { nombre: string } }
-  agenda: { id: string; eventos: Array<{ id: string; titulo: string; descripcionHtml: string | null; fecha: Date | string; tipoEvento: { nombre: string } }> } | null
+  agenda: { id: string; eventos: Array<{ id: string; titulo: string; descripcionHtml: string | null; fecha: Date | string; tipoEvento: { nombre: string }; commissionId?: string | null; commissionNombre?: string | null }> } | null
   apuntes: Array<{ id: string; titulo: string; descripcionHtml: string | null; recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE'; url: string; orden: number }> }>
 }
 
 interface AllYear { slug: string; nombre: string; subjectsCount: number }
+
+interface SubjectMobileEvent {
+  id: string
+  titulo: string
+  descripcionHtml: string | null
+  fecha: Date | string
+  tipoEvento: { nombre: string }
+  commissionId?: string | null
+  commissionNombre?: string | null
+}
 
 function GoogleDriveIcon({ className }: { className?: string }) {
   // eslint-disable-next-line @next/next/no-img-element
@@ -30,13 +50,39 @@ function GoogleDriveIcon({ className }: { className?: string }) {
 export function MobileSubject({
   subject,
   allYears,
+  commissions,
+  events,
+  activeCommissionName,
 }: {
   subject: SubjectForMobile
   allYears: AllYear[]
+  commissions: CommissionOption[]
+  events?: SubjectMobileEvent[]
+  activeCommissionName?: string
 }) {
   const colors = getYearColorClasses(subject.year.slug)
-  const eventos = subject.agenda?.eventos ?? []
   const drawerYears: MobileShellDrawerYear[] = allYears
+  const preferredCommissionId = usePreferredCommissionId(
+    subject.slug,
+    commissions,
+    Boolean(activeCommissionName),
+  )
+
+  const eventosBase = useMemo<SubjectMobileEvent[]>(
+    () => (events ?? subject.agenda?.eventos ?? []) as SubjectMobileEvent[],
+    [events, subject.agenda?.eventos],
+  )
+  const selectedCommission = useMemo(
+    () => commissions.find((commission) => commission.id === preferredCommissionId) ?? null,
+    [commissions, preferredCommissionId],
+  )
+  const eventos = useMemo(() => {
+    if (activeCommissionName) {
+      return eventosBase
+    }
+
+    return filterEventsByPreferredCommission(eventosBase, preferredCommissionId)
+  }, [activeCommissionName, eventosBase, preferredCommissionId])
 
   return (
     <MobileShell
@@ -52,20 +98,41 @@ export function MobileSubject({
         <section className="px-[18px] pt-4">
           <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
             <div className="flex items-start justify-between gap-4">
-              <span
-                className={['inline-flex px-3 py-1 border text-[10px] font-bold uppercase tracking-[0.2em] rounded', colors.chipClassName].join(' ')}
-              >
-                {subject.year.nombre}
-              </span>
-              <AdminControls yearId={subject.year.id} noWrapper>
-                <button
-                  type="button"
-                  onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-subject'))}
-                  className="p-2 rounded bg-black/20 text-white/70 hover:bg-black/35 transition-colors cursor-pointer"
-                  title="Editar materia"
+              <div className="flex flex-wrap gap-2">
+                <span
+                  className={['inline-flex px-3 py-1 border text-[10px] font-bold uppercase tracking-[0.2em] rounded', colors.chipClassName].join(' ')}
                 >
-                  <Pencil size={14} />
-                </button>
+                  {subject.year.nombre}
+                </span>
+                {activeCommissionName ? (
+                  <span className="inline-flex rounded border border-white/10 bg-surface-1 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/68">
+                    {activeCommissionName}
+                  </span>
+                ) : selectedCommission ? (
+                  <span className="inline-flex rounded border border-white/10 bg-surface-1 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/68">
+                    {selectedCommission.nombre}
+                  </span>
+                ) : null}
+              </div>
+              <AdminControls yearId={subject.year.id} noWrapper>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-new-commission'))}
+                    className="p-2 rounded bg-black/20 text-white/70 hover:bg-black/35 transition-colors cursor-pointer"
+                    title="Nueva comisión"
+                  >
+                    <Plus size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-subject'))}
+                    className="p-2 rounded bg-black/20 text-white/70 hover:bg-black/35 transition-colors cursor-pointer"
+                    title="Editar materia"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                </div>
               </AdminControls>
             </div>
             <h1 className="mt-3 text-2xl font-black tracking-tight text-white leading-tight">
@@ -129,7 +196,7 @@ export function MobileSubject({
                 </a>
               )}
             </div>
-            <div className="mt-4 grid grid-cols-2 divide-x divide-white/5">
+             <div className="mt-4 grid grid-cols-2 divide-x divide-white/5">
               <div className="flex flex-col items-center justify-center gap-0.5">
                 <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">Eventos</span>
                 <span className="text-lg font-black text-white">{eventos.length}</span>
@@ -138,7 +205,22 @@ export function MobileSubject({
                 <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">Apuntes</span>
                 <span className="text-lg font-black text-white">{subject.apuntes.length}</span>
               </div>
-            </div>
+             </div>
+            {!activeCommissionName ? (
+              <div className="mt-4">
+                <CommissionSelectField
+                  id="mobile-subject-preferred-commission"
+                  label="Comisión"
+                  value={preferredCommissionId ?? ALL_COMMISSIONS_VALUE}
+                  commissions={commissions}
+                  onChange={(value) => {
+                    const nextCommissionId = normalizePreferredCommissionId(value)
+                    writePreferredCommissionId(subject.slug, nextCommissionId)
+                  }}
+                  helperText="Esta elección solo ajusta las fechas que ves en esta materia."
+                />
+              </div>
+            ) : null}
           </div>
         </section>
 

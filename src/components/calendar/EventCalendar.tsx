@@ -25,8 +25,11 @@ export interface EventCalendarEvent {
   subjectSlug?: string
   subjectId?: string
   materiaNombre?: string
-  descripcionHtml?: string
+  descripcionHtml?: string | null
   tituloOriginal?: string
+  commissionId?: string | null
+  commissionSlug?: string | null
+  commissionNombre?: string | null
 }
 
 interface EventCalendarProps {

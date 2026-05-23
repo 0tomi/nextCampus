@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useActionState, useState } from 'react'
+import { useEffect, useActionState, useMemo, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/ui/Modal'
@@ -10,6 +10,11 @@ import {
   type EventoActionState,
 } from '@/app/admin/actions'
 import type { EventCalendarEvent } from '@/components/calendar/EventCalendar'
+import {
+  ALL_COMMISSIONS_VALUE,
+  type CommissionOption,
+} from '@/lib/commission-preferences'
+import { CommissionSelectField } from '@/components/commissions/CommissionSelectField'
 
 interface TipoEvento {
   id: string
@@ -21,6 +26,7 @@ interface EventModalSubject {
   slug: string
   nombre: string
   agendaId: string
+  commissions: readonly CommissionOption[]
 }
 
 interface EventModalProps {
@@ -32,7 +38,8 @@ interface EventModalProps {
   /** Fecha precargada al abrir desde un clic en el calendario (ISO o string YYYY-MM-DDTHH:mm) */
   initialDate?: string
   onSuccess?: () => void
-  subjects?: EventModalSubject[]
+  subjects?: readonly EventModalSubject[]
+  commissions?: readonly CommissionOption[]
   /** Evento a editar si estamos en modo edición */
   eventToEdit?: EventCalendarEvent
 }
@@ -68,6 +75,7 @@ function EventModalContent({
   initialDate,
   onSuccess,
   subjects,
+  commissions,
   eventToEdit,
 }: EventModalProps) {
   const router = useRouter()
@@ -82,6 +90,9 @@ function EventModalContent({
   const [selectedSubjectId, setSelectedSubjectId] = useState(
     eventToEdit?.subjectId ?? ''
   )
+  const [selectedCommissionId, setSelectedCommissionId] = useState(
+    eventToEdit?.commissionId ?? ''
+  )
 
   // Determine current active agendaId and subjectSlug
   const isYearMode = subjects && subjects.length > 0
@@ -91,6 +102,15 @@ function EventModalContent({
 
   const activeAgendaId = isYearMode ? (currentSubject?.agendaId ?? '') : agendaId
   const activeSubjectSlug = isYearMode ? (currentSubject?.slug ?? '') : subjectSlug
+  const availableCommissions = useMemo(
+    () => (isYearMode ? (currentSubject?.commissions ?? []) : (commissions ?? [])),
+    [commissions, currentSubject?.commissions, isYearMode],
+  )
+  const activeCommissionId = availableCommissions.some(
+    (commission) => commission.id === selectedCommissionId,
+  )
+    ? selectedCommissionId
+    : ''
 
   useEffect(() => {
     if (state.ok) {
@@ -161,6 +181,7 @@ function EventModalContent({
         {eventToEdit && <input type="hidden" name="id" value={eventToEdit.id} />}
         <input type="hidden" name="agendaId" value={activeAgendaId} />
         <input type="hidden" name="subjectSlug" value={activeSubjectSlug} />
+        <input type="hidden" name="commissionId" value={activeCommissionId} />
 
         {isYearMode && (
           <div className="space-y-1">
@@ -174,7 +195,10 @@ function EventModalContent({
               id="evento-subject"
               required
               value={selectedSubjectId}
-              onChange={(e) => setSelectedSubjectId(e.target.value)}
+              onChange={(e) => {
+                setSelectedSubjectId(e.target.value)
+                setSelectedCommissionId('')
+              }}
               className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none cursor-pointer"
             >
               <option value="" disabled>
@@ -187,6 +211,21 @@ function EventModalContent({
               ))}
             </select>
           </div>
+        )}
+
+        {(isYearMode ? selectedSubjectId !== '' : true) && (
+          <CommissionSelectField
+            id="evento-comision"
+            label="Comisión"
+            value={activeCommissionId || ALL_COMMISSIONS_VALUE}
+            commissions={availableCommissions}
+            onChange={(value) =>
+              setSelectedCommissionId(
+                value === ALL_COMMISSIONS_VALUE ? '' : value,
+              )
+            }
+            helperText="Si la dejás en Todas las comisiones, la fecha queda disponible para toda la materia."
+          />
         )}
 
         <div className="space-y-1">
@@ -222,7 +261,7 @@ function EventModalContent({
             required
             value={selectedTipoId}
             onChange={(e) => setSelectedTipoId(e.target.value)}
-            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
+            className="w-full cursor-pointer rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
           >
             <option value="" disabled>
               Seleccioná un tipo

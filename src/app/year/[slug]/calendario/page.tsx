@@ -1,13 +1,9 @@
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
 import { getCareer, getYearBySlug, getTiposEvento } from '@/lib/queries'
 import { getYearColorClasses, getYearTone } from '@/lib/yearColors'
-import { DashboardShell } from '@/components/shell/DashboardShell'
-import { Sidebar } from '@/components/shell/Sidebar'
-import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
-import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
-import { MobileCalendarLazy } from '@/components/mobile/calendar/MobileCalendarLazy'
+import { type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
+import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
+import { YearCalendarView } from '@/components/year/YearCalendarView'
 
 export const revalidate = 300
 
@@ -26,10 +22,12 @@ export default async function YearCalendarPage({
 
   const colors = getYearColorClasses(year.slug)
   const tone = getYearTone(year.slug)
+  const getSubjectVisibleEvents = (subject: (typeof year.subjects)[number]) =>
+    subject.agendas.flatMap((agenda) => agenda.eventos)
 
   const events = year.subjects
     .flatMap((s) =>
-      (s.agenda?.eventos ?? []).map((e) => ({
+      getSubjectVisibleEvents(s).map((e) => ({
         id: e.id,
         titulo: `${e.titulo} · ${s.nombre}`,
         fecha: e.fecha,
@@ -40,6 +38,9 @@ export default async function YearCalendarPage({
         materiaNombre: s.nombre,
         descripcionHtml: e.descripcionHtml,
         tituloOriginal: e.titulo,
+        commissionId: e.commissionId,
+        commissionSlug: e.commission?.slug ?? null,
+        commissionNombre: e.commission?.nombre ?? null,
       })),
     )
     .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
@@ -54,7 +55,7 @@ export default async function YearCalendarPage({
 
   const sidebarItems = year.subjects.map((subject, index) => ({
     id: subject.id,
-    href: `/materia/${subject.slug}`,
+    href: buildSubjectHref({ yearSlug: year.slug, subjectSlug: subject.slug }),
     label: subject.nombre,
     badge: String(index + 1).padStart(2, '0'),
     meta: 'Materia',
@@ -68,78 +69,23 @@ export default async function YearCalendarPage({
       slug: s.slug,
       nombre: s.nombre,
       agendaId: s.agenda!.id,
+      commissions: s.commissions,
     }))
 
   return (
-    <>
-      {/* Desktop */}
-      <div className="hidden lg:block">
-        <DashboardShell
-          topbar={
-            <Link
-              href={`/year/${year.slug}`}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-white/56 transition-colors hover:text-white/80"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {year.nombre}
-            </Link>
-          }
-          sidebar={
-            <Sidebar
-              eyebrow="Navegación"
-              title={year.nombre}
-              items={sidebarItems}
-            />
-          }
-          mainClassName="space-y-8"
-        >
-          <section className="space-y-4">
-            <div className="flex flex-col gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
-                Agenda
-              </p>
-              <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
-                Calendario completo · {year.nombre}
-              </h1>
-            </div>
-            <EventCalendarAdmin
-              events={events}
-              emptyMessage="Todavía no hay eventos cargados en este año."
-              className="year-calendar-expanded"
-              dayMaxEvents={4}
-              tiposEvento={tiposEvento}
-              subjects={modalSubjects}
-            />
-          </section>
-        </DashboardShell>
-      </div>
-
-      {/* Mobile */}
-      <div className="lg:hidden">
-        <MobileShell
-          title="Calendario"
-          subtitle={year.nombre}
-          onBack={`/year/${year.slug}`}
-          drawerYears={drawerYears}
-          careerName={year.career.nombre}
-          currentYearSlug={year.slug}
-        >
-          <div className="pt-4">
-            <MobileCalendarLazy
-              events={events.map((e) => ({
-                id: e.id,
-                fecha: e.fecha,
-                titulo: e.titulo,
-                tipo: e.tipo,
-                subjectSlug: e.subjectSlug,
-              }))}
-              accent={tone}
-              initialDate={events[0]?.fecha}
-              yearId={year.id}
-            />
-          </div>
-        </MobileShell>
-      </div>
-    </>
+    <YearCalendarView
+      year={{
+        id: year.id,
+        slug: year.slug,
+        nombre: year.nombre,
+        career: year.career,
+      }}
+      allYears={drawerYears}
+      sidebarItems={sidebarItems}
+      tone={tone}
+      tiposEvento={tiposEvento}
+      subjects={modalSubjects}
+      events={events}
+    />
   )
 }

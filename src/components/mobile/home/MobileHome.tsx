@@ -4,6 +4,7 @@ import { YearCarousel } from './YearCarousel'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { AddYearButton } from '@/components/admin/HomeAdminOverlay'
+import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 
 interface CareerForMobile {
   nombre: string
@@ -29,6 +30,7 @@ interface UpcomingEvent {
   tipo: string
   subjectSlug: string
   subjectNombre: string
+  yearSlug: string | null
 }
 
 export function MobileHome({
@@ -94,7 +96,13 @@ export function MobileHome({
               <EmptyAgenda />
             ) : (
               upcomingEvents.map((e) => (
-                <Link key={e.id} href={`/materia/${e.subjectSlug}`}>
+                <Link
+                  key={e.id}
+                  href={buildSubjectHref({
+                    yearSlug: e.yearSlug,
+                    subjectSlug: e.subjectSlug,
+                  })}
+                >
                   <AgendaCard
                     fecha={e.fecha}
                     tipo={e.tipo}

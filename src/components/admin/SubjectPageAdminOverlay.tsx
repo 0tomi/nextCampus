@@ -1,14 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { AdminControls } from './AdminControls'
 import { SubjectModal } from './SubjectModal'
 import { EventModal } from './EventModal'
 import { ApunteModal } from './ApunteModal'
 import { QuizBankModal } from './QuizBankModal'
+import { CommissionModal } from './CommissionModal'
 import { deleteEvento, deleteApunteAction } from '@/app/admin/actions'
 import type { ApunteFull } from './ApunteModal'
+import type { CommissionOption } from '@/lib/commission-preferences'
 
 interface TipoEvento {
   id: string
@@ -24,6 +26,7 @@ interface SubjectPageAdminOverlayProps {
     driveUrl?: string | null
     playlistUrl?: string | null
     playlistEnabled?: boolean
+    commissions: readonly CommissionOption[]
   }
   agendaId: string
   yearId?: string
@@ -31,10 +34,8 @@ interface SubjectPageAdminOverlayProps {
   tiposEvento: TipoEvento[]
 }
 
-import { useEffect } from 'react'
-
 interface AdminTriggerButtonProps {
-  action: 'upload-bank' | 'new-apunte' | 'new-event' | 'edit-subject'
+  action: 'upload-bank' | 'new-apunte' | 'new-event' | 'edit-subject' | 'new-commission'
   className?: string
   children: React.ReactNode
 }
@@ -66,6 +67,7 @@ export function SubjectPageAdminOverlay({
 }: SubjectPageAdminOverlayProps) {
   const [editSubjectOpen, setEditSubjectOpen] = useState(false)
   const [newEventOpen, setNewEventOpen] = useState(false)
+  const [newCommissionOpen, setNewCommissionOpen] = useState(false)
   const [newApunteOpen, setNewApunteOpen] = useState(false)
   const [editingApunte, setEditingApunte] = useState<ApunteFull | null>(null)
   const [uploadBankOpen, setUploadBankOpen] = useState(false)
@@ -78,6 +80,7 @@ export function SubjectPageAdminOverlay({
     }
     const handleNewApunte = () => setNewApunteOpen(true)
     const handleNewEvent = () => setNewEventOpen(true)
+    const handleNewCommission = () => setNewCommissionOpen(true)
     const handleEditSubject = () => setEditSubjectOpen(true)
     const handleEditApunte = (e: Event) => {
       const { apunte } = (e as CustomEvent<{ apunte: ApunteFull }>).detail
@@ -87,6 +90,7 @@ export function SubjectPageAdminOverlay({
     window.addEventListener('open-admin-modal-upload-bank', handleUploadBank)
     window.addEventListener('open-admin-modal-new-apunte', handleNewApunte)
     window.addEventListener('open-admin-modal-new-event', handleNewEvent)
+    window.addEventListener('open-admin-modal-new-commission', handleNewCommission)
     window.addEventListener('open-admin-modal-edit-subject', handleEditSubject)
     window.addEventListener('open-admin-modal-edit-apunte', handleEditApunte)
 
@@ -94,6 +98,7 @@ export function SubjectPageAdminOverlay({
       window.removeEventListener('open-admin-modal-upload-bank', handleUploadBank)
       window.removeEventListener('open-admin-modal-new-apunte', handleNewApunte)
       window.removeEventListener('open-admin-modal-new-event', handleNewEvent)
+      window.removeEventListener('open-admin-modal-new-commission', handleNewCommission)
       window.removeEventListener('open-admin-modal-edit-subject', handleEditSubject)
       window.removeEventListener('open-admin-modal-edit-apunte', handleEditApunte)
     }
@@ -118,6 +123,14 @@ export function SubjectPageAdminOverlay({
         >
           <Plus className="h-3.5 w-3.5" />
           Nuevo apunte
+        </button>
+        <button
+          type="button"
+          onClick={() => setNewCommissionOpen(true)}
+          className="inline-flex items-center gap-2 rounded border border-white/10 bg-surface-1 px-3 py-2 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Nueva comisión
         </button>
         <button
           type="button"
@@ -159,6 +172,17 @@ export function SubjectPageAdminOverlay({
         agendaId={agendaId}
         subjectSlug={subject.slug}
         tiposEvento={tiposEvento}
+        commissions={subject.commissions}
+      />
+
+      <CommissionModal
+        open={newCommissionOpen}
+        onClose={() => setNewCommissionOpen(false)}
+        subject={{
+          id: subject.id,
+          nombre: subject.nombre,
+        }}
+        commissions={subject.commissions}
       />
 
       {/* Modal de creación de apunte */}

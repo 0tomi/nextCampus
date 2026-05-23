@@ -15,6 +15,7 @@ import {
 } from '@/components/admin/HomeAdminOverlay'
 import { MobileHome } from '@/components/mobile/home/MobileHome'
 import { MobileShell } from '@/components/mobile/shell/MobileShell'
+import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 export const revalidate = 300
 
 export default async function HomePage() {
@@ -76,14 +77,41 @@ export default async function HomePage() {
     )
   }
 
-  const upcomingEvents = upcomingEventsRaw.map((e) => ({
-    id: e.id,
-    titulo: e.titulo,
-    fecha: e.fecha,
-    tipo: e.tipoEvento.nombre,
-    subjectSlug: e.agenda?.subject?.slug ?? '',
-    subjectNombre: e.agenda?.subject?.nombre ?? '',
-  })).filter((e) => e.subjectSlug)
+  const subjectYearSlugBySlug = new Map(
+    career.years.flatMap((year) =>
+      year.subjects.map((subject) => [subject.slug, year.slug] as const),
+    ),
+  )
+
+  const upcomingEvents = upcomingEventsRaw.reduce<
+    Array<{
+      id: string
+      titulo: string
+      fecha: Date
+      tipo: string
+      subjectSlug: string
+      subjectNombre: string
+      yearSlug: string | null
+    }>
+  >((acc, event) => {
+    const subjectSlug = event.agenda?.subject?.slug ?? ''
+
+    if (!subjectSlug) {
+      return acc
+    }
+
+    acc.push({
+      id: event.id,
+      titulo: event.titulo,
+      fecha: event.fecha,
+      tipo: event.tipoEvento.nombre,
+      subjectSlug,
+      subjectNombre: event.agenda?.subject?.nombre ?? '',
+      yearSlug: subjectYearSlugBySlug.get(subjectSlug) ?? null,
+    })
+
+    return acc
+  }, [])
 
   const sidebarItems = career.years.map((year, index) => {
     const colors = getYearColorClasses(year.slug)
@@ -172,7 +200,10 @@ export default async function HomePage() {
                             )}
                           >
                             <Link
-                              href={`/materia/${subject.slug}`}
+                              href={buildSubjectHref({
+                                yearSlug: year.slug,
+                                subjectSlug: subject.slug,
+                              })}
                               className="group flex items-center gap-3 px-5 py-4 transition-colors hover:bg-white/5"
                             >
                               <Layers className="h-[14px] w-[14px] shrink-0 text-white/20 transition-colors group-hover:text-white/40" />

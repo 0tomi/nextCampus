@@ -3,6 +3,120 @@ import { unstable_cache } from 'next/cache'
 import { prisma } from './prisma'
 import { countSubjectQuizBanks } from './storage'
 
+const eventoSelect = {
+  id: true,
+  titulo: true,
+  descripcionHtml: true,
+  fecha: true,
+  tipoEventoId: true,
+  tipoEvento: { select: { nombre: true } },
+} as const
+
+const agendaWithEventosSelect = {
+  id: true,
+  commissionId: true,
+  commission: {
+    select: {
+      id: true,
+      slug: true,
+      nombre: true,
+    },
+  },
+  eventos: {
+    orderBy: { fecha: 'asc' },
+    select: eventoSelect,
+  },
+} as const
+
+type QueryCommission = {
+  id: string
+  slug: string
+  nombre: string
+}
+
+type QueryEvent = {
+  id: string
+  titulo: string
+  descripcionHtml: string
+  fecha: Date
+  tipoEventoId: string
+  tipoEvento: {
+    nombre: string
+  }
+}
+
+type QueryEventWithCommissionMetadata = QueryEvent & {
+  commissionId: string | null
+  commission: QueryCommission | null
+}
+
+type QueryAgenda = {
+  id: string
+  commissionId: string | null
+  commission: QueryCommission | null
+  eventos: QueryEvent[]
+}
+
+type QueryAgendaWithCommissionMetadata = Omit<QueryAgenda, 'eventos'> & {
+  isGeneral: boolean
+  eventos: QueryEventWithCommissionMetadata[]
+}
+
+type SubjectWithCommissionMetadata<
+  T extends {
+    agendas: QueryAgenda[]
+    commissions: QueryCommission[]
+  },
+> = Omit<T, 'agendas' | 'commissions'> & {
+  agenda: QueryAgendaWithCommissionMetadata | null
+  agendaGeneral: QueryAgendaWithCommissionMetadata | null
+  agendas: QueryAgendaWithCommissionMetadata[]
+  commissions: Array<T['commissions'][number] & { agenda: QueryAgendaWithCommissionMetadata | null }>
+}
+
+function attachCommissionMetadataToAgenda(
+  agenda: QueryAgenda,
+): QueryAgendaWithCommissionMetadata {
+
+  const commission = agenda.commission ?? null
+
+  return {
+    ...agenda,
+    isGeneral: agenda.commissionId === null,
+    eventos: agenda.eventos.map((evento) => ({
+      ...evento,
+      commissionId: agenda.commissionId,
+      commission,
+    })),
+  }
+}
+
+function attachCommissionMetadataToSubject<
+  T extends {
+    agendas: QueryAgenda[]
+    commissions: QueryCommission[]
+  },
+>(subject: T): SubjectWithCommissionMetadata<T> {
+  const agendas = subject.agendas.map((agenda) => attachCommissionMetadataToAgenda(agenda))
+  const agendaGeneral = agendas.find((agenda) => agenda.commissionId === null) ?? null
+  const agendasByCommissionId = new Map(
+    agendas
+      .filter((agenda) => agenda.commissionId !== null)
+      .map((agenda) => [agenda.commissionId, agenda] as const),
+  )
+
+  return {
+    ...subject,
+    agenda: agendaGeneral,
+    agendaGeneral,
+    agendas,
+    commissions: subject.commissions.map((commission) => ({
+      ...commission,
+      agenda: agendasByCommissionId.get(commission.id) ?? null,
+    })),
+  }
+}
+
 // Lecturas públicas (anónimas). Sin datos sensibles.
 //
 // Cacheamos con unstable_cache + tags para deduplicar entre rutas y permitir
@@ -47,8 +161,8 @@ export const getCareer = unstable_cache(
 
 export function getYearBySlug(slug: string) {
   return unstable_cache(
-    () =>
-      prisma.academicYear.findUnique({
+    async () => {
+      const year = await prisma.academicYear.findUnique({
         where: { slug },
         select: {
           id: true,
@@ -60,27 +174,31 @@ export function getYearBySlug(slug: string) {
               id: true,
               slug: true,
               nombre: true,
-              agenda: {
+              agendas: {
+                orderBy: { createdAt: 'asc' },
+                select: agendaWithEventosSelect,
+              },
+              commissions: {
+                orderBy: { nombre: 'asc' },
                 select: {
                   id: true,
-                  eventos: {
-                    orderBy: { fecha: 'asc' },
-                    select: {
-                      id: true,
-                      titulo: true,
-                      descripcionHtml: true,
-                      fecha: true,
-                      tipoEventoId: true,
-                      tipoEvento: { select: { nombre: true } },
-                    },
-                  },
+                  slug: true,
+                  nombre: true,
                 },
               },
             },
           },
           career: { select: { nombre: true } },
         },
-      }),
+      })
+
+      if (!year) return null
+
+      return {
+        ...year,
+        subjects: year.subjects.map((subject) => attachCommissionMetadataToSubject(subject)),
+      }
+    },
     ['year', slug],
     { tags: [TAGS.year(slug), TAGS.career], revalidate: 3600 },
   )()
@@ -88,8 +206,8 @@ export function getYearBySlug(slug: string) {
 
 export function getSubjectPageBySlug(slug: string) {
   return unstable_cache(
-    () =>
-      prisma.subject.findUnique({
+    async () => {
+      const subject = await prisma.subject.findUnique({
         where: { slug },
         select: {
           id: true,
@@ -107,20 +225,16 @@ export function getSubjectPageBySlug(slug: string) {
               career: { select: { nombre: true } },
             },
           },
-          agenda: {
+          agendas: {
+            orderBy: { createdAt: 'asc' },
+            select: agendaWithEventosSelect,
+          },
+          commissions: {
+            orderBy: { nombre: 'asc' },
             select: {
               id: true,
-              eventos: {
-                orderBy: { fecha: 'asc' },
-                select: {
-                  id: true,
-                  titulo: true,
-                  descripcionHtml: true,
-                  fecha: true,
-                  tipoEventoId: true,
-                  tipoEvento: { select: { nombre: true } },
-                },
-              },
+              slug: true,
+              nombre: true,
             },
           },
           apuntes: {
@@ -141,7 +255,12 @@ export function getSubjectPageBySlug(slug: string) {
             },
           },
         },
-      }),
+      })
+
+      if (!subject) return null
+
+      return attachCommissionMetadataToSubject(subject)
+    },
     ['subject', slug],
     { tags: [TAGS.subject(slug)], revalidate: 3600 },
   )()
@@ -173,11 +292,27 @@ export function getAdminSubjectBySlug(slug: string) {
     where: { slug },
     include: {
       year: { select: { slug: true } },
-      agenda: {
+      agendas: {
+        orderBy: { createdAt: 'asc' },
         include: {
+          commission: true,
           eventos: {
             orderBy: { fecha: 'asc' },
             include: { tipoEvento: true },
+          },
+        },
+      },
+      commissions: {
+        orderBy: { nombre: 'asc' },
+        include: {
+          agenda: {
+            include: {
+              commission: true,
+              eventos: {
+                orderBy: { fecha: 'asc' },
+                include: { tipoEvento: true },
+              },
+            },
           },
         },
       },
@@ -188,6 +323,27 @@ export function getAdminSubjectBySlug(slug: string) {
         },
       },
     },
+  }).then((subject) => {
+    if (!subject) return null
+
+    const agendas = subject.agendas.map((agenda) => attachCommissionMetadataToAgenda(agenda))
+    const agendaGeneral = agendas.find((agenda) => agenda.commissionId === null) ?? null
+    const agendasByCommissionId = new Map(
+      agendas
+        .filter((agenda) => agenda.commissionId !== null)
+        .map((agenda) => [agenda.commissionId, agenda] as const),
+    )
+
+    return {
+      ...subject,
+      agenda: agendaGeneral,
+      agendaGeneral,
+      agendas,
+      commissions: subject.commissions.map((commission) => ({
+        ...commission,
+        agenda: agendasByCommissionId.get(commission.id) ?? commission.agenda ?? null,
+      })),
+    }
   })
 }
 
@@ -214,6 +370,14 @@ export function getUpcomingEventsCrossYear(limit = 6) {
           tipoEvento: { select: { nombre: true } },
           agenda: {
             select: {
+              commissionId: true,
+              commission: {
+                select: {
+                  id: true,
+                  slug: true,
+                  nombre: true,
+                },
+              },
               subject: {
                 select: { slug: true, nombre: true },
               },
@@ -250,7 +414,7 @@ export async function getSubjectDeleteImpact(
       nombre: true,
       slug: true,
       year: { select: { slug: true } },
-      agenda: {
+      agendas: {
         select: {
           _count: { select: { eventos: true } },
         },
@@ -269,7 +433,7 @@ export async function getSubjectDeleteImpact(
 
   return {
     subjectNombre: subject.nombre,
-    eventosCount: subject.agenda?._count.eventos ?? 0,
+    eventosCount: subject.agendas.reduce((total, agenda) => total + agenda._count.eventos, 0),
     apuntesCount: subject._count.apuntes,
     recursosCount,
     bancosCount,
@@ -299,7 +463,11 @@ export async function getYearDeleteImpact(
         select: {
           id: true,
           slug: true,
-          agenda: { select: { _count: { select: { eventos: true } } } },
+          agendas: {
+            select: {
+              _count: { select: { eventos: true } },
+            },
+          },
           _count: { select: { apuntes: true } },
         },
       },
@@ -310,7 +478,7 @@ export async function getYearDeleteImpact(
   let eventosCount = 0
   let apuntesCount = 0
   for (const s of year.subjects) {
-    eventosCount += s.agenda?._count.eventos ?? 0
+    eventosCount += s.agendas.reduce((total, agenda) => total + agenda._count.eventos, 0)
     apuntesCount += s._count.apuntes
   }
 

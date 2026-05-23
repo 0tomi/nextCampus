@@ -10,6 +10,7 @@ import {
   SubjectAdminRow,
   AddSubjectButton,
 } from '@/components/admin/HomeAdminOverlay'
+import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 
 interface CarouselYear {
   id: string
@@ -121,7 +122,10 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
                       className={sIdx !== 0 ? 'border-t border-white/5' : ''}
                     >
                       <Link
-                        href={`/materia/${s.slug}`}
+                        href={buildSubjectHref({
+                          yearSlug: y.slug,
+                          subjectSlug: s.slug,
+                        })}
                         className="group flex items-center gap-3 px-[18px] py-3.5 cursor-pointer hover:bg-white/[0.03] transition-colors"
                       >
                         <Layers size={14} className="text-white/25 shrink-0" />

@@ -10,6 +10,8 @@ import { useAdminAccess } from '@/components/admin/adminAccess'
 import { Sheet } from '@/components/ui/Sheet'
 import { updateEventoFechaAction, deleteEvento } from '@/app/admin/actions'
 import { cn, formatDateTime } from '@/lib/utils'
+import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
+import type { CommissionOption } from '@/lib/commission-preferences'
 
 interface TipoEvento {
   id: string
@@ -25,13 +27,16 @@ interface EventCalendarAdminProps {
   subjectSlug?: string
   yearId?: string
   yearSlug?: string
+  commissionSlug?: string
   tiposEvento: TipoEvento[]
-  subjects?: {
+  subjects?: readonly {
     id: string
     slug: string
     nombre: string
     agendaId: string
+    commissions: readonly CommissionOption[]
   }[]
+  commissions?: readonly CommissionOption[]
 }
 
 /**
@@ -49,8 +54,10 @@ export function EventCalendarAdmin({
   subjectSlug = '',
   yearId,
   yearSlug,
+  commissionSlug,
   tiposEvento,
   subjects,
+  commissions,
 }: EventCalendarAdminProps) {
   const canEdit = useAdminAccess({ yearId, yearSlug }) ?? false
   const router = useRouter()
@@ -105,6 +112,14 @@ export function EventCalendarAdmin({
       })
     }
   }, [selectedEvent, router])
+
+  const subjectHref = selectedEvent?.subjectSlug
+    ? buildSubjectHref({
+        yearSlug,
+        subjectSlug: selectedEvent.subjectSlug,
+        commissionSlug: selectedEvent.commissionSlug ?? commissionSlug,
+      })
+    : null
 
   return (
     <>
@@ -167,9 +182,9 @@ export function EventCalendarAdmin({
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-white/30">
                     Materia
                   </span>
-                  {selectedEvent.subjectSlug ? (
+                  {subjectHref ? (
                     <Link
-                      href={`/materia/${selectedEvent.subjectSlug}`}
+                      href={subjectHref}
                       className="text-sm font-bold text-white transition-colors hover:text-red-400 hover:underline cursor-pointer"
                     >
                       {selectedEvent.materiaNombre}
@@ -194,6 +209,17 @@ export function EventCalendarAdmin({
                     : ''}
                 </span>
               </div>
+
+              {selectedEvent.commissionNombre ? (
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-white/30">
+                    Comisión
+                  </span>
+                  <span className="text-sm font-medium text-white/80">
+                    {selectedEvent.commissionNombre}
+                  </span>
+                </div>
+              ) : null}
             </div>
 
             {/* Descripcion */}
@@ -256,6 +282,7 @@ export function EventCalendarAdmin({
           tiposEvento={tiposEvento}
           initialDate={initialDate}
           subjects={subjects}
+          commissions={commissions}
         />
       )}
 
@@ -272,6 +299,7 @@ export function EventCalendarAdmin({
           subjectSlug={subjectSlug}
           tiposEvento={tiposEvento}
           subjects={subjects}
+          commissions={commissions}
           eventToEdit={selectedEvent}
         />
       )}
