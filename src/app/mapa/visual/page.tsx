@@ -1,6 +1,8 @@
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { GraduationCap, Shield } from 'lucide-react';
 import { getCareer } from '@/lib/queries';
+import { PREFERENCES_KEY, isYearVisible, readPreferencesFromCookie } from '@/lib/preferences';
 import { getYearColorClasses } from '@/lib/yearColors';
 import { DashboardShell } from '@/components/shell/DashboardShell';
 import { Sidebar } from '@/components/shell/Sidebar';
@@ -24,6 +26,10 @@ function DashboardBrand() {
 }
 
 export default async function MapaVisualPage() {
+  const cookieStore = await cookies();
+  const initialPrefs = readPreferencesFromCookie(
+    cookieStore.get(PREFERENCES_KEY)?.value ?? null,
+  );
   const career = await getCareer();
 
   if (!career) {
@@ -59,14 +65,19 @@ export default async function MapaVisualPage() {
     );
   }
 
-  const sidebarItems = career.years.map((year, index) => {
+  const visibleYears = career.years
+    .map((year, index) => ({ year, index }))
+    .filter(({ year }) => isYearVisible(year.slug, initialPrefs))
+    .map(({ year, index }) => ({ ...year, order: index }));
+
+  const sidebarItems = visibleYears.map((year) => {
     const colors = getYearColorClasses(year.slug);
 
     return {
       id: year.id,
       href: `/year/${year.slug}`,
       label: year.nombre,
-      badge: String(index + 1),
+      badge: String(year.order + 1),
       meta: `${year.subjects.length} materias`,
       badgeClassName: colors.progressClassName + ' text-white',
     };
