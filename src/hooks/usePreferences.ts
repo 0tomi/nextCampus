@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 import {
   readPreferences,
   writePreferences,
@@ -8,23 +8,52 @@ import {
   type UserPreferences,
 } from '@/lib/preferences'
 
-export function usePreferences() {
-  const [prefs, setPrefsState] = useState<UserPreferences | null>(null)
-  const [isHydrated, setIsHydrated] = useState(false)
+type Listener = () => void
+const listeners = new Set<Listener>()
 
-  useEffect(() => {
-    setPrefsState(readPreferences())
-    setIsHydrated(true)
-  }, [])
+function subscribe(listener: Listener) {
+  listeners.add(listener)
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === null || e.key === 'nextcampus_user_preferences_v1') {
+      listener()
+    }
+  }
+  window.addEventListener('storage', onStorage)
+  return () => {
+    listeners.delete(listener)
+    window.removeEventListener('storage', onStorage)
+  }
+}
+
+function emit() {
+  listeners.forEach((l) => l())
+}
+
+function getSnapshot(): UserPreferences | null {
+  return readPreferences()
+}
+
+function getServerSnapshot(): UserPreferences | null {
+  return null
+}
+
+export function usePreferences() {
+  const prefs = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  )
 
   const setPrefs = useCallback((next: UserPreferences) => {
     writePreferences(next)
-    setPrefsState(next)
+    emit()
   }, [])
 
   const clear = useCallback(() => {
     clearPreferences()
-    setPrefsState(null)
+    emit()
   }, [])
 
   return { prefs, isHydrated, setPrefs, clear }
