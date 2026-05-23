@@ -33,6 +33,11 @@ export default async function ConfigurarPage() {
       id: subject.id,
       slug: subject.slug,
       nombre: subject.nombre,
+      commissions: subject.commissions.map((c) => ({
+        id: c.id,
+        slug: c.slug,
+        nombre: c.nombre,
+      })),
     })),
   }))
 

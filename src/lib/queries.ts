@@ -149,7 +149,17 @@ export const getCareer = unstable_cache(
             nombre: true,
             subjects: {
               orderBy: { nombre: 'asc' },
-              select: { id: true, slug: true, nombre: true, descripcion: true, driveUrl: true },
+              select: {
+                id: true,
+                slug: true,
+                nombre: true,
+                descripcion: true,
+                driveUrl: true,
+                commissions: {
+                  orderBy: { nombre: 'asc' },
+                  select: { id: true, slug: true, nombre: true },
+                },
+              },
             },
           },
         },

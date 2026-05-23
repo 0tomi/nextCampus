@@ -9,11 +9,18 @@ import { EMPTY_PREFERENCES, type UserPreferences } from '@/lib/preferences'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { cn } from '@/lib/utils'
 
+type CommissionForConfig = { id: string; slug: string; nombre: string }
+
 type YearForConfig = {
   id: string
   slug: string
   nombre: string
-  subjects: Array<{ id: string; slug: string; nombre: string }>
+  subjects: Array<{
+    id: string
+    slug: string
+    nombre: string
+    commissions: CommissionForConfig[]
+  }>
 }
 
 interface ConfigurarFormProps {
@@ -21,17 +28,22 @@ interface ConfigurarFormProps {
   years: YearForConfig[]
 }
 
-function CheckBox({ checked, focused }: { checked: boolean; focused?: boolean }) {
+function CheckBox({ checked, size = 'md' }: { checked: boolean; size?: 'sm' | 'md' }) {
   return (
     <span
       aria-hidden
       className={cn(
-        'flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border transition-colors',
+        'flex shrink-0 items-center justify-center rounded-sm border transition-colors',
+        size === 'sm' ? 'h-4 w-4' : 'h-5 w-5',
         checked ? 'border-uader-red bg-uader-red' : 'border-white/20 bg-transparent',
-        focused && 'ring-2 ring-uader-red ring-offset-2 ring-offset-surface-0',
       )}
     >
-      {checked && <CheckIcon className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+      {checked && (
+        <CheckIcon
+          className={cn(size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5', 'text-white')}
+          strokeWidth={3}
+        />
+      )}
     </span>
   )
 }
@@ -82,6 +94,15 @@ function ConfigurarFormInner({
       hiddenSubjects: d.hiddenSubjects.includes(slug)
         ? d.hiddenSubjects.filter((s) => s !== slug)
         : [...d.hiddenSubjects, slug],
+    }))
+  }
+
+  const toggleCommission = (slug: string) => {
+    setDraft((d) => ({
+      ...d,
+      hiddenCommissions: d.hiddenCommissions.includes(slug)
+        ? d.hiddenCommissions.filter((s) => s !== slug)
+        : [...d.hiddenCommissions, slug],
     }))
   }
 
@@ -202,6 +223,38 @@ function ConfigurarFormInner({
                             {subject.nombre}
                           </span>
                         </label>
+
+                        {subject.commissions.length > 1 && (
+                          <ul
+                            className={cn(
+                              'flex flex-col bg-white/[0.02] border-t border-white/5',
+                              !subjectChecked && 'opacity-50 pointer-events-none',
+                            )}
+                          >
+                            {subject.commissions.map((commission) => {
+                              const commissionChecked = !draft.hiddenCommissions.includes(commission.slug)
+                              return (
+                                <li key={commission.id}>
+                                  <label className="flex cursor-pointer items-center gap-3 pl-12 pr-5 py-2.5 transition-colors hover:bg-white/[0.03]">
+                                    <input
+                                      type="checkbox"
+                                      className="peer sr-only"
+                                      checked={commissionChecked}
+                                      onChange={() => toggleCommission(commission.slug)}
+                                      disabled={!yearChecked || !subjectChecked}
+                                    />
+                                    <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-uader-red peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
+                                      <CheckBox checked={commissionChecked} size="sm" />
+                                    </span>
+                                    <span className="min-w-0 flex-1 text-[12px] text-white/55">
+                                      Comisión {commission.nombre}
+                                    </span>
+                                  </label>
+                                </li>
+                              )
+                            })}
+                          </ul>
+                        )}
                       </li>
                     )
                   })}
@@ -340,6 +393,30 @@ function ConfigurarFormSkeleton({ careerName, years }: ConfigurarFormProps) {
                           {subject.nombre}
                         </span>
                       </label>
+
+                      {subject.commissions.length > 1 && (
+                        <ul className="flex flex-col bg-white/[0.02] border-t border-white/5">
+                          {subject.commissions.map((commission) => (
+                            <li key={commission.id}>
+                              <label className="flex cursor-pointer items-center gap-3 pl-12 pr-5 py-2.5 transition-colors hover:bg-white/[0.03]">
+                                <input
+                                  type="checkbox"
+                                  className="peer sr-only"
+                                  checked
+                                  disabled
+                                  readOnly
+                                />
+                                <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-uader-red peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
+                                  <CheckBox checked size="sm" />
+                                </span>
+                                <span className="min-w-0 flex-1 text-[12px] text-white/55">
+                                  Comisión {commission.nombre}
+                                </span>
+                              </label>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </li>
                   ))}
                 </ul>
