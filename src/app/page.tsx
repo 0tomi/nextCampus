@@ -137,7 +137,7 @@ export default async function HomePage() {
             <HomeSidebar careerName={career.nombre} years={career.years} />
           }
           headerOverlay={
-            <div className="pointer-events-none absolute bottom-[-1px] left-[328px] z-10 hidden lg:block">
+            <div className="pointer-events-none absolute bottom-[-1px] left-[372px] z-10 hidden lg:block">
               <Mascot size={60} />
             </div>
           }
