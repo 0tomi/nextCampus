@@ -205,6 +205,20 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
     saveProgress(Array.from(new Set([...completed, subject.slug])));
   };
 
+  const getBoundedPosition = (x: number, y: number, scale: number, width: number, height: number) => {
+    const paddingX = Math.min(180, width / 3);
+    const paddingY = Math.min(180, height / 3);
+    const minX = paddingX - WORLD_WIDTH * scale;
+    const maxX = width - paddingX;
+    const minY = paddingY - worldHeight * scale;
+    const maxY = height - paddingY;
+
+    return {
+      x: clamp(x, minX, maxX),
+      y: clamp(y, minY, maxY),
+    };
+  };
+
   const moveCameraToSubject = (subject: SubjectNode) => {
     const viewport = viewportRef.current;
     if (!viewport) return;
@@ -212,11 +226,15 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
     const rect = viewport.getBoundingClientRect();
     const position = getNodePosition(subject);
     const scale = Math.max(camera.scale, 0.78);
+    const targetX = rect.width / 2 - (position.x + NODE_WIDTH / 2) * scale;
+    const targetY = rect.height / 2 - (position.y + NODE_HEIGHT / 2) * scale;
+
+    const bounded = getBoundedPosition(targetX, targetY, scale, rect.width, rect.height);
 
     setCamera({
       scale,
-      x: rect.width / 2 - (position.x + NODE_WIDTH / 2) * scale,
-      y: rect.height / 2 - (position.y + NODE_HEIGHT / 2) * scale,
+      x: bounded.x,
+      y: bounded.y,
     });
   };
 
@@ -231,10 +249,22 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
       const worldX = (anchorX - current.x) / current.scale;
       const worldY = (anchorY - current.y) / current.scale;
 
+      const targetX = anchorX - worldX * targetScale;
+      const targetY = anchorY - worldY * targetScale;
+
+      if (rect) {
+        const bounded = getBoundedPosition(targetX, targetY, targetScale, rect.width, rect.height);
+        return {
+          scale: targetScale,
+          x: bounded.x,
+          y: bounded.y,
+        };
+      }
+
       return {
         scale: targetScale,
-        x: anchorX - worldX * targetScale,
-        y: anchorY - worldY * targetScale,
+        x: targetX,
+        y: targetY,
       };
     });
   };
@@ -267,10 +297,19 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
 
     if (!drag || drag.pointerId !== event.pointerId) return;
 
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const rect = viewport.getBoundingClientRect();
+
+    const targetX = drag.camera.x + event.clientX - drag.startX;
+    const targetY = drag.camera.y + event.clientY - drag.startY;
+
+    const bounded = getBoundedPosition(targetX, targetY, drag.camera.scale, rect.width, rect.height);
+
     setCamera({
       ...drag.camera,
-      x: drag.camera.x + event.clientX - drag.startX,
-      y: drag.camera.y + event.clientY - drag.startY,
+      x: bounded.x,
+      y: bounded.y,
     });
   };
 
