@@ -1,4 +1,5 @@
 import { getEventTone } from '@/components/mobile/shared/tokens'
+import { formatAgendaTime } from '@/lib/utils'
 
 const WEEKDAYS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
 const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
@@ -15,7 +16,7 @@ export function AgendaCard({ fecha, tipo, titulo }: AgendaCardProps) {
   const weekday = WEEKDAYS[d.getDay()]
   const day = d.getDate()
   const month = MONTHS[d.getMonth()]
-  const time = d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+  const time = formatAgendaTime(d)
 
   return (
     <div className="bg-[#1a1a1a] border border-white/5 rounded-[10px] flex items-stretch gap-3.5 px-3.5 py-3 cursor-pointer hover:bg-[#1f1f1f] transition-colors">

@@ -10,6 +10,7 @@ import {
 
 type Listener = () => void
 const listeners = new Set<Listener>()
+const subscribeToHydration = () => () => {}
 
 function subscribe(listener: Listener) {
   listeners.add(listener)
@@ -41,7 +42,7 @@ export function usePreferences() {
   const prefs = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   const isHydrated = useSyncExternalStore(
-    () => () => {},
+    subscribeToHydration,
     () => true,
     () => false,
   )
