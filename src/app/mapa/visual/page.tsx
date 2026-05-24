@@ -3,12 +3,12 @@ import Link from 'next/link';
 import { GraduationCap, Shield } from 'lucide-react';
 import { getCareer } from '@/lib/queries';
 import { PREFERENCES_KEY, isYearVisible, readPreferencesFromCookie } from '@/lib/preferences';
-import { getYearColorClasses } from '@/lib/yearColors';
 import { DashboardShell } from '@/components/shell/DashboardShell';
 import { Sidebar } from '@/components/shell/Sidebar';
 import { AnimateIn } from '@/components/ui/AnimateIn';
 import { MapaVisualCorrelativas } from '@/components/mapa/MapaVisualCorrelativas';
 import { MapaCorrelativasMobile } from '@/components/mapa/MapaCorrelativasMobile';
+import { MapaSidebar } from '@/components/mapa/MapaSidebar';
 
 export const revalidate = 300;
 
@@ -71,18 +71,6 @@ export default async function MapaVisualPage() {
     .filter(({ year }) => isYearVisible(year.slug, initialPrefs))
     .map(({ year, index }) => ({ ...year, order: index }));
 
-  const sidebarItems = visibleYears.map((year) => {
-    const colors = getYearColorClasses(year.slug);
-
-    return {
-      id: year.id,
-      href: `/year/${year.slug}`,
-      label: year.nombre,
-      badge: String(year.order + 1),
-      meta: `${year.subjects.length} materias`,
-      badgeClassName: colors.progressClassName + ' text-white',
-    };
-  });
   const availableSubjectSlugs = career.years.flatMap((year) => year.subjects.map((subject) => subject.slug));
 
   return (
@@ -114,12 +102,7 @@ export default async function MapaVisualPage() {
             </Link>
           }
           sidebar={
-            <Sidebar
-              eyebrow="CARRERA"
-              title={career.nombre}
-              secondaryEyebrow="AÑOS ACADÉMICOS"
-              items={sidebarItems}
-            />
+            <MapaSidebar currentView="visual" availableSubjectSlugs={availableSubjectSlugs} />
           }
         >
           <AnimateIn className="space-y-6">
