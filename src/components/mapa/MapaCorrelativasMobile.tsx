@@ -6,7 +6,6 @@ import {
   ArrowRight,
   BookOpen,
   Check,
-  CheckCircle2,
   ChevronRight,
   Filter,
   GraduationCap,
@@ -17,9 +16,9 @@ import {
   Search,
   Sparkles,
   Target,
-  Unlock,
 } from 'lucide-react';
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell';
+import { Modal } from '@/components/ui/Modal';
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
 import { calculateSubjectStatuses } from '@/lib/domain/mapa/unlockLogic';
 import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
@@ -120,6 +119,7 @@ export function MapaCorrelativasMobile({
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [yearFilter, setYearFilter] = useState<YearFilter>('ALL');
   const [mode, setMode] = useState<MobileMapaMode>(initialMode);
+  const [detailSubjectSlug, setDetailSubjectSlug] = useState<string | null>(null);
   const isHydrated = useSyncExternalStore(
     () => () => undefined,
     () => true,
@@ -139,15 +139,18 @@ export function MapaCorrelativasMobile({
     subjectsData.find((subject) => subjectStatuses[subject.slug] === 'UNLOCKED') ??
     subjectsData[0];
   const selectedStatus = selectedSubject ? subjectStatuses[selectedSubject.slug] : 'UNLOCKED';
-  const selectedMissing = selectedSubject
-    ? selectedSubject.correlativas.filter((slug) => !completed.includes(slug))
-    : [];
   const selectedUnlocks = selectedSubject ? getUnlocks(selectedSubject.slug) : [];
   const completedCount = completed.length;
   const totalSubjects = subjectsData.length;
   const unlockedCount = Object.values(subjectStatuses).filter((status) => status === 'UNLOCKED').length;
   const lockedCount = totalSubjects - completedCount - unlockedCount;
   const progressPercentage = Math.round((completedCount / totalSubjects) * 100);
+  const detailSubject = subjectsData.find((subject) => subject.slug === detailSubjectSlug) ?? null;
+  const detailStatus = detailSubject ? subjectStatuses[detailSubject.slug] : null;
+  const detailMissing = detailSubject
+    ? detailSubject.correlativas.filter((slug) => !completed.includes(slug))
+    : [];
+  const detailUnlocks = detailSubject ? getUnlocks(detailSubject.slug) : [];
 
   const handleToggleSubject = (subject: SubjectNode) => {
     const currentStatus = subjectStatuses[subject.slug];
@@ -161,6 +164,11 @@ export function MapaCorrelativasMobile({
     }
 
     saveProgress(Array.from(new Set([...completed, subject.slug])));
+  };
+
+  const openSubjectDetail = (subject: SubjectNode) => {
+    setSelectedSubjectSlug(subject.slug);
+    setDetailSubjectSlug(subject.slug);
   };
 
   const handleReset = () => {
@@ -412,7 +420,7 @@ export function MapaCorrelativasMobile({
                   <button
                     key={subject.slug}
                     type="button"
-                    onClick={() => setSelectedSubjectSlug(subject.slug)}
+                      onClick={() => openSubjectDetail(subject)}
                     className={cn(
                       'min-w-[260px] shrink-0 rounded-[22px] border px-4 py-4 text-left transition',
                       selectedSubjectSlug === subject.slug
@@ -446,17 +454,6 @@ export function MapaCorrelativasMobile({
                 ))
               )}
             </div>
-          </section>
-
-          <section className="px-[18px]">
-            <SelectedSubjectCard
-              subject={selectedSubject}
-              status={selectedStatus}
-              missing={selectedMissing}
-              unlocks={selectedUnlocks}
-              canOpen={availableSlugs.size === 0 || availableSlugs.has(selectedSubject.slug)}
-              onToggle={handleToggleSubject}
-            />
           </section>
 
           <section className="px-[18px]">
@@ -512,7 +509,7 @@ export function MapaCorrelativasMobile({
                     status={subjectStatuses[subject.slug]}
                     missing={subject.correlativas.filter((slug) => !completed.includes(slug))}
                     canOpen={availableSlugs.size === 0 || availableSlugs.has(subject.slug)}
-                    onSelect={() => setSelectedSubjectSlug(subject.slug)}
+                    onSelect={() => openSubjectDetail(subject)}
                     onToggle={() => handleToggleSubject(subject)}
                   />
                 ))
@@ -603,7 +600,7 @@ export function MapaCorrelativasMobile({
                           <button
                             key={subject.slug}
                             type="button"
-                            onClick={() => setSelectedSubjectSlug(subject.slug)}
+                            onClick={() => openSubjectDetail(subject)}
                             className={cn(
                               'cursor-pointer rounded-full border px-3 py-2 text-left text-[11px] font-bold leading-4 transition',
                               STATUS_CARD[status],
@@ -675,36 +672,56 @@ export function MapaCorrelativasMobile({
           </section>
         </div>
       </div>
+
+      <SubjectDetailModal
+        subject={detailSubject}
+        status={detailStatus}
+        missing={detailMissing}
+        unlocks={detailUnlocks}
+        canOpen={detailSubject ? availableSlugs.size === 0 || availableSlugs.has(detailSubject.slug) : false}
+        onClose={() => setDetailSubjectSlug(null)}
+        onToggle={handleToggleSubject}
+      />
     </MobileShell>
   );
 }
 
-function SelectedSubjectCard({
+function SubjectDetailModal({
   subject,
   status,
   missing,
   unlocks,
   canOpen,
+  onClose,
   onToggle,
 }: {
-  subject: SubjectNode;
-  status: SubjectStatus;
+  subject: SubjectNode | null;
+  status: SubjectStatus | null;
   missing: string[];
   unlocks: SubjectNode[];
   canOpen: boolean;
+  onClose: () => void;
   onToggle: (subject: SubjectNode) => void;
 }) {
+  if (!subject || !status) return null;
+
+  const guidance = getSubjectGuidance(subject, status, missing, unlocks);
+
   return (
-    <div className="overflow-hidden rounded-[28px] border border-white/10 bg-[#141414] shadow-[0_22px_70px_rgba(0,0,0,0.28)]">
-      <div className="border-b border-white/8 px-4 py-4">
+    <Modal
+      open={Boolean(subject)}
+      onClose={onClose}
+      title={subject.nombre}
+      className="mx-3 max-w-none overflow-hidden rounded-[28px] border-white/10 bg-[#111111]"
+    >
+      <div className="space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/38">
-              Materia enfocada
-            </p>
-            <h2 className="mt-2 text-xl font-black leading-6 text-white">{subject.nombre}</h2>
-            <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.16em] text-white/42">
               {subject.codigo} · {YEAR_LABELS[subject.year as 1 | 2 | 3 | 4 | 5]}
+            </p>
+            <p className="mt-2 text-sm leading-6 text-white/62">
+              {guidance.summary}
             </p>
           </div>
 
@@ -713,14 +730,24 @@ function SelectedSubjectCard({
           </span>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <MiniFact label="Código" value={subject.codigo} />
           <MiniFact label="Horas" value={subject.horas} />
           <MiniFact label="Cursado" value={subject.periodo === 'Anual' ? 'Anual' : 'Cuatri'} />
         </div>
-      </div>
 
-      <div className="space-y-4 px-4 py-4">
+        <div className="rounded-[22px] border border-white/10 bg-white/[0.04] px-4 py-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/38">
+            Qué te conviene hacer
+          </p>
+          <p className="mt-2 text-sm font-bold leading-6 text-white">
+            {guidance.title}
+          </p>
+          <p className="mt-2 text-sm leading-6 text-white/58">
+            {guidance.detail}
+          </p>
+        </div>
+
         <div className="flex gap-2">
           <button
             type="button"
@@ -740,6 +767,7 @@ function SelectedSubjectCard({
           {canOpen ? (
             <Link
               href={`/materia/${subject.slug}`}
+              onClick={onClose}
               className="flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 text-sm font-black text-white/74 transition hover:bg-white/8 hover:text-white"
             >
               <BookOpen className="h-4 w-4" />
@@ -763,7 +791,7 @@ function SelectedSubjectCard({
           />
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -803,7 +831,7 @@ function SubjectListCard({
           <p className="mt-2 text-[12px] leading-5 text-white/52">{STATUS_LABELS[status]}</p>
         </div>
         <span className={cn('shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em]', STATUS_BADGE[status])}>
-          {status === 'COMPLETED' ? <CheckCircle2 className="h-3.5 w-3.5" /> : status === 'UNLOCKED' ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+          {status === 'COMPLETED' ? 'Hecha' : status === 'UNLOCKED' ? 'Lista' : 'En espera'}
         </span>
       </div>
 
@@ -963,4 +991,48 @@ function MiniFact({ label, value }: { label: string; value: number | string }) {
       <p className="mt-2 text-sm font-black text-white">{value}</p>
     </div>
   );
+}
+
+function getSubjectGuidance(
+  subject: SubjectNode,
+  status: SubjectStatus,
+  missing: string[],
+  unlocks: SubjectNode[],
+) {
+  if (status === 'COMPLETED') {
+    return {
+      summary: 'Esta materia ya cuenta como resuelta dentro del recorrido que marcaste.',
+      title: 'Ya la tenés cubierta',
+      detail:
+        unlocks.length > 0
+          ? `Te sirve para acercarte a ${unlocks
+              .slice(0, 2)
+              .map((item) => item.nombre)
+              .join(' y ')}${unlocks.length > 2 ? ' y más' : ''}.`
+          : 'No destraba materias directas, pero sigue sumando al avance general de tu carrera.',
+    };
+  }
+
+  if (status === 'UNLOCKED') {
+    return {
+      summary: 'Con lo que ya marcaste, esta materia está lista para ser tu próximo movimiento.',
+      title: 'Podés seguir con esta materia',
+      detail:
+        unlocks.length > 0
+          ? `Si avanzás con ${subject.nombre}, después vas a abrir ${unlocks.length} materia${unlocks.length === 1 ? '' : 's'} directa${unlocks.length === 1 ? '' : 's'}.`
+          : 'No abre materias directas inmediatas, pero te deja mejor posicionado para etapas siguientes.',
+    };
+  }
+
+  return {
+    summary: 'Todavía no aparece disponible con el progreso que tenés marcado hasta ahora.',
+    title: 'Primero conviene completar requisitos',
+    detail:
+      missing.length > 0
+        ? `Antes de llegar a ${subject.nombre}, te conviene enfocarte en ${missing
+            .slice(0, 3)
+            .map(getSubjectName)
+            .join(', ')}${missing.length > 3 ? ' y otras más' : ''}.`
+        : 'Aún no está lista dentro de tu recorrido actual.',
+  };
 }
