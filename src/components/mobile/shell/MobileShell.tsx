@@ -10,6 +10,7 @@ import {
   Shield,
   X,
   ChevronRight,
+  Map,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getYearColorClasses } from '@/lib/yearColors'
@@ -167,6 +168,41 @@ export function MobileShell({
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <div className="mb-4">
+            <span className="mb-2 block px-3 text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
+              Herramientas
+            </span>
+            <Link
+              href="/mapa"
+              onClick={closeDrawer}
+              className={cn(
+                'group flex items-center justify-between rounded-lg border px-3 py-3 transition-all',
+                pathname.startsWith('/mapa')
+                  ? 'border-amber-400/35 bg-amber-400/10'
+                  : 'border-amber-400/15 bg-gradient-to-r from-amber-500/10 to-orange-500/5 hover:border-amber-400/30 hover:bg-amber-500/12',
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-md bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-[0_0_12px_rgba(245,158,11,0.18)]">
+                  <Map size={16} strokeWidth={2.2} />
+                </span>
+                <div className="flex min-w-0 flex-col">
+                  <span className="text-sm font-bold leading-tight text-white">
+                    Mapa de correlativas
+                  </span>
+                  <span className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-white/42">
+                    Recorrido interactivo
+                  </span>
+                </div>
+              </div>
+              <ChevronRight
+                size={15}
+                strokeWidth={2}
+                className="shrink-0 text-white/28 transition group-hover:translate-x-0.5 group-hover:text-white/56"
+              />
+            </Link>
+          </div>
+
           <span className="mb-2 block px-3 text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
             AÑOS ACADÉMICOS
           </span>
