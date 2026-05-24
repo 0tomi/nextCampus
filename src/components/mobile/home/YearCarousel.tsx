@@ -102,14 +102,14 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
                   ].join(' ')}
                 >
                   <div>
-                    <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-black/55">
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/72">
                       Año {idx + 1} · {y.subjects.length} {y.subjects.length === 1 ? 'materia' : 'materias'}
                     </p>
-                    <h3 className={['mt-1 text-xl font-black tracking-tight', (colors.name === 'violet' || colors.name === 'rose') ? 'text-white' : 'text-black'].join(' ')}>
+                    <h3 className="mt-1 text-xl font-black tracking-tight text-white">
                       {y.nombre}
                     </h3>
                   </div>
-                  <div className={['w-10 h-10 rounded-lg flex items-center justify-center bg-black/20', (colors.name === 'violet' || colors.name === 'rose') ? 'text-white' : 'text-black'].join(' ')}>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-black/20 text-white">
                     <ChevronRight size={20} strokeWidth={2.5} />
                   </div>
                 </Link>
