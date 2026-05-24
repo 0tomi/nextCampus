@@ -712,9 +712,9 @@ function SubjectDetailModal({
       open={Boolean(subject)}
       onClose={onClose}
       title={subject.nombre}
-      className="mx-3 max-w-none overflow-hidden rounded-[28px] border-white/10 bg-[#111111]"
+      className="mx-3 h-[min(78vh,36rem)] max-w-none overflow-hidden rounded-[28px] border-white/10 bg-[#111111]"
     >
-      <div className="space-y-4">
+      <div className="h-[calc(min(78vh,36rem)-5.5rem)] space-y-4 overflow-y-auto pr-1">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/38">
