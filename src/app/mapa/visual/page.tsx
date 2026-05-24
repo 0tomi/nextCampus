@@ -8,6 +8,7 @@ import { DashboardShell } from '@/components/shell/DashboardShell';
 import { Sidebar } from '@/components/shell/Sidebar';
 import { AnimateIn } from '@/components/ui/AnimateIn';
 import { MapaVisualCorrelativas } from '@/components/mapa/MapaVisualCorrelativas';
+import { MapaCorrelativasMobile } from '@/components/mapa/MapaCorrelativasMobile';
 
 export const revalidate = 300;
 
@@ -85,30 +86,47 @@ export default async function MapaVisualPage() {
   const availableSubjectSlugs = career.years.flatMap((year) => year.subjects.map((subject) => subject.slug));
 
   return (
-    <DashboardShell
-      brand={<DashboardBrand />}
-      mainClassName="p-0"
-      topbar={
-        <Link
-          href="/admin"
-          className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-        >
-          <Shield className="h-4 w-4" />
-          Admin
-        </Link>
-      }
-      sidebar={
-        <Sidebar
-          eyebrow="CARRERA"
-          title={career.nombre}
-          secondaryEyebrow="AÑOS ACADÉMICOS"
-          items={sidebarItems}
+    <>
+      <div className="lg:hidden">
+        <MapaCorrelativasMobile
+          careerName={career.nombre}
+          drawerYears={visibleYears.map((year) => ({
+            slug: year.slug,
+            nombre: year.nombre,
+            subjectsCount: year.subjects.length,
+          }))}
+          availableSubjectSlugs={availableSubjectSlugs}
+          initialMode="ruta"
         />
-      }
-    >
-      <AnimateIn className="space-y-6">
-        <MapaVisualCorrelativas availableSubjectSlugs={availableSubjectSlugs} />
-      </AnimateIn>
-    </DashboardShell>
+      </div>
+
+      <div className="hidden lg:block">
+        <DashboardShell
+          brand={<DashboardBrand />}
+          mainClassName="p-0"
+          topbar={
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              <Shield className="h-4 w-4" />
+              Admin
+            </Link>
+          }
+          sidebar={
+            <Sidebar
+              eyebrow="CARRERA"
+              title={career.nombre}
+              secondaryEyebrow="AÑOS ACADÉMICOS"
+              items={sidebarItems}
+            />
+          }
+        >
+          <AnimateIn className="space-y-6">
+            <MapaVisualCorrelativas availableSubjectSlugs={availableSubjectSlugs} />
+          </AnimateIn>
+        </DashboardShell>
+      </div>
+    </>
   );
 }
