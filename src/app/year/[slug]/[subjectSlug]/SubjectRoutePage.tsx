@@ -92,7 +92,7 @@ export function SubjectRoutePage({
       label: 'Apuntes',
       badge: <NotebookTabs className="h-4 w-4" />,
       meta: `${subject.apuntes.length} recursos`,
-      badgeClassName: 'from-cyan-400 to-blue-500 text-black',
+      badgeClassName: 'from-cyan-400 to-blue-500 text-white',
     },
   ]
 

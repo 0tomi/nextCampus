@@ -79,6 +79,10 @@ function ConfigurarFormInner({
   const router = useRouter()
   const [draft, setDraft] = useState<UserPreferences>(initialPrefs)
 
+  const navigateHomeWithFreshState = () => {
+    window.location.assign('/')
+  }
+
   const toggleYear = (slug: string) => {
     setDraft((d) => ({
       ...d,
@@ -108,12 +112,12 @@ function ConfigurarFormInner({
 
   const onSave = () => {
     setPrefs(draft)
-    router.push('/')
+    navigateHomeWithFreshState()
   }
 
   const onResetAll = () => {
     clear()
-    router.push('/')
+    navigateHomeWithFreshState()
   }
 
   const onCancel = () => router.push('/')

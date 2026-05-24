@@ -36,7 +36,7 @@ export function QuizTab({
         </div>
         <Link
           href={buildSubjectQuizHref({ yearSlug, subjectSlug })}
-          className={['flex items-center justify-center gap-2 h-11 rounded-md text-sm font-bold text-black cursor-pointer bg-gradient-to-r', colors.badgeClassName].join(' ')}
+          className={['flex h-11 cursor-pointer items-center justify-center gap-2 rounded-md bg-gradient-to-r text-sm font-bold text-white', colors.badgeClassName].join(' ')}
         >
           Empezar quiz
           <ArrowRight size={16} strokeWidth={2.5} />

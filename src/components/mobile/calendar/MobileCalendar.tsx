@@ -205,7 +205,7 @@ export function MobileCalendar({
                   color: cell.muted
                     ? 'rgba(255,255,255,0.18)'
                     : isSelected
-                      ? '#0a0a0a'
+                      ? 'rgba(255,255,255,0.98)'
                       : isToday
                         ? accent
                         : 'rgba(255,255,255,0.85)',

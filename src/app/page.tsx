@@ -78,6 +78,11 @@ export default async function HomePage() {
         <div className="lg:hidden">
           <MobileShell title="NextCampus" drawerYears={[]} careerName="">
             <div className="px-[18px] pt-6">
+              <div className="mb-5 flex justify-center">
+                <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-5 py-3">
+                  <Mascot size={96} className="opacity-95" />
+                </div>
+              </div>
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">CARRERA</p>
               <h1 className="mt-2 text-2xl font-black text-white">Todavía no hay datos.</h1>
               <p className="mt-3 text-sm text-white/55 leading-relaxed">Cuando esté listo vas a ver acá los años y materias de la carrera.</p>

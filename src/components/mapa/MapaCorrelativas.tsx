@@ -19,6 +19,7 @@ import {
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
 import { calculateSubjectStatuses } from '@/lib/domain/mapa/unlockLogic';
 import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
+import { readMapaProgress, writeMapaProgress } from '@/lib/mapaProgress';
 import { cn } from '@/lib/utils';
 
 type StatusFilter = 'ALL' | SubjectStatus;
@@ -69,16 +70,8 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('nextcampus_progreso_materias');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as string[];
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setCompleted(parsed.filter((slug) => subjectsData.some((subject) => subject.slug === slug)));
-      } catch {
-        localStorage.removeItem('nextcampus_progreso_materias');
-      }
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCompleted(readMapaProgress());
     setIsHydrated(true);
   }, []);
 
@@ -87,7 +80,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
 
   const saveProgress = (newCompleted: string[]) => {
     setCompleted(newCompleted);
-    localStorage.setItem('nextcampus_progreso_materias', JSON.stringify(newCompleted));
+    writeMapaProgress(newCompleted);
   };
 
   const removeSubjectAndDependents = (slugToRemove: string, currentCompleted: string[]): string[] => {

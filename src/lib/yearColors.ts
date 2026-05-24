@@ -22,7 +22,7 @@ export type YearColorInput =
 export const YEAR_COLOR_PALETTE = [
   {
     name: 'amber',
-    badgeClassName: 'from-amber-400 to-orange-500 text-black',
+    badgeClassName: 'from-amber-400 to-orange-500 text-white',
     chipClassName:
       'border-amber-400/20 bg-amber-500/10 text-amber-300 shadow-[0_0_24px_rgba(251,191,36,0.08)]',
     progressClassName: 'bg-gradient-to-r from-amber-400 to-orange-500',
@@ -31,7 +31,7 @@ export const YEAR_COLOR_PALETTE = [
   },
   {
     name: 'emerald',
-    badgeClassName: 'from-emerald-400 to-teal-500 text-black',
+    badgeClassName: 'from-emerald-400 to-teal-500 text-white',
     chipClassName:
       'border-emerald-400/20 bg-emerald-500/10 text-emerald-300 shadow-[0_0_24px_rgba(52,211,153,0.08)]',
     progressClassName: 'bg-gradient-to-r from-emerald-400 to-teal-500',
@@ -58,7 +58,7 @@ export const YEAR_COLOR_PALETTE = [
   },
   {
     name: 'cyan',
-    badgeClassName: 'from-cyan-400 to-blue-500 text-black',
+    badgeClassName: 'from-cyan-400 to-blue-500 text-white',
     chipClassName:
       'border-cyan-400/20 bg-cyan-500/10 text-cyan-300 shadow-[0_0_24px_rgba(34,211,238,0.08)]',
     progressClassName: 'bg-gradient-to-r from-cyan-400 to-blue-500',

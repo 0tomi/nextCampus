@@ -134,40 +134,37 @@ const TAGS = {
 
 export const queryTags = TAGS
 
-export const getCareer = unstable_cache(
-  () =>
-    prisma.career.findFirst({
-      select: {
-        id: true,
-        nombre: true,
-        descripcion: true,
-        years: {
-          orderBy: { orden: 'asc' },
-          select: {
-            id: true,
-            slug: true,
-            nombre: true,
-            subjects: {
-              orderBy: { nombre: 'asc' },
-              select: {
-                id: true,
-                slug: true,
-                nombre: true,
-                descripcion: true,
-                driveUrl: true,
-                commissions: {
-                  orderBy: { nombre: 'asc' },
-                  select: { id: true, slug: true, nombre: true },
-                },
+export function getCareer() {
+  return prisma.career.findFirst({
+    select: {
+      id: true,
+      nombre: true,
+      descripcion: true,
+      years: {
+        orderBy: { orden: 'asc' },
+        select: {
+          id: true,
+          slug: true,
+          nombre: true,
+          subjects: {
+            orderBy: { nombre: 'asc' },
+            select: {
+              id: true,
+              slug: true,
+              nombre: true,
+              descripcion: true,
+              driveUrl: true,
+              commissions: {
+                orderBy: { nombre: 'asc' },
+                select: { id: true, slug: true, nombre: true },
               },
             },
           },
         },
       },
-    }),
-  ['career'],
-  { tags: [TAGS.career], revalidate: 3600 },
-)
+    },
+  })
+}
 
 export function getYearBySlug(slug: string) {
   return unstable_cache(

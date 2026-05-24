@@ -3,11 +3,12 @@ import Link from 'next/link';
 import { Shield, GraduationCap } from 'lucide-react';
 import { getCareer } from '@/lib/queries';
 import { PREFERENCES_KEY, isYearVisible, readPreferencesFromCookie } from '@/lib/preferences';
-import { getYearColorClasses } from '@/lib/yearColors';
 import { DashboardShell } from '@/components/shell/DashboardShell';
 import { Sidebar } from '@/components/shell/Sidebar';
 import { AnimateIn } from '@/components/ui/AnimateIn';
 import { MapaCorrelativas } from '@/components/mapa/MapaCorrelativas';
+import { MapaCorrelativasMobile } from '@/components/mapa/MapaCorrelativasMobile';
+import { MapaSidebar } from '@/components/mapa/MapaSidebar';
 
 export const revalidate = 300;
 
@@ -76,46 +77,46 @@ export default async function MapaPage() {
     .filter(({ year }) => isYearVisible(year.slug, initialPrefs))
     .map(({ year, index }) => ({ ...year, order: index }));
 
-  const sidebarItems = visibleYears.map((year) => {
-    const colors = getYearColorClasses(year.slug);
-
-    return {
-      id: year.id,
-      href: `/year/${year.slug}`,
-      label: year.nombre,
-      badge: String(year.order + 1),
-      meta: `${year.subjects.length} materias`,
-      badgeClassName: colors.progressClassName + ' text-white',
-    };
-  });
   const availableSubjectSlugs = career.years.flatMap((year) =>
     year.subjects.map((subject) => subject.slug),
   );
 
   return (
-    <DashboardShell
-      brand={<DashboardBrand />}
-      topbar={
-        <Link
-          href="/admin"
-          className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-        >
-          <Shield className="h-4 w-4" />
-          Admin
-        </Link>
-      }
-      sidebar={
-        <Sidebar
-          eyebrow="CARRERA"
-          title={career.nombre}
-          secondaryEyebrow="AÑOS ACADÉMICOS"
-          items={sidebarItems}
+    <>
+      <div className="lg:hidden">
+        <MapaCorrelativasMobile
+          careerName={career.nombre}
+          drawerYears={visibleYears.map((year) => ({
+            slug: year.slug,
+            nombre: year.nombre,
+            subjectsCount: year.subjects.length,
+          }))}
+          availableSubjectSlugs={availableSubjectSlugs}
+          initialMode="plan"
         />
-      }
-    >
-      <AnimateIn className="space-y-6">
-        <MapaCorrelativas availableSubjectSlugs={availableSubjectSlugs} />
-      </AnimateIn>
-    </DashboardShell>
+      </div>
+
+      <div className="hidden lg:block">
+        <DashboardShell
+          brand={<DashboardBrand />}
+          topbar={
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              <Shield className="h-4 w-4" />
+              Admin
+            </Link>
+          }
+          sidebar={
+            <MapaSidebar />
+          }
+        >
+          <AnimateIn className="space-y-6">
+            <MapaCorrelativas availableSubjectSlugs={availableSubjectSlugs} />
+          </AnimateIn>
+        </DashboardShell>
+      </div>
+    </>
   );
 }

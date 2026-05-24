@@ -12,18 +12,16 @@ import {
   Lock,
   Minus,
   Move,
-  PanelRightClose,
-  PanelRightOpen,
   Plus,
   Radar,
   RefreshCw,
-  Sparkles,
   Unlock,
   X,
 } from 'lucide-react';
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
 import { calculateSubjectStatuses } from '@/lib/domain/mapa/unlockLogic';
 import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
+import { readMapaProgress, writeMapaProgress } from '@/lib/mapaProgress';
 import { cn } from '@/lib/utils';
 
 type MapaVisualCorrelativasProps = {
@@ -36,7 +34,6 @@ type Camera = {
   scale: number;
 };
 
-const STORAGE_KEY = 'nextcampus_progreso_materias';
 const NODE_WIDTH = 326;
 const NODE_HEIGHT = 138;
 const YEAR_GAP = 580;
@@ -139,19 +136,8 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
   const [isPanelOpen, setIsPanelOpen] = useState(true);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as string[];
-        const validProgress = parsed.filter((slug) => subjectsData.some((subject) => subject.slug === slug));
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setCompleted(validProgress);
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    }
-
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCompleted(readMapaProgress());
     setIsHydrated(true);
   }, []);
 
@@ -163,9 +149,6 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
   const selectedMissing = selectedSubject
     ? selectedSubject.correlativas.filter((slug) => !completed.includes(slug))
     : [];
-  const completedCount = completed.length;
-  const unlockedCount = Object.values(subjectStatuses).filter((status) => status === 'UNLOCKED').length;
-  const progress = Math.round((completedCount / subjectsData.length) * 100);
   const activeSlug = hoveredSlug ?? selectedSlug;
   const activeSubject = subjectsData.find((subject) => subject.slug === activeSlug);
   const activeChain = new Set<string>([
@@ -188,7 +171,7 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
 
   const saveProgress = (nextCompleted: string[]) => {
     setCompleted(nextCompleted);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextCompleted));
+    writeMapaProgress(nextCompleted);
   };
 
   const handleToggleSubject = (subject: SubjectNode) => {
@@ -649,21 +632,6 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
         </aside>
       ) : null}
     </section>
-  );
-}
-
-function Metric({ label, value, tone }: { label: string; value: number | string; tone: 'emerald' | 'cyan' | 'amber' }) {
-  const toneClassName = {
-    emerald: 'border-emerald-200/20 bg-emerald-300/9 text-emerald-100',
-    cyan: 'border-cyan-200/20 bg-cyan-300/9 text-cyan-100',
-    amber: 'border-amber-200/20 bg-amber-300/9 text-amber-100',
-  }[tone];
-
-  return (
-    <div className={cn('rounded-md border p-3', toneClassName)}>
-      <p className="truncate text-[10px] font-black uppercase tracking-widest opacity-70">{label}</p>
-      <p className="mt-2 text-2xl font-black">{value}</p>
-    </div>
   );
 }
 

@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useMemo } from 'react'
 import { ArrowRight, ChevronRight, Calendar, Layers, Pencil, Trash2, Plus } from 'lucide-react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
-import { YearSwitcherPill } from './YearSwitcherPill'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { AdminControls } from '@/components/admin/AdminControls'
@@ -138,10 +137,10 @@ export function MobileYear({
             <div className="relative">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <p className={['text-[10px] font-extrabold uppercase tracking-[0.22em]', (colors.name === 'violet' || colors.name === 'rose') ? 'text-white/70' : 'text-black/55'].join(' ')}>
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-white/72">
                     Año {yearNumber} · {year.subjects.length} {year.subjects.length === 1 ? 'materia' : 'materias'}
                   </p>
-                  <h1 className={['mt-2 text-2xl font-black tracking-tight leading-tight truncate', (colors.name === 'violet' || colors.name === 'rose') ? 'text-white' : 'text-black'].join(' ')}>
+                  <h1 className="mt-2 truncate text-2xl font-black leading-tight tracking-tight text-white">
                     {year.nombre}
                   </h1>
                 </div>
@@ -150,7 +149,7 @@ export function MobileYear({
                     <button
                       type="button"
                       onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-year'))}
-                      className={['p-2 rounded bg-black/20 hover:bg-black/35 transition-colors cursor-pointer', (colors.name === 'violet' || colors.name === 'rose') ? 'text-white' : 'text-black'].join(' ')}
+                      className="cursor-pointer rounded bg-black/20 p-2 text-white transition-colors hover:bg-black/35"
                       title="Editar año"
                     >
                       <Pencil size={14} />
@@ -180,9 +179,6 @@ export function MobileYear({
           </div>
         </section>
         
-        {/* SWITCHER */}
-        <YearSwitcherPill years={allYears} currentSlug={year.slug} />
-
         {/* PRÓXIMOS 3 EVENTOS + CTA calendario */}
         <section className="flex flex-col gap-3">
           <div className="px-[18px] flex items-center justify-between">

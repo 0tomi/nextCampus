@@ -8,6 +8,7 @@ import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { AddYearButton } from '@/components/admin/HomeAdminOverlay'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
+import { Mascot } from '@/components/ui/Mascot'
 import { usePreferences } from '@/hooks/usePreferences'
 import { isYearVisible, isSubjectVisible, type UserPreferences } from '@/lib/preferences'
 
@@ -95,6 +96,11 @@ export function MobileHome({
         careerName={career.nombre}
       >
         <div className="px-[18px] pt-6 flex flex-col gap-4">
+          <div className="flex justify-center">
+            <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-5 py-3">
+              <Mascot size={96} className="opacity-95" />
+            </div>
+          </div>
           <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
             Inicio personalizado
           </p>
@@ -126,11 +132,22 @@ export function MobileHome({
       <div className="flex flex-col gap-7">
         {/* HERO */}
         <section className="px-[18px] pt-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">CARRERA</p>
-          <h1 className="mt-2 text-2xl font-black tracking-tight text-white leading-tight">{career.nombre}</h1>
-          {career.descripcion && (
-            <p className="mt-3 text-sm leading-relaxed text-white/55">{career.descripcion}</p>
-          )}
+          <div className="relative overflow-hidden rounded-[24px] border border-white/6 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] px-5 py-4">
+            <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-orange-400/12 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-10 left-0 h-24 w-24 rounded-full bg-amber-200/8 blur-2xl" />
+            <div className="relative min-h-[136px] pr-1 pb-10">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">CARRERA</p>
+                <h1 className="mt-2 text-2xl font-black tracking-tight text-white leading-tight">{career.nombre}</h1>
+                {career.descripcion && (
+                  <p className="mt-3 max-w-[26ch] text-sm leading-relaxed text-white/55">{career.descripcion}</p>
+                )}
+              </div>
+              <div className="absolute bottom-[-14px] right-[-6px]">
+                <Mascot size={74} className="opacity-95" />
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* STATS — 3 cards 1fr */}
