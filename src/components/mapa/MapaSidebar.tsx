@@ -7,27 +7,14 @@ import { ArrowLeft, BookOpen, CheckCircle2 } from 'lucide-react';
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
 import { calculateSubjectStatuses } from '@/lib/domain/mapa/unlockLogic';
 import type { SubjectNode } from '@/lib/domain/mapa/types';
-
-const STORAGE_KEY = 'nextcampus_progreso_materias';
+import {
+  MAPA_PROGRESS_UPDATED_EVENT,
+  readMapaProgress,
+} from '@/lib/mapaProgress';
 
 type MapaSidebarProps = {
   availableSubjectSlugs?: string[];
 };
-
-function readStoredProgress(): string[] {
-  if (typeof window === 'undefined') return [];
-
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (!saved) return [];
-
-  try {
-    const parsed = JSON.parse(saved) as string[];
-    return parsed.filter((slug) => subjectsData.some((subject) => subject.slug === slug));
-  } catch {
-    localStorage.removeItem(STORAGE_KEY);
-    return [];
-  }
-}
 
 export function MapaSidebar({ availableSubjectSlugs = [] }: MapaSidebarProps) {
   const router = useRouter();
@@ -36,15 +23,17 @@ export function MapaSidebar({ availableSubjectSlugs = [] }: MapaSidebarProps) {
 
   useEffect(() => {
     const syncProgress = () => {
-      setCompleted(readStoredProgress());
+      setCompleted(readMapaProgress());
       setIsHydrated(true);
     };
 
     syncProgress();
     window.addEventListener('storage', syncProgress);
+    window.addEventListener(MAPA_PROGRESS_UPDATED_EVENT, syncProgress);
 
     return () => {
       window.removeEventListener('storage', syncProgress);
+      window.removeEventListener(MAPA_PROGRESS_UPDATED_EVENT, syncProgress);
     };
   }, []);
 

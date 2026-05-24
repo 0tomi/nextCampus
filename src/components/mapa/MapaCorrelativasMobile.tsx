@@ -22,6 +22,7 @@ import { Modal } from '@/components/ui/Modal';
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
 import { calculateSubjectStatuses } from '@/lib/domain/mapa/unlockLogic';
 import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
+import { readMapaProgress, writeMapaProgress } from '@/lib/mapaProgress';
 import { cn } from '@/lib/utils';
 
 type MobileMapaMode = 'plan' | 'ruta';
@@ -34,8 +35,6 @@ type MapaCorrelativasMobileProps = {
   availableSubjectSlugs?: string[];
   initialMode?: MobileMapaMode;
 };
-
-const STORAGE_KEY = 'nextcampus_progreso_materias';
 
 const YEAR_LABELS: Record<1 | 2 | 3 | 4 | 5, string> = {
   1: 'Primer año',
@@ -71,21 +70,6 @@ const STATUS_CARD: Record<SubjectStatus, string> = {
   LOCKED: 'border-white/10 bg-white/5',
 };
 
-function readStoredProgress(): string[] {
-  if (typeof window === 'undefined') return [];
-
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (!saved) return [];
-
-  try {
-    const parsed = JSON.parse(saved) as string[];
-    return parsed.filter((slug) => subjectsData.some((subject) => subject.slug === slug));
-  } catch {
-    localStorage.removeItem(STORAGE_KEY);
-    return [];
-  }
-}
-
 function getUnlocks(slug: string) {
   return subjectsData.filter((subject) => subject.correlativas.includes(slug));
 }
@@ -113,7 +97,7 @@ export function MapaCorrelativasMobile({
   availableSubjectSlugs = [],
   initialMode = 'plan',
 }: MapaCorrelativasMobileProps) {
-  const [completed, setCompleted] = useState<string[]>(() => readStoredProgress());
+  const [completed, setCompleted] = useState<string[]>(() => readMapaProgress());
   const [selectedSubjectSlug, setSelectedSubjectSlug] = useState(subjectsData[0]?.slug ?? '');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
@@ -131,7 +115,7 @@ export function MapaCorrelativasMobile({
 
   const saveProgress = (nextCompleted: string[]) => {
     setCompleted(nextCompleted);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextCompleted));
+    writeMapaProgress(nextCompleted);
   };
 
   const selectedSubject =
