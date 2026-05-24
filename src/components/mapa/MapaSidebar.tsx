@@ -44,12 +44,11 @@ export function MapaSidebar({ availableSubjectSlugs = [] }: MapaSidebarProps) {
     () =>
       subjectsData
         .filter((subject) => subjectStatuses[subject.slug] === 'UNLOCKED')
-        .filter((subject) => availableSlugs.size === 0 || availableSlugs.has(subject.slug))
         .sort((a, b) => {
           if (a.year !== b.year) return a.year - b.year;
           return a.nombre.localeCompare(b.nombre);
         }),
-    [availableSlugs, subjectStatuses],
+    [subjectStatuses],
   );
 
   return (
