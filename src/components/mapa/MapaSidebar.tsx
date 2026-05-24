@@ -3,24 +3,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  ArrowLeft,
-  ArrowRight,
-  BookOpen,
-  CheckCircle2,
-  Layers3,
-  Map,
-  Network,
-} from 'lucide-react';
+import { ArrowLeft, BookOpen, CheckCircle2 } from 'lucide-react';
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
 import { calculateSubjectStatuses } from '@/lib/domain/mapa/unlockLogic';
 import type { SubjectNode } from '@/lib/domain/mapa/types';
-import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'nextcampus_progreso_materias';
 
 type MapaSidebarProps = {
-  currentView: 'plan' | 'visual';
   availableSubjectSlugs?: string[];
 };
 
@@ -39,10 +29,7 @@ function readStoredProgress(): string[] {
   }
 }
 
-export function MapaSidebar({
-  currentView,
-  availableSubjectSlugs = [],
-}: MapaSidebarProps) {
+export function MapaSidebar({ availableSubjectSlugs = [] }: MapaSidebarProps) {
   const router = useRouter();
   const [completed, setCompleted] = useState<string[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -76,104 +63,23 @@ export function MapaSidebar({
     [availableSlugs, subjectStatuses],
   );
 
-  const completedCount = completed.length;
-  const nextFocus = readySubjects[0] ?? null;
-
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="border-b border-white/5 px-5 py-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38">
-          Mapa de correlativas
-        </p>
-        <h2 className="mt-2 text-lg font-black tracking-tight text-white">
-          Tu recorrido
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-white/52">
-          Usá este panel para moverte entre vistas y ver qué materias ya tenés listas para seguir.
-        </p>
-      </div>
-
-      <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
+      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         <button
           type="button"
           onClick={() => router.back()}
-          className="flex w-full cursor-pointer items-center justify-between rounded-md border border-white/10 bg-white/5 px-3.5 py-3 text-left transition hover:bg-white/8"
+          className="flex w-full cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-left text-sm font-bold text-white/78 transition hover:bg-white/8 hover:text-white"
         >
-          <span className="flex items-center gap-3">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded bg-white/8 text-white/72">
-              <ArrowLeft className="h-4 w-4" />
-            </span>
-            <span>
-              <span className="block text-xs font-black uppercase tracking-[0.18em] text-white/82">
-                Volver atrás
-              </span>
-              <span className="mt-1 block text-[11px] text-white/42">
-                Regresá a la pantalla anterior
-              </span>
-            </span>
-          </span>
+          <ArrowLeft className="h-4 w-4 shrink-0" />
+          Volver atrás
         </button>
 
         <section className="rounded-md border border-white/8 bg-black/18 p-3.5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">
-                Vista actual
-              </p>
-              <h3 className="mt-1 text-sm font-black text-white">
-                {currentView === 'plan' ? 'Seguimiento por materia' : 'Recorrido visual'}
-              </h3>
-            </div>
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded bg-amber-400/12 text-amber-100">
-              {currentView === 'plan' ? <Layers3 className="h-4 w-4" /> : <Network className="h-4 w-4" />}
-            </span>
-          </div>
-
-          <div className="mt-3 space-y-2">
-            <SidebarLink
-              href="/mapa"
-              active={currentView === 'plan'}
-              icon={<Layers3 className="h-4 w-4" />}
-              title="Calculá tu avance"
-              meta="Marcá materias y descubrí qué sigue"
-            />
-            <SidebarLink
-              href="/mapa/visual"
-              active={currentView === 'visual'}
-              icon={<Map className="h-4 w-4" />}
-              title="Ver ruta visual"
-              meta="Recorrido conectado entre materias"
-            />
-          </div>
-        </section>
-
-        <section className="rounded-md border border-emerald-300/12 bg-emerald-400/6 p-3.5">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-100/60">
-            Resumen
-          </p>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <MiniStat label="Marcadas" value={completedCount} />
-            <MiniStat label="Listas" value={readySubjects.length} />
-          </div>
-          <p className="mt-3 text-xs leading-5 text-emerald-50/85">
-            {nextFocus
-              ? `Si querés seguir ahora, ${nextFocus.nombre} ya aparece lista para cursar.`
-              : isHydrated
-                ? 'Todavía no hay materias listas con el progreso marcado.'
-                : 'Estamos revisando tu progreso guardado.'}
-          </p>
-        </section>
-
-        <section className="rounded-md border border-white/8 bg-black/18 p-3.5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">
-                Materias listas
-              </p>
-              <h3 className="mt-1 text-sm font-black text-white">
-                Lo que ya podés cursar
-              </h3>
-            </div>
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">
+              Lo que ya podés cursar
+            </p>
             <span className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-black text-white/60">
               {readySubjects.length}
             </span>
@@ -189,7 +95,7 @@ export function MapaSidebar({
                 Cuando marques materias, acá vas a ver las próximas opciones disponibles.
               </p>
             ) : (
-              readySubjects.slice(0, 8).map((subject) => (
+              readySubjects.map((subject) => (
                 <ReadySubjectLink
                   key={subject.slug}
                   subject={subject}
@@ -205,47 +111,6 @@ export function MapaSidebar({
   );
 }
 
-function SidebarLink({
-  href,
-  active,
-  icon,
-  title,
-  meta,
-}: {
-  href: string;
-  active: boolean;
-  icon: React.ReactNode;
-  title: string;
-  meta: string;
-}) {
-  return (
-    <Link
-      href={href}
-      aria-current={active ? 'page' : undefined}
-      className={cn(
-        'group flex cursor-pointer items-center gap-3 rounded-md border px-3 py-3 transition',
-        active
-          ? 'border-amber-300/28 bg-amber-300/10'
-          : 'border-white/8 bg-white/5 hover:border-white/14 hover:bg-white/8',
-      )}
-    >
-      <span
-        className={cn(
-          'inline-flex h-9 w-9 items-center justify-center rounded',
-          active ? 'bg-amber-300 text-black' : 'bg-white/8 text-white/70',
-        )}
-      >
-        {icon}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-black text-white">{title}</span>
-        <span className="mt-1 block text-[11px] text-white/42">{meta}</span>
-      </span>
-      <ArrowRight className="h-4 w-4 shrink-0 text-white/24 transition group-hover:translate-x-0.5 group-hover:text-white/58" />
-    </Link>
-  );
-}
-
 function ReadySubjectLink({
   subject,
   href,
@@ -257,7 +122,7 @@ function ReadySubjectLink({
 }) {
   if (!canOpen) {
     return (
-      <div className="rounded-md border border-white/8 bg-white/5 px-3 py-3">
+      <div className="rounded-md border border-white/8 bg-white/5 px-3 py-2.5">
         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-100/58">
           Año {subject.year}
         </p>
@@ -270,7 +135,7 @@ function ReadySubjectLink({
   return (
     <Link
       href={href}
-      className="group flex cursor-pointer items-center gap-3 rounded-md border border-white/8 bg-white/5 px-3 py-3 transition hover:border-cyan-300/20 hover:bg-cyan-400/8"
+      className="group flex cursor-pointer items-center gap-3 rounded-md border border-white/8 bg-white/5 px-3 py-2.5 transition hover:border-cyan-300/20 hover:bg-cyan-400/8"
     >
       <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded bg-cyan-300/14 text-cyan-100">
         <BookOpen className="h-4 w-4" />
@@ -285,14 +150,5 @@ function ReadySubjectLink({
       </span>
       <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-200/70" />
     </Link>
-  );
-}
-
-function MiniStat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-md border border-white/8 bg-black/18 px-3 py-2.5">
-      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/42">{label}</p>
-      <p className="mt-2 text-xl font-black text-white">{value}</p>
-    </div>
   );
 }

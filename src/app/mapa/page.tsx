@@ -109,7 +109,7 @@ export default async function MapaPage() {
             </Link>
           }
           sidebar={
-            <MapaSidebar currentView="plan" availableSubjectSlugs={availableSubjectSlugs} />
+            <MapaSidebar availableSubjectSlugs={availableSubjectSlugs} />
           }
         >
           <AnimateIn className="space-y-6">
