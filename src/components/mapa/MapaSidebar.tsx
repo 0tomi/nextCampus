@@ -12,11 +12,7 @@ import {
   readMapaProgress,
 } from '@/lib/mapaProgress';
 
-type MapaSidebarProps = {
-  availableSubjectSlugs?: string[];
-};
-
-export function MapaSidebar({ availableSubjectSlugs = [] }: MapaSidebarProps) {
+export function MapaSidebar() {
   const router = useRouter();
   const [completed, setCompleted] = useState<string[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -37,7 +33,6 @@ export function MapaSidebar({ availableSubjectSlugs = [] }: MapaSidebarProps) {
     };
   }, []);
 
-  const availableSlugs = useMemo(() => new Set(availableSubjectSlugs), [availableSubjectSlugs]);
   const subjectStatuses = useMemo(() => calculateSubjectStatuses(completed), [completed]);
 
   const readySubjects = useMemo(
@@ -88,7 +83,6 @@ export function MapaSidebar({ availableSubjectSlugs = [] }: MapaSidebarProps) {
                   key={subject.slug}
                   subject={subject}
                   href={`/materia/${subject.slug}`}
-                  canOpen={availableSlugs.size === 0 || availableSlugs.has(subject.slug)}
                 />
               ))
             )}
@@ -102,24 +96,10 @@ export function MapaSidebar({ availableSubjectSlugs = [] }: MapaSidebarProps) {
 function ReadySubjectLink({
   subject,
   href,
-  canOpen,
 }: {
   subject: SubjectNode;
   href: string;
-  canOpen: boolean;
 }) {
-  if (!canOpen) {
-    return (
-      <div className="rounded-md border border-white/8 bg-white/5 px-3 py-2.5">
-        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-100/58">
-          Año {subject.year}
-        </p>
-        <p className="mt-1 text-sm font-bold leading-5 text-white">{subject.nombre}</p>
-        <p className="mt-2 text-[11px] text-white/38">Todavía sin detalle público</p>
-      </div>
-    );
-  }
-
   return (
     <Link
       href={href}
