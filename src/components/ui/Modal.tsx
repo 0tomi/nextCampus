@@ -18,6 +18,7 @@ interface ModalProps {
   titleId?: string
   children: ReactNode
   className?: string
+  contentClassName?: string
 }
 
 export function Modal({
@@ -27,6 +28,7 @@ export function Modal({
   titleId = 'modal-title',
   children,
   className,
+  contentClassName,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
 
@@ -136,7 +138,7 @@ export function Modal({
         </div>
 
         {/* Content */}
-        <div className="px-6 py-5">{children}</div>
+        <div className={cn('px-6 py-5', contentClassName)}>{children}</div>
       </div>
     </div>
   )
