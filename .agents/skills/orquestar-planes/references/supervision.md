@@ -54,6 +54,47 @@ Decisión:
 
 ---
 
+## Verificación independiente (opcional)
+
+Para fases críticas o de mucho alcance, podés delegar la validación a un segundo sub-agente — el **verificador**. No es el default: consume tokens y en la mayoría de las fases tu revisión más el reporte del implementador alcanzan. Tratá esta herramienta como excepción, no como rutina.
+
+**Cuándo conviene**
+
+- Fase crítica que toca contratos, lógica sensible (pagos, auth, datos legales) o un patrón que se va a replicar.
+- Fase grande con muchos archivos donde dudás de cubrir todo a ojo.
+- El implementador admite desviaciones que querés contrastar antes de aceptarlas.
+- Sospecha de regresión sutil que un vistazo rápido no detecta.
+
+**Cuándo no**
+
+- Fases estándar, localizadas, que seguís bien con una lectura.
+- Fases que ya validaste vos sin dudas.
+- Como code review genérico — el verificador chequea apego al plan, no opina sobre estilo o gustos.
+
+**Qué le pasás al verificador**
+
+- Ruta del archivo del plan + las mismas claves que recibió el implementador (`F2`, `R1`, `R3`…).
+- El reporte completo que devolvió el implementador.
+- Lista de archivos tocados (de "Archivos tocados" del reporte).
+- Pregunta concreta y acotada: *"¿el entregable cumple el criterio de cierre declarado en `F2`, respeta los archivos en alcance, y honra las restricciones globales `R1, R3`? Si encontrás desvíos, listá archivo + qué desvía."*
+
+**Qué te devuelve**
+
+Confirmación corta o lista de desvíos concretos (archivo + qué desvía + por qué importa). **No re-implementa, no reescribe, no propone refactors** — solo verifica. Si arranca a sugerir cambios fuera de lo pedido, lo descartás.
+
+**Qué hacés con el resultado**
+
+- *Confirma sin desvíos* → cerrás la fase normal.
+- *Encuentra desvíos menores* → los registrás como deuda en el cierre y avanzás.
+- *Encuentra desvíos sustanciales* → re-delegás al implementador con feedback puntual, o los resolvés vos si son chicos.
+- *Contradice al implementador* → revisás vos directo antes de decidir; el verificador puede equivocarse.
+
+**Tope práctico**
+
+A lo sumo una verificación independiente por plan mediano, dos o tres por plan grande. Si sentís que necesitás más, probablemente el plan está mal dimensionado o las fases están mal acotadas — replantear vale más que sumar verificadores.
+
+---
+
 ## Re-delegación tras rechazo
 
 1. **Registrar el rechazo en el archivo del plan** con motivo concreto antes de re-delegar. Esto deja huella si el contexto se compacta entre intentos: estado de la fase pasa a `rechazada` y se agrega un evento al `historial` con el motivo.
@@ -106,7 +147,29 @@ Cuando todas las fases reportan estado de cierre, **el plan no termina ahí**. A
 
 Si la auditoría detecta **inconsistencias bloqueantes**, no se cierra el plan: se abre fase de remediación o se escala al humano.
 
-Solo cuando la auditoría confirma cobertura + consistencia, el orquestador rellena el bloque `auditoria` del archivo, pasa `estado_global.estado` a `completado` y agrega el evento `plan_cerrado` al `historial`.
+Si la auditoría detecta deuda no bloqueante, el plan **tampoco** se cierra dejándola flotando — pasar a la sección siguiente.
+
+---
+
+## Resolución de deuda acumulada
+
+La auditoría lista la deuda; el cierre la resuelve o la acepta con razón. Antes de marcar `completado`, decidís ítem por ítem:
+
+- **Levantar ahora** — entra al cierre del plan.
+- **Postergar con razón** — queda registrada en `auditoria.deuda` con justificación concreta de por qué se posterga (no "lo vemos después" genérico).
+- **Bloqueante** — el plan no cierra hasta resolverla.
+
+Cómo levantar la deuda que decidís resolver depende de volumen y criticidad:
+
+- **Poca y acotada** (un par de ítems, mismo dominio, sin riesgo de tocar lo ya validado) → delegá una mini-fase de cleanup a un sub-agente. La lista de deuda es el contenido operativo; el criterio de cierre es "todos los ítems resueltos o marcados inviables con razón". Tratala como una fase más: validás el entregable al volver.
+
+- **Crítica o voluminosa** (toca contratos sensibles, cruza dominios, son muchos ítems, o el riesgo de regresión es alto) → la encarás vos como orquestador. La razón es práctica: coordinar sub-agentes para levantar deuda crítica cuesta más que resolverla con contexto completo en la mano, y tu atención vale más que la velocidad cuando lo crítico está en juego.
+
+- **Tan grande que es su propio plan** (varias fases, múltiples dominios, supera el alcance original) → no la fuerces dentro del cierre. Cerrá el plan actual como `parcial` con la deuda documentada en `auditoria.deuda` y arrancá un plan nuevo para resolverla. Forzar un cleanup grande dentro del cierre rompe la trazabilidad y desdibuja el alcance del plan original.
+
+Tras resolver la deuda que decidiste levantar, registrar en `auditoria` qué se resolvió y qué quedó postergado. **Recién ahí** el orquestador rellena el bloque `auditoria`, pasa `estado_global.estado` a `completado` y agrega el evento `plan_cerrado` al `historial`.
+
+Si la deuda se resolvió delegando un cleanup, también registrar la mini-fase en `historial` (evento `cleanup_deuda` con resumen de qué se levantó) para mantener traza.
 
 ---
 

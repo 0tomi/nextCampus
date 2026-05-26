@@ -8,7 +8,7 @@ description: Orquestar planes técnicos por fases con sub-agentes especializados
 > Referencias (cargar cuando aplique):
 > - `references/archivo_plan.md` — formato YAML del plan, claves indexadas y operaciones sobre el archivo
 > - `references/protocolo_delegacion.md` — qué incluir en cada delegación
-> - `references/supervision.md` — criticidad, validación, re-delegación, auditoría final
+> - `references/supervision.md` — criticidad, validación, verificación independiente, re-delegación, auditoría final y cierre de deuda
 > - `references/auxiliares.md` — sdd-explore y sdd-archive
 
 ---
@@ -35,11 +35,11 @@ No activar para brainstorming, tareas de una sola capa, o cambios menores que no
 
 2. **Delegar una fase a la vez**. La delegación lleva: contexto suficiente para ejecutar, ruta del archivo de plan + claves que el sub-agente debe consultar (ej: `F2`, `R1`, `R3`), skills aplicables si corresponde (las que el plan ya sugiera o las que detectes del entorno — ver más abajo), y la criticidad declarada. Plantilla en `protocolo_delegacion.md`.
 
-3. **Validar el entregable** según criticidad: las críticas se validan antes de delegar la siguiente; las estándar pueden agruparse de a 2. Detalle en `supervision.md`.
+3. **Validar el entregable** según criticidad: las críticas se validan antes de delegar la siguiente; las estándar pueden agruparse de a 2. El sub-agente debe reportar fielmente cualquier desviación del plan en su entrega — no se penaliza la desviación reportada, sí la oculta. Para fases críticas o grandes donde dudás de cubrir todo a ojo, podés delegar una verificación independiente a un segundo sub-agente; usar con criterio, consume tokens. Detalle en `supervision.md`.
 
 4. **Registrar el cierre en el archivo**: actualizar el `estado` de la fase a `completada` (o `parcial`/`rechazada` según corresponda) y rellenar su bloque `cierre`. Si dos sub-agentes terminan a la vez, el orquestador actualiza el archivo uno cierre por turno — ver `archivo_plan.md`.
 
-5. **Auditoría final** cuando todas las fases cierran: cobertura del objetivo, consistencia entre fases, desvíos, deuda. Si hay desvíos bloqueantes, el plan no se cierra. Detalle en `supervision.md`.
+5. **Auditoría final + cierre de deuda** cuando todas las fases cierran: cobertura del objetivo, consistencia entre fases, desvíos, deuda. El plan no se cierra dejando deuda flotando — la levantás vos directamente o delegás un cleanup según volumen y criticidad. Si hay desvíos bloqueantes, el plan tampoco cierra. Detalle en `supervision.md`.
 
 ---
 
@@ -85,4 +85,4 @@ Si rechazás un entregable, registrá el rechazo en el archivo de plan primero (
 
 ## Regla central
 
-El trabajo del orquestador termina cuando el plan completo está auditado y consistente, no cuando el último sub-agente entrega. El archivo de plan es la fuente de verdad del estado. Las skills y los auxiliares son herramientas que ofrecés; el sub-agente decide.
+El trabajo del orquestador termina cuando el plan completo está auditado, consistente, y la deuda acumulada quedó resuelta o aceptada con razón. No cuando el último sub-agente entrega. El archivo de plan es la fuente de verdad del estado. Las skills y los auxiliares son herramientas que ofrecés; el sub-agente decide.

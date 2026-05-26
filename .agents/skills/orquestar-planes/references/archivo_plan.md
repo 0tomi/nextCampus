@@ -174,7 +174,7 @@ No hay esquema rígido — el contenido se ajusta a lo que la fase requiere. Per
 - **fases (`F{N}`)**: nombre, dominio, criticidad, objetivo, archivos permitidos/prohibidos, criterio de cierre, dependencias, estado. Si subdividís una fase multi-dominio, hacelo (`F2a`, `F2b`) y referenciá el padre en una nota.
 - **cierre de fase**: archivos tocados, supuestos usados, deuda dejada, notas para el siguiente agente, timestamp. Se agrega al pasar a `completada` o `parcial`.
 - **estado_global**: estado del plan + mapa fase → estado. Es la vista rápida que el orquestador consulta primero al reanudar.
-- **auditoria**: cobertura, consistencia, desvíos, deuda final. Se rellena al cerrar el plan.
+- **auditoria**: cobertura, consistencia, desvíos, deuda final. Se rellena al cerrar el plan. Si hubo cleanup de deuda en el cierre, distinguir entre deuda resuelta y deuda postergada con razón.
 - **historial**: lista cronológica de eventos. Mantiene la traza incluso si una fase cambia varias veces de estado.
 
 ---
@@ -197,9 +197,9 @@ Cambiar `F{N}.estado` a `completada` (o `parcial`), agregar el bloque `cierre` c
 
 Cambiar `F{N}.estado` a `rechazada`, agregar evento `fase_rechazada` al `historial` con motivo concreto. Cuando se re-delegue, volverá a `en_curso`.
 
-**Cerrar el plan (auditoría final)**
+**Cerrar el plan (auditoría final + resolución de deuda)**
 
-Rellenar el bloque `auditoria`. Cambiar `estado_global.estado` a `completado` (o `bloqueado` si la auditoría detectó algo no resoluble). Evento `plan_cerrado` en `historial`.
+Ejecutar la auditoría final. Si dejó deuda acumulada, resolverla o aceptarla con razón (ver `supervision.md`). Si la resolución se delegó como mini-fase de cleanup, agregar evento `cleanup_deuda` al `historial`. Rellenar el bloque `auditoria` con cobertura, consistencia, desvíos y separación entre deuda resuelta y deuda postergada. Cambiar `estado_global.estado` a `completado` (o `parcial` si quedó deuda postergada significativa, o `bloqueado` si la auditoría detectó algo no resoluble). Evento `plan_cerrado` en `historial`.
 
 ---
 

@@ -32,6 +32,13 @@ Este mensaje es un extracto. El archivo es la fuente completa.
 Si lo que leés en el archivo contradice este mensaje, reportá la
 discrepancia antes de seguir. Podés consultar otras entradas si te
 ayudan; no edites el archivo, eso lo hago yo al cerrar tu fase.
+
+Si por cualquier razón te desviás del alcance, supuestos o criterio
+de cierre — porque hizo falta para destrabar algo, porque el plan no
+lo cubría, o porque tomaste un atajo — marcalo explícito en el campo
+"Apego al plan" de tu reporte. Lo mismo con deuda que dejes (TODOs,
+tests pendientes, refactors postergados): listala. La desviación
+reportada se incorpora a la validación; la oculta degrada el plan.
 ```
 
 Ejemplo de bloque preparado correctamente: ruta `docs/plans/refactor-auth.yaml`, claves `F2` y `R1, R3`. No dejar placeholders literales como `<CLAVE_DE_ESTA_FASE>`.
@@ -72,12 +79,18 @@ reportalo en lugar de improvisar.
 Cambios realizados: ...
 Archivos tocados: ...
 Supuestos usados: ...
+Apego al plan: completo | con desviaciones — qué se desvió y por qué
+Deuda dejada: ninguna | ... (lista breve, marcar si algo es bloqueante)
 Bloqueos / inconsistencias: ninguno | ...
 Suficiencia de contexto: sí | no — qué faltó
 Notas para el siguiente agente: ...
 ```
 
 Si el sub-agente reporta "contexto insuficiente", el problema fue de delegación, no de ejecución. El orquestador re-delega ampliando el contexto, no penaliza al sub-agente.
+
+**Norma sobre desviaciones**: el sub-agente reporta lo que pasó tal como pasó. Si se salió del alcance, modificó algo no previsto, dejó algo a medias, o tomó un atajo, lo dice. Una desviación reportada cuesta poco — el orquestador la incorpora a la validación o la registra como deuda. Una desviación oculta se descubre tarde y degrada el plan. Este principio se transmite en el cuerpo de la delegación, no se asume.
+
+**Norma sobre deuda**: si la fase dejó deuda técnica (TODOs, atajos, tests faltantes, refactors pospuestos), se lista explícita acá. El orquestador la agrega al bloque `cierre.deuda` del archivo y la considera al cerrar el plan.
 
 ---
 
