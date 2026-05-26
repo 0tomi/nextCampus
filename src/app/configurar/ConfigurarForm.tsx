@@ -32,6 +32,16 @@ interface ConfigurarFormProps {
   years: YearForConfig[]
 }
 
+function buildNewDevicePreferences(years: YearForConfig[]): UserPreferences {
+  return {
+    hiddenYears: years.map((year) => year.slug),
+    hiddenSubjects: years.flatMap((year) =>
+      year.subjects.map((subject) => subject.slug),
+    ),
+    hiddenCommissions: [],
+  }
+}
+
 function CheckBox({ checked, size = 'md' }: { checked: boolean; size?: 'sm' | 'md' }) {
   return (
     <span
@@ -62,7 +72,7 @@ export function ConfigurarForm(props: ConfigurarFormProps) {
   return (
     <ConfigurarFormInner
       {...props}
-      initialPrefs={prefs ?? EMPTY_PREFERENCES}
+      initialPrefs={prefs ?? buildNewDevicePreferences(props.years)}
       setPrefs={setPrefs}
     />
   )
@@ -349,7 +359,7 @@ function ConfigurarFormSkeleton({ careerName, years }: ConfigurarFormProps) {
           </div>
         </div>
 
-        {/* Years grid — all checked by default, inputs disabled */}
+        {/* Years grid — default empty selection while loading */}
         <div className="grid gap-4 lg:grid-cols-2">
           {years.map((year, index) => {
             const colors = getYearColorClasses(year.slug)
@@ -368,12 +378,12 @@ function ConfigurarFormSkeleton({ careerName, years }: ConfigurarFormProps) {
                   <input
                     type="checkbox"
                     className="peer sr-only"
-                    checked
+                    checked={false}
                     disabled
                     readOnly
                   />
                   <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-white peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-transparent rounded-sm">
-                    <CheckBox checked />
+                    <CheckBox checked={false} />
                   </span>
                   <div className="flex-1">
                     <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/80">
@@ -384,13 +394,13 @@ function ConfigurarFormSkeleton({ careerName, years }: ConfigurarFormProps) {
                         {year.nombre}
                       </h3>
                       <span className="text-xs text-white/60">
-                        ({year.subjects.length} de {year.subjects.length})
+                        (0 de {year.subjects.length})
                       </span>
                     </div>
                   </div>
                 </label>
 
-                <ul className="flex flex-col transition-opacity">
+                <ul className="flex flex-col pointer-events-none opacity-40 transition-opacity">
                   {year.subjects.map((subject, subjectIndex) => (
                     <li
                       key={subject.id}
@@ -403,12 +413,12 @@ function ConfigurarFormSkeleton({ careerName, years }: ConfigurarFormProps) {
                         <input
                           type="checkbox"
                           className="peer sr-only"
-                          checked
+                          checked={false}
                           disabled
                           readOnly
                         />
                         <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-uader-red peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
-                          <CheckBox checked />
+                          <CheckBox checked={false} />
                         </span>
                         <span className="min-w-0 flex-1 text-[13px] font-medium text-white/70">
                           {subject.nombre}
@@ -423,12 +433,12 @@ function ConfigurarFormSkeleton({ careerName, years }: ConfigurarFormProps) {
                                 <input
                                   type="checkbox"
                                   className="peer sr-only"
-                                  checked
+                                  checked={false}
                                   disabled
                                   readOnly
                                 />
                                 <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-uader-red peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
-                                  <CheckBox checked size="sm" />
+                                  <CheckBox checked={false} size="sm" />
                                 </span>
                                 <span className="min-w-0 flex-1 text-[12px] text-white/55">
                                   Comisión {commission.nombre}
