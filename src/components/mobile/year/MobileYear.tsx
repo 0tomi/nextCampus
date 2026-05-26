@@ -1,14 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { ArrowRight, ChevronRight, Calendar, Layers, Pencil, Trash2, Plus } from 'lucide-react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { AdminControls } from '@/components/admin/AdminControls'
-import { DeleteEventoButton } from '@/components/admin/SubjectPageAdminOverlay'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
+import { MobileEventDetailSheet } from '@/components/mobile/calendar/MobileEventDetailSheet'
+import type { MobileCalendarEvent } from '@/components/mobile/calendar/MobileCalendar'
 import {
   filterEventsByPreferredCommission,
   type CommissionOption,
@@ -24,7 +25,7 @@ interface YearForMobile {
     slug: string
     nombre: string
     commissions: CommissionOption[]
-    agenda: { eventos: Array<{ id: string; titulo: string; fecha: Date | string; tipoEvento: { nombre: string }; commissionId: string | null; commissionSlug: string | null; commissionNombre: string | null }> } | null
+    agenda: { id: string; eventos: Array<{ id: string; titulo: string; fecha: Date | string; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId: string | null; commissionSlug: string | null; commissionNombre: string | null }> } | null
   }>
   career: { nombre: string }
 }
@@ -35,11 +36,17 @@ interface AllYear {
   subjectsCount: number
 }
 
+interface TipoEvento {
+  id: string
+  nombre: string
+}
+
 interface NextEvent {
   id: string
   titulo: string
   fecha: Date | string
   tipo: string
+  tipoId: string
   subjectId: string
   subjectSlug: string
   subjectNombre: string
@@ -48,6 +55,8 @@ interface NextEvent {
   commissionId?: string | null
   commissionSlug?: string | null
   commissionNombre?: string | null
+  yearId?: string
+  yearSlug?: string
 }
 
 export function MobileYear({
@@ -55,12 +64,15 @@ export function MobileYear({
   allYears,
   nextEvents,
   careerName,
+  tiposEvento,
 }: {
   year: YearForMobile
   allYears: AllYear[]
   nextEvents: NextEvent[]
   careerName: string
+  tiposEvento: readonly TipoEvento[]
 }) {
+  const [detailEvent, setDetailEvent] = useState<MobileCalendarEvent | null>(null)
   const colors = getYearColorClasses(year.slug)
   const preferredBySubject = usePreferredCommissionMap(year.subjects)
   const yearIndex = allYears.findIndex(y => y.slug === year.slug)
@@ -117,6 +129,36 @@ export function MobileYear({
     nombre: y.nombre,
     subjectsCount: y.subjectsCount,
   }))
+
+  const modalSubjects = year.subjects
+    .filter((subject) => subject.agenda !== null)
+    .map((subject) => ({
+      id: subject.id,
+      slug: subject.slug,
+      nombre: subject.nombre,
+      agendaId: subject.agenda!.id,
+      commissions: subject.commissions,
+    }))
+
+  const openEventDetail = (event: NextEvent) => {
+    setDetailEvent({
+      id: event.id,
+      titulo: event.titulo,
+      tituloOriginal: event.titulo,
+      fecha: event.fecha,
+      tipo: event.tipo,
+      tipoId: event.tipoId,
+      descripcionHtml: event.descripcionHtml ?? null,
+      subjectId: event.subjectId,
+      subjectSlug: event.subjectSlug,
+      materiaNombre: event.materiaNombre || event.subjectNombre,
+      yearId: year.id,
+      yearSlug: year.slug,
+      commissionId: event.commissionId ?? null,
+      commissionSlug: event.commissionSlug ?? null,
+      commissionNombre: event.commissionNombre ?? null,
+    })
+  }
 
   return (
     <MobileShell
@@ -204,30 +246,14 @@ export function MobileYear({
               </div>
             ) : (
               filteredNextEvents.map(e => (
-                <div key={e.id} className="relative group">
-                  <Link
-                    href={buildSubjectHref({
-                      yearSlug: year.slug,
-                      subjectSlug: e.subjectSlug,
-                      commissionSlug: e.commissionSlug,
-                    })}
-                    className="block"
-                  >
-                    <AgendaCard fecha={e.fecha} tipo={e.tipo} titulo={`${e.titulo} · ${e.subjectNombre}`} />
-                  </Link>
-                  <AdminControls yearId={year.id} noWrapper>
-                    <div
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 z-10"
-                      onClick={(evt) => evt.stopPropagation()}
-                    >
-                      <DeleteEventoButton
-                        eventoId={e.id}
-                        subjectSlug={e.subjectSlug}
-                        yearId={year.id}
-                      />
-                    </div>
-                  </AdminControls>
-                </div>
+                <AgendaCard
+                  key={e.id}
+                  fecha={e.fecha}
+                  tipo={e.tipo}
+                  titulo={e.titulo}
+                  materia={e.subjectNombre}
+                  onClick={() => openEventDetail(e)}
+                />
               ))
             )}
           </div>
@@ -296,6 +322,15 @@ export function MobileYear({
           </div>
         </section>
       </div>
+      <MobileEventDetailSheet
+        event={detailEvent}
+        open={Boolean(detailEvent)}
+        onClose={() => setDetailEvent(null)}
+        yearId={year.id}
+        yearSlug={year.slug}
+        tiposEvento={tiposEvento}
+        subjects={modalSubjects}
+      />
     </MobileShell>
   )
 }

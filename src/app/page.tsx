@@ -5,7 +5,7 @@ import { ConfigButton } from '@/components/shell/ConfigButton'
 import {
   getCareer,
   getHomeCalendarEvents,
-  getUpcomingEventsCrossYear,
+  getTiposEvento,
 } from '@/lib/queries'
 import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
@@ -27,10 +27,10 @@ export default async function HomePage() {
     cookieStore.get(PREFERENCES_KEY)?.value ?? null,
   )
 
-  const [career, upcomingEventsRaw, homeCalendarEventsRaw] = await Promise.all([
+  const [career, homeCalendarEventsRaw, tiposEvento] = await Promise.all([
     getCareer(),
-    getUpcomingEventsCrossYear(50),
     getHomeCalendarEvents(),
+    getTiposEvento(),
   ])
 
   if (!career) {
@@ -99,47 +99,36 @@ export default async function HomePage() {
     )
   }
 
-  const subjectYearSlugBySlug = new Map(
-    career.years.flatMap((year) =>
-      year.subjects.map((subject) => [subject.slug, year.slug] as const),
-    ),
-  )
+  // eslint-disable-next-line react-hooks/purity -- el corte "próximos eventos" depende del momento actual del render
+  const now = Date.now()
 
-  const upcomingEvents = upcomingEventsRaw.reduce<
-    Array<{
-      id: string
-      titulo: string
-      fecha: Date
-      tipo: string
-      subjectSlug: string
-      subjectNombre: string
-      yearSlug: string | null
-      commissionId: string | null
-      commissionSlug: string | null
-      commissionNombre: string | null
-    }>
-  >((acc, event) => {
-    const subjectSlug = event.agenda?.subject?.slug ?? ''
+  const upcomingEvents = homeCalendarEventsRaw
+    .filter((event) => new Date(event.fecha).getTime() >= now)
+    .map((event) => {
+      const subject = event.agenda?.subject
+      const year = subject?.year
 
-    if (!subjectSlug) {
-      return acc
-    }
-
-    acc.push({
-      id: event.id,
-      titulo: event.titulo,
-      fecha: event.fecha,
-      tipo: event.tipoEvento.nombre,
-      subjectSlug,
-      subjectNombre: event.agenda?.subject?.nombre ?? '',
-      yearSlug: subjectYearSlugBySlug.get(subjectSlug) ?? null,
-      commissionId: event.agenda?.commissionId ?? null,
-      commissionSlug: event.agenda?.commission?.slug ?? null,
-      commissionNombre: event.agenda?.commission?.nombre ?? null,
+      return {
+        id: event.id,
+        titulo: event.titulo,
+        descripcionHtml: event.descripcionHtml,
+        fecha: event.fecha,
+        tipo: event.tipoEvento.nombre,
+        tipoId: event.tipoEventoId,
+        subjectId: subject?.id ?? '',
+        subjectSlug: subject?.slug ?? '',
+        subjectNombre: subject?.nombre ?? '',
+        yearId: year?.id ?? null,
+        yearSlug: year?.slug ?? null,
+        commissionId: event.agenda?.commissionId ?? null,
+        commissionSlug: event.agenda?.commission?.slug ?? null,
+        commissionNombre: event.agenda?.commission?.nombre ?? null,
+      }
     })
+    .filter((event) => event.subjectSlug && event.yearSlug)
+    .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
+    .slice(0, 50)
 
-    return acc
-  }, [])
 
   const homeCalendarEvents = homeCalendarEventsRaw.reduce<
     Array<{
@@ -155,6 +144,8 @@ export default async function HomePage() {
       descripcionHtml: string | null
       commissionSlug: string | null
       commissionNombre: string | null
+      agendaId: string
+      yearId: string
     }>
   >((acc, event) => {
     const subject = event.agenda?.subject
@@ -177,6 +168,8 @@ export default async function HomePage() {
       descripcionHtml: event.descripcionHtml,
       commissionSlug: event.agenda?.commission?.slug ?? null,
       commissionNombre: event.agenda?.commission?.nombre ?? null,
+      agendaId: event.agenda.id,
+      yearId: year.id,
     })
 
     return acc
@@ -241,7 +234,13 @@ export default async function HomePage() {
         </DashboardShell>
       </div>
       <div className="lg:hidden">
-        <MobileHome career={career} initialPrefs={initialPrefs} upcomingEvents={upcomingEvents} />
+        <MobileHome
+          career={career}
+          initialPrefs={initialPrefs}
+          upcomingEvents={upcomingEvents}
+          tiposEvento={tiposEvento}
+          calendarEvents={homeCalendarEvents}
+        />
       </div>
     </>
   )

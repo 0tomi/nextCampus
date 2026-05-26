@@ -6,16 +6,35 @@ import { AgendaTab } from './tabs/AgendaTab'
 import { QuizTab } from './tabs/QuizTab'
 import { ApuntesTab } from './tabs/ApuntesTab'
 import { getYearColorClasses } from '@/lib/yearColors'
+import type { MobileCalendarEvent } from '@/components/mobile/calendar/MobileCalendar'
+import type { CommissionOption } from '@/lib/commission-preferences'
 
 type TabKey = 'agenda' | 'quiz' | 'apuntes'
+
+interface TipoEvento {
+  id: string
+  nombre: string
+}
+
+interface EventModalSubject {
+  id: string
+  slug: string
+  nombre: string
+  agendaId: string
+  commissions: readonly CommissionOption[]
+}
 
 interface SubjectTabsProps {
   subjectSlug: string
   subjectName: string
   yearSlug: string
   yearId: string
-  events: Array<{ id: string; titulo: string; fecha: Date | string; tipo: string }>
+  agendaId: string
+  events: MobileCalendarEvent[]
   apuntes: Array<{ id: string; titulo: string; descripcionHtml: string | null; recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE'; url: string; orden: number }> }>
+  tiposEvento: readonly TipoEvento[]
+  subjects?: readonly EventModalSubject[]
+  commissions: readonly CommissionOption[]
 }
 
 const TABS: Array<{ key: TabKey; label: string; Icon: typeof CalendarDays }> = [
@@ -30,7 +49,7 @@ const HASH_MAP: Record<string, TabKey> = {
   '#apuntes': 'apuntes',
 }
 
-export function SubjectTabs({ subjectSlug, subjectName, yearSlug, yearId, events, apuntes }: SubjectTabsProps) {
+export function SubjectTabs({ subjectSlug, subjectName, yearSlug, yearId, agendaId, events, apuntes, tiposEvento, subjects, commissions }: SubjectTabsProps) {
   const [active, setActive] = useState<TabKey>(() => {
     if (typeof window === 'undefined') return 'agenda'
     const hash = window.location.hash
@@ -74,7 +93,19 @@ export function SubjectTabs({ subjectSlug, subjectName, yearSlug, yearId, events
       </div>
 
       <div>
-        {active === 'agenda' && <AgendaTab events={events} accent={colors.tone} yearId={yearId} subjectSlug={subjectSlug} />}
+        {active === 'agenda' && (
+          <AgendaTab
+            events={events}
+            accent={colors.tone}
+            yearId={yearId}
+            yearSlug={yearSlug}
+            subjectSlug={subjectSlug}
+            agendaId={agendaId}
+            tiposEvento={tiposEvento}
+            subjects={subjects}
+            commissions={commissions}
+          />
+        )}
         {active === 'quiz' && <QuizTab subjectSlug={subjectSlug} subjectName={subjectName} yearSlug={yearSlug} yearId={yearId} />}
         {active === 'apuntes' && <ApuntesTab apuntes={apuntes} yearId={yearId} subjectSlug={subjectSlug} />}
       </div>

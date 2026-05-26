@@ -45,6 +45,7 @@ export default async function YearPage({
       titulo: e.titulo,
       fecha: e.fecha,
       tipo: e.tipoEvento.nombre,
+      tipoId: e.tipoEventoId,
       subjectId: s.id,
       subjectSlug: s.slug,
       subjectNombre: s.nombre,
@@ -214,6 +215,7 @@ export default async function YearPage({
           allYears={allYears}
           nextEvents={nextEvents}
           careerName={year.career.nombre}
+          tiposEvento={tiposEvento}
         />
       </div>
       <YearPageAdminOverlay

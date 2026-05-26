@@ -411,6 +411,7 @@ export function getHomeCalendarEvents() {
           tipoEvento: { select: { nombre: true } },
           agenda: {
             select: {
+              id: true,
               commissionId: true,
               commission: {
                 select: {
@@ -424,6 +425,10 @@ export function getHomeCalendarEvents() {
                   id: true,
                   slug: true,
                   nombre: true,
+                  commissions: {
+                    orderBy: { nombre: 'asc' },
+                    select: { id: true, slug: true, nombre: true },
+                  },
                   year: {
                     select: {
                       id: true,

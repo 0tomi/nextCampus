@@ -26,19 +26,26 @@ interface SubjectForMobile {
   playlistUrl: string | null
   playlistEnabled: boolean
   year: { id: string; slug: string; nombre: string; career: { nombre: string } }
-  agenda: { id: string; eventos: Array<{ id: string; titulo: string; descripcionHtml: string | null; fecha: Date | string; tipoEvento: { nombre: string }; commissionId?: string | null; commissionNombre?: string | null }> } | null
+  agenda: { id: string; eventos: Array<{ id: string; titulo: string; descripcionHtml: string | null; fecha: Date | string; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId?: string | null; commissionSlug?: string | null; commissionNombre?: string | null }> } | null
   apuntes: Array<{ id: string; titulo: string; descripcionHtml: string | null; recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE'; url: string; orden: number }> }>
 }
 
 interface AllYear { slug: string; nombre: string; subjectsCount: number }
+
+interface TipoEvento {
+  id: string
+  nombre: string
+}
 
 interface SubjectMobileEvent {
   id: string
   titulo: string
   descripcionHtml: string | null
   fecha: Date | string
+  tipoEventoId: string
   tipoEvento: { nombre: string }
   commissionId?: string | null
+  commissionSlug?: string | null
   commissionNombre?: string | null
 }
 
@@ -53,12 +60,14 @@ export function MobileSubject({
   commissions,
   events,
   activeCommissionName,
+  tiposEvento,
 }: {
   subject: SubjectForMobile
   allYears: AllYear[]
   commissions: CommissionOption[]
   events?: SubjectMobileEvent[]
   activeCommissionName?: string
+  tiposEvento: readonly TipoEvento[]
 }) {
   const colors = getYearColorClasses(subject.year.slug)
   const drawerYears: MobileShellDrawerYear[] = allYears
@@ -230,8 +239,34 @@ export function MobileSubject({
           subjectName={subject.nombre}
           yearSlug={subject.year.slug}
           yearId={subject.year.id}
-          events={eventos.map(e => ({ id: e.id, titulo: e.titulo, fecha: e.fecha, tipo: e.tipoEvento.nombre }))}
+          agendaId={subject.agenda?.id ?? ''}
+          events={eventos.map(e => ({
+            id: e.id,
+            titulo: e.titulo,
+            tituloOriginal: e.titulo,
+            fecha: e.fecha,
+            tipo: e.tipoEvento.nombre,
+            tipoId: e.tipoEventoId,
+            descripcionHtml: e.descripcionHtml,
+            subjectId: subject.id,
+            subjectSlug: subject.slug,
+            materiaNombre: subject.nombre,
+            yearId: subject.year.id,
+            yearSlug: subject.year.slug,
+            commissionId: e.commissionId ?? null,
+            commissionSlug: e.commissionSlug ?? null,
+            commissionNombre: e.commissionNombre ?? null,
+          }))}
           apuntes={subject.apuntes}
+          tiposEvento={tiposEvento}
+          subjects={[{
+            id: subject.id,
+            slug: subject.slug,
+            nombre: subject.nombre,
+            agendaId: subject.agenda?.id ?? '',
+            commissions,
+          }]}
+          commissions={commissions}
         />
       </div>
     </MobileShell>

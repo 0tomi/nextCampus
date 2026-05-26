@@ -1,13 +1,15 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { CalendarDays, SlidersHorizontal } from 'lucide-react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { YearCarousel } from './YearCarousel'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { AddYearButton } from '@/components/admin/HomeAdminOverlay'
-import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
+import { MobileEventDetailSheet } from '@/components/mobile/calendar/MobileEventDetailSheet'
+import type { MobileCalendarEvent } from '@/components/mobile/calendar/MobileCalendar'
 import { Mascot } from '@/components/ui/Mascot'
 import { usePreferences } from '@/hooks/usePreferences'
 import {
@@ -16,6 +18,7 @@ import {
   isYearVisible,
   type UserPreferences,
 } from '@/lib/preferences'
+import type { CommissionOption } from '@/lib/commission-preferences'
 
 interface CareerForMobile {
   nombre: string
@@ -30,32 +33,57 @@ interface CareerForMobile {
       nombre: string
       descripcion: string | null
       driveUrl: string | null
+      commissions: CommissionOption[]
     }>
   }>
+}
+
+interface TipoEvento {
+  id: string
+  nombre: string
 }
 
 interface UpcomingEvent {
   id: string
   titulo: string
+  descripcionHtml: string | null
   fecha: Date | string
   tipo: string
+  tipoId: string
+  subjectId: string
   subjectSlug: string
   subjectNombre: string
+  yearId: string | null
   yearSlug: string | null
   commissionId: string | null
   commissionSlug: string | null
   commissionNombre: string | null
 }
 
+interface HomeCalendarEventForMobile {
+  id: string
+  agendaId: string
+  subjectId: string
+  subjectSlug: string
+  materiaNombre: string
+  yearId: string
+  yearSlug: string
+}
+
 export function MobileHome({
   career,
   initialPrefs,
   upcomingEvents,
+  tiposEvento,
+  calendarEvents,
 }: {
   career: CareerForMobile
   initialPrefs: UserPreferences | null
   upcomingEvents: UpcomingEvent[]
+  tiposEvento: readonly TipoEvento[]
+  calendarEvents: readonly HomeCalendarEventForMobile[]
 }) {
+  const [detailEvent, setDetailEvent] = useState<MobileCalendarEvent | null>(null)
   const { prefs, isHydrated } = usePreferences(initialPrefs)
   const shouldWaitForStoredPrefs = !isHydrated && initialPrefs === null
   const effectivePrefs = isHydrated ? prefs : initialPrefs
@@ -103,6 +131,45 @@ export function MobileHome({
     nombre: y.nombre,
     subjectsCount: y.subjects.length,
   }))
+
+  const agendaIdBySubjectId = new Map(
+    calendarEvents.map((event) => [event.subjectId, event.agendaId] as const),
+  )
+
+  const modalSubjects = visibleYears.flatMap((year) =>
+    year.subjects.flatMap((subject) => {
+      const agendaId = agendaIdBySubjectId.get(subject.id)
+      if (!agendaId) return []
+
+      return [{
+        id: subject.id,
+        slug: subject.slug,
+        nombre: subject.nombre,
+        agendaId,
+        commissions: subject.commissions,
+      }]
+    }),
+  )
+
+  const openEventDetail = (event: UpcomingEvent) => {
+    setDetailEvent({
+      id: event.id,
+      titulo: event.titulo,
+      tituloOriginal: event.titulo,
+      fecha: event.fecha,
+      tipo: event.tipo,
+      tipoId: event.tipoId,
+      descripcionHtml: event.descripcionHtml,
+      subjectId: event.subjectId,
+      subjectSlug: event.subjectSlug,
+      materiaNombre: event.subjectNombre,
+      yearId: event.yearId ?? undefined,
+      yearSlug: event.yearSlug ?? undefined,
+      commissionId: event.commissionId,
+      commissionSlug: event.commissionSlug,
+      commissionNombre: event.commissionNombre,
+    })
+  }
 
   if (visibleYears.length === 0) {
     return (
@@ -201,25 +268,29 @@ export function MobileHome({
               <EmptyAgenda />
             ) : (
               filteredUpcomingEvents.map((e) => (
-                <Link
+                <AgendaCard
                   key={e.id}
-                  href={buildSubjectHref({
-                    yearSlug: e.yearSlug,
-                    subjectSlug: e.subjectSlug,
-                    commissionSlug: e.commissionSlug,
-                  })}
-                >
-                  <AgendaCard
-                    fecha={e.fecha}
-                    tipo={e.tipo}
-                    titulo={`${e.titulo} · ${e.subjectNombre}`}
-                  />
-                </Link>
+                  fecha={e.fecha}
+                  tipo={e.tipo}
+                  titulo={e.titulo}
+                  materia={e.subjectNombre}
+                  onClick={() => openEventDetail(e)}
+                />
               ))
             )}
           </div>
         </section>
       </div>
+      <MobileEventDetailSheet
+        event={detailEvent}
+        open={Boolean(detailEvent)}
+        onClose={() => setDetailEvent(null)}
+        yearId={detailEvent?.yearId}
+        yearSlug={detailEvent?.yearSlug}
+        subjectSlug={detailEvent?.subjectSlug}
+        tiposEvento={tiposEvento}
+        subjects={modalSubjects}
+      />
     </MobileShell>
   )
 }

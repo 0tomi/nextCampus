@@ -387,11 +387,14 @@ export function SubjectRoutePage({
             titulo: evento.titulo,
             descripcionHtml: evento.descripcionHtml,
             fecha: evento.fecha,
+            tipoEventoId: evento.tipoEventoId,
             tipoEvento: evento.tipoEvento,
             commissionId: evento.commissionId,
+            commissionSlug: evento.commission?.slug ?? null,
             commissionNombre: evento.commission?.nombre ?? null,
           }))}
           activeCommissionName={activeCommission?.nombre}
+          tiposEvento={tiposEvento}
         />
       </div>
 

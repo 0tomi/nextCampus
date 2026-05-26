@@ -5,7 +5,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getEventTone } from '@/components/mobile/shared/tokens'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
 import { AdminControls } from '@/components/admin/AdminControls'
-import { DeleteEventoButton } from '@/components/admin/SubjectPageAdminOverlay'
+import { MobileEventDetailSheet } from './MobileEventDetailSheet'
+import type { CommissionOption } from '@/lib/commission-preferences'
 
 const MONTH_NAMES_ES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -26,7 +27,30 @@ export interface MobileCalendarEvent {
   fecha: Date | string
   titulo: string
   tipo: string
+  tipoId?: string
+  tituloOriginal?: string
+  descripcionHtml?: string | null
+  subjectId?: string
   subjectSlug?: string
+  materiaNombre?: string
+  yearId?: string
+  yearSlug?: string
+  commissionId?: string | null
+  commissionSlug?: string | null
+  commissionNombre?: string | null
+}
+
+interface TipoEvento {
+  id: string
+  nombre: string
+}
+
+interface EventModalSubject {
+  id: string
+  slug: string
+  nombre: string
+  agendaId: string
+  commissions: readonly CommissionOption[]
 }
 
 export interface MobileCalendarProps {
@@ -35,7 +59,12 @@ export interface MobileCalendarProps {
   initialDate?: Date | string
   initialSelected?: Date | string | null
   yearId?: string
+  yearSlug?: string
   subjectSlug?: string
+  agendaId?: string
+  tiposEvento?: readonly TipoEvento[]
+  subjects?: readonly EventModalSubject[]
+  commissions?: readonly CommissionOption[]
 }
 
 export function MobileCalendar({
@@ -44,8 +73,14 @@ export function MobileCalendar({
   initialDate,
   initialSelected = null,
   yearId,
+  yearSlug,
   subjectSlug,
+  agendaId,
+  tiposEvento,
+  subjects,
+  commissions,
 }: MobileCalendarProps) {
+  const [detailEvent, setDetailEvent] = useState<MobileCalendarEvent | null>(null)
   const [cursor, setCursor] = useState<Date>(() => {
     if (initialDate) {
       const d = new Date(initialDate)
@@ -308,25 +343,14 @@ export function MobileCalendar({
               </div>
             ) : (
               selectedEvents.map((e) => (
-                <div key={e.id} className="relative group">
-                  <AgendaCard
-                    fecha={e.fecha}
-                    tipo={e.tipo}
-                    titulo={e.titulo}
-                  />
-                  {yearId && (e.subjectSlug || subjectSlug) && (
-                    <div
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 z-10"
-                      onClick={(evt) => evt.stopPropagation()}
-                    >
-                      <DeleteEventoButton
-                        eventoId={e.id}
-                        subjectSlug={e.subjectSlug || subjectSlug || ''}
-                        yearId={yearId}
-                      />
-                    </div>
-                  )}
-                </div>
+                <AgendaCard
+                  key={e.id}
+                  fecha={e.fecha}
+                  tipo={e.tipo}
+                  titulo={e.titulo}
+                  materia={e.materiaNombre}
+                  onClick={() => setDetailEvent(e)}
+                />
               ))
             )
           ) : monthEventsSorted.length === 0 ? (
@@ -338,29 +362,31 @@ export function MobileCalendar({
             </div>
           ) : (
             monthEventsSorted.map((e) => (
-              <div key={e.id} className="relative group">
-                <AgendaCard
-                  fecha={e.fecha}
-                  tipo={e.tipo}
-                  titulo={e.titulo}
-                />
-                {yearId && (e.subjectSlug || subjectSlug) && (
-                  <div
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 z-10"
-                    onClick={(evt) => evt.stopPropagation()}
-                  >
-                    <DeleteEventoButton
-                      eventoId={e.id}
-                      subjectSlug={e.subjectSlug || subjectSlug || ''}
-                      yearId={yearId}
-                    />
-                  </div>
-                )}
-              </div>
+              <AgendaCard
+                key={e.id}
+                fecha={e.fecha}
+                tipo={e.tipo}
+                titulo={e.titulo}
+                materia={e.materiaNombre}
+                onClick={() => setDetailEvent(e)}
+              />
             ))
           )}
         </div>
       </div>
+
+      <MobileEventDetailSheet
+        event={detailEvent}
+        open={Boolean(detailEvent)}
+        onClose={() => setDetailEvent(null)}
+        yearId={yearId}
+        yearSlug={yearSlug}
+        subjectSlug={subjectSlug}
+        agendaId={agendaId}
+        tiposEvento={tiposEvento}
+        subjects={subjects}
+        commissions={commissions}
+      />
     </div>
   )
 }

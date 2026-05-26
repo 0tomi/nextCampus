@@ -164,12 +164,25 @@ export function YearCalendarView({
                 id: event.id,
                 fecha: event.fecha,
                 titulo: event.titulo,
+                tituloOriginal: event.tituloOriginal ?? event.titulo,
                 tipo: event.tipo,
+                tipoId: event.tipoId,
+                descripcionHtml: event.descripcionHtml,
+                subjectId: event.subjectId,
                 subjectSlug: event.subjectSlug,
+                materiaNombre: event.materiaNombre,
+                yearId: year.id,
+                yearSlug: year.slug,
+                commissionId: event.commissionId ?? null,
+                commissionSlug: event.commissionSlug ?? null,
+                commissionNombre: event.commissionNombre ?? null,
               }))}
               accent={tone}
               initialDate={filteredEvents[0]?.fecha}
               yearId={year.id}
+              yearSlug={year.slug}
+              tiposEvento={tiposEvento}
+              subjects={subjects}
             />
           </div>
         </MobileShell>
