@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Check as CheckIcon } from 'lucide-react'
 import { usePreferences } from '@/hooks/usePreferences'
-import { EMPTY_PREFERENCES, type UserPreferences } from '@/lib/preferences'
+import {
+  EMPTY_PREFERENCES,
+  getCommissionPreferenceKey,
+  type UserPreferences,
+} from '@/lib/preferences'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { cn } from '@/lib/utils'
 
@@ -49,7 +53,7 @@ function CheckBox({ checked, size = 'md' }: { checked: boolean; size?: 'sm' | 'm
 }
 
 export function ConfigurarForm(props: ConfigurarFormProps) {
-  const { prefs, isHydrated, setPrefs, clear } = usePreferences()
+  const { prefs, isHydrated, setPrefs } = usePreferences()
 
   if (!isHydrated) {
     return <ConfigurarFormSkeleton {...props} />
@@ -60,7 +64,6 @@ export function ConfigurarForm(props: ConfigurarFormProps) {
       {...props}
       initialPrefs={prefs ?? EMPTY_PREFERENCES}
       setPrefs={setPrefs}
-      clear={clear}
     />
   )
 }
@@ -70,11 +73,9 @@ function ConfigurarFormInner({
   years,
   initialPrefs,
   setPrefs,
-  clear,
 }: ConfigurarFormProps & {
   initialPrefs: UserPreferences
   setPrefs: (p: UserPreferences) => void
-  clear: () => void
 }) {
   const router = useRouter()
   const [draft, setDraft] = useState<UserPreferences>(initialPrefs)
@@ -101,13 +102,23 @@ function ConfigurarFormInner({
     }))
   }
 
-  const toggleCommission = (slug: string) => {
-    setDraft((d) => ({
-      ...d,
-      hiddenCommissions: d.hiddenCommissions.includes(slug)
-        ? d.hiddenCommissions.filter((s) => s !== slug)
-        : [...d.hiddenCommissions, slug],
-    }))
+  const toggleCommission = (subjectSlug: string, commissionSlug: string) => {
+    const scopedKey = getCommissionPreferenceKey(subjectSlug, commissionSlug)
+
+    setDraft((d) => {
+      const isHidden =
+        d.hiddenCommissions.includes(scopedKey) ||
+        d.hiddenCommissions.includes(commissionSlug)
+
+      return {
+        ...d,
+        hiddenCommissions: isHidden
+          ? d.hiddenCommissions.filter(
+              (s) => s !== scopedKey && s !== commissionSlug,
+            )
+          : [...d.hiddenCommissions, scopedKey],
+      }
+    })
   }
 
   const onSave = () => {
@@ -116,7 +127,7 @@ function ConfigurarFormInner({
   }
 
   const onResetAll = () => {
-    clear()
+    setPrefs(EMPTY_PREFERENCES)
     navigateHomeWithFreshState()
   }
 
@@ -236,7 +247,13 @@ function ConfigurarFormInner({
                             )}
                           >
                             {subject.commissions.map((commission) => {
-                              const commissionChecked = !draft.hiddenCommissions.includes(commission.slug)
+                              const commissionPreferenceKey = getCommissionPreferenceKey(
+                                subject.slug,
+                                commission.slug,
+                              )
+                              const commissionChecked =
+                                !draft.hiddenCommissions.includes(commissionPreferenceKey) &&
+                                !draft.hiddenCommissions.includes(commission.slug)
                               return (
                                 <li key={commission.id}>
                                   <label className="flex cursor-pointer items-center gap-3 pl-12 pr-5 py-2.5 transition-colors hover:bg-white/[0.03]">
@@ -244,7 +261,7 @@ function ConfigurarFormInner({
                                       type="checkbox"
                                       className="peer sr-only"
                                       checked={commissionChecked}
-                                      onChange={() => toggleCommission(commission.slug)}
+                                      onChange={() => toggleCommission(subject.slug, commission.slug)}
                                       disabled={!yearChecked || !subjectChecked}
                                     />
                                     <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-uader-red peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">

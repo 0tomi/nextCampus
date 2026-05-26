@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { SlidersHorizontal } from 'lucide-react'
+import { CalendarDays, SlidersHorizontal } from 'lucide-react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { YearCarousel } from './YearCarousel'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
@@ -10,7 +10,12 @@ import { AddYearButton } from '@/components/admin/HomeAdminOverlay'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { Mascot } from '@/components/ui/Mascot'
 import { usePreferences } from '@/hooks/usePreferences'
-import { isYearVisible, isSubjectVisible, type UserPreferences } from '@/lib/preferences'
+import {
+  isCommissionVisible,
+  isSubjectVisible,
+  isYearVisible,
+  type UserPreferences,
+} from '@/lib/preferences'
 
 interface CareerForMobile {
   nombre: string
@@ -37,6 +42,9 @@ interface UpcomingEvent {
   subjectSlug: string
   subjectNombre: string
   yearSlug: string | null
+  commissionId: string | null
+  commissionSlug: string | null
+  commissionNombre: string | null
 }
 
 export function MobileHome({
@@ -51,6 +59,7 @@ export function MobileHome({
   const { prefs, isHydrated } = usePreferences(initialPrefs)
   const shouldWaitForStoredPrefs = !isHydrated && initialPrefs === null
   const effectivePrefs = isHydrated ? prefs : initialPrefs
+  const hasConfiguredSubjects = effectivePrefs !== null
 
   if (shouldWaitForStoredPrefs) {
     return (
@@ -72,12 +81,20 @@ export function MobileHome({
           subjects: y.subjects.filter((s) => isSubjectVisible(y.slug, s.slug, effectivePrefs)),
         }))
 
-  const filteredUpcomingEvents = upcomingEvents.filter((e) => {
+  const filteredUpcomingEvents = hasConfiguredSubjects
+    ? upcomingEvents.filter((e) => {
         if (!e.yearSlug) return false
         if (!isYearVisible(e.yearSlug, effectivePrefs)) return false
         if (!isSubjectVisible(e.yearSlug, e.subjectSlug, effectivePrefs)) return false
-        return true
-      })
+        if (!e.commissionSlug) return true
+        return isCommissionVisible(
+          e.yearSlug,
+          e.subjectSlug,
+          e.commissionSlug,
+          effectivePrefs,
+        )
+      }).slice(0, 6)
+    : []
 
   const totalSubjects = visibleYears.reduce((acc, y) => acc + y.subjects.length, 0)
 
@@ -178,7 +195,9 @@ export function MobileHome({
             <h2 className="mt-1 text-lg font-black text-white">Próximos eventos</h2>
           </div>
           <div className="px-[18px] flex flex-col gap-2.5">
-            {filteredUpcomingEvents.length === 0 ? (
+            {!hasConfiguredSubjects ? (
+              <ConfigureAgendaNotice />
+            ) : filteredUpcomingEvents.length === 0 ? (
               <EmptyAgenda />
             ) : (
               filteredUpcomingEvents.map((e) => (
@@ -187,6 +206,7 @@ export function MobileHome({
                   href={buildSubjectHref({
                     yearSlug: e.yearSlug,
                     subjectSlug: e.subjectSlug,
+                    commissionSlug: e.commissionSlug,
                   })}
                 >
                   <AgendaCard
@@ -242,6 +262,31 @@ function EmptyAgenda() {
   return (
     <div className="bg-[#1a1a1a] border border-dashed border-white/10 rounded-lg p-4 text-sm text-white/45 text-center">
       Por ahora no hay eventos próximos.
+    </div>
+  )
+}
+
+function ConfigureAgendaNotice() {
+  return (
+    <div className="flex flex-col items-start gap-3 rounded-lg border border-dashed border-white/10 bg-[#1a1a1a] p-4">
+      <span className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/10 bg-white/[0.03] text-white/70">
+        <CalendarDays className="h-4 w-4" />
+      </span>
+      <div className="space-y-1">
+        <h3 className="text-base font-black text-white">
+          Configurá tus materias
+        </h3>
+        <p className="text-sm leading-relaxed text-white/55">
+          Elegí qué años, materias y comisiones querés seguir para ver tus fechas acá.
+        </p>
+      </div>
+      <Link
+        href="/configurar"
+        className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-uader-red px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-uader-red-light"
+      >
+        <SlidersHorizontal className="h-4 w-4" />
+        Configurar
+      </Link>
     </div>
   )
 }

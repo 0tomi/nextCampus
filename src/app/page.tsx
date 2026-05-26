@@ -2,7 +2,11 @@ import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { Shield } from 'lucide-react'
 import { ConfigButton } from '@/components/shell/ConfigButton'
-import { getCareer, getUpcomingEventsCrossYear } from '@/lib/queries'
+import {
+  getCareer,
+  getHomeCalendarEvents,
+  getUpcomingEventsCrossYear,
+} from '@/lib/queries'
 import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
 import { AnimateIn } from '@/components/ui/AnimateIn'
@@ -11,6 +15,7 @@ import { AddYearButton } from '@/components/admin/HomeAdminOverlay'
 import { MobileHome } from '@/components/mobile/home/MobileHome'
 import { MobileShell } from '@/components/mobile/shell/MobileShell'
 import { HomeYearsGrid } from '@/components/home/HomeYearsGrid'
+import { HomeGlobalCalendar } from '@/components/home/HomeGlobalCalendar'
 import { HomeSidebar } from '@/components/home/HomeSidebar'
 import { Mascot } from '@/components/ui/Mascot'
 import { PREFERENCES_KEY, readPreferencesFromCookie } from '@/lib/preferences'
@@ -22,9 +27,10 @@ export default async function HomePage() {
     cookieStore.get(PREFERENCES_KEY)?.value ?? null,
   )
 
-  const [career, upcomingEventsRaw] = await Promise.all([
+  const [career, upcomingEventsRaw, homeCalendarEventsRaw] = await Promise.all([
     getCareer(),
-    getUpcomingEventsCrossYear(6),
+    getUpcomingEventsCrossYear(50),
+    getHomeCalendarEvents(),
   ])
 
   if (!career) {
@@ -108,6 +114,9 @@ export default async function HomePage() {
       subjectSlug: string
       subjectNombre: string
       yearSlug: string | null
+      commissionId: string | null
+      commissionSlug: string | null
+      commissionNombre: string | null
     }>
   >((acc, event) => {
     const subjectSlug = event.agenda?.subject?.slug ?? ''
@@ -124,6 +133,50 @@ export default async function HomePage() {
       subjectSlug,
       subjectNombre: event.agenda?.subject?.nombre ?? '',
       yearSlug: subjectYearSlugBySlug.get(subjectSlug) ?? null,
+      commissionId: event.agenda?.commissionId ?? null,
+      commissionSlug: event.agenda?.commission?.slug ?? null,
+      commissionNombre: event.agenda?.commission?.nombre ?? null,
+    })
+
+    return acc
+  }, [])
+
+  const homeCalendarEvents = homeCalendarEventsRaw.reduce<
+    Array<{
+      id: string
+      titulo: string
+      fecha: Date
+      tipo: string
+      tipoId: string
+      yearSlug: string
+      subjectSlug: string
+      subjectId: string
+      materiaNombre: string
+      descripcionHtml: string | null
+      commissionSlug: string | null
+      commissionNombre: string | null
+    }>
+  >((acc, event) => {
+    const subject = event.agenda?.subject
+    const year = subject?.year
+
+    if (!subject || !year) {
+      return acc
+    }
+
+    acc.push({
+      id: event.id,
+      titulo: event.titulo,
+      fecha: event.fecha,
+      tipo: event.tipoEvento.nombre,
+      tipoId: event.tipoEventoId,
+      yearSlug: year.slug,
+      subjectSlug: subject.slug,
+      subjectId: subject.id,
+      materiaNombre: subject.nombre,
+      descripcionHtml: event.descripcionHtml,
+      commissionSlug: event.agenda?.commission?.slug ?? null,
+      commissionNombre: event.agenda?.commission?.nombre ?? null,
     })
 
     return acc
@@ -166,6 +219,11 @@ export default async function HomePage() {
                 </p>
               </div>
             </section>
+
+            <HomeGlobalCalendar
+              initialPrefs={initialPrefs}
+              events={homeCalendarEvents}
+            />
 
             <section className="space-y-5">
               <div className="flex items-center justify-between px-1">

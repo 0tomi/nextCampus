@@ -4,6 +4,13 @@ export type UserPreferences = {
   hiddenCommissions: string[]
 }
 
+export function getCommissionPreferenceKey(
+  subjectSlug: string,
+  commissionSlug: string,
+): string {
+  return `${subjectSlug}:${commissionSlug}`
+}
+
 export const PREFERENCES_KEY = 'nextcampus_user_preferences_v1'
 const PREFERENCES_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
@@ -127,5 +134,10 @@ export function isCommissionVisible(
 ): boolean {
   if (prefs === null) return true
   if (!isSubjectVisible(yearSlug, subjectSlug, prefs)) return false
-  return !prefs.hiddenCommissions.includes(commissionSlug)
+
+  const scopedKey = getCommissionPreferenceKey(subjectSlug, commissionSlug)
+  return (
+    !prefs.hiddenCommissions.includes(scopedKey) &&
+    !prefs.hiddenCommissions.includes(commissionSlug)
+  )
 }

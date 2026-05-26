@@ -397,6 +397,51 @@ export function getUpcomingEventsCrossYear(limit = 6) {
   )()
 }
 
+export function getHomeCalendarEvents() {
+  return unstable_cache(
+    () =>
+      prisma.evento.findMany({
+        orderBy: { fecha: 'asc' },
+        select: {
+          id: true,
+          titulo: true,
+          descripcionHtml: true,
+          fecha: true,
+          tipoEventoId: true,
+          tipoEvento: { select: { nombre: true } },
+          agenda: {
+            select: {
+              commissionId: true,
+              commission: {
+                select: {
+                  id: true,
+                  slug: true,
+                  nombre: true,
+                },
+              },
+              subject: {
+                select: {
+                  id: true,
+                  slug: true,
+                  nombre: true,
+                  year: {
+                    select: {
+                      id: true,
+                      slug: true,
+                      nombre: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+    ['home-calendar-events'],
+    { tags: [TAGS.upcomingEvents, TAGS.career], revalidate: 300 },
+  )()
+}
+
 // ---------------------------------------------------------------------------
 // Impacto de eliminación — usado por ConfirmDeleteModal para mostrar conteos
 // reales antes de que el admin confirme el borrado. Sin cache: el admin
