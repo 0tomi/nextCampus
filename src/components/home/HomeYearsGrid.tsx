@@ -306,7 +306,7 @@ function HomeYearCardSection({ year, originalIndex }: HomeYearCardSectionProps) 
                     <div className="min-w-0">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38 flex items-center gap-2">
                         <span>Materia {String(index + 1).padStart(2, '0')}</span>
-                        <AdminControls yearId={year.id}>
+                        <AdminControls yearId={year.id} noWrapper>
                           <span 
                             className="pointer-events-auto flex items-center" 
                             onClick={(e) => {
