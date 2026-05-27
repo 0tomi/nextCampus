@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { CalendarDays, SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react'
 import { EventCalendar, type EventCalendarEvent } from '@/components/calendar/EventCalendar'
 import { DarkCard } from '@/components/ui/DarkCard'
@@ -21,6 +22,7 @@ export interface HomeGlobalCalendarEvent {
   fecha: Date | string
   tipo: string
   tipoId: string
+  yearNombre: string
   yearSlug: string
   subjectSlug: string
   subjectId: string
@@ -28,6 +30,36 @@ export interface HomeGlobalCalendarEvent {
   descripcionHtml: string | null
   commissionSlug: string | null
   commissionNombre: string | null
+}
+
+export function buildHomeCalendarEventHref(
+  event: Pick<HomeGlobalCalendarEvent, 'yearSlug' | 'subjectSlug' | 'commissionSlug'>,
+) {
+  return buildSubjectHref({
+    yearSlug: event.yearSlug,
+    subjectSlug: event.subjectSlug,
+    commissionSlug: event.commissionSlug,
+  })
+}
+
+export function isHomeCalendarEventVisible(
+  event: Pick<HomeGlobalCalendarEvent, 'yearSlug' | 'subjectSlug' | 'commissionSlug'>,
+  prefs: UserPreferences | null,
+) {
+  if (!isSubjectVisible(event.yearSlug, event.subjectSlug, prefs)) {
+    return false
+  }
+
+  if (!event.commissionSlug) {
+    return true
+  }
+
+  return isCommissionVisible(
+    event.yearSlug,
+    event.subjectSlug,
+    event.commissionSlug,
+    prefs,
+  )
 }
 
 interface HomeGlobalCalendarProps {
@@ -40,6 +72,7 @@ export function HomeGlobalCalendar({
   events,
 }: HomeGlobalCalendarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const router = useRouter()
   const { prefs, isHydrated } = usePreferences(initialPrefs)
   const shouldWaitForStoredPrefs = !isHydrated && initialPrefs === null
   const effectivePrefs = isHydrated ? prefs : initialPrefs
@@ -53,22 +86,9 @@ export function HomeGlobalCalendar({
     return <HomeGlobalCalendarSetupNotice />
   }
 
-  const visibleEvents = events.filter((event) => {
-    if (!isSubjectVisible(event.yearSlug, event.subjectSlug, effectivePrefs)) {
-      return false
-    }
-
-    if (!event.commissionSlug) {
-      return true
-    }
-
-    return isCommissionVisible(
-      event.yearSlug,
-      event.subjectSlug,
-      event.commissionSlug,
-      effectivePrefs,
-    )
-  })
+  const visibleEvents = events.filter((event) =>
+    isHomeCalendarEventVisible(event, effectivePrefs),
+  )
 
   // Obtener los 5 eventos más cercanos a partir de hoy (ordenados cronológicamente)
   const today = new Date()
@@ -87,6 +107,7 @@ export function HomeGlobalCalendar({
     fecha: event.fecha,
     tipo: event.tipo,
     tipoId: event.tipoId,
+    yearSlug: event.yearSlug,
     subjectId: event.subjectId,
     subjectSlug: event.subjectSlug,
     materiaNombre: event.materiaNombre,
@@ -123,51 +144,55 @@ export function HomeGlobalCalendar({
             closestEvents.map((evento) => (
               <DarkCard
                 key={evento.id}
-                className="flex flex-col justify-between p-4 min-h-[140px] rounded-lg border border-white/5 bg-surface-1/60 backdrop-blur-sm transition-all duration-300 hover:border-white/10 hover:bg-surface-1"
+                className="group relative flex min-h-[140px] flex-col justify-between rounded-lg border border-white/5 bg-surface-1/60 p-4 backdrop-blur-sm transition-all duration-300 hover:border-white/10 hover:bg-surface-1"
               >
+                <Link
+                  href={buildHomeCalendarEventHref(evento)}
+                  aria-label={`Abrir ${evento.materiaNombre}`}
+                  className="absolute inset-0 z-10 block cursor-pointer rounded-lg no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                />
+
                 <div className="space-y-2.5">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[9px] font-bold uppercase tracking-[0.15em] text-white/35">
                     <span
                       className={cn(
-                        "rounded px-1.5 py-0.5 text-[8px] font-bold tracking-wider",
+                        "rounded border px-1.5 py-0.5 text-[8px] font-bold tracking-wider",
                         evento.tipo.toLowerCase() === 'examen' ||
                         evento.tipo.toLowerCase() === 'parcial' ||
                         evento.tipo.toLowerCase() === 'final' ||
                         evento.tipo.toLowerCase() === 'recuperatorio'
-                          ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                          ? 'border-red-500/20 bg-red-500/10 text-red-400'
                           : evento.tipo.toLowerCase() === 'trabajo práctico' ||
                             evento.tipo.toLowerCase() === 'tp' ||
                             evento.tipo.toLowerCase() === 'trabajo practico' ||
                             evento.tipo.toLowerCase() === 'entrega'
-                          ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
-                          : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            ? 'border-yellow-500/20 bg-yellow-500/10 text-yellow-400'
+                            : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
                       )}
                     >
                       {evento.tipo}
                     </span>
+                    <span className="rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[8px] font-bold tracking-wider text-white/65">
+                      {evento.yearNombre}
+                    </span>
                     <span>•</span>
-                    <Link
-                      href={buildSubjectHref({
-                        yearSlug: evento.yearSlug,
-                        subjectSlug: evento.subjectSlug,
-                        commissionSlug: evento.commissionSlug,
-                      })}
-                      className="hover:text-white transition-colors truncate max-w-[120px]"
+                    <span
+                      className="max-w-[120px] truncate text-white/55 transition-colors group-hover:text-white"
                       title={evento.materiaNombre}
                     >
                       {evento.materiaNombre}
-                    </Link>
+                    </span>
                     {evento.commissionNombre ? (
                       <>
                         <span>•</span>
-                        <span className="truncate max-w-[80px]" title={evento.commissionNombre}>
+                        <span className="max-w-[80px] truncate" title={evento.commissionNombre}>
                           {evento.commissionNombre}
                         </span>
                       </>
                     ) : null}
                   </div>
 
-                  <h3 className="text-sm font-black tracking-tight text-white leading-snug line-clamp-2">
+                  <h3 className="line-clamp-2 text-sm leading-snug font-black tracking-tight text-white transition-colors group-hover:text-white">
                     {evento.titulo}
                   </h3>
 
@@ -181,7 +206,7 @@ export function HomeGlobalCalendar({
                   ) : null}
                 </div>
 
-                <div className="mt-4 pt-2.5 border-t border-white/5 flex items-center justify-between">
+                <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-2.5">
                   <span className="inline-flex max-w-full rounded border border-white/8 bg-white/[0.02] px-2 py-1 text-[8px] font-bold uppercase tracking-[0.1em] text-white/60">
                     {formatDateTime(evento.fecha)}
                   </span>
@@ -199,6 +224,19 @@ export function HomeGlobalCalendar({
               emptyMessage="Por ahora no hay eventos con tu selección actual."
               className="home-global-calendar"
               dayMaxEvents={4}
+              onEventClick={(event) => {
+                if (!event.yearSlug || !event.subjectSlug) {
+                  return
+                }
+
+                router.push(
+                  buildSubjectHref({
+                    yearSlug: event.yearSlug,
+                    subjectSlug: event.subjectSlug,
+                    commissionSlug: event.commissionSlug,
+                  }),
+                )
+              }}
             />
           </div>
         )}

@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:," />
+  <title>Plan NextCampus - Admin y Home</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f0f0f;
+      --panel: #1a1a1a;
+      --panel-2: #141414;
+      --panel-3: #0a0a0a;
+      --line: rgba(255,255,255,.10);
+      --line-soft: rgba(255,255,255,.05);
+      --muted: rgba(255,255,255,.58);
+      --soft: rgba(255,255,255,.38);
+      --text: #ffffff;
+      --primary: #cc0000;
+      --primary-light: #e80000;
+      --accent: #003366;
+      --amber: #f59e0b;
+      --orange: #f97316;
+      --violet: #a855f7;
+      --fuchsia: #d946ef;
+      --cyan: #17d3c1;
+      --red: #ff5b64;
+      --green: #62d982;
+      --radius-sm: 6px;
+      --radius: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+      letter-spacing: -.01em;
+    }
+
+    button, .button { cursor: pointer; }
+    .page { width: min(1180px, calc(100vw - 32px)); margin: 0 auto; padding: 40px 0 64px; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+    .hero-main, .card, .mock, .decision, .handoff {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.025));
+      border-radius: var(--radius-xl);
+      box-shadow: 0 24px 80px rgba(0,0,0,.25);
+    }
+    .hero-main { padding: 30px; position: relative; overflow: hidden; min-height: 300px; }
+    .hero-main:after {
+      content: "";
+      position: absolute;
+      right: -120px;
+      bottom: -120px;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      border: 1px solid rgba(204,0,0,.22);
+      background: radial-gradient(circle, rgba(204,0,0,.16), transparent 66%);
+    }
+    .eyebrow { color: rgba(255,255,255,.42); font-size: 11px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+    h1 { margin: 16px 0 0; font-family: var(--font-sora), ui-sans-serif, system-ui, sans-serif; font-size: clamp(42px, 7vw, 78px); line-height: .92; letter-spacing: -.065em; max-width: 820px; }
+    h2 { margin: 0; font-family: var(--font-sora), ui-sans-serif, system-ui, sans-serif; font-size: 28px; letter-spacing: -.045em; }
+    h3 { margin: 0; font-size: 18px; letter-spacing: -.025em; }
+    p { color: var(--muted); line-height: 1.55; }
+    .lead { max-width: 720px; margin-top: 22px; font-size: 17px; }
+    .hero-side { display: grid; gap: 14px; }
+    .metric { padding: 20px; border-radius: var(--radius); border: 1px solid var(--line); background: rgba(255,255,255,.04); }
+    .metric strong { display: block; margin-top: 8px; font-size: 30px; letter-spacing: -.05em; }
+    .metric span { color: var(--soft); font-size: 11px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+
+    .nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 28px; }
+    .tab {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.045);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 800;
+    }
+    .tab[aria-selected="true"] { color: white; background: var(--primary); border-color: transparent; }
+
+    .section { display: none; }
+    .section.active { display: block; }
+    .grid { display: grid; gap: 16px; }
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card { padding: 22px; }
+    .card .tag { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 6px 9px; color: var(--soft); font-size: 11px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+    .callout { border-left: 3px solid var(--primary); padding: 14px 16px; background: rgba(204,0,0,.08); border-radius: var(--radius-lg); color: var(--muted); }
+    .good { color: var(--green); }
+    .warn { color: var(--amber); }
+    .risk { color: var(--red); }
+    .path { font-family: ui-monospace, "Cascadia Code", monospace; color: #fff; font-size: 12px; background: rgba(0,0,0,.28); border: 1px solid var(--line); padding: 3px 6px; border-radius: 6px; }
+
+    .mock { padding: 18px; background: var(--bg); }
+    .mock-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .admin-shell-mock { min-height: 640px; overflow: hidden; border: 1px solid var(--line-soft); border-radius: var(--radius-xl); background: var(--bg); }
+    .admin-topbar { display: flex; height: 64px; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line-soft); background: var(--panel); padding: 0 24px; }
+    .admin-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .admin-brand-mark { display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--radius-sm); background: linear-gradient(135deg, var(--amber), var(--orange)); color: black; font-weight: 1000; }
+    .admin-brand-title { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+    .admin-brand-title b { font-size: 18px; font-weight: 850; letter-spacing: -.04em; color: white; }
+    .admin-brand-title span { color: rgba(255,255,255,.42); font-size: 12px; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; }
+    .admin-signout { border: 1px solid var(--line); border-radius: var(--radius); background: transparent; color: rgba(255,255,255,.7); padding: 9px 12px; font-size: 13px; font-weight: 750; }
+    .admin-body { display: grid; grid-template-columns: 288px minmax(0, 1fr); min-height: 576px; }
+    .admin-sidebar { border-right: 1px solid var(--line-soft); background: var(--panel-2); }
+    .admin-sidebar-head { border-bottom: 1px solid var(--line-soft); padding: 20px; }
+    .admin-sidebar-head p { margin: 0; color: rgba(255,255,255,.38); font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; }
+    .admin-sidebar-head h3 { margin-top: 8px; font-size: 18px; font-weight: 950; color: white; }
+    .admin-nav { padding: 16px 12px; }
+    .admin-nav ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    .admin-nav-item { display: flex; align-items: center; gap: 12px; border-radius: var(--radius); padding: 10px 12px; color: white; text-decoration: none; transition: background .18s ease; }
+    .admin-nav-item.active, .admin-nav-item:hover { background: rgba(255,255,255,.05); }
+    .admin-nav-badge { display: grid; place-items: center; width: 32px; height: 32px; flex: 0 0 auto; border-radius: var(--radius-sm); color: white; font-size: 15px; font-weight: 950; }
+    .admin-nav-badge.profile { background: linear-gradient(135deg, var(--primary), var(--primary-light)); }
+    .admin-nav-badge.users { background: linear-gradient(135deg, var(--amber), var(--orange)); color: black; }
+    .admin-nav-badge.history { background: linear-gradient(135deg, var(--violet), var(--fuchsia)); }
+    .admin-nav-copy { min-width: 0; flex: 1; }
+    .admin-nav-copy b { display: block; font-size: 14px; font-weight: 800; }
+    .admin-nav-copy span { display: block; margin-top: 3px; overflow: hidden; color: rgba(255,255,255,.42); font-size: 11px; font-weight: 750; letter-spacing: .16em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+    .admin-chevron { color: rgba(255,255,255,.24); }
+    .admin-nav-note { margin: 14px 12px 0; border: 1px dashed var(--line); border-radius: var(--radius); padding: 12px; color: rgba(255,255,255,.45); font-size: 12px; line-height: 1.5; }
+    .admin-content { background: var(--bg); padding: 32px; }
+    .profile-page { max-width: 960px; margin: 0 auto; }
+    .profile-page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 32px; }
+    .profile-page-head p { margin: 8px 0 0; max-width: 620px; color: rgba(255,255,255,.55); font-size: 14px; line-height: 1.7; }
+    .profile-page-head .eyebrow { color: rgba(221,188,255,.72); }
+    .profile-page h1 { margin: 12px 0 0; font-size: 32px; line-height: 1.1; letter-spacing: -.055em; }
+    .profile-badge { display: inline-flex; border: 1px solid rgba(98,217,130,.28); border-radius: var(--radius); background: rgba(98,217,130,.1); color: #86efac; padding: 8px 10px; font-size: 12px; font-weight: 850; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+    .field { display: grid; gap: 7px; }
+    .field span { color: rgba(255,255,255,.75); font-size: 14px; font-weight: 750; }
+    .field input { width: 100%; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(0,0,0,.3); color: var(--text); padding: 12px; outline: none; }
+    .field input:focus { border-color: rgba(204,0,0,.65); }
+    .form-card { border: 1px solid var(--line); border-radius: var(--radius-lg); background: rgba(255,255,255,.03); padding: 20px; }
+    .form-card.full { grid-column: 1 / -1; }
+    .helper { margin: 8px 0 0; color: var(--soft); font-size: 12px; }
+    .save-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+    .safe-note { border: 1px solid rgba(30,90,143,.36); background: rgba(0,51,102,.18); color: rgba(255,255,255,.66); border-radius: var(--radius); padding: 12px; font-size: 13px; line-height: 1.45; }
+    .mini-home { display: grid; gap: 18px; }
+    .calendar-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+    .event-card {
+      min-height: 128px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #191817;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform .18s ease, border-color .18s ease;
+      color: inherit;
+      text-decoration: none;
+    }
+    .event-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.25); }
+    .chips { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+    .chip { border-radius: 5px; padding: 4px 6px; font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--line); }
+    .chip.red { color: #ff8087; border-color: rgba(255,91,100,.35); background: rgba(255,91,100,.1); }
+    .chip.yellow { color: #ffd75c; border-color: rgba(255,215,92,.35); background: rgba(255,215,92,.1); }
+    .chip.year { color: #9eefff; border-color: rgba(23,211,193,.35); background: rgba(23,211,193,.1); }
+    .event-card b { font-size: 14px; line-height: 1.25; }
+    .event-card small, .note-card small { color: var(--soft); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; }
+    .note-grid { display: grid; grid-template-columns: repeat(var(--note-count, 4), minmax(0, 1fr)); gap: 10px; }
+    .note-card { min-height: 108px; border: 1px solid var(--line); border-radius: 13px; padding: 12px; background: #181715; color: inherit; text-decoration: none; display: grid; align-content: space-between; }
+    .years { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+    .year-card { overflow: hidden; border: 1px solid var(--line); border-radius: 13px; background: #171716; }
+    .year-head { padding: 14px; color: #111; font-weight: 1000; background: linear-gradient(135deg, var(--cyan), #2d7fff); }
+    .year-head.pink { background: linear-gradient(135deg, #ff5b93, #e63bd7); color: white; }
+    .year-head.violet { background: linear-gradient(135deg, #b685ff, #a13dff); color: white; }
+    .year-head.green { background: linear-gradient(135deg, #0ed094, #14bfae); color: white; }
+    .year-head.orange { background: linear-gradient(135deg, #ffc21a, #ff6f00); color: white; }
+    .year-card ul { list-style: none; padding: 8px 0; margin: 0; }
+    .year-card li { padding: 10px 14px; color: var(--muted); border-top: 1px solid rgba(255,255,255,.055); font-size: 13px; }
+    .hidden-year { opacity: .56; filter: saturate(.55); }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 14px 0; }
+    .switch, .selectish {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 9px 12px;
+      background: rgba(255,255,255,.045);
+      color: var(--text);
+      font-weight: 800;
+    }
+    input[type="range"] { accent-color: var(--primary); }
+
+    .flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+    .step { border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: rgba(0,0,0,.2); }
+    .step b { color: #fff; display: block; margin-bottom: 8px; }
+    .decision { padding: 20px; border-color: rgba(204,0,0,.28); background: linear-gradient(180deg, rgba(204,0,0,.09), rgba(255,255,255,.025)); }
+    .handoff { padding: 22px; margin-top: 16px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .primary { border: 0; border-radius: var(--radius); background: var(--primary); color: white; font-weight: 850; padding: 12px 14px; }
+    .primary:hover { background: var(--primary-light); }
+    .secondary { border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255,255,255,.04); color: rgba(255,255,255,.7); font-weight: 800; padding: 12px 14px; }
+    textarea { width: 100%; min-height: 190px; margin-top: 12px; border-radius: 14px; border: 1px solid var(--line); background: rgba(0,0,0,.35); color: var(--text); padding: 14px; font: 12px/1.5 ui-monospace, "Cascadia Code", monospace; }
+
+    @media (max-width: 940px) {
+      .hero, .grid.two, .grid.three, .flow, .admin-body, .form-grid { grid-template-columns: 1fr; }
+      .admin-sidebar { border-right: 0; border-bottom: 1px solid var(--line-soft); }
+      .profile-page-head { flex-direction: column; align-items: flex-start; }
+      .calendar-cards, .years, .note-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 48px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="hero-main">
+        <div class="eyebrow">Artifact de planificación</div>
+        <h1>Admin accesible y home más útil</h1>
+        <p class="lead">Investigación para agregar perfil de administrador, mejorar el calendario del home, mostrar últimos apuntes y permitir a admins ver años ocultos sin cambiar la configuración del usuario.</p>
+      </div>
+      <aside class="hero-side">
+        <div class="metric"><span>Archivos clave</span><strong>12</strong><p>Home, calendario, auth, admin y queries ya localizados.</p></div>
+        <div class="metric"><span>Decisión recomendada</span><strong>/admin/perfil</strong><p>Todos los admins entran al panel, pero cada rol ve solo lo que corresponde.</p></div>
+      </aside>
+    </section>
+
+    <nav class="nav" aria-label="Secciones del artifact">
+      <button class="tab" aria-selected="true" data-tab="overview">Resumen</button>
+      <button class="tab" aria-selected="false" data-tab="admin">Admin perfil</button>
+      <button class="tab" aria-selected="false" data-tab="home">Home</button>
+      <button class="tab" aria-selected="false" data-tab="handoff">Handoff</button>
+    </nav>
+
+    <section id="overview" class="section active">
+      <div class="grid three">
+        <article class="card">
+          <span class="tag">1 - Perfil admin</span>
+          <h2 style="margin-top:14px">Abrir /admin sin regalar permisos</h2>
+          <p>La ruta ya reconoce `ADMIN_GENERAL` y `ADMIN_CAMPUS`. El cambio no debería tocar usuarios ni historial para admins normales: solo sumar una página de perfil propia.</p>
+          <p><span class="path">src/app/admin/page.tsx</span> hoy manda siempre a <span class="path">/admin/users</span>.</p>
+        </article>
+        <article class="card">
+          <span class="tag">2 - Calendario</span>
+          <h2 style="margin-top:14px">Eventos clickeables y con año visible</h2>
+          <p>El home agrega eventos de varios años. El tag de año baja la ambigüedad cuando hay varios parciales o TPs cerca, y el click directo a la materia ahorra navegación.</p>
+          <p><span class="path">HomeGlobalCalendar.tsx</span> ya conoce `yearSlug` y `subjectSlug`.</p>
+        </article>
+        <article class="card">
+          <span class="tag">3 - Apuntes y años ocultos</span>
+          <h2 style="margin-top:14px">Más superficie útil sin ruido</h2>
+          <p>Últimos apuntes debajo del calendario tiene sentido: es contenido fresco y accionable. El botón de años ocultos debe existir solo para admins y venir apagado por defecto.</p>
+          <p><span class="path">Apunte.createdAt</span> ya permite ordenar por subida.</p>
+        </article>
+      </div>
+
+      <div class="decision" style="margin-top:16px">
+        <h2>Recomendación global</h2>
+        <p>Hacerlo en una iteración acotada: primero permisos y perfil admin, después home. No mezclarlo con rediseño profundo. La base actual está bastante preparada; el riesgo real está en auth y en no romper preferencias del usuario.</p>
+      </div>
+    </section>
+
+    <section id="admin" class="section">
+      <div class="grid two">
+        <article class="card">
+          <span class="tag">Estado actual</span>
+          <h2 style="margin-top:14px">Qué encontré</h2>
+          <p><span class="path">UserRole</span> tiene `ADMIN_GENERAL` y `ADMIN_CAMPUS`. Los admins normales ya pueden existir y tienen permisos por año.</p>
+          <p><span class="path">/admin/users</span> y <span class="path">/admin/historial</span> usan `requireGeneralAdmin()`, eso está bien y se mantiene.</p>
+          <p><span class="path">AdminSidebar</span> hoy muestra siempre Usuarios e Historial, sin filtrar por capacidad.</p>
+        </article>
+        <article class="card">
+          <span class="tag">Propuesta</span>
+          <h2 style="margin-top:14px">Nueva sección Mi perfil</h2>
+          <p>Agregar <span class="path">src/app/admin/perfil/page.tsx</span> con email actual, rol visible y formulario para cambiar email y/o contraseña.</p>
+          <p>Admins generales entran a usuarios por default. Admins campus entran a perfil por default. La sidebar muestra Perfil para todos, Usuarios/Historial solo para quienes pueden crear usuarios.</p>
+        </article>
+      </div>
+
+      <div class="flow">
+        <div class="step"><b>1. Acceso</b><span class="soft">`requireAnyAdmin()` permite entrar a perfil.</span></div>
+        <div class="step"><b>2. Sidebar</b><span class="soft">`useAdminSession()` filtra links por `canCreateUsers`.</span></div>
+        <div class="step"><b>3. Password</b><span class="soft">`auth.updateUser({ password, currentPassword })` para validar al usuario actual.</span></div>
+        <div class="step"><b>4. Email</b><span class="soft">Actualizar Auth y `UserAccount.email` sin dejar estados inconsistentes.</span></div>
+      </div>
+
+      <div class="mock" style="margin-top:16px">
+        <div class="mock-title">
+          <div>
+            <span class="eyebrow">Mock admin</span>
+            <h2 style="margin-top:6px">Referencia visual basada en /admin</h2>
+          </div>
+          <small>Misma estructura que DashboardShell</small>
+        </div>
+
+        <div class="admin-shell-mock">
+          <header class="admin-topbar">
+            <div class="admin-brand">
+              <span class="admin-brand-mark">▱</span>
+              <div class="admin-brand-title">
+                <b>Campus Virtual</b>
+                <span>FCYT - UADER</span>
+              </div>
+            </div>
+            <button class="admin-signout" type="button">Cerrar sesión</button>
+          </header>
+
+          <div class="admin-body">
+            <aside class="admin-sidebar" aria-label="Navegación de administración mock">
+              <div class="admin-sidebar-head">
+                <p>Panel</p>
+                <h3>Administración</h3>
+              </div>
+              <nav class="admin-nav">
+                <ul>
+                  <li>
+                    <a class="admin-nav-item active" href="#">
+                      <span class="admin-nav-badge profile">P</span>
+                      <span class="admin-nav-copy">
+                        <b>Mi perfil</b>
+                        <span>Datos de acceso</span>
+                      </span>
+                      <span class="admin-chevron">›</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a class="admin-nav-item" href="#">
+                      <span class="admin-nav-badge users">U</span>
+                      <span class="admin-nav-copy">
+                        <b>Usuarios</b>
+                        <span>Administradores del campus</span>
+                      </span>
+                      <span class="admin-chevron">›</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a class="admin-nav-item" href="#">
+                      <span class="admin-nav-badge history">H</span>
+                      <span class="admin-nav-copy">
+                        <b>Historial</b>
+                        <span>Movimientos recientes</span>
+                      </span>
+                      <span class="admin-chevron">›</span>
+                    </a>
+                  </li>
+                </ul>
+                <p class="admin-nav-note">En la implementación, un admin de año ve solo “Mi perfil”. “Usuarios” e “Historial” aparecen únicamente para administradores generales.</p>
+              </nav>
+            </aside>
+
+            <main class="admin-content">
+              <section class="profile-page">
+                <div class="profile-page-head">
+                  <div>
+                    <p class="eyebrow">Cuenta</p>
+                    <h1>Mi perfil</h1>
+                    <p>Actualizá tu correo o cambiá tu contraseña cuando lo necesites. Estos datos son los que usás para entrar al panel.</p>
+                  </div>
+                  <span class="profile-badge">Admin de cuarto año</span>
+                </div>
+
+                <div class="form-grid">
+                  <div class="form-card">
+                    <h3>Correo</h3>
+                    <p class="helper">Si cambiás tu correo, la próxima vez vas a ingresar con el nuevo.</p>
+                    <label class="field" style="margin-top:16px">
+                      <span>Correo actual</span>
+                      <input value="admin.cuarto@fcyt.edu.ar" readonly />
+                    </label>
+                    <label class="field" style="margin-top:12px">
+                      <span>Nuevo correo</span>
+                      <input placeholder="nombre@fcyt.edu.ar" />
+                    </label>
+                    <div class="save-row">
+                      <button class="primary" type="button">Guardar correo</button>
+                    </div>
+                  </div>
+
+                  <div class="form-card">
+                    <h3>Contraseña</h3>
+                    <p class="helper">Pedimos tu contraseña actual para confirmar que sos vos.</p>
+                    <label class="field" style="margin-top:16px">
+                      <span>Contraseña actual</span>
+                      <input type="password" placeholder="Ingresá tu contraseña actual" />
+                    </label>
+                    <label class="field" style="margin-top:12px">
+                      <span>Nueva contraseña</span>
+                      <input type="password" placeholder="Mínimo 8 caracteres" />
+                    </label>
+                    <label class="field" style="margin-top:12px">
+                      <span>Repetir nueva contraseña</span>
+                      <input type="password" placeholder="Volvé a escribirla" />
+                    </label>
+                    <div class="save-row">
+                      <button class="primary" type="button">Actualizar contraseña</button>
+                    </div>
+                  </div>
+
+                  <div class="form-card full">
+                    <h3>Permisos</h3>
+                    <p class="helper">Administrás: Cuarto año. Podés editar materias, eventos, comisiones, apuntes y bancos de preguntas de ese año.</p>
+                    <div class="safe-note">Las secciones para gestionar usuarios y revisar historial general quedan reservadas para administradores generales.</div>
+                  </div>
+                </div>
+              </section>
+            </main>
+          </div>
+        </div>
+      </div>
+
+      <div class="decision" style="margin-top:16px">
+        <h2>Decisión recomendada para email</h2>
+        <p>Para este panel interno, recomiendo actualización inmediata con service role pero limitada al `authUserId` del admin autenticado, más transacción en Prisma y auditoría. Evita el problema de email pendiente y base local desincronizada.</p>
+        <p class="callout">Seguridad: la action debe usar `requireAnyAdmin()`, ignorar cualquier `userId` enviado desde el cliente, tomar siempre el usuario desde sesión y no exponer jamás `SUPABASE_SECRET_KEY` al navegador.</p>
+      </div>
+    </section>
+
+    <section id="home" class="section">
+      <div class="mock">
+        <div class="mock-title">
+          <div>
+            <span class="eyebrow">Mock home desktop</span>
+            <h2 style="margin-top:6px">Calendario, apuntes y materias</h2>
+          </div>
+          <div class="controls">
+            <label class="selectish">Apuntes visibles <input id="noteRange" type="range" min="4" max="6" value="4" /></label>
+          </div>
+        </div>
+
+        <div class="mini-home">
+          <section>
+            <div class="mock-title"><h3>Calendario de tus materias</h3><small>Eventos clickeables a su materia</small></div>
+            <div class="calendar-cards">
+              <a class="event-card" href="#">
+                <div><div class="chips"><span class="chip red">Examen</span><span class="chip year">Año 4</span></div><p><small>Ingeniería de Software II</small></p><b>Parcial</b></div>
+                <small>27 de mayo, 12:00</small>
+              </a>
+              <a class="event-card" href="#">
+                <div><div class="chips"><span class="chip red">Examen</span><span class="chip year">Año 3</span></div><p><small>Probabilidad y Estadística</small></p><b>Parcial</b></div>
+                <small>03 de junio, 12:00</small>
+              </a>
+              <a class="event-card" href="#">
+                <div><div class="chips"><span class="chip red">Examen</span><span class="chip year">Año 4</span></div><p><small>Inteligencia Artificial</small></p><b>Redes neuronales</b></div>
+                <small>04 de junio, 17:00</small>
+              </a>
+              <a class="event-card" href="#">
+                <div><div class="chips"><span class="chip yellow">Trabajo práctico</span><span class="chip year">Año 4</span></div><p><small>Bases de Datos Avanzadas</small></p><b>TP1</b></div>
+                <small>05 de junio, 09:00</small>
+              </a>
+              <a class="event-card" href="#">
+                <div><div class="chips"><span class="chip red">Examen</span><span class="chip year">Año 3</span></div><p><small>Ética Profesional</small></p><b>Parcial</b></div>
+                <small>05 de junio, 10:00</small>
+              </a>
+            </div>
+          </section>
+
+          <section>
+            <div class="mock-title"><h3>Últimos apuntes subidos</h3><small id="noteLabel">4 tarjetas</small></div>
+            <div class="note-grid" id="notesGrid">
+              <a class="note-card" href="#"><small>Base de Datos</small><b>Normalización y dependencias</b><small>Año 3</small></a>
+              <a class="note-card" href="#"><small>Inteligencia Artificial</small><b>Backpropagation explicado</b><small>Año 4</small></a>
+              <a class="note-card" href="#"><small>Arquitectura</small><b>Pipeline y memoria caché</b><small>Año 2</small></a>
+              <a class="note-card" href="#"><small>Ética Profesional</small><b>Resumen unidad 2</b><small>Año 3</small></a>
+              <a class="note-card optional" href="#"><small>Sistemas Operativos</small><b>Planificación de procesos</b><small>Año 3</small></a>
+              <a class="note-card optional" href="#"><small>Seguridad</small><b>Modelo de amenazas</b><small>Año 5</small></a>
+            </div>
+          </section>
+
+          <section>
+            <div class="mock-title">
+              <h3>Materias por año</h3>
+              <div class="controls" style="margin:0">
+                <button class="switch" id="toggleHidden">Mostrar años ocultos</button>
+                <button class="primary" type="button">Añadir año</button>
+              </div>
+            </div>
+            <div class="years" id="yearsGrid">
+              <div class="year-card"><div class="year-head">Año 1<br/>Primer año</div><ul><li>Cálculo Diferencial</li><li>Fundamentos de Programación</li><li>Lógica y Álgebra</li></ul></div>
+              <div class="year-card hidden-year"><div class="year-head pink">Año 2<br/>Segundo año</div><ul><li>Algoritmos</li><li>Arquitectura</li><li>Ingeniería de Software I</li></ul></div>
+              <div class="year-card"><div class="year-head violet">Año 3<br/>Tercer año</div><ul><li>Bases de Datos</li><li>Ética Profesional</li><li>Sistemas Operativos</li></ul></div>
+              <div class="year-card hidden-year"><div class="year-head green">Año 4<br/>Cuarto año</div><ul><li>Computación Avanzada</li><li>Inteligencia Artificial</li><li>Metodología</li></ul></div>
+              <div class="year-card"><div class="year-head orange">Año 5<br/>Quinto año</div><ul><li>Administración</li><li>Seguridad</li><li>Tesina</li></ul></div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="grid three" style="margin-top:16px">
+        <article class="card"><span class="tag">Calendario</span><p>Agregar `yearNombre` o `yearOrden` al payload. Hacer la tarjeta completa clickeable con `buildSubjectHref`. En calendario expandido, `onEventClick` puede navegar a la materia.</p></article>
+        <article class="card"><span class="tag">Apuntes</span><p>Crear `getLatestApuntes(6)` con `createdAt desc`, subject y year. Filtrar por preferencias en cliente como el calendario.</p></article>
+        <article class="card"><span class="tag">Años ocultos</span><p>Usar estado local `showHiddenYears`, visible solo para admins. Default apagado. Si se activa, renderiza años ocultos con una marca suave.</p></article>
+      </div>
+    </section>
+
+    <section id="handoff" class="section">
+      <div class="handoff">
+        <span class="eyebrow">Prompt de implementación</span>
+        <h2 style="margin-top:8px">Resumen para el próximo agente</h2>
+        <textarea id="promptBox" readonly></textarea>
+        <div class="actions">
+          <button class="primary" id="copyPrompt">Copiar prompt</button>
+          <button class="secondary" id="copyJson">Copiar JSON</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      hiddenYearsVisible: false,
+      noteCount: 4,
+      recommendedFiles: [
+        'src/app/admin/page.tsx',
+        'src/app/admin/AdminSidebar.tsx',
+        'src/app/admin/perfil/page.tsx',
+        'src/app/admin/perfil/actions.ts',
+        'src/lib/auth.ts',
+        'src/lib/queries.ts',
+        'src/app/page.tsx',
+        'src/components/home/HomeGlobalCalendar.tsx',
+        'src/components/home/HomeYearsGrid.tsx'
+      ]
+    };
+
+    const tabs = document.querySelectorAll('.tab');
+    const sections = document.querySelectorAll('.section');
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((item) => item.setAttribute('aria-selected', String(item === tab)));
+        sections.forEach((section) => section.classList.toggle('active', section.id === tab.dataset.tab));
+      });
+    });
+
+    const yearsGrid = document.getElementById('yearsGrid');
+    const toggleHidden = document.getElementById('toggleHidden');
+    function renderHiddenYears() {
+      yearsGrid.querySelectorAll('.hidden-year').forEach((el) => {
+        el.style.display = state.hiddenYearsVisible ? '' : 'none';
+      });
+      toggleHidden.textContent = state.hiddenYearsVisible ? 'Ocultar años ocultos' : 'Mostrar años ocultos';
+    }
+    toggleHidden.addEventListener('click', () => {
+      state.hiddenYearsVisible = !state.hiddenYearsVisible;
+      renderHiddenYears();
+      updatePrompt();
+    });
+
+    const noteRange = document.getElementById('noteRange');
+    const notesGrid = document.getElementById('notesGrid');
+    const noteLabel = document.getElementById('noteLabel');
+    function renderNotes() {
+      const count = Number(noteRange.value);
+      state.noteCount = count;
+      notesGrid.style.setProperty('--note-count', count);
+      notesGrid.querySelectorAll('.note-card').forEach((el, index) => {
+        el.style.display = index < count ? '' : 'none';
+      });
+      noteLabel.textContent = count + ' tarjetas';
+    }
+    noteRange.addEventListener('input', () => { renderNotes(); updatePrompt(); });
+
+    const promptBox = document.getElementById('promptBox');
+    function promptText() {
+      return [
+        'Implementar mejoras planificadas para NextCampus:',
+        '',
+        '1. Admin: agregar /admin/perfil para ADMIN_GENERAL y ADMIN_CAMPUS. La pantalla debe seguir la estética real de /admin: DashboardShell, header superior, sidebar w-72, bg-surface-0/1/2, border-white/5, radios md/lg y badges como AdminSidebar. /admin debe redirigir a /admin/users si canCreateUsers=true y a /admin/perfil si es ADMIN_CAMPUS. Mantener /admin/users y /admin/historial protegidos con requireGeneralAdmin().',
+        '2. Perfil admin: permitir cambiar email y contraseña del admin autenticado. No aceptar userId desde el cliente. Usar requireAnyAdmin(). Para password, preferir Supabase auth.updateUser con currentPassword. Para email, actualizar Supabase Auth del propio authUserId y UserAccount.email de forma consistente, con auditoría. El copy visible debe ser user-friendly y no mencionar infraestructura.',
+        '3. Calendario home: agregar tag de año al evento y hacer click en el evento/tarjeta para navegar a la materia con buildSubjectHref. En el calendario expandido usar onEventClick para navegar.',
+        '4. Últimos apuntes: agregar sección debajo del calendario con getLatestApuntes(6), filtrada por preferencias, mostrando entre 4 y 6 tarjetas responsive. Cada tarjeta debe navegar a la materia.',
+        '5. Años ocultos: debajo de la lista/grid de materias, mostrar para admins un botón local de Mostrar años ocultos. Default apagado. No debe modificar localStorage/cookie de preferencias.',
+        '',
+        'Archivos sugeridos: ' + state.recommendedFiles.join(', '),
+        '',
+        'Validar con lint/test relevantes. No ejecutar build.'
+      ].join('\n');
+    }
+    function updatePrompt() { promptBox.value = promptText(); }
+    document.getElementById('copyPrompt').addEventListener('click', async () => {
+      await navigator.clipboard.writeText(promptBox.value);
+    });
+    document.getElementById('copyJson').addEventListener('click', async () => {
+      await navigator.clipboard.writeText(JSON.stringify(state, null, 2));
+    });
+
+    renderHiddenYears();
+    renderNotes();
+    updatePrompt();
+  </script>
+</body>
+</html>

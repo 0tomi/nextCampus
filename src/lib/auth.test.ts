@@ -1,10 +1,26 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const redirectMock = vi.fn()
+const createSupabaseServerClientMock = vi.fn()
+const prismaMock = {
+  userAccount: {
+    findUnique: vi.fn(),
+    upsert: vi.fn(),
+  },
+}
 
 vi.mock('server-only', () => ({}))
-vi.mock('next/navigation', () => ({ redirect: vi.fn() }))
+vi.mock('next/navigation', () => ({ redirect: redirectMock }))
 vi.mock('@/lib/env', () => ({ env: { ADMIN_EMAILS: 'general@campus.test' } }))
-vi.mock('@/lib/prisma', () => ({ prisma: {} }))
-vi.mock('./supabase/server', () => ({ createSupabaseServerClient: vi.fn() }))
+vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }))
+vi.mock('./supabase/server', () => ({
+  createSupabaseServerClient: createSupabaseServerClientMock,
+}))
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  vi.resetModules()
+})
 
 describe('auth helpers puros', () => {
   it('marca AdminGeneral con capacidades globales', async () => {
@@ -122,5 +138,78 @@ describe('auth helpers puros', () => {
 
     expect(isBootstrapGeneralAdminEmail(' GENERAL@CAMPUS.TEST ')).toBe(true)
     expect(isBootstrapGeneralAdminEmail('alumno@campus.test')).toBe(false)
+  })
+
+  it('envía a los admins con gestión de usuarios al listado', async () => {
+    const { getAdminHomeDestination } = await import('./auth')
+
+    expect(getAdminHomeDestination({ canCreateUsers: true })).toBe('/admin/users')
+  })
+
+  it('envía a los admins de campus a su perfil', async () => {
+    const { getAdminHomeDestination } = await import('./auth')
+
+    expect(getAdminHomeDestination({ canCreateUsers: false })).toBe('/admin/perfil')
+  })
+
+  it('acepta admins generales guardados en la base', async () => {
+    const getUser = vi.fn().mockResolvedValue({
+      data: { user: { id: 'auth-general', email: 'general-db@campus.test' } },
+      error: null,
+    })
+
+    createSupabaseServerClientMock.mockResolvedValue({
+      auth: { getUser },
+    })
+
+    prismaMock.userAccount.findUnique.mockResolvedValue({
+      id: 'account-general',
+      authUserId: 'auth-general',
+      email: 'general-db@campus.test',
+      role: 'ADMIN_GENERAL',
+      status: 'ACTIVE',
+      yearPermissions: [],
+    })
+
+    const { getAdminUser, USER_ROLES } = await import('./auth')
+    const admin = await getAdminUser()
+
+    expect(admin).toMatchObject({
+      id: 'account-general',
+      role: USER_ROLES.ADMIN_GENERAL,
+      canManageAllYears: true,
+      canCreateUsers: true,
+    })
+  })
+
+  it('mantiene el alcance acotado para admins de campus cargados desde la base', async () => {
+    const getUser = vi.fn().mockResolvedValue({
+      data: { user: { id: 'auth-campus', email: 'campus-db@campus.test' } },
+      error: null,
+    })
+
+    createSupabaseServerClientMock.mockResolvedValue({
+      auth: { getUser },
+    })
+
+    prismaMock.userAccount.findUnique.mockResolvedValue({
+      id: 'account-campus',
+      authUserId: 'auth-campus',
+      email: 'campus-db@campus.test',
+      role: 'ADMIN_CAMPUS',
+      status: 'ACTIVE',
+      yearPermissions: [{ year: { id: 'year-1', slug: 'primer-anio' } }],
+    })
+
+    const { getAdminUser, USER_ROLES } = await import('./auth')
+    const admin = await getAdminUser()
+
+    expect(admin).toMatchObject({
+      id: 'account-campus',
+      role: USER_ROLES.ADMIN_CAMPUS,
+      canManageAllYears: false,
+      canCreateUsers: false,
+      yearIds: ['year-1'],
+    })
   })
 })

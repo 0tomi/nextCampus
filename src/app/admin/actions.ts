@@ -60,6 +60,7 @@ async function revalidateSubjectContent(subjectSlug: string): Promise<void> {
   // quedan como red de seguridad para la ISR de página completa.
   revalidateTag(queryTags.subject(subjectSlug))
   revalidateTag(queryTags.upcomingEvents)
+  revalidateTag(queryTags.latestApuntes)
 
   const subject = await prisma.subject.findUnique({
     where: { slug: subjectSlug },

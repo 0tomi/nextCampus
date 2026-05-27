@@ -6,6 +6,7 @@ import { CalendarDays, SlidersHorizontal } from 'lucide-react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { YearCarousel } from './YearCarousel'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
+import { HomeLatestApuntes, type HomeLatestApunte } from '@/components/home/HomeLatestApuntes'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { AddYearButton } from '@/components/admin/HomeAdminOverlay'
 import { MobileEventDetailSheet } from '@/components/mobile/calendar/MobileEventDetailSheet'
@@ -76,12 +77,14 @@ export function MobileHome({
   upcomingEvents,
   tiposEvento,
   calendarEvents,
+  latestApuntes,
 }: {
   career: CareerForMobile
   initialPrefs: UserPreferences | null
   upcomingEvents: UpcomingEvent[]
   tiposEvento: readonly TipoEvento[]
   calendarEvents: readonly HomeCalendarEventForMobile[]
+  latestApuntes: readonly HomeLatestApunte[]
 }) {
   const [detailEvent, setDetailEvent] = useState<MobileCalendarEvent | null>(null)
   const { prefs, isHydrated } = usePreferences(initialPrefs)
@@ -280,6 +283,12 @@ export function MobileHome({
             )}
           </div>
         </section>
+
+        <HomeLatestApuntes
+          variant="mobile"
+          initialPrefs={initialPrefs}
+          notes={latestApuntes}
+        />
       </div>
       <MobileEventDetailSheet
         event={detailEvent}

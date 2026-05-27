@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Layers, SlidersHorizontal, ArrowRight, Plus } from 'lucide-react'
+import { Layers, SlidersHorizontal, ArrowRight, Plus, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { usePreferences } from '@/hooks/usePreferences'
@@ -11,6 +11,7 @@ import { AdminControls } from '@/components/admin/AdminControls'
 import {
   YearAdminBar,
   SubjectAdminRow,
+  AddYearButton,
   AddSubjectButton,
 } from '@/components/admin/HomeAdminOverlay'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
@@ -18,65 +19,128 @@ import { DarkCard } from '@/components/ui/DarkCard'
 import { SubjectModal } from '@/components/admin/SubjectModal'
 import { useAdminAccess } from '@/components/admin/adminAccess'
 
-
 interface HomeYearsGridProps {
   initialPrefs: UserPreferences | null
-  years: Array<{
-    id: string
-    slug: string
-    nombre: string
-    subjects: Array<{
-      id: string
-      slug: string
-      nombre: string
-      descripcion: string | null
-      driveUrl: string | null
-    }>
-  }>
+  years: HomeGridYear[]
+}
+
+type HomeGridSubject = {
+  id: string
+  slug: string
+  nombre: string
+  descripcion: string | null
+  driveUrl: string | null
+}
+
+type HomeGridYear = {
+  id: string
+  slug: string
+  nombre: string
+  subjects: HomeGridSubject[]
+}
+
+type HomeGridDisplayedYear = {
+  year: HomeGridYear
+  originalIndex: number
+  isHiddenByPrefs: boolean
+}
+
+interface GetHomeYearsForDisplayParams {
+  years: HomeGridYear[]
+  prefs: UserPreferences | null
+  isAdmin: boolean
+  showHiddenYears: boolean
+}
+
+export function getHomeYearsForDisplay({
+  years,
+  prefs,
+  isAdmin,
+  showHiddenYears,
+}: GetHomeYearsForDisplayParams): HomeGridDisplayedYear[] {
+  return years
+    .map((year, originalIndex) => {
+      const isHiddenByPrefs = !isYearVisible(year.slug, prefs)
+      const shouldIncludeYear = !isHiddenByPrefs || (isAdmin && showHiddenYears)
+
+      if (!shouldIncludeYear) return null
+
+      const subjects = year.subjects.filter((subject) => {
+        if (isHiddenByPrefs && isAdmin && showHiddenYears) {
+          return !prefs?.hiddenSubjects.includes(subject.slug)
+        }
+
+        return isSubjectVisible(year.slug, subject.slug, prefs)
+      })
+
+      return {
+        year: {
+          ...year,
+          subjects,
+        },
+        originalIndex,
+        isHiddenByPrefs,
+      }
+    })
+    .filter((value): value is HomeGridDisplayedYear => value !== null)
 }
 
 export function HomeYearsGrid({ initialPrefs, years }: HomeYearsGridProps) {
+  const [showHiddenYears, setShowHiddenYears] = useState(false)
   const { prefs, isHydrated } = usePreferences(initialPrefs)
+  const isAdmin = useAdminAccess()
   const shouldWaitForStoredPrefs = !isHydrated && initialPrefs === null
   const effectivePrefs = isHydrated ? prefs : initialPrefs
-
-  const yearsWithIndex = years.map((y, i) => ({ year: y, originalIndex: i }))
 
   if (shouldWaitForStoredPrefs) {
     return <HomeYearsGridSkeleton yearsCount={years.length} />
   }
 
-  const visibleYears = yearsWithIndex
-        .filter(({ year }) => isYearVisible(year.slug, effectivePrefs))
-        .map(({ year, originalIndex }) => ({
-          year: {
-            ...year,
-            subjects: year.subjects.filter((s) =>
-              isSubjectVisible(year.slug, s.slug, effectivePrefs),
-            ),
-          },
-          originalIndex,
-        }))
+  const visibleYears = getHomeYearsForDisplay({
+    years,
+    prefs: effectivePrefs,
+    isAdmin,
+    showHiddenYears,
+  })
+
+  const adminControls = isAdmin ? (
+    <div className="flex flex-wrap justify-end gap-2">
+      <AdminControls requireGlobal noWrapper>
+        <AddYearButton />
+      </AdminControls>
+      <button
+        type="button"
+        onClick={() => setShowHiddenYears((current) => !current)}
+        className="inline-flex cursor-pointer items-center gap-2 rounded border border-white/10 bg-surface-1 px-3 py-1.5 text-xs font-semibold text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+      >
+        <EyeOff className="h-3.5 w-3.5" />
+        {showHiddenYears ? 'Ocultar años ocultos' : 'Mostrar años ocultos'}
+      </button>
+    </div>
+  ) : null
 
   if (visibleYears.length === 0) {
     return (
-      <div className="flex flex-col items-start gap-4 rounded-md border border-dashed border-white/10 bg-surface-1 px-6 py-10">
-        <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/40">
-          Inicio personalizado
-        </p>
-        <h2 className="max-w-xl text-2xl font-bold text-white">
-          No tenés años o materias visibles
-        </h2>
-        <p className="max-w-xl text-sm leading-relaxed text-white/55">
-          Elegí los que querés ver en tu inicio desde la pantalla de personalización.
-        </p>
-        <Link
-          href="/configurar"
-          className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-uader-red px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-uader-red-light"
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-          Configurar
-        </Link>
+      <div className="space-y-5">
+        {adminControls}
+        <div className="flex flex-col items-start gap-4 rounded-md border border-dashed border-white/10 bg-surface-1 px-6 py-10">
+          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/40">
+            Inicio personalizado
+          </p>
+          <h2 className="max-w-xl text-2xl font-bold text-white">
+            No tenés años o materias visibles
+          </h2>
+          <p className="max-w-xl text-sm leading-relaxed text-white/55">
+            Elegí los que querés ver en tu inicio desde la pantalla de personalización.
+          </p>
+          <Link
+            href="/configurar"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-uader-red px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-uader-red-light"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            Configurar
+          </Link>
+        </div>
       </div>
     )
   }
@@ -88,100 +152,122 @@ export function HomeYearsGrid({ initialPrefs, years }: HomeYearsGridProps) {
 
   if (totalVisibleSubjects < 10) {
     return (
-      <div className="space-y-12">
-        {visibleYears.map(({ year, originalIndex }) => (
-          <HomeYearCardSection
-            key={year.id}
-            year={year}
-            originalIndex={originalIndex}
-          />
-        ))}
+      <div className="space-y-5">
+        {adminControls}
+        <div className="space-y-12">
+          {visibleYears.map(({ year, originalIndex, isHiddenByPrefs }) => (
+            <HomeYearCardSection
+              key={year.id}
+              year={year}
+              originalIndex={originalIndex}
+              isHiddenByPrefs={isHiddenByPrefs}
+            />
+          ))}
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="stagger-children grid gap-4 md:grid-cols-3 xl:grid-cols-5">
-      {visibleYears.map(({ year, originalIndex }) => {
-        const colors = getYearColorClasses(year.slug)
+    <div className="space-y-5">
+      {adminControls}
+      <div className="stagger-children grid gap-4 md:grid-cols-3 xl:grid-cols-5">
+        {visibleYears.map(({ year, originalIndex, isHiddenByPrefs }) => {
+          const colors = getYearColorClasses(year.slug)
 
-        return (
-          <div
-            key={year.id}
-            id={`year-${year.slug}`}
-            className="flex flex-col overflow-hidden rounded bg-surface-1"
-          >
-            <Link href={`/${year.slug}`} className="group block">
-              <div className={cn('px-5 py-4 transition-opacity group-hover:opacity-90', colors.progressClassName)}>
-                <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-white/90">
-                  Año {originalIndex + 1}
-                </p>
-                <h3 className="mt-1 text-base font-bold text-white">
-                  {year.nombre}
-                </h3>
-              </div>
-            </Link>
-
-            <ul className="flex flex-col">
-              {year.subjects.map((subject, subjectIndex) => (
-                <li
-                  key={subject.id}
+          return (
+            <div
+              key={year.id}
+              id={`year-${year.slug}`}
+              className={cn(
+                'flex flex-col overflow-hidden rounded bg-surface-1 transition-opacity',
+                isHiddenByPrefs && 'opacity-55',
+              )}
+            >
+              <Link href={`/${year.slug}`} className="group block">
+                <div
                   className={cn(
-                    subjectIndex !== year.subjects.length - 1 &&
-                      'border-b border-white/5',
+                    'px-5 py-4 transition-opacity group-hover:opacity-90',
+                    colors.progressClassName,
                   )}
                 >
-                  <Link
-                    href={buildSubjectHref({
-                      yearSlug: year.slug,
-                      subjectSlug: subject.slug,
-                    })}
-                    className="group flex items-center gap-3 px-5 py-4 transition-colors hover:bg-white/5"
-                  >
-                    <Layers className="h-[14px] w-[14px] shrink-0 text-white/20 transition-colors group-hover:text-white/40" />
-                    <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-white/60 transition-colors group-hover:text-white">
-                      {subject.nombre}
-                    </span>
-                    <AdminControls yearId={year.id}>
-                      <SubjectAdminRow
-                        subject={{
-                          id: subject.id,
-                          slug: subject.slug,
-                          nombre: subject.nombre,
-                          descripcion: subject.descripcion,
-                          driveUrl: subject.driveUrl,
-                        }}
-                        yearId={year.id}
-                      />
-                    </AdminControls>
-                  </Link>
-                </li>
-              ))}
-              <AdminControls yearId={year.id}>
-                <li>
-                  <AddSubjectButton yearId={year.id} />
-                </li>
-              </AdminControls>
-            </ul>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-white/90">
+                      Año {originalIndex + 1}
+                    </p>
+                    {isHiddenByPrefs ? (
+                      <span className="inline-flex items-center rounded-full border border-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-white/80">
+                        Oculto
+                      </span>
+                    ) : null}
+                  </div>
+                  <h3 className="mt-1 text-base font-bold text-white">
+                    {year.nombre}
+                  </h3>
+                </div>
+              </Link>
 
-            <AdminControls requireGlobal>
-              <YearAdminBar
-                year={{
-                  id: year.id,
-                  slug: year.slug,
-                  nombre: year.nombre,
-                  orden: originalIndex + 1,
-                  subjects: year.subjects.map((s) => ({
-                    id: s.id,
-                    slug: s.slug,
-                    nombre: s.nombre,
-                  })),
-                }}
-              />
-            </AdminControls>
-          </div>
-        )
-      })}
+              <ul className="flex flex-col">
+                {year.subjects.map((subject, subjectIndex) => (
+                  <li
+                    key={subject.id}
+                    className={cn(
+                      subjectIndex !== year.subjects.length - 1 &&
+                        'border-b border-white/5',
+                    )}
+                  >
+                    <Link
+                      href={buildSubjectHref({
+                        yearSlug: year.slug,
+                        subjectSlug: subject.slug,
+                      })}
+                      className="group flex items-center gap-3 px-5 py-4 transition-colors hover:bg-white/5"
+                    >
+                      <Layers className="h-[14px] w-[14px] shrink-0 text-white/20 transition-colors group-hover:text-white/40" />
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-white/60 transition-colors group-hover:text-white">
+                        {subject.nombre}
+                      </span>
+                      <AdminControls yearId={year.id}>
+                        <SubjectAdminRow
+                          subject={{
+                            id: subject.id,
+                            slug: subject.slug,
+                            nombre: subject.nombre,
+                            descripcion: subject.descripcion,
+                            driveUrl: subject.driveUrl,
+                          }}
+                          yearId={year.id}
+                        />
+                      </AdminControls>
+                    </Link>
+                  </li>
+                ))}
+                <AdminControls yearId={year.id}>
+                  <li>
+                    <AddSubjectButton yearId={year.id} />
+                  </li>
+                </AdminControls>
+              </ul>
+
+              <AdminControls requireGlobal>
+                <YearAdminBar
+                  year={{
+                    id: year.id,
+                    slug: year.slug,
+                    nombre: year.nombre,
+                    orden: originalIndex + 1,
+                    subjects: year.subjects.map((s) => ({
+                      id: s.id,
+                      slug: s.slug,
+                      nombre: s.nombre,
+                    })),
+                  }}
+                />
+              </AdminControls>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -232,22 +318,16 @@ function AddSubjectCard({ yearId }: { yearId: string }) {
 }
 
 interface HomeYearCardSectionProps {
-  year: {
-    id: string
-    slug: string
-    nombre: string
-    subjects: Array<{
-      id: string
-      slug: string
-      nombre: string
-      descripcion: string | null
-      driveUrl: string | null
-    }>
-  }
+  year: HomeGridYear
   originalIndex: number
+  isHiddenByPrefs: boolean
 }
 
-function HomeYearCardSection({ year, originalIndex }: HomeYearCardSectionProps) {
+function HomeYearCardSection({
+  year,
+  originalIndex,
+  isHiddenByPrefs,
+}: HomeYearCardSectionProps) {
   const colors = getYearColorClasses(year.slug)
   const hasSubjects = year.subjects.length > 0
   const isAdmin = useAdminAccess({ yearId: year.id })
@@ -255,31 +335,47 @@ function HomeYearCardSection({ year, originalIndex }: HomeYearCardSectionProps) 
   if (!hasSubjects && !isAdmin) return null
 
   return (
-    <div id={`year-${year.slug}`} className="space-y-4">
+    <div
+      id={`year-${year.slug}`}
+      className={cn('space-y-4 transition-opacity', isHiddenByPrefs && 'opacity-55')}
+    >
       {/* Encabezado del Año (clickable para navegar) */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 pb-3">
         <Link href={`/${year.slug}`} className="group inline-flex flex-col">
-          <h3 className={cn("text-lg font-bold transition-colors flex items-center gap-2", colors.textClassName, "group-hover:opacity-80")}>
+          <h3
+            className={cn(
+              'flex items-center gap-2 text-lg font-bold transition-colors',
+              colors.textClassName,
+              'group-hover:opacity-80',
+            )}
+          >
             {year.nombre}
             <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
           </h3>
         </Link>
 
-        <AdminControls requireGlobal>
-          <YearAdminBar
-            year={{
-              id: year.id,
-              slug: year.slug,
-              nombre: year.nombre,
-              orden: originalIndex + 1,
-              subjects: year.subjects.map((s) => ({
-                id: s.id,
-                slug: s.slug,
-                nombre: s.nombre,
-              })),
-            }}
-          />
-        </AdminControls>
+        <div className="flex items-center gap-3">
+          {isHiddenByPrefs ? (
+            <span className="inline-flex items-center rounded-full border border-white/12 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white/55">
+              Oculto
+            </span>
+          ) : null}
+          <AdminControls requireGlobal>
+            <YearAdminBar
+              year={{
+                id: year.id,
+                slug: year.slug,
+                nombre: year.nombre,
+                orden: originalIndex + 1,
+                subjects: year.subjects.map((s) => ({
+                  id: s.id,
+                  slug: s.slug,
+                  nombre: s.nombre,
+                })),
+              }}
+            />
+          </AdminControls>
+        </div>
       </div>
 
       {/* Grid de Materias en formato Tarjeta */}
@@ -290,7 +386,7 @@ function HomeYearCardSection({ year, originalIndex }: HomeYearCardSectionProps) 
           </div>
         </AdminControls>
       ) : (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {year.subjects.map((subject, index) => (
             <Link
               key={subject.id}
@@ -300,15 +396,18 @@ function HomeYearCardSection({ year, originalIndex }: HomeYearCardSectionProps) 
               })}
               className="group"
             >
-              <DarkCard variant="interactive" className="h-full p-5 flex flex-col justify-between">
+              <DarkCard
+                variant="interactive"
+                className="flex h-full flex-col justify-between p-5"
+              >
                 <div>
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38 flex items-center gap-2">
                         <span>Materia {String(index + 1).padStart(2, '0')}</span>
                         <AdminControls yearId={year.id} noWrapper>
-                          <span 
-                            className="pointer-events-auto flex items-center" 
+                          <span
+                            className="pointer-events-auto flex items-center"
                             onClick={(e) => {
                               e.stopPropagation()
                               e.preventDefault()
@@ -316,11 +415,11 @@ function HomeYearCardSection({ year, originalIndex }: HomeYearCardSectionProps) 
                           >
                             <SubjectAdminRow
                               subject={{
-                                  id: subject.id,
-                                  slug: subject.slug,
-                                  nombre: subject.nombre,
-                                  descripcion: subject.descripcion,
-                                  driveUrl: subject.driveUrl,
+                                id: subject.id,
+                                slug: subject.slug,
+                                nombre: subject.nombre,
+                                descripcion: subject.descripcion,
+                                driveUrl: subject.driveUrl,
                               }}
                               yearId={year.id}
                             />
@@ -328,21 +427,21 @@ function HomeYearCardSection({ year, originalIndex }: HomeYearCardSectionProps) 
                         </AdminControls>
                       </p>
                     </div>
-                    
+
                     <span
                       className={cn(
-                        "inline-flex h-10 min-w-10 shrink-0 items-center justify-center px-3 text-xs font-black tracking-[0.16em] text-white",
-                        colors.progressClassName
+                        'inline-flex h-10 min-w-10 shrink-0 items-center justify-center px-3 text-xs font-black tracking-[0.16em] text-white',
+                        colors.progressClassName,
                       )}
                     >
                       {String(index + 1).padStart(2, '0')}
                     </span>
                   </div>
-                  
+
                   <h3 className="mt-3 text-xl font-black tracking-tight text-white leading-tight">
                     {subject.nombre}
                   </h3>
-                  
+
                   {subject.descripcion && (
                     <p className="mt-2 text-sm leading-relaxed text-white/55 line-clamp-2">
                       {subject.descripcion}
@@ -350,7 +449,7 @@ function HomeYearCardSection({ year, originalIndex }: HomeYearCardSectionProps) 
                   )}
                 </div>
 
-                <div className="mt-6 flex items-center justify-between text-sm font-semibold text-white/58 group-hover:text-white/80 transition-colors">
+                <div className="mt-6 flex items-center justify-between text-sm font-semibold text-white/58 transition-colors group-hover:text-white/80">
                   <span>Abrir materia</span>
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </div>
@@ -366,5 +465,3 @@ function HomeYearCardSection({ year, originalIndex }: HomeYearCardSectionProps) 
     </div>
   )
 }
-
-

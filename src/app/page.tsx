@@ -5,17 +5,17 @@ import { ConfigButton } from '@/components/shell/ConfigButton'
 import {
   getCareer,
   getHomeCalendarEvents,
+  getLatestApuntes,
   getTiposEvento,
 } from '@/lib/queries'
 import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
 import { AnimateIn } from '@/components/ui/AnimateIn'
-import { AdminControls } from '@/components/admin/AdminControls'
-import { AddYearButton } from '@/components/admin/HomeAdminOverlay'
 import { MobileHome } from '@/components/mobile/home/MobileHome'
 import { MobileShell } from '@/components/mobile/shell/MobileShell'
 import { HomeYearsGrid } from '@/components/home/HomeYearsGrid'
 import { HomeGlobalCalendar } from '@/components/home/HomeGlobalCalendar'
+import { HomeLatestApuntes } from '@/components/home/HomeLatestApuntes'
 import { HomeSidebar } from '@/components/home/HomeSidebar'
 import { Mascot } from '@/components/ui/Mascot'
 import { PREFERENCES_KEY, readPreferencesFromCookie } from '@/lib/preferences'
@@ -27,10 +27,11 @@ export default async function HomePage() {
     cookieStore.get(PREFERENCES_KEY)?.value ?? null,
   )
 
-  const [career, homeCalendarEventsRaw, tiposEvento] = await Promise.all([
+  const [career, homeCalendarEventsRaw, tiposEvento, latestApuntesRaw] = await Promise.all([
     getCareer(),
     getHomeCalendarEvents(),
     getTiposEvento(),
+    getLatestApuntes(),
   ])
 
   if (!career) {
@@ -137,6 +138,7 @@ export default async function HomePage() {
       fecha: Date
       tipo: string
       tipoId: string
+      yearNombre: string
       yearSlug: string
       subjectSlug: string
       subjectId: string
@@ -161,6 +163,7 @@ export default async function HomePage() {
       fecha: event.fecha,
       tipo: event.tipoEvento.nombre,
       tipoId: event.tipoEventoId,
+      yearNombre: year.nombre,
       yearSlug: year.slug,
       subjectSlug: subject.slug,
       subjectId: subject.id,
@@ -174,6 +177,16 @@ export default async function HomePage() {
 
     return acc
   }, [])
+
+  const latestApuntes = latestApuntesRaw.map((apunte) => ({
+    id: apunte.id,
+    titulo: apunte.titulo,
+    createdAt: apunte.createdAt,
+    subjectSlug: apunte.subject.slug,
+    subjectNombre: apunte.subject.nombre,
+    yearSlug: apunte.subject.year.slug,
+    yearNombre: apunte.subject.year.nombre,
+  }))
 
   return (
     <>
@@ -218,14 +231,13 @@ export default async function HomePage() {
               events={homeCalendarEvents}
             />
 
+            <HomeLatestApuntes initialPrefs={initialPrefs} notes={latestApuntes} />
+
             <section className="space-y-5">
-              <div className="flex items-center justify-between px-1">
+              <div className="px-1">
                 <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/40">
                   MATERIAS POR AÑO
                 </p>
-                <AdminControls requireGlobal>
-                  <AddYearButton />
-                </AdminControls>
               </div>
 
               <HomeYearsGrid initialPrefs={initialPrefs} years={career.years} />
@@ -240,6 +252,7 @@ export default async function HomePage() {
           upcomingEvents={upcomingEvents}
           tiposEvento={tiposEvento}
           calendarEvents={homeCalendarEvents}
+          latestApuntes={latestApuntes}
         />
       </div>
     </>

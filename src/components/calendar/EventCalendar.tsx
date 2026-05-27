@@ -22,6 +22,7 @@ export interface EventCalendarEvent {
   tipo?: string | null
   tipoId?: string
   classNames?: string | string[]
+  yearSlug?: string
   subjectSlug?: string
   subjectId?: string
   materiaNombre?: string
@@ -259,7 +260,9 @@ export function EventCalendar({
           const originalEvent = events.find((e, idx) => {
             const startVal = e.start ?? e.date ?? e.fecha
             const titleVal = e.title ?? e.titulo ?? ''
-            const eventId = buildEventId(e, idx, titleVal, startVal!)
+            if (!startVal || !titleVal.trim()) return false
+
+            const eventId = buildEventId(e, idx, titleVal, startVal)
             return eventId === clickedId || e.id === clickedId
           })
           if (originalEvent && onEventClick) {

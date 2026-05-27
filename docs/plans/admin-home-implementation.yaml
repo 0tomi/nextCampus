@@ -1,0 +1,310 @@
+plan: admin-home-implementation
+meta:
+  objetivo: Implementar perfil admin, ajustar acceso de admins y mejorar el home con eventos, ultimos apuntes y toggle admin para anos ocultos.
+  dominio: auth + admin + home frontend + queries
+  creado: 2026-05-27T00:00:00-03:00
+  fuente: docs/plans/2026-05-27-admin-home-implementation-plan.md
+  fases_totales: 6
+
+restricciones:
+  R1:
+    titulo: No build ni Playwright
+    contenido: |
+      No ejecutar pnpm build. No usar Playwright salvo pedido explicito del usuario.
+  R2:
+    titulo: Autorizacion server-side
+    contenido: |
+      Abrir /admin a admins normales no debe exponer gestion de usuarios ni historial. Usuarios, crear, editar e historial deben seguir protegidos por requireGeneralAdmin().
+  R3:
+    titulo: Perfil admin seguro
+    contenido: |
+      Las acciones de perfil requieren requireAnyAdmin(), no aceptan userId desde el cliente, sincronizan email entre Supabase Auth y UserAccount, y no exponen secretos en componentes cliente.
+  R4:
+    titulo: Copy user-friendly
+    contenido: |
+      El frontend no debe mencionar Supabase, service role, server actions, DB, JWT, backend, frontend, framework ni infraestructura. Botones clickeables deben tener cursor-pointer.
+  R5:
+    titulo: Preferencias del home
+    contenido: |
+      Eventos y apuntes deben respetar preferencias existentes de anos, materias y comisiones ocultas. El toggle admin de anos ocultos es local y no escribe preferencias.
+  R6:
+    titulo: Cambios minimos
+    contenido: |
+      Preservar estilos y patrones existentes. No redisenar completo home ni admin. No agregar compatibilidad hacia atras sin necesidad concreta.
+
+fases:
+  F1:
+    nombre: Admin Access And Navigation
+    dominio: auth + frontend
+    criticidad: critica
+    objetivo: Permitir ingreso a /admin de todos los admins activos y limitar secciones privilegiadas a admin general.
+    archivos_alcance:
+      permitidos:
+        - src/app/admin/page.tsx
+        - src/app/admin/AdminSidebar.tsx
+        - src/app/admin/users/page.tsx
+        - src/app/admin/users/create/page.tsx
+        - src/app/admin/users/edit/[id]/page.tsx
+        - src/app/admin/historial/page.tsx
+        - src/lib/auth.ts
+      prohibidos: []
+    criterio_cierre: /admin redirige segun rol; sidebar muestra Mi perfil a todos y Usuarios/Historial solo a quienes pueden crear usuarios; rutas privilegiadas siguen con requireGeneralAdmin().
+    dependencias: []
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/app/admin/page.tsx
+        - src/app/admin/AdminSidebar.tsx
+        - src/lib/auth.ts
+        - src/lib/auth.test.ts
+        - src/app/admin/AdminSidebar.test.tsx
+      supuestos:
+        - canCreateUsers es la fuente de verdad para destino inicial y visibilidad de Usuarios/Historial.
+      deuda:
+        - /admin/perfil queda referenciada pero se implementa en F2.
+      notas: Rutas privilegiadas verificadas con requireGeneralAdmin(); se agregaron tests por strict_tdd del repo.
+      timestamp: 2026-05-27T00:15:00-03:00
+    skills_sugeridas:
+      - next-best-practices
+      - vercel-react-best-practices
+
+  F2:
+    nombre: Admin Profile Page
+    dominio: auth + frontend
+    criticidad: critica
+    objetivo: Crear /admin/perfil con formularios para actualizar correo y contrasena del admin autenticado.
+    archivos_alcance:
+      permitidos:
+        - src/app/admin/perfil/page.tsx
+        - src/app/admin/perfil/actions.ts
+        - src/app/admin/perfil/ProfileForm.tsx
+        - src/lib/auth.ts
+        - tests/
+      prohibidos: []
+    criterio_cierre: Campus admin puede cargar y enviar /admin/perfil; validaciones amigables; email unico y sincronizado; password exige actual, nueva y confirmacion; sin secretos en cliente.
+    dependencias: [F1]
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/app/admin/perfil/page.tsx
+        - src/app/admin/perfil/ProfileForm.tsx
+        - src/app/admin/perfil/actions.ts
+        - src/app/admin/perfil/actions.test.ts
+        - src/app/admin/perfil/page.test.ts
+      supuestos:
+        - AUDIT_ACTIONS.USER_UPDATED es suficiente para auditar cambios de perfil propio.
+        - Supabase tipa current_password para verificacion de contrasena actual en updateUser.
+        - Admin general muestra resumen de acceso completo en lugar de lista de anos.
+      deuda: []
+      notas: UI revisada sin copy tecnico visible; server actions usan requireAnyAdmin y no aceptan userId desde form data.
+      timestamp: 2026-05-27T00:35:00-03:00
+    skills_sugeridas:
+      - supabase
+      - zod
+      - nextjs-supabase-auth
+
+  F3:
+    nombre: Home Calendar Improvements
+    dominio: home frontend + queries
+    criticidad: estandar
+    objetivo: Mostrar ano en eventos proximos y hacer las tarjetas de evento navegables sin romper filtros actuales.
+    archivos_alcance:
+      permitidos:
+        - src/lib/queries.ts
+        - src/app/page.tsx
+        - src/components/home/HomeGlobalCalendar.tsx
+        - src/components/calendar/EventCalendar.tsx
+      prohibidos: []
+    criterio_cierre: Eventos muestran tipo, ano, materia y fecha; tarjeta navega a la materia/comision; filtros de preferencias se preservan; empty state no cambia.
+    dependencias: [F2]
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/lib/queries.ts
+        - src/app/page.tsx
+        - src/components/home/HomeGlobalCalendar.tsx
+        - src/components/calendar/EventCalendar.tsx
+        - src/components/home/HomeGlobalCalendar.test.tsx
+      supuestos:
+        - year.nombre es el label correcto para el tag visible de ano.
+        - EventCalendar ya tenia soporte cercano para clicks y se conecto sin refactor grande.
+      deuda: []
+      notas: Se agrego guard en eventClick para no reconstruir IDs de eventos sin fecha/titulo.
+      timestamp: 2026-05-27T00:55:00-03:00
+    skills_sugeridas:
+      - next-best-practices
+      - vercel-react-best-practices
+
+  F4:
+    nombre: Latest Notes Section
+    dominio: home frontend + queries
+    criticidad: estandar
+    objetivo: Agregar seccion Ultimos apuntes subidos bajo calendario en desktop y mobile si el home mobile lo requiere.
+    archivos_alcance:
+      permitidos:
+        - src/lib/queries.ts
+        - src/app/page.tsx
+        - src/components/home/HomeLatestApuntes.tsx
+        - src/components/mobile/home/MobileHome.tsx
+        - src/components/mobile/home/
+        - src/app/**/actions.ts
+        - src/lib/**
+      prohibidos: []
+    criterio_cierre: Ultimos apuntes aparecen debajo del calendario, respetan preferencias, navegan a materia, tienen empty state amigable y acciones de apuntes revalidan el nuevo cache tag.
+    dependencias: [F3]
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/lib/queries.ts
+        - src/app/admin/actions.ts
+        - src/app/page.tsx
+        - src/components/home/HomeLatestApuntes.tsx
+        - src/components/home/HomeLatestApuntes.test.tsx
+        - src/components/mobile/home/MobileHome.tsx
+        - src/app/admin/actions.test.ts
+      supuestos:
+        - prefs null en apuntes se trata igual que agenda: mostrar CTA de configuracion en vez de contenido global.
+        - El tag latest-apuntes debe acompanarse con career para evitar metadata vieja de anos/materias.
+      deuda: []
+      notas: Mobile incluido; revalidacion de apuntes centralizada en acciones admin.
+      timestamp: 2026-05-27T01:20:00-03:00
+    skills_sugeridas:
+      - next-best-practices
+      - vercel-react-best-practices
+
+  F5:
+    nombre: Admin Toggle For Hidden Years
+    dominio: home frontend
+    criticidad: estandar
+    objetivo: Permitir que admins vean temporalmente anos ocultos en HomeYearsGrid sin modificar preferencias.
+    archivos_alcance:
+      permitidos:
+        - src/components/home/HomeYearsGrid.tsx
+        - src/components/mobile/home/YearCarousel.tsx
+      prohibidos: []
+    criterio_cierre: Toggle visible solo a admins junto a controles de agregar ano; default apagado; no escribe preferencias; anos ocultos se muestran atenuados y usables al activar.
+    dependencias: [F4]
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/components/home/HomeYearsGrid.tsx
+        - src/components/home/HomeYearsGrid.test.tsx
+        - src/app/page.tsx
+      supuestos:
+        - Al revelar un ano oculto, las materias siguen respetando hiddenSubjects, pero el ano oculto deja de bloquearlas por ser admin toggle temporal.
+        - Mobile queda sin paridad porque no hay control comparable dentro de YearCarousel y ampliarlo seria otro flujo.
+      deuda: []
+      notas: El control Agregar ano se movio al bloque de controles de HomeYearsGrid para ubicarlo junto al toggle; tests y lint focalizados pasaron.
+      timestamp: 2026-05-27T01:45:00-03:00
+    skills_sugeridas:
+      - vercel-react-best-practices
+
+  F6:
+    nombre: Tests And Verification
+    dominio: qa
+    criticidad: critica
+    objetivo: Agregar tests razonables y correr verificaciones permitidas sin build ni Playwright.
+    archivos_alcance:
+      permitidos:
+        - tests/
+        - src/**/*.test.ts
+        - src/**/*.test.tsx
+        - src/app/admin/perfil/actions.ts
+      prohibidos: []
+    criterio_cierre: Tests utiles agregados si encajan con la estructura; pnpm lint y pnpm test ejecutados o documentados; sin pnpm build; copy tecnico ausente de UI visible.
+    dependencias: [F5]
+    estado: completada
+    cierre:
+      archivos_tocados: []
+      supuestos:
+        - Los tests agregados en F1-F5 ya cubren el alcance esperado de esta fase; no se agregaron nuevos archivos en F6.
+        - Errores de lint en .agents/skills/brainstorming/scripts/server.cjs y warning en src/app/[yearSlug]/[subjectSlug]/quiz/QuizRunner.tsx quedan fuera del alcance del plan (archivos no tocados por F1-F5).
+      deuda:
+        - Lint global reporta 4 errores y 3 warnings preexistentes fuera de scope; conviene tratarlos en un plan aparte.
+      notas: |
+        Verificaciones ejecutadas:
+        - pnpm test: 14 archivos, 100 tests, todos en verde (incluye 8 suites nuevas creadas en F1-F5: auth.test.ts, AdminSidebar.test.tsx, actions.test.ts, perfil/page.test.ts, perfil/actions.test.ts, HomeGlobalCalendar.test.tsx, HomeLatestApuntes.test.tsx, HomeYearsGrid.test.tsx).
+        - pnpm lint: falla por archivos fuera del alcance del plan.
+        - Revision manual de copy en UI (perfil, sidebar, home components): sin menciones de supabase/service role/server action/JWT/backend/frontend/framework/infraestructura.
+        - Botones interactivos clave con cursor-pointer verificado en ProfileForm, HomeYearsGrid, HomeLatestApuntes y AdminSidebar.
+        - Server actions de perfil usan requireAnyAdmin(), no aceptan userId desde formData y sincronizan email con rollback best-effort.
+        - No se ejecuto pnpm build ni Playwright conforme R1.
+      timestamp: 2026-05-27T19:25:00-03:00
+    skills_sugeridas:
+      - next-best-practices
+      - vercel-react-best-practices
+
+estado_global:
+  estado: completada
+  fases:
+    F1: completada
+    F2: completada
+    F3: completada
+    F4: completada
+    F5: completada
+    F6: completada
+
+auditoria:
+  resultado: aprobado
+  timestamp: 2026-05-27T19:25:00-03:00
+  validador: claude-opus-4-7
+  resumen: |
+    Plan admin-home-implementation cerrado. Las 6 fases cumplen su criterio de cierre:
+    - F1 redirige /admin segun rol y limita Usuarios/Historial a admin general.
+    - F2 expone /admin/perfil con edicion de correo y contrasena protegida por requireAnyAdmin.
+    - F3 enriquece eventos del home con tipo, ano y materia, y los hace navegables.
+    - F4 suma seccion Ultimos apuntes en desktop y mobile respetando preferencias.
+    - F5 agrega toggle admin para anos ocultos sin tocar preferencias.
+    - F6 valida que pnpm test pasa 100/100 y que la UI no expone copy tecnico.
+  observaciones:
+    - Lint global sigue rojo por archivos fuera del scope (script en .agents/skills/brainstorming y warning preexistente en QuizRunner). Tratar en plan aparte.
+
+historial:
+  - timestamp: 2026-05-27T00:00:00-03:00
+    evento: plan_creado
+    detalle: Plan YAML inicializado desde docs/plans/2026-05-27-admin-home-implementation-plan.md.
+  - timestamp: 2026-05-27T00:05:00-03:00
+    evento: fase_iniciada
+    fase: F1
+  - timestamp: 2026-05-27T00:15:00-03:00
+    evento: fase_completada
+    fase: F1
+    validacion: aprobada_con_observaciones
+  - timestamp: 2026-05-27T00:20:00-03:00
+    evento: fase_iniciada
+    fase: F2
+  - timestamp: 2026-05-27T00:35:00-03:00
+    evento: fase_completada
+    fase: F2
+    validacion: aprobada_con_observaciones
+  - timestamp: 2026-05-27T00:40:00-03:00
+    evento: fase_iniciada
+    fase: F3
+  - timestamp: 2026-05-27T00:55:00-03:00
+    evento: fase_completada
+    fase: F3
+    validacion: aprobada
+  - timestamp: 2026-05-27T01:00:00-03:00
+    evento: fase_iniciada
+    fase: F4
+  - timestamp: 2026-05-27T01:20:00-03:00
+    evento: fase_completada
+    fase: F4
+    validacion: aprobada
+  - timestamp: 2026-05-27T01:25:00-03:00
+    evento: fase_iniciada
+    fase: F5
+  - timestamp: 2026-05-27T01:45:00-03:00
+    evento: fase_completada
+    fase: F5
+    validacion: aprobada
+  - timestamp: 2026-05-27T01:50:00-03:00
+    evento: fase_iniciada
+    fase: F6
+  - timestamp: 2026-05-27T19:25:00-03:00
+    evento: fase_completada
+    fase: F6
+    validacion: aprobada_con_observaciones
+  - timestamp: 2026-05-27T19:25:00-03:00
+    evento: plan_completado
+    detalle: Auditoria final aprobada; verificaciones documentadas y plan cerrado.

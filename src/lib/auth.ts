@@ -96,6 +96,12 @@ export function buildAdminCapabilities(role: UserRole): AdminCapabilities {
   }
 }
 
+export function getAdminHomeDestination(
+  admin: Pick<AdminCapabilities, 'canCreateUsers'>,
+): '/admin/users' | '/admin/perfil' {
+  return admin.canCreateUsers ? '/admin/users' : '/admin/perfil'
+}
+
 export function buildAdminUser(account: DbUserAccount): AdminUser | null {
   if (account.status !== USER_STATUSES.ACTIVE) return null
 
@@ -202,7 +208,15 @@ export const getAdminUser = cache(async (): Promise<AdminUser | null> => {
     },
   })
 
-  if (!account || account.role !== USER_ROLES.ADMIN_CAMPUS) return null
+  if (!account) return null
+
+  if (
+    account.role !== USER_ROLES.ADMIN_CAMPUS &&
+    account.role !== USER_ROLES.ADMIN_GENERAL
+  ) {
+    return null
+  }
+
   return buildAdminUser(account)
 })
 

@@ -1,0 +1,196 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const revalidatePathMock = vi.fn()
+const revalidateTagRawMock = vi.fn()
+const requireGeneralAdminMock = vi.fn()
+const requireYearAdminForAgendaIdMock = vi.fn()
+const requireYearAdminForApunteIdMock = vi.fn()
+const requireYearAdminForCommissionIdMock = vi.fn()
+const requireYearAdminForEventoIdMock = vi.fn()
+const requireYearAdminForSubjectIdMock = vi.fn()
+const requireYearAdminForSubjectSlugMock = vi.fn()
+const requireYearAdminForYearIdMock = vi.fn()
+const sanitizeRichHtmlMock = vi.fn()
+const detectarRecursoMock = vi.fn()
+const recordAuditMock = vi.fn()
+
+const prismaMock = {
+  subject: {
+    findUnique: vi.fn(),
+  },
+  apunte: {
+    create: vi.fn(),
+    findUnique: vi.fn(),
+    delete: vi.fn(),
+  },
+  $transaction: vi.fn(),
+}
+
+vi.mock('next/cache', () => ({
+  revalidatePath: revalidatePathMock,
+  revalidateTag: revalidateTagRawMock,
+}))
+
+vi.mock('@/lib/auth', () => ({
+  requireGeneralAdmin: requireGeneralAdminMock,
+  requireYearAdminForAgendaId: requireYearAdminForAgendaIdMock,
+  requireYearAdminForApunteId: requireYearAdminForApunteIdMock,
+  requireYearAdminForCommissionId: requireYearAdminForCommissionIdMock,
+  requireYearAdminForEventoId: requireYearAdminForEventoIdMock,
+  requireYearAdminForSubjectId: requireYearAdminForSubjectIdMock,
+  requireYearAdminForSubjectSlug: requireYearAdminForSubjectSlugMock,
+  requireYearAdminForYearId: requireYearAdminForYearIdMock,
+}))
+
+vi.mock('@/lib/prisma', () => ({
+  prisma: prismaMock,
+}))
+
+vi.mock('@/lib/sanitize', () => ({
+  sanitizeRichHtml: sanitizeRichHtmlMock,
+}))
+
+vi.mock('@/lib/slug', () => ({
+  slugify: vi.fn(),
+  uniqueSlug: vi.fn(),
+}))
+
+vi.mock('@/lib/storage', () => ({
+  uploadQuizBank: vi.fn(),
+  deleteQuizBank: vi.fn(),
+  deleteSubjectStorage: vi.fn(),
+  deleteYearStorage: vi.fn(),
+  quizBanksCacheTag: vi.fn(() => 'quiz-bank-tag'),
+}))
+
+vi.mock('@/lib/queries', () => ({
+  queryTags: {
+    career: 'career',
+    tiposEvento: 'tipos-evento',
+    latestApuntes: 'latest-apuntes',
+    upcomingEvents: 'upcoming-events',
+    year: (slug: string) => `year:${slug}`,
+    subject: (slug: string) => `subject:${slug}`,
+  },
+  getSubjectDeleteImpact: vi.fn(),
+  getYearDeleteImpact: vi.fn(),
+}))
+
+vi.mock('@/lib/recursos', () => ({
+  detectarRecurso: detectarRecursoMock,
+}))
+
+vi.mock('@/lib/supabase/server', () => ({
+  createSupabaseServerClient: vi.fn(),
+}))
+
+vi.mock('@/lib/audit', () => ({
+  AUDIT_ACTIONS: {
+    APUNTE_CREATED: 'APUNTE_CREATED',
+    APUNTE_UPDATED: 'APUNTE_UPDATED',
+    APUNTE_DELETED: 'APUNTE_DELETED',
+  },
+  recordAudit: recordAuditMock,
+}))
+
+vi.mock('@/lib/domain/quiz-bank', () => ({
+  parseQuizBank: vi.fn(),
+}))
+
+function makeFormData(entries: Record<string, string>) {
+  const formData = new FormData()
+
+  for (const [key, value] of Object.entries(entries)) {
+    formData.set(key, value)
+  }
+
+  return formData
+}
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  vi.resetModules()
+
+  sanitizeRichHtmlMock.mockImplementation((html) => String(html))
+  detectarRecursoMock.mockImplementation((url: string) => {
+    if (url.includes('youtube.com')) return { tipo: 'YOUTUBE' }
+    if (url.includes('drive.google.com')) return { tipo: 'DRIVE' }
+    return null
+  })
+  prismaMock.subject.findUnique.mockResolvedValue({
+    year: { slug: 'primer-anio' },
+    commissions: [],
+  })
+  prismaMock.$transaction.mockImplementation(async (callback) => callback({
+    apunte: {
+      update: vi.fn().mockResolvedValue(undefined),
+    },
+    apunteRecurso: {
+      deleteMany: vi.fn().mockResolvedValue(undefined),
+      createMany: vi.fn().mockResolvedValue(undefined),
+    },
+  }))
+  recordAuditMock.mockResolvedValue(undefined)
+})
+
+describe('admin apunte actions', () => {
+  it('revalida latest-apuntes al crear un apunte', async () => {
+    requireYearAdminForSubjectIdMock.mockResolvedValue({
+      subjectSlug: 'calculo',
+      yearSlug: 'primer-anio',
+      admin: { id: 'admin-1' },
+    })
+    prismaMock.apunte.create.mockResolvedValue({ id: 'apunte-1' })
+
+    const { createApunteAction } = await import('./actions')
+    const result = await createApunteAction(
+      { ok: false, message: '' },
+      makeFormData({
+        subjectId: 'subject-1',
+        titulo: 'Resumen parcial',
+        descripcionHtml: '<p>Temas clave</p>',
+        recursosJson: '[]',
+      }),
+    )
+
+    expect(result).toEqual({ ok: true, message: 'Apunte creado correctamente.' })
+    expect(revalidateTagRawMock).toHaveBeenCalledWith('latest-apuntes', 'max')
+  })
+
+  it('revalida latest-apuntes al editar un apunte', async () => {
+    requireYearAdminForApunteIdMock.mockResolvedValue({
+      subjectSlug: 'calculo',
+      yearSlug: 'primer-anio',
+      admin: { id: 'admin-1' },
+    })
+
+    const { updateApunteAction } = await import('./actions')
+    const result = await updateApunteAction(
+      { ok: false, message: '' },
+      makeFormData({
+        apunteId: 'apunte-1',
+        titulo: 'Resumen actualizado',
+        descripcionHtml: '<p>Más claro</p>',
+        recursosJson: '[]',
+      }),
+    )
+
+    expect(result).toEqual({ ok: true, message: 'Apunte actualizado correctamente.' })
+    expect(revalidateTagRawMock).toHaveBeenCalledWith('latest-apuntes', 'max')
+  })
+
+  it('revalida latest-apuntes al eliminar un apunte', async () => {
+    requireYearAdminForApunteIdMock.mockResolvedValue({
+      subjectSlug: 'calculo',
+      yearSlug: 'primer-anio',
+      admin: { id: 'admin-1' },
+    })
+    prismaMock.apunte.findUnique.mockResolvedValue({ titulo: 'Resumen viejo' })
+    prismaMock.apunte.delete.mockResolvedValue(undefined)
+
+    const { deleteApunteAction } = await import('./actions')
+    await deleteApunteAction(makeFormData({ id: 'apunte-1' }))
+
+    expect(revalidateTagRawMock).toHaveBeenCalledWith('latest-apuntes', 'max')
+  })
+})

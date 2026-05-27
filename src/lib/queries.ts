@@ -126,6 +126,7 @@ function attachCommissionMetadataToSubject<
 
 const TAGS = {
   career: 'career',
+  latestApuntes: 'latest-apuntes',
   tiposEvento: 'tipos-evento',
   year: (slug: string) => `year:${slug}`,
   subject: (slug: string) => `subject:${slug}`,
@@ -434,6 +435,7 @@ export function getHomeCalendarEvents() {
                       id: true,
                       slug: true,
                       nombre: true,
+                      orden: true,
                     },
                   },
                 },
@@ -444,6 +446,35 @@ export function getHomeCalendarEvents() {
       }),
     ['home-calendar-events'],
     { tags: [TAGS.upcomingEvents, TAGS.career], revalidate: 300 },
+  )()
+}
+
+export function getLatestApuntes(limit = 6) {
+  return unstable_cache(
+    () =>
+      prisma.apunte.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        select: {
+          id: true,
+          titulo: true,
+          createdAt: true,
+          subject: {
+            select: {
+              slug: true,
+              nombre: true,
+              year: {
+                select: {
+                  slug: true,
+                  nombre: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+    ['latest-apuntes', String(limit)],
+    { tags: [TAGS.latestApuntes, TAGS.career], revalidate: 300 },
   )()
 }
 
