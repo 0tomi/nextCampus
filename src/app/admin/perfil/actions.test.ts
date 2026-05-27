@@ -57,7 +57,7 @@ beforeEach(() => {
 
 describe('admin perfil email action', () => {
   it('normaliza el correo antes de validarlo', async () => {
-    const { updateAdminEmailSchema } = await import('./actions')
+    const { updateAdminEmailSchema } = await import('./schemas')
 
     const result = updateAdminEmailSchema.safeParse({
       nextEmail: ' NUEVO@Campus.Test ',
@@ -68,7 +68,7 @@ describe('admin perfil email action', () => {
   })
 
   it('rechaza correos inválidos', async () => {
-    const { updateAdminEmailSchema } = await import('./actions')
+    const { updateAdminEmailSchema } = await import('./schemas')
 
     const result = updateAdminEmailSchema.safeParse({
       nextEmail: 'correo-invalido',
@@ -183,7 +183,7 @@ describe('admin perfil email action', () => {
 
 describe('admin perfil password action', () => {
   it('exige confirmación y largo mínimo', async () => {
-    const { updateAdminPasswordSchema } = await import('./actions')
+    const { updateAdminPasswordSchema } = await import('./schemas')
 
     const result = updateAdminPasswordSchema.safeParse({
       currentPassword: 'actual1234',

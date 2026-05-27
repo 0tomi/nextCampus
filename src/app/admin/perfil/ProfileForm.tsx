@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
-import { initialProfileActionState, type ProfileActionState } from './actions'
+import { initialProfileActionState, type ProfileActionState } from './schemas'
 
 interface ProfileFormProps {
   currentEmail: string
