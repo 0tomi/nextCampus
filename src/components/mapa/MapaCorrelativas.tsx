@@ -568,7 +568,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                             <div className="flex flex-wrap items-center justify-between gap-2">
                               {hasPage ? (
                                 <Link
-                                  href={`/materia/${subject.slug}`}
+                                  href={`/anio-${subject.year}/${subject.slug}`}
                                   onClick={(event) => event.stopPropagation()}
                                   className="inline-flex w-fit items-center gap-1 text-[10px] font-bold text-white/40 transition hover:text-white"
                                 >

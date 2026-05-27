@@ -1,10 +1,10 @@
 import type { SubjectNode } from './types';
 
-const P1 = 'sistemas-uader-fcyt-anio-1-';
-const P2 = 'sistemas-uader-fcyt-anio-2-';
-const P3 = 'sistemas-uader-fcyt-anio-3-';
-const P4 = 'sistemas-uader-fcyt-anio-4-';
-const P5 = 'sistemas-uader-fcyt-anio-5-';
+const P1 = '';
+const P2 = '';
+const P3 = '';
+const P4 = '';
+const P5 = '';
 
 const S = {
   sistemas: `${P1}sistemas-y-organizaciones`,

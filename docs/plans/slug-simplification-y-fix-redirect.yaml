@@ -1,0 +1,301 @@
+plan: slug-simplification-y-fix-redirect
+meta:
+  objetivo: >
+    Arreglar dos problemas: (1) el redirect roto cuando se actualiza una materia
+    desde el admin (que termina en 404), y (2) la estructura de URLs larga e
+    inconsistente. Final: rutas en /{yearSlug}/{subjectSlug}, con slug de año
+    formato "anio-N" y slug de materia plano (sin prefijo del año).
+  dominio: datos + backend + frontend + qa
+  creado: 2026-05-26T00:00:00-03:00
+  fases_totales: 5
+  plan_origen: /home/tomi/.claude/plans/necesito-que-planifiques-el-buzzing-sutherland.md
+  notas: >
+    App interna, no hace falta backward-compat ni redirects de URLs viejas.
+    Tras la migración SQL las URLs viejas /year/... y /materia/... devolverán
+    404 (esperado). PostgreSQL en Supabase.
+
+restricciones:
+  R1:
+    titulo: Sin SEO ni redirects de URLs viejas
+    contenido: >
+      No incorporar redirects 301/302 desde /year/... ni /materia/...
+      Las URLs viejas deben devolver 404. App interna.
+  R2:
+    titulo: Frontend user-friendly
+    contenido: >
+      Nada de copy con términos técnicos (slug, server component, cache,
+      revalidate, etc.). Botones deben tener cursor-pointer.
+  R3:
+    titulo: Conventional Commits sin atribución a IA
+    contenido: >
+      Cada feature/fix/refactor debe tener su commit con Conventional Commits.
+      NUNCA agregar "Co-Authored-By" ni atribución a IA.
+  R4:
+    titulo: Reutilizar utilidades existentes
+    contenido: >
+      slugify (src/lib/utils.ts:47-54), uniqueSlug (src/lib/slug.ts:17-22),
+      buildSubjectHref/buildSubjectQuizHref (src/components/mobile/shared/subjectRoutes.ts),
+      queryTags (src/app/admin/actions.ts). NO inventar duplicados.
+  R5:
+    titulo: Slug de año slug-safe
+    contenido: >
+      Año slug format = "anio-N" (anio-1..anio-5). Nada de tildes ni "year".
+      Slug de materia = slugify(nombre), sin prefijo de año.
+  R6:
+    titulo: Catch-all en raíz protegido
+    contenido: >
+      Al quedar /[yearSlug] como dynamic segment en la raíz, no debe permitirse
+      crear años cuyo slug colisione con rutas existentes: admin, api, configurar,
+      mapa, materia, year. Validar en createYearAction y updateYearAction.
+  R7:
+    titulo: No tocar cambios fuera de scope
+    contenido: >
+      No tocar .agents/, .claude/, .openspec/, plans, ni cualquier archivo
+      fuera del scope explícito de cada fase.
+
+fases:
+  F1:
+    nombre: Migracion SQL + nueva formula de slugs en seed
+    dominio: datos + backend
+    criticidad: critica
+    objetivo: >
+      Renombrar los slugs existentes en AcademicYear y Subject vía SQL,
+      actualizar la fórmula del seed para que reproduzca el nuevo formato,
+      y verificar que no queden duplicados.
+    archivos_alcance:
+      permitidos:
+        - prisma/schema.prisma
+        - prisma/migrations/
+        - prisma/seed.ts
+      prohibidos:
+        - src/
+        - .claude/
+        - .agents/
+    criterio_cierre: >
+      (a) Existe nueva migration con el SQL que renombra AcademicYear.slug
+      (sistemas-uader-fcyt-anio-N → anio-N) y Subject.slug (quita prefijo de año).
+      (b) prisma/seed.ts genera yearSlug='anio-N' y subjectSlug=slugify(nombre)
+      con uniqueSlug para colisiones.
+      (c) Aplicada la migration en la BD de dev, validado via MCP supabase
+      execute_sql que no hay duplicados en Subject.slug ni AcademicYear.slug.
+      (d) prisma generate sin errores.
+    dependencias: []
+    skills_sugeridas:
+      - supabase
+      - supabase-postgres-best-practices
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - prisma/seed.ts
+        - prisma/migrations/20260526120000_slug_simplification/migration.sql
+      supuestos:
+        - Sentencia 2 de la migration quedó como no-op en el snapshot actual; se mantiene como defensa.
+        - career.slug='sistemas-uader-fcyt' se conserva (no se usa en URLs públicas).
+      deuda: []
+      notas: |
+        BD migrada en Supabase. AcademicYear slugs = anio-1..anio-5.
+        37 materias con slug plano (slugify(nombre)). 0 duplicados.
+        seed.ts ahora usa uniqueSlug con Set tracking; prisma generate OK.
+      timestamp: 2026-05-26T00:30:00-03:00
+
+  F2:
+    nombre: Reestructurar rutas App Router
+    dominio: frontend + backend
+    criticidad: critica
+    objetivo: >
+      Mover el árbol /year/[slug]/* a /[yearSlug]/* y eliminar el árbol legacy
+      /materia/[slug]/*. Renombrar el param "slug" del año a "yearSlug" en
+      todos los page.tsx, loading.tsx, y archivos auxiliares (subject-route-context.ts,
+      SubjectRoutePage.tsx).
+    archivos_alcance:
+      permitidos:
+        - src/app/year/
+        - src/app/materia/
+        - src/app/[yearSlug]/
+      prohibidos:
+        - prisma/
+        - .claude/
+        - .agents/
+    criterio_cierre: >
+      (a) /src/app/year y /src/app/materia eliminados (no existen).
+      (b) Existe /src/app/[yearSlug]/ con: page.tsx, loading.tsx, calendario/,
+      [subjectSlug]/page.tsx, [subjectSlug]/loading.tsx, [subjectSlug]/quiz/,
+      [subjectSlug]/[commissionSlug]/, junto con SubjectRoutePage.tsx y
+      subject-route-context.ts movidos.
+      (c) Cada page.tsx desempaca params como {yearSlug, ...} (no {slug}).
+      (d) Lookups Prisma siguen funcionando: getYearBySlug(yearSlug),
+      getSubjectPageBySlug(subjectSlug).
+      (e) tsc --noEmit pasa.
+    dependencias: [F1]
+    skills_sugeridas:
+      - next-best-practices
+      - nextjs-app-router-patterns
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/app/[yearSlug]/page.tsx (rename desde year/[slug]/)
+        - src/app/[yearSlug]/loading.tsx (rename)
+        - src/app/[yearSlug]/calendario/page.tsx (rename)
+        - src/app/[yearSlug]/[subjectSlug]/page.tsx (rename)
+        - src/app/[yearSlug]/[subjectSlug]/SubjectRoutePage.tsx (rename + hardcodes /year/ a /)
+        - src/app/[yearSlug]/[subjectSlug]/subject-route-context.ts (rename)
+        - src/app/[yearSlug]/[subjectSlug]/quiz/page.tsx (rename)
+        - src/app/[yearSlug]/[subjectSlug]/quiz/QuizRunner.tsx (relocate desde materia/)
+        - src/app/[yearSlug]/[subjectSlug]/[commissionSlug]/page.tsx (rename)
+        - src/app/materia/ eliminado
+        - src/app/year/ eliminado
+      supuestos:
+        - QuizRunner.tsx se relocate al árbol nuevo porque quiz/page.tsx lo importa.
+        - SubjectRoutePage.tsx tenía hardcodes /year/${...} que se actualizaron a /${...} dentro de F2 (F4 no toca src/app/).
+      deuda:
+        - Posible pérdida del loading.tsx específico de [subjectSlug] (no estaba trackeado en HEAD; no bloqueante).
+      notas: |
+        tsc --noEmit pasa con 0 errores. Lookups Prisma intactos.
+        Hardcodes /year/ y /materia/ en componentes (mapa, mobile, home, year)
+        no rompen tsc porque next.config.ts no tiene typedRoutes.
+      timestamp: 2026-05-26T01:00:00-03:00
+
+  F3:
+    nombre: Fix del redirect post-update + slug generation + paths revalidados
+    dominio: backend + frontend
+    criticidad: critica
+    objetivo: >
+      (1) Que actualizar una materia desde su propia página termine en la URL
+      con el slug nuevo, sin 404. (2) Que createYearAction valide la blacklist
+      de slugs reservados. (3) Que todos los revalidatePath del admin usen la
+      ruta nueva (/{yearSlug}/...) y se elimine /materia/.
+    archivos_alcance:
+      permitidos:
+        - src/app/admin/actions.ts
+        - src/components/admin/SubjectModal.tsx
+      prohibidos:
+        - prisma/
+        - .claude/
+        - .agents/
+    criterio_cierre: >
+      (a) SubjectActionState tipado para devolver newSlug y yearSlug en éxito
+      de update.
+      (b) updateSubjectAction devuelve {ok:true, newSlug, yearSlug} y revalida
+      la nueva ruta /{yearSlug}/{newSlug}.
+      (c) SubjectModal usa useRouter().replace(`/${yearSlug}/${newSlug}`) al
+      detectar éxito del update; create sigue cerrando sin redirigir.
+      (d) createYearAction y updateYearAction rechazan slugs reservados
+      (admin, api, configurar, mapa, materia, year).
+      (e) Todos los revalidatePath('/year/...') → revalidatePath('/...').
+      (f) Todos los revalidatePath('/materia/...') eliminados.
+    dependencias: [F2]
+    skills_sugeridas:
+      - next-best-practices
+      - react-best-practices
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/app/admin/actions.ts
+        - src/components/admin/SubjectModal.tsx
+      supuestos:
+        - revalidateSubjectContent helper también limpiado (cubre quiz path).
+        - Mensaje user-friendly cuando un nombre coincide con sección reservada (R2).
+      deuda: []
+      notas: |
+        SubjectActionState ahora es union discriminado.
+        updateSubjectAction devuelve newSlug+yearSlug en éxito.
+        SubjectModal navega con router.replace al destino correcto post-update.
+        RESERVED_YEAR_SLUGS bloquea admin/api/configurar/mapa/materia/year.
+        tsc OK. 0 referencias /year/ o /materia/ en actions.ts.
+      timestamp: 2026-05-26T01:30:00-03:00
+
+  F4:
+    nombre: Refactor de referencias hardcoded y helpers
+    dominio: frontend
+    criticidad: estandar
+    objetivo: >
+      Actualizar todas las referencias a /year/... y /materia/... en componentes
+      (home, mobile, mapa, year), el helper buildSubjectHref/buildSubjectQuizHref
+      para que yearSlug sea obligatorio y devuelva /{yearSlug}/{subjectSlug},
+      y limpiar las constantes hardcoded de correlativasData.ts + sus tests.
+    archivos_alcance:
+      permitidos:
+        - src/components/
+        - src/lib/domain/mapa/
+        - src/app/configurar/
+      prohibidos:
+        - src/app/admin/
+        - prisma/
+        - .claude/
+        - .agents/
+    criterio_cierre: >
+      (a) buildSubjectHref y buildSubjectQuizHref tienen yearSlug obligatorio,
+      sin fallback a /materia/.
+      (b) Ningún componente arma paths /year/${X} o /materia/${X} a mano.
+      (c) correlativasData.ts ya no usa prefijos sistemas-uader-fcyt-anio-N-
+      (constantes P1..P5 eliminadas o vaciadas a '').
+      (d) unlockLogic.test.ts actualizado, tests pasan.
+      (e) tsc --noEmit pasa.
+    dependencias: [F2, F3]
+    skills_sugeridas:
+      - react-best-practices
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/components/mobile/shared/subjectRoutes.ts
+        - src/components/mobile/calendar/MobileEventDetailSheet.tsx
+        - src/components/calendar/EventCalendarAdmin.tsx
+        - src/components/mobile/subject/MobileSubject.tsx
+        - src/components/mobile/year/MobileYear.tsx
+        - src/components/mobile/home/YearCarousel.tsx
+        - src/components/home/HomeYearsGrid.tsx
+        - src/components/home/HomeSidebar.tsx
+        - src/components/year/YearCalendarView.tsx
+        - src/components/mobile/shell/MobileShell.tsx
+        - src/components/mapa/MapaSidebar.tsx
+        - src/components/mapa/MapaCorrelativasMobile.tsx
+        - src/components/mapa/MapaCorrelativas.tsx
+        - src/components/mapa/MapaVisualCorrelativas.tsx
+        - src/components/admin/SubjectPageAdminOverlay.tsx (comentario)
+        - src/lib/domain/mapa/correlativasData.ts
+        - src/lib/domain/mapa/unlockLogic.test.ts
+      supuestos:
+        - Mapa compone /anio-${year}/${slug} a mano (SubjectNode tiene year:number, no yearSlug).
+        - Guards reforzados en MobileEventDetailSheet y EventCalendarAdmin: link null cuando falta yearSlug.
+      deuda:
+        - Mapa acoplado a la fórmula 'anio-N' del slug del año. Si cambia, tocar componentes del mapa.
+      notas: |
+        tsc --noEmit OK. Vitest src/lib/domain/mapa/ 4/4 pasando.
+        0 matches de /year/ o /materia/ en src/components/, src/lib/, src/app/configurar/.
+      timestamp: 2026-05-26T02:00:00-03:00
+
+  F5:
+    nombre: Verificacion final, residuos y commits
+    dominio: qa + backend
+    criticidad: estandar
+    objetivo: >
+      Asegurar que no queden residuos de /year/, /materia/, ni sistemas-uader
+      en el código. Correr tipo y tests. Hacer los commits faltantes con
+      Conventional Commits.
+    archivos_alcance:
+      permitidos:
+        - src/
+        - prisma/
+      prohibidos:
+        - .claude/
+        - .agents/
+    criterio_cierre: >
+      (a) rg "/year/|/materia/|sistemas-uader" src/ prisma/ → solo matches
+      esperados (career slug en seed/schema, audit-log de historial).
+      (b) pnpm tsc --noEmit pasa sin errores.
+      (c) pnpm test (vitest) verde para src/lib/domain/mapa/.
+      (d) Commits por fase con Conventional Commits, sin atribución a IA.
+    dependencias: [F1, F2, F3, F4]
+    estado: pendiente
+
+estado_global:
+  fase_actual: F5
+  fases_completadas: [F1, F2, F3, F4]
+  bloqueos: []
+  ultimo_update: 2026-05-26T02:00:00-03:00
+
+historial:
+  - 2026-05-26T00:30:00-03:00 — F1 completada (migración SQL aplicada, seed actualizado, 0 duplicados)
+  - 2026-05-26T01:00:00-03:00 — F2 completada (rutas movidas a /[yearSlug]/, /materia/ eliminado, tsc OK)
+  - 2026-05-26T01:30:00-03:00 — F3 completada (fix redirect, blacklist slugs, revalidates limpios)
+  - 2026-05-26T02:00:00-03:00 — F4 completada (helper + 13 componentes + correlativas refactor, tsc + vitest OK)

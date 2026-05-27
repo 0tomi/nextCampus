@@ -82,7 +82,7 @@ export function MapaSidebar() {
                 <ReadySubjectLink
                   key={subject.slug}
                   subject={subject}
-                  href={`/materia/${subject.slug}`}
+                  href={`/anio-${subject.year}/${subject.slug}`}
                 />
               ))
             )}

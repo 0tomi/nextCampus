@@ -6,11 +6,11 @@ export const revalidate = 300
 export default async function CommissionSubjectPage({
   params,
 }: {
-  params: Promise<{ slug: string; subjectSlug: string; commissionSlug: string }>
+  params: Promise<{ yearSlug: string; subjectSlug: string; commissionSlug: string }>
 }) {
-  const { slug, subjectSlug, commissionSlug } = await params
+  const { yearSlug, subjectSlug, commissionSlug } = await params
   const routeContext = await getSubjectRouteContext({
-    yearSlug: slug,
+    yearSlug,
     subjectSlug,
     commissionSlug,
   })

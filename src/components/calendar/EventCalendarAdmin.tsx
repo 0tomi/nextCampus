@@ -113,7 +113,7 @@ export function EventCalendarAdmin({
     }
   }, [selectedEvent, router])
 
-  const subjectHref = selectedEvent?.subjectSlug
+  const subjectHref = selectedEvent?.subjectSlug && yearSlug
     ? buildSubjectHref({
         yearSlug,
         subjectSlug: selectedEvent.subjectSlug,

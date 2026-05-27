@@ -178,7 +178,7 @@ export function MobileShell({
               return (
                 <li key={year.slug}>
                   <Link
-                    href={`/year/${year.slug}`}
+                    href={`/${year.slug}`}
                     onClick={closeDrawer}
                     className={cn(
                       'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',

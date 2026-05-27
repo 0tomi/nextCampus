@@ -94,7 +94,7 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
               <div className="bg-[#1a1a1a] border border-white/5 rounded-xl overflow-hidden flex flex-col">
                 {/* Gradient header */}
                 <Link
-                  href={`/year/${y.slug}`}
+                  href={`/${y.slug}`}
                   className={[
                     'flex items-start justify-between gap-3 px-[18px] py-[18px] cursor-pointer',
                     'bg-gradient-to-r',

@@ -62,7 +62,7 @@ export function MobileEventDetailSheet({
   const canShowAdminActions = Boolean(event?.id && effectiveYearId && tiposEvento.length > 0)
   const tone = event ? getEventTone(event.tipo) : null
 
-  const subjectHref = event?.subjectSlug
+  const subjectHref = event?.subjectSlug && effectiveYearSlug
     ? buildSubjectHref({
         yearSlug: effectiveYearSlug,
         subjectSlug: event.subjectSlug,

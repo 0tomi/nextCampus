@@ -10,11 +10,11 @@ export const revalidate = 300
 export default async function YearCalendarPage({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ yearSlug: string }>
 }) {
-  const { slug } = await params
+  const { yearSlug } = await params
   const [year, tiposEvento, career] = await Promise.all([
-    getYearBySlug(slug),
+    getYearBySlug(yearSlug),
     getTiposEvento(),
     getCareer(),
   ])

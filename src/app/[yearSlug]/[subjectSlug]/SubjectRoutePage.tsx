@@ -64,7 +64,7 @@ export function SubjectRoutePage({
   const sectionItems = [
     {
       id: 'year',
-      href: `/year/${subject.year.slug}`,
+      href: `/${subject.year.slug}`,
       label: subject.year.nombre,
       badge: <ArrowLeft className="h-4 w-4" />,
       meta: 'Volver al año',
@@ -102,7 +102,7 @@ export function SubjectRoutePage({
         <DashboardShell
           topbar={
             <Link
-              href={`/year/${subject.year.slug}`}
+              href={`/${subject.year.slug}`}
               className="inline-flex items-center gap-2 text-sm font-semibold text-white/56 transition-colors hover:text-white/80"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -125,7 +125,7 @@ export function SubjectRoutePage({
               </Link>
               <span>/</span>
               <Link
-                href={`/year/${subject.year.slug}`}
+                href={`/${subject.year.slug}`}
                 className="transition-colors hover:text-white/72"
               >
                 {subject.year.nombre}

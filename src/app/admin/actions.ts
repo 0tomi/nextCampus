@@ -44,14 +44,23 @@ function revalidateTag(tag: string): void {
 
 // Toda escritura: auth específico (general o por año) -> Zod -> sanitize.
 
+// Nombres de sección reservados en la raíz del sitio. Los años no pueden tener
+// un slug que colisione con estas rutas (admin, api, configurar, mapa, etc.).
+const RESERVED_YEAR_SLUGS = new Set([
+  'admin',
+  'api',
+  'configurar',
+  'mapa',
+  'materia',
+  'year',
+])
+
 async function revalidateSubjectContent(subjectSlug: string): Promise<void> {
   // Invalida los caches granulares (unstable_cache) por tag. Los revalidatePath
   // quedan como red de seguridad para la ISR de página completa.
   revalidateTag(queryTags.subject(subjectSlug))
   revalidateTag(queryTags.upcomingEvents)
 
-  revalidatePath(`/materia/${subjectSlug}`)
-  revalidatePath(`/materia/${subjectSlug}/quiz`)
   const subject = await prisma.subject.findUnique({
     where: { slug: subjectSlug },
     select: {
@@ -63,12 +72,13 @@ async function revalidateSubjectContent(subjectSlug: string): Promise<void> {
   })
   if (subject?.year?.slug) {
     revalidateTag(queryTags.year(subject.year.slug))
-    revalidatePath(`/year/${subject.year.slug}`)
-    revalidatePath(`/year/${subject.year.slug}/calendario`)
-    revalidatePath(`/year/${subject.year.slug}/${subjectSlug}`)
+    revalidatePath(`/${subject.year.slug}`)
+    revalidatePath(`/${subject.year.slug}/calendario`)
+    revalidatePath(`/${subject.year.slug}/${subjectSlug}`)
+    revalidatePath(`/${subject.year.slug}/${subjectSlug}/quiz`)
 
     for (const commission of subject.commissions) {
-      revalidatePath(`/year/${subject.year.slug}/${subjectSlug}/${commission.slug}`)
+      revalidatePath(`/${subject.year.slug}/${subjectSlug}/${commission.slug}`)
     }
   }
 }
@@ -665,11 +675,21 @@ export async function createYearAction(
     return { ok: false, message: 'No existe una carrera configurada.' }
   }
 
+  const base = slugify(nombre)
+  if (RESERVED_YEAR_SLUGS.has(base)) {
+    return {
+      ok: false,
+      message: 'Ese nombre coincide con una sección del sitio. Probá con otro.',
+    }
+  }
+
   const existingSlugs = await prisma.academicYear.findMany({
     select: { slug: true },
   })
-  const takenSlugs = new Set(existingSlugs.map((y) => y.slug))
-  const base = slugify(nombre)
+  const takenSlugs = new Set([
+    ...existingSlugs.map((y) => y.slug),
+    ...RESERVED_YEAR_SLUGS,
+  ])
   const slug = uniqueSlug(base, takenSlugs)
 
   const year = await prisma.academicYear.create({
@@ -714,12 +734,22 @@ export async function updateYearAction(
 
   const oldSlug = year.slug
 
+  const base = slugify(nombre)
+  if (RESERVED_YEAR_SLUGS.has(base)) {
+    return {
+      ok: false,
+      message: 'Ese nombre coincide con una sección del sitio. Probá con otro.',
+    }
+  }
+
   const existingSlugs = await prisma.academicYear.findMany({
     where: { id: { not: id } },
     select: { slug: true },
   })
-  const takenSlugs = new Set(existingSlugs.map((y) => y.slug))
-  const base = slugify(nombre)
+  const takenSlugs = new Set([
+    ...existingSlugs.map((y) => y.slug),
+    ...RESERVED_YEAR_SLUGS,
+  ])
   const newSlug = uniqueSlug(base, takenSlugs)
 
   await prisma.academicYear.update({
@@ -731,11 +761,11 @@ export async function updateYearAction(
   revalidateTag(queryTags.year(oldSlug))
   if (newSlug !== oldSlug) revalidateTag(queryTags.year(newSlug))
   revalidatePath('/')
-  revalidatePath(`/year/${oldSlug}`)
-  revalidatePath(`/year/${oldSlug}/calendario`)
+  revalidatePath(`/${oldSlug}`)
+  revalidatePath(`/${oldSlug}/calendario`)
   if (newSlug !== oldSlug) {
-    revalidatePath(`/year/${newSlug}`)
-    revalidatePath(`/year/${newSlug}/calendario`)
+    revalidatePath(`/${newSlug}`)
+    revalidatePath(`/${newSlug}/calendario`)
   }
   await recordAudit({
     userId: admin.id,
@@ -782,7 +812,7 @@ export async function deleteYearAction(formData: FormData): Promise<void> {
     revalidateTag(queryTags.subject(s.slug))
   }
   revalidatePath('/')
-  revalidatePath(`/year/${year.slug}`)
+  revalidatePath(`/${year.slug}`)
   await recordAudit({
     userId: admin.id,
     action: AUDIT_ACTIONS.YEAR_DELETED,
@@ -807,10 +837,16 @@ export async function getYearDeleteImpactAction(
 
 // --- ABM Materias ----------------------------------------------------------
 
-export interface SubjectActionState {
-  ok: boolean
-  message: string
-}
+export type SubjectActionState =
+  | { ok: false; message: string }
+  | {
+      ok: true
+      message: string
+      /** Slug recalculado tras un update; permite al cliente navegar a la URL nueva. */
+      newSlug?: string
+      /** Slug del año al que pertenece la materia tras el update. */
+      yearSlug?: string
+    }
 
 export interface CommissionActionState {
   ok: boolean
@@ -894,8 +930,8 @@ export async function createSubjectAction(
   revalidateTag(queryTags.career)
   revalidateTag(queryTags.year(year.slug))
   revalidatePath('/')
-  revalidatePath(`/year/${year.slug}`)
-  revalidatePath(`/year/${year.slug}/calendario`)
+  revalidatePath(`/${year.slug}`)
+  revalidatePath(`/${year.slug}/calendario`)
   await recordAudit({
     userId: admin.id,
     action: AUDIT_ACTIONS.SUBJECT_CREATED,
@@ -1032,10 +1068,10 @@ export async function updateSubjectAction(
   revalidateTag(queryTags.subject(oldSlug))
   if (newSlug !== oldSlug) revalidateTag(queryTags.subject(newSlug))
   revalidatePath('/')
-  revalidatePath(`/year/${scope.yearSlug}`)
-  revalidatePath(`/year/${scope.yearSlug}/calendario`)
-  revalidatePath(`/materia/${oldSlug}`)
-  if (newSlug !== oldSlug) revalidatePath(`/materia/${newSlug}`)
+  revalidatePath(`/${scope.yearSlug}`)
+  revalidatePath(`/${scope.yearSlug}/calendario`)
+  revalidatePath(`/${scope.yearSlug}/${oldSlug}`)
+  if (newSlug !== oldSlug) revalidatePath(`/${scope.yearSlug}/${newSlug}`)
   await recordAudit({
     userId: scope.admin.id,
     action: AUDIT_ACTIONS.SUBJECT_UPDATED,
@@ -1043,7 +1079,12 @@ export async function updateSubjectAction(
     entityId: id,
     detail: { nombre, oldSlug, newSlug, yearSlug: scope.yearSlug },
   })
-  return { ok: true, message: 'Materia actualizada correctamente.' }
+  return {
+    ok: true,
+    message: 'Materia actualizada correctamente.',
+    newSlug,
+    yearSlug: scope.yearSlug,
+  }
 }
 
 export async function deleteSubjectAction(formData: FormData): Promise<void> {
@@ -1073,9 +1114,9 @@ export async function deleteSubjectAction(formData: FormData): Promise<void> {
   revalidateTag(queryTags.subject(subjectSlug))
   revalidateTag(quizBanksCacheTag(yearSlug, subjectSlug))
   revalidatePath('/')
-  revalidatePath(`/year/${yearSlug}`)
-  revalidatePath(`/year/${yearSlug}/calendario`)
-  revalidatePath(`/materia/${subjectSlug}`)
+  revalidatePath(`/${yearSlug}`)
+  revalidatePath(`/${yearSlug}/calendario`)
+  revalidatePath(`/${yearSlug}/${subjectSlug}`)
   if (subject) {
     await recordAudit({
       userId: scope.admin.id,
@@ -1131,9 +1172,9 @@ export async function updateSubjectDriveUrlAction(
   revalidateTag(queryTags.year(scope.yearSlug))
   revalidateTag(queryTags.subject(scope.subjectSlug))
   revalidatePath('/')
-  revalidatePath(`/year/${scope.yearSlug}`)
-  revalidatePath(`/year/${scope.yearSlug}/calendario`)
-  revalidatePath(`/materia/${scope.subjectSlug}`)
+  revalidatePath(`/${scope.yearSlug}`)
+  revalidatePath(`/${scope.yearSlug}/calendario`)
+  revalidatePath(`/${scope.yearSlug}/${scope.subjectSlug}`)
 
   await recordAudit({
     userId: scope.admin.id,
@@ -1191,9 +1232,9 @@ export async function updateSubjectPlaylistAction(
   revalidateTag(queryTags.year(scope.yearSlug))
   revalidateTag(queryTags.subject(scope.subjectSlug))
   revalidatePath('/')
-  revalidatePath(`/year/${scope.yearSlug}`)
-  revalidatePath(`/year/${scope.yearSlug}/calendario`)
-  revalidatePath(`/materia/${scope.subjectSlug}`)
+  revalidatePath(`/${scope.yearSlug}`)
+  revalidatePath(`/${scope.yearSlug}/calendario`)
+  revalidatePath(`/${scope.yearSlug}/${scope.subjectSlug}`)
 
   await recordAudit({
     userId: scope.admin.id,

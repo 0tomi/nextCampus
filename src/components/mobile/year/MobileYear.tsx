@@ -260,7 +260,7 @@ export function MobileYear({
 
           <div className="px-[18px]">
             <Link
-              href={`/year/${year.slug}/calendario`}
+              href={`/${year.slug}/calendario`}
               className="flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl bg-[#1a1a1a] border cursor-pointer hover:bg-[#1f1f1f] transition-colors"
               style={{ borderColor: colors.tone }}
             >

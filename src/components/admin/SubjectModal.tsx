@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useActionState, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/ui/Modal'
 import {
   createSubjectAction,
@@ -36,6 +37,7 @@ export function SubjectModal({
   onSuccess,
 }: SubjectModalProps) {
   const isEdit = !!subject
+  const router = useRouter()
   const [playlistUrlError, setPlaylistUrlError] = useState('')
 
   const handlePlaylistUrlBlur = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -58,10 +60,16 @@ export function SubjectModal({
 
   useEffect(() => {
     if (state.ok) {
+      // Si la materia cambió de nombre, el destino final también cambió.
+      // Mandamos al usuario a la nueva URL para que no se quede en una página
+      // que ya no existe.
+      if (state.newSlug && state.yearSlug) {
+        router.replace(`/${state.yearSlug}/${state.newSlug}`)
+      }
       onSuccess?.()
       onClose()
     }
-  }, [state.ok, onClose, onSuccess])
+  }, [state, onClose, onSuccess, router])
 
   const title = isEdit ? 'Editar materia' : 'Nueva materia'
 

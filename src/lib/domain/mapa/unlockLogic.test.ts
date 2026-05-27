@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { calculateSubjectStatuses } from './unlockLogic';
 
-const P1 = 'sistemas-uader-fcyt-anio-1-';
-const P2 = 'sistemas-uader-fcyt-anio-2-';
-const P3 = 'sistemas-uader-fcyt-anio-3-';
+const P1 = '';
+const P2 = '';
+const P3 = '';
 
 describe('Pruebas unitarias de la lógica de desbloqueo de correlativas', () => {
   it('debería retornar materias de primer año desbloqueadas cuando el alumno no completó nada', () => {

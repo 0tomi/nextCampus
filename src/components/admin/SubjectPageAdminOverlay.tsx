@@ -56,7 +56,7 @@ export function AdminTriggerButton({ action, className, children }: AdminTrigger
 
 /**
  * Island de cliente: monta todos los controles de edición admin sobre la vista
- * pública de /materia/[slug]. Invisible para anónimos (AdminControls hace el gate).
+ * pública de la materia. Invisible para anónimos (AdminControls hace el gate).
  */
 export function SubjectPageAdminOverlay({
   subject,

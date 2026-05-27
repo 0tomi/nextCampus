@@ -109,7 +109,7 @@ export function YearCalendarView({
         <DashboardShell
           topbar={
             <Link
-              href={`/year/${year.slug}`}
+              href={`/${year.slug}`}
               className="inline-flex items-center gap-2 text-sm font-semibold text-white/56 transition-colors hover:text-white/80"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -153,7 +153,7 @@ export function YearCalendarView({
         <MobileShell
           title="Calendario"
           subtitle={year.nombre}
-          onBack={`/year/${year.slug}`}
+          onBack={`/${year.slug}`}
           drawerYears={allYears}
           careerName={year.career.nombre}
           currentYearSlug={year.slug}

@@ -31,7 +31,7 @@ export function HomeSidebar({ careerName, initialPrefs, years }: HomeSidebarProp
     const colors = getYearColorClasses(year.slug)
     return {
       id: year.id,
-      href: `/year/${year.slug}`,
+      href: `/${year.slug}`,
       label: year.nombre,
       badge: String(originalIndex + 1),
       meta: `${year.subjects.length} materias`,

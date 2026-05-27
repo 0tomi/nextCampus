@@ -8,16 +8,16 @@ import {
   buildSubjectHref,
   buildSubjectQuizHref,
 } from '@/components/mobile/shared/subjectRoutes'
-import { QuizRunner } from '@/app/materia/[slug]/quiz/QuizRunner'
+import { QuizRunner } from './QuizRunner'
 
 export const revalidate = 3600
 
 export default async function QuizPage({
   params,
 }: {
-  params: Promise<{ slug: string; subjectSlug: string }>
+  params: Promise<{ yearSlug: string; subjectSlug: string }>
 }) {
-  const { slug, subjectSlug } = await params
+  const { yearSlug, subjectSlug } = await params
   const subject = await getSubjectQuizMeta(subjectSlug)
   if (!subject) notFound()
 
@@ -26,7 +26,7 @@ export default async function QuizPage({
     subjectSlug: subject.slug,
   })
 
-  if (subject.year.slug !== slug) {
+  if (subject.year.slug !== yearSlug) {
     redirect(canonicalQuizHref)
   }
 

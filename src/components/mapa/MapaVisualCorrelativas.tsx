@@ -609,7 +609,7 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
 
             {availableSlugs.size === 0 || availableSlugs.has(selectedSubject.slug) ? (
               <Link
-                href={`/materia/${selectedSubject.slug}`}
+                href={`/anio-${selectedSubject.year}/${selectedSubject.slug}`}
                 className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 text-sm font-black uppercase tracking-wider text-white/68 transition hover:bg-white/8 hover:text-white"
               >
                 Abrir materia
