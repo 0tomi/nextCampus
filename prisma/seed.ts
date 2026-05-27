@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from './generated/client/client'
+import { uniqueSlug } from '../src/lib/slug'
 
 // Seed usa conexión directa (DIRECT_URL): corre en CLI, no en serverless.
 const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL
@@ -67,8 +68,12 @@ async function main(): Promise<void> {
     create: CAREER,
   })
 
+  const takenSubjectSlugs = new Set<string>(
+    (await prisma.subject.findMany({ select: { slug: true } })).map((s) => s.slug),
+  )
+
   for (let i = 0; i < YEAR_NAMES.length; i++) {
-    const yearSlug = `${career.slug}-anio-${i + 1}`
+    const yearSlug = `anio-${i + 1}`
     const year = await prisma.academicYear.upsert({
       where: { slug: yearSlug },
       update: { nombre: YEAR_NAMES[i], orden: i + 1 },
@@ -81,7 +86,9 @@ async function main(): Promise<void> {
     })
 
     for (const subjectName of SUBJECTS_BY_YEAR[i]) {
-      const subjectSlug = `${yearSlug}-${slugify(subjectName)}`
+      const base = slugify(subjectName)
+      const subjectSlug = uniqueSlug(base, takenSubjectSlugs)
+      takenSubjectSlugs.add(subjectSlug)
       const subject = await prisma.subject.upsert({
         where: { slug: subjectSlug },
         update: { nombre: subjectName },
