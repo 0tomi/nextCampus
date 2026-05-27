@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from './generated/client/client'
-import { uniqueSlug } from '../src/lib/slug'
+import { uniqueSlug, yearSlugFromNumber } from '../src/lib/slug'
 
 // Seed usa conexión directa (DIRECT_URL): corre en CLI, no en serverless.
 const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL
@@ -73,7 +73,7 @@ async function main(): Promise<void> {
   )
 
   for (let i = 0; i < YEAR_NAMES.length; i++) {
-    const yearSlug = `anio-${i + 1}`
+    const yearSlug = yearSlugFromNumber(i + 1)
     const year = await prisma.academicYear.upsert({
       where: { slug: yearSlug },
       update: { nombre: YEAR_NAMES[i], orden: i + 1 },

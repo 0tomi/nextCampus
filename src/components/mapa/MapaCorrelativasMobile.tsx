@@ -23,6 +23,8 @@ import { subjectsData } from '@/lib/domain/mapa/correlativasData';
 import { calculateSubjectStatuses } from '@/lib/domain/mapa/unlockLogic';
 import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
 import { readMapaProgress, writeMapaProgress } from '@/lib/mapaProgress';
+import { yearSlugFromNumber } from '@/lib/slug';
+import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes';
 import { cn } from '@/lib/utils';
 
 type MobileMapaMode = 'plan' | 'ruta';
@@ -752,7 +754,7 @@ function SubjectDetailModal({
 
           {canOpen ? (
             <Link
-              href={`/anio-${subject.year}/${subject.slug}`}
+              href={buildSubjectHref({ yearSlug: yearSlugFromNumber(subject.year), subjectSlug: subject.slug })}
               onClick={onClose}
               className="flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 text-sm font-black text-white/74 transition hover:bg-white/8 hover:text-white"
             >
@@ -837,7 +839,7 @@ function SubjectListCard({
       <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/8 pt-3">
         {canOpen ? (
           <Link
-            href={`/anio-${subject.year}/${subject.slug}`}
+            href={buildSubjectHref({ yearSlug: yearSlugFromNumber(subject.year), subjectSlug: subject.slug })}
             onClick={(event) => event.stopPropagation()}
             className="inline-flex cursor-pointer items-center gap-1 text-[11px] font-black text-white/44 transition hover:text-white"
           >

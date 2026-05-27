@@ -21,6 +21,8 @@ import { calculateSubjectStatuses } from '@/lib/domain/mapa/unlockLogic';
 import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
 import { readMapaProgress, writeMapaProgress } from '@/lib/mapaProgress';
 import { cn } from '@/lib/utils';
+import { yearSlugFromNumber } from '@/lib/slug';
+import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes';
 
 type StatusFilter = 'ALL' | SubjectStatus;
 
@@ -568,7 +570,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                             <div className="flex flex-wrap items-center justify-between gap-2">
                               {hasPage ? (
                                 <Link
-                                  href={`/anio-${subject.year}/${subject.slug}`}
+                                  href={buildSubjectHref({ yearSlug: yearSlugFromNumber(subject.year), subjectSlug: subject.slug })}
                                   onClick={(event) => event.stopPropagation()}
                                   className="inline-flex w-fit items-center gap-1 text-[10px] font-bold text-white/40 transition hover:text-white"
                                 >

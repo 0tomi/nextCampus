@@ -7,6 +7,8 @@ import { ArrowLeft, BookOpen, CheckCircle2 } from 'lucide-react';
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
 import { calculateSubjectStatuses } from '@/lib/domain/mapa/unlockLogic';
 import type { SubjectNode } from '@/lib/domain/mapa/types';
+import { yearSlugFromNumber } from '@/lib/slug';
+import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes';
 import {
   MAPA_PROGRESS_UPDATED_EVENT,
   readMapaProgress,
@@ -82,7 +84,7 @@ export function MapaSidebar() {
                 <ReadySubjectLink
                   key={subject.slug}
                   subject={subject}
-                  href={`/anio-${subject.year}/${subject.slug}`}
+                  href={buildSubjectHref({ yearSlug: yearSlugFromNumber(subject.year), subjectSlug: subject.slug })}
                 />
               ))
             )}

@@ -20,3 +20,12 @@ export function uniqueSlug(base: string, taken: ReadonlySet<string>): string {
   while (taken.has(`${base}-${n}`)) n++
   return `${base}-${n}`
 }
+
+/**
+ * Devuelve el slug canónico de un año académico a partir de su número.
+ * Single source of truth: si la fórmula del slug cambia, este es el único lugar
+ * que hay que tocar (seed, mapa y demás consumidores la importan).
+ */
+export function yearSlugFromNumber(n: number): string {
+  return `anio-${n}`
+}

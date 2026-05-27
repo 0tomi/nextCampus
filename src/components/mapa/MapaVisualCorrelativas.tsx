@@ -23,6 +23,8 @@ import { calculateSubjectStatuses } from '@/lib/domain/mapa/unlockLogic';
 import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
 import { readMapaProgress, writeMapaProgress } from '@/lib/mapaProgress';
 import { cn } from '@/lib/utils';
+import { yearSlugFromNumber } from '@/lib/slug';
+import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes';
 
 type MapaVisualCorrelativasProps = {
   availableSubjectSlugs?: string[];
@@ -609,7 +611,7 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
 
             {availableSlugs.size === 0 || availableSlugs.has(selectedSubject.slug) ? (
               <Link
-                href={`/anio-${selectedSubject.year}/${selectedSubject.slug}`}
+                href={buildSubjectHref({ yearSlug: yearSlugFromNumber(selectedSubject.year), subjectSlug: selectedSubject.slug })}
                 className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 text-sm font-black uppercase tracking-wider text-white/68 transition hover:bg-white/8 hover:text-white"
               >
                 Abrir materia
