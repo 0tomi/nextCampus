@@ -286,16 +286,29 @@ fases:
       (c) pnpm test (vitest) verde para src/lib/domain/mapa/.
       (d) Commits por fase con Conventional Commits, sin atribución a IA.
     dependencias: [F1, F2, F3, F4]
-    estado: pendiente
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - "git commits: a752011 feat(db), 2b6a9b1 feat(routing)"
+      supuestos:
+        - El commit intermedio 882ae34 (hecho fuera del orquestador) absorbió los renames de F2, así que el commit de routing en F5 cubre el resto (working tree de F2/F3/F4).
+        - No se commitearon .atl/ ni openspec/ (artefactos auxiliares de skills, no del feature).
+      deuda: []
+      notas: |
+        rg final: 0 matches de /year/ o /materia/ en src/components/, src/lib/, src/app/configurar/.
+        pnpm tsc --noEmit OK. pnpm vitest src/lib/domain/mapa/ 4/4 verde.
+        2 commits creados con Conventional Commits, sin atribución a IA (R3).
+      timestamp: 2026-05-26T02:30:00-03:00
 
 estado_global:
-  fase_actual: F5
-  fases_completadas: [F1, F2, F3, F4]
+  fase_actual: completado
+  fases_completadas: [F1, F2, F3, F4, F5]
   bloqueos: []
-  ultimo_update: 2026-05-26T02:00:00-03:00
+  ultimo_update: 2026-05-26T02:30:00-03:00
 
 historial:
   - 2026-05-26T00:30:00-03:00 — F1 completada (migración SQL aplicada, seed actualizado, 0 duplicados)
   - 2026-05-26T01:00:00-03:00 — F2 completada (rutas movidas a /[yearSlug]/, /materia/ eliminado, tsc OK)
   - 2026-05-26T01:30:00-03:00 — F3 completada (fix redirect, blacklist slugs, revalidates limpios)
   - 2026-05-26T02:00:00-03:00 — F4 completada (helper + 13 componentes + correlativas refactor, tsc + vitest OK)
+  - 2026-05-26T02:30:00-03:00 — F5 completada (verificación final + commits feat(db) y feat(routing))
