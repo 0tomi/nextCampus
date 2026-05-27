@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -8,13 +8,18 @@ import {
   Menu,
   ChevronLeft,
   Shield,
+  SlidersHorizontal,
   X,
   ChevronRight,
   Map,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getYearColorClasses } from '@/lib/yearColors'
-import { ConfigButton } from '@/components/shell/ConfigButton'
+
+const SWIPE_START_INSET_RATIO = 0.2
+const SWIPE_OPEN_PX = 70
+const SWIPE_CLOSE_PX = 60
+const SWIPE_AXIS_BIAS = 1.4
 
 export interface MobileShellDrawerYear {
   slug: string
@@ -47,6 +52,8 @@ export function MobileShell({
   const pathname = usePathname()
   const [drawer, setDrawer] = useState({ open: false, pathname })
   const open = drawer.open && drawer.pathname === pathname
+  const openRef = useRef(open)
+  openRef.current = open
 
   const openDrawer = useCallback(() => setDrawer({ open: true, pathname }), [pathname])
   const closeDrawer = useCallback(() => setDrawer({ open: false, pathname }), [pathname])
@@ -66,6 +73,81 @@ export function MobileShell({
       document.body.style.overflow = previousOverflow
     }
   }, [closeDrawer, open])
+
+  useEffect(() => {
+    let startX = 0
+    let startY = 0
+    let tracking = false
+    let committed = false
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return
+      const touch = e.touches[0]
+      const viewportWidth = window.innerWidth
+      const inset = viewportWidth * SWIPE_START_INSET_RATIO
+
+      if (openRef.current) {
+        tracking = true
+        committed = false
+        startX = touch.clientX
+        startY = touch.clientY
+        return
+      }
+
+      if (touch.clientX < inset || touch.clientX > viewportWidth - inset) return
+
+      tracking = true
+      committed = false
+      startX = touch.clientX
+      startY = touch.clientY
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!tracking || e.touches.length !== 1) return
+      const touch = e.touches[0]
+      const deltaX = touch.clientX - startX
+      const deltaY = touch.clientY - startY
+      const absX = Math.abs(deltaX)
+      const absY = Math.abs(deltaY)
+
+      if (!committed) {
+        if (absX < 10 && absY < 10) return
+        if (absX < absY * SWIPE_AXIS_BIAS) {
+          tracking = false
+          return
+        }
+        committed = true
+      }
+
+      if (openRef.current && deltaX < -SWIPE_CLOSE_PX) {
+        closeDrawer()
+        tracking = false
+        return
+      }
+
+      if (!openRef.current && deltaX > SWIPE_OPEN_PX) {
+        openDrawer()
+        tracking = false
+      }
+    }
+
+    const handleTouchEnd = () => {
+      tracking = false
+      committed = false
+    }
+
+    document.addEventListener('touchstart', handleTouchStart, { passive: true })
+    document.addEventListener('touchmove', handleTouchMove, { passive: true })
+    document.addEventListener('touchend', handleTouchEnd)
+    document.addEventListener('touchcancel', handleTouchEnd)
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart)
+      document.removeEventListener('touchmove', handleTouchMove)
+      document.removeEventListener('touchend', handleTouchEnd)
+      document.removeEventListener('touchcancel', handleTouchEnd)
+    }
+  }, [closeDrawer, openDrawer])
 
   return (
     <div className="min-h-screen bg-surface-0 text-white">
@@ -112,19 +194,7 @@ export function MobileShell({
             </div>
           </Link>
 
-          <div className="flex items-center gap-1">
-            <ConfigButton
-              iconOnly
-              className="h-10 w-10 rounded-lg border-0 text-white/40 hover:text-white/70"
-            />
-            <Link
-              href="/admin"
-              aria-label="Administración"
-              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/5 hover:text-white/70"
-            >
-              <Shield size={17} strokeWidth={2} />
-            </Link>
-          </div>
+          <div className="h-10 w-10" aria-hidden />
         </div>
       </header>
 
@@ -217,6 +287,52 @@ export function MobileShell({
         </nav>
 
         <div className="border-t border-white/5 px-3 py-3">
+          <div className="mb-3 flex flex-col gap-1">
+            <Link
+              href="/admin"
+              onClick={closeDrawer}
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
+                pathname.startsWith('/admin') ? 'bg-white/5' : 'hover:bg-white/5',
+              )}
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
+                <Shield size={16} strokeWidth={2} />
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-sm font-bold leading-tight text-white">
+                  Administración
+                </span>
+                <span className="mt-0.5 text-[10px] font-bold uppercase leading-tight tracking-[0.16em] text-white/40">
+                  Tu cuenta
+                </span>
+              </span>
+              <ChevronRight size={15} strokeWidth={2} className="shrink-0 text-white/30" />
+            </Link>
+
+            <Link
+              href="/configurar"
+              onClick={closeDrawer}
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
+                pathname.startsWith('/configurar') ? 'bg-white/5' : 'hover:bg-white/5',
+              )}
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
+                <SlidersHorizontal size={16} strokeWidth={2} />
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-sm font-bold leading-tight text-white">
+                  Configurar
+                </span>
+                <span className="mt-0.5 text-[10px] font-bold uppercase leading-tight tracking-[0.16em] text-white/40">
+                  Preferencias
+                </span>
+              </span>
+              <ChevronRight size={15} strokeWidth={2} className="shrink-0 text-white/30" />
+            </Link>
+          </div>
+
           <Link
             href="/mapa"
             onClick={closeDrawer}
