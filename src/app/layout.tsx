@@ -1,8 +1,9 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans, Sora } from 'next/font/google'
 import './globals.css'
 import { getAdminClientSession } from '@/lib/auth'
 import { AdminSessionProvider } from '@/components/admin/AdminSessionProvider'
+import { PWARegister } from '@/components/pwa/PWARegister'
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -21,6 +22,12 @@ const sora = Sora({
 export const metadata: Metadata = {
   title: 'NextCampus — Campus Estudiantil',
   description: 'Calendario, quiz y apuntes por asignatura',
+  applicationName: 'NextCampus',
+  appleWebApp: {
+    capable: true,
+    title: 'NextCampus',
+    statusBarStyle: 'black-translucent',
+  },
   icons: {
     icon: [
       { url: '/education.svg', type: 'image/svg+xml' },
@@ -29,6 +36,13 @@ export const metadata: Metadata = {
     shortcut: '/education.png',
     apple: '/education.png',
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#cc0000',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export default async function RootLayout({
@@ -44,6 +58,7 @@ export default async function RootLayout({
     >
       <body className="min-h-full bg-surface-0 font-sans text-white antialiased">
         <AdminSessionProvider session={session}>{children}</AdminSessionProvider>
+        <PWARegister />
       </body>
     </html>
   )

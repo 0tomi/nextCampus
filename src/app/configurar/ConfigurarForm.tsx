@@ -12,6 +12,7 @@ import {
 } from '@/lib/preferences'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { cn } from '@/lib/utils'
+import { InstallPWASettingsCard } from '@/components/pwa/InstallPWA'
 
 type CommissionForConfig = { id: string; slug: string; nombre: string }
 
@@ -194,6 +195,8 @@ function ConfigurarFormInner({
             <ArrowLeft className="h-4 w-4" />
             Volver al inicio
           </Link>
+
+          <InstallPWASettingsCard />
 
           <div className="space-y-2">
             <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/40">
@@ -378,6 +381,8 @@ function ConfigurarFormSkeleton({ careerName, years }: ConfigurarFormProps) {
             Volver al inicio
           </Link>
 
+          <InstallPWASettingsCard />
+
           <div className="space-y-2">
             <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/40">
               Personalización
@@ -391,6 +396,8 @@ function ConfigurarFormSkeleton({ careerName, years }: ConfigurarFormProps) {
             </p>
           </div>
         </div>
+
+        <InstallPWASettingsCard className="mb-8" />
 
         {/* Years grid — default empty selection while loading */}
         <div className="grid gap-4 lg:grid-cols-2">
