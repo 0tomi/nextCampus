@@ -113,19 +113,9 @@ export function HomeGlobalCalendar({
 
       <div className="flex flex-col gap-6">
         {/* Tarjetas de eventos */}
-        <div
-          className={cn(
-            "w-full",
-            isExpanded
-              ? "flex flex-col gap-3"
-              : "grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
-          )}
-        >
+        <div className="w-full grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {closestEvents.length === 0 ? (
-            <DarkCard className={cn(
-              "p-6 text-sm leading-6 text-white/50 text-center border-dashed flex flex-col items-center justify-center gap-2",
-              isExpanded ? "w-full py-12" : "col-span-full py-16"
-            )}>
+            <DarkCard className="col-span-full p-6 py-16 text-sm leading-6 text-white/50 text-center border-dashed flex flex-col items-center justify-center gap-2">
               <CalendarDays className="h-6 w-6 opacity-40" />
               <span>No hay eventos próximos en tu agenda.</span>
             </DarkCard>
@@ -133,10 +123,7 @@ export function HomeGlobalCalendar({
             closestEvents.map((evento) => (
               <DarkCard
                 key={evento.id}
-                className={cn(
-                  "flex flex-col justify-between p-4 min-h-[140px] rounded-lg border border-white/5 bg-surface-1/60 backdrop-blur-sm transition-all duration-300 hover:border-white/10 hover:bg-surface-1",
-                  isExpanded && "min-h-[120px]"
-                )}
+                className="flex flex-col justify-between p-4 min-h-[140px] rounded-lg border border-white/5 bg-surface-1/60 backdrop-blur-sm transition-all duration-300 hover:border-white/10 hover:bg-surface-1"
               >
                 <div className="space-y-2.5">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[9px] font-bold uppercase tracking-[0.15em] text-white/35">
