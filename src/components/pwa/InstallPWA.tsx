@@ -105,38 +105,22 @@ function useInstallAction() {
   }
 }
 
-interface InstallPWADrawerEntryProps {
-  onNavigated?: () => void
-}
-
-export function InstallPWADrawerEntry({ onNavigated }: InstallPWADrawerEntryProps) {
+export function InstallPWATopbarButton() {
   const action = useInstallAction()
 
-  if (!action.visible) return null
+  if (!action.visible) {
+    return <div className="h-10 w-10" aria-hidden />
+  }
 
   return (
     <>
       <button
         type="button"
-        onClick={async () => {
-          await action.onClick()
-          if (!action.isIOS) onNavigated?.()
-        }}
-        className="group flex w-full cursor-pointer items-center justify-between rounded-lg border border-uader-red/30 bg-gradient-to-r from-uader-red/12 to-uader-red/[0.04] px-3 py-3 transition-all hover:border-uader-red/50 hover:from-uader-red/18"
+        aria-label="Instalar app"
+        onClick={action.onClick}
+        className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-uader-red/35 bg-uader-red/12 text-white transition-colors hover:border-uader-red/55 hover:bg-uader-red/20"
       >
-        <span className="flex min-w-0 items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-uader-red to-uader-red-dark text-white shadow-[0_0_12px_rgba(204,0,0,0.25)]">
-            <Download size={16} strokeWidth={2.2} />
-          </span>
-          <span className="flex min-w-0 flex-col text-left">
-            <span className="truncate text-sm font-bold leading-tight text-white">
-              Instalar app
-            </span>
-            <span className="mt-0.5 text-[10px] font-bold uppercase leading-tight tracking-[0.16em] text-white/50">
-              Acceso directo en tu pantalla
-            </span>
-          </span>
-        </span>
+        <Download size={17} strokeWidth={2.3} />
       </button>
       {action.showIos && <IosInstructionsSheet onClose={action.closeIos} />}
     </>

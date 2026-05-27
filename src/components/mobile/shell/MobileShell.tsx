@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getYearColorClasses } from '@/lib/yearColors'
-import { InstallPWADrawerEntry } from '@/components/pwa/InstallPWA'
+import { InstallPWATopbarButton } from '@/components/pwa/InstallPWA'
 
 const SWIPE_START_INSET_RATIO = 0.2
 const SWIPE_OPEN_PX = 70
@@ -195,7 +195,7 @@ export function MobileShell({
             </div>
           </Link>
 
-          <div className="h-10 w-10" aria-hidden />
+          <InstallPWATopbarButton />
         </div>
       </header>
 
@@ -332,10 +332,6 @@ export function MobileShell({
               </span>
               <ChevronRight size={15} strokeWidth={2} className="shrink-0 text-white/30" />
             </Link>
-          </div>
-
-          <div className="mb-3">
-            <InstallPWADrawerEntry onNavigated={closeDrawer} />
           </div>
 
           <Link
