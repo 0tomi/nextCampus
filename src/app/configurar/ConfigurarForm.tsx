@@ -95,21 +95,60 @@ function ConfigurarFormInner({
   }
 
   const toggleYear = (slug: string) => {
-    setDraft((d) => ({
-      ...d,
-      hiddenYears: d.hiddenYears.includes(slug)
-        ? d.hiddenYears.filter((s) => s !== slug)
-        : [...d.hiddenYears, slug],
-    }))
+    const targetYear = years.find((y) => y.slug === slug)
+    if (!targetYear) return
+
+    setDraft((d) => {
+      const isCurrentlyHidden = d.hiddenYears.includes(slug)
+      const subjectSlugs = targetYear.subjects.map((s) => s.slug)
+
+      if (isCurrentlyHidden) {
+        return {
+          ...d,
+          hiddenYears: d.hiddenYears.filter((s) => s !== slug),
+          hiddenSubjects: d.hiddenSubjects.filter((s) => !subjectSlugs.includes(s)),
+        }
+      } else {
+        const newHiddenSubjects = Array.from(
+          new Set([...d.hiddenSubjects, ...subjectSlugs])
+        )
+        return {
+          ...d,
+          hiddenYears: [...d.hiddenYears, slug],
+          hiddenSubjects: newHiddenSubjects,
+        }
+      }
+    })
   }
 
   const toggleSubject = (slug: string) => {
-    setDraft((d) => ({
-      ...d,
-      hiddenSubjects: d.hiddenSubjects.includes(slug)
-        ? d.hiddenSubjects.filter((s) => s !== slug)
-        : [...d.hiddenSubjects, slug],
-    }))
+    const parentYear = years.find((y) => y.subjects.some((s) => s.slug === slug))
+    if (!parentYear) return
+
+    setDraft((d) => {
+      const isSubjectCurrentlyHidden = d.hiddenSubjects.includes(slug)
+      let newHiddenSubjects: string[]
+      let newHiddenYears = [...d.hiddenYears]
+
+      if (isSubjectCurrentlyHidden) {
+        newHiddenSubjects = d.hiddenSubjects.filter((s) => s !== slug)
+        newHiddenYears = newHiddenYears.filter((y) => y !== parentYear.slug)
+      } else {
+        newHiddenSubjects = [...d.hiddenSubjects, slug]
+        const allSubjectsHidden = parentYear.subjects.every(
+          (s) => s.slug === slug || newHiddenSubjects.includes(s.slug)
+        )
+        if (allSubjectsHidden && !newHiddenYears.includes(parentYear.slug)) {
+          newHiddenYears.push(parentYear.slug)
+        }
+      }
+
+      return {
+        ...d,
+        hiddenSubjects: newHiddenSubjects,
+        hiddenYears: newHiddenYears,
+      }
+    })
   }
 
   const toggleCommission = (subjectSlug: string, commissionSlug: string) => {
@@ -216,12 +255,7 @@ function ConfigurarFormInner({
                 </label>
 
                 {/* Subject list */}
-                <ul
-                  className={cn(
-                    'flex flex-col transition-opacity',
-                    !yearChecked && 'pointer-events-none opacity-40',
-                  )}
-                >
+                <ul className="flex flex-col transition-opacity">
                   {year.subjects.map((subject, subjectIndex) => {
                     const subjectChecked = !draft.hiddenSubjects.includes(subject.slug)
 
@@ -239,7 +273,6 @@ function ConfigurarFormInner({
                             className="peer sr-only"
                             checked={subjectChecked}
                             onChange={() => toggleSubject(subject.slug)}
-                            disabled={!yearChecked}
                           />
                           <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-uader-red peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
                             <CheckBox checked={subjectChecked} />
@@ -272,7 +305,7 @@ function ConfigurarFormInner({
                                       className="peer sr-only"
                                       checked={commissionChecked}
                                       onChange={() => toggleCommission(subject.slug, commission.slug)}
-                                      disabled={!yearChecked || !subjectChecked}
+                                      disabled={!subjectChecked}
                                     />
                                     <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-uader-red peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
                                       <CheckBox checked={commissionChecked} size="sm" />
