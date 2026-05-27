@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { InstallPWATopbarButton } from '@/components/pwa/InstallPWA'
 
-const SWIPE_START_INSET_RATIO = 0.2
+const SWIPE_EDGE_PX = 28
 const SWIPE_OPEN_PX = 70
 const SWIPE_CLOSE_PX = 60
 const SWIPE_AXIS_BIAS = 1.4
@@ -84,8 +84,6 @@ export function MobileShell({
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length !== 1) return
       const touch = e.touches[0]
-      const viewportWidth = window.innerWidth
-      const inset = viewportWidth * SWIPE_START_INSET_RATIO
 
       if (openRef.current) {
         tracking = true
@@ -95,7 +93,7 @@ export function MobileShell({
         return
       }
 
-      if (touch.clientX < inset || touch.clientX > viewportWidth - inset) return
+      if (touch.clientX > SWIPE_EDGE_PX) return
 
       tracking = true
       committed = false
