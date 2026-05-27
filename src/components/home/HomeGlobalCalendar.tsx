@@ -1,10 +1,14 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import { CalendarDays, SlidersHorizontal } from 'lucide-react'
+import { CalendarDays, SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react'
 import { EventCalendar, type EventCalendarEvent } from '@/components/calendar/EventCalendar'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { usePreferences } from '@/hooks/usePreferences'
+import { cn, formatDateTime } from '@/lib/utils'
+import { sanitizeRichHtml } from '@/lib/sanitize'
+import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import {
   isCommissionVisible,
   isSubjectVisible,
@@ -35,6 +39,7 @@ export function HomeGlobalCalendar({
   initialPrefs,
   events,
 }: HomeGlobalCalendarProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
   const { prefs, isHydrated } = usePreferences(initialPrefs)
   const shouldWaitForStoredPrefs = !isHydrated && initialPrefs === null
   const effectivePrefs = isHydrated ? prefs : initialPrefs
@@ -64,6 +69,16 @@ export function HomeGlobalCalendar({
       effectivePrefs,
     )
   })
+
+  // Obtener los 5 eventos más cercanos a partir de hoy (ordenados cronológicamente)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const upcomingEvents = [...visibleEvents]
+    .filter((event) => new Date(event.fecha).getTime() >= today.getTime())
+    .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
+
+  const closestEvents = upcomingEvents.slice(0, 5)
 
   const calendarEvents: EventCalendarEvent[] = visibleEvents.map((event) => ({
     id: event.id,
@@ -96,12 +111,135 @@ export function HomeGlobalCalendar({
         </p>
       </div>
 
-      <EventCalendar
-        events={calendarEvents}
-        emptyMessage="Por ahora no hay eventos con tu selección actual."
-        className="home-global-calendar"
-        dayMaxEvents={4}
-      />
+      <div className="flex flex-col gap-6 lg:flex-row items-start">
+        {/* Calendario con transición de expansión */}
+        <div
+          className={cn(
+            "transition-all duration-500 ease-in-out overflow-hidden w-full shrink-0",
+            isExpanded
+              ? "lg:w-[62%] xl:w-[66%] 2xl:w-[70%] opacity-100 max-h-[2000px] visible"
+              : "lg:w-0 opacity-0 max-h-0 lg:max-h-[2000px] invisible pointer-events-none"
+          )}
+        >
+          <EventCalendar
+            events={calendarEvents}
+            emptyMessage="Por ahora no hay eventos con tu selección actual."
+            className="home-global-calendar"
+            dayMaxEvents={4}
+          />
+        </div>
+
+        {/* Tarjetas de eventos */}
+        <div
+          className={cn(
+            "transition-all duration-500 ease-in-out w-full flex-1",
+            isExpanded
+              ? "flex flex-col gap-3 lg:max-h-[600px] lg:overflow-y-auto lg:pr-1"
+              : "grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+          )}
+        >
+          {closestEvents.length === 0 ? (
+            <DarkCard className={cn(
+              "p-6 text-sm leading-6 text-white/50 text-center border-dashed flex flex-col items-center justify-center gap-2",
+              isExpanded ? "w-full py-12" : "col-span-full py-16"
+            )}>
+              <CalendarDays className="h-6 w-6 opacity-40" />
+              <span>No hay eventos próximos en tu agenda.</span>
+            </DarkCard>
+          ) : (
+            closestEvents.map((evento) => (
+              <DarkCard
+                key={evento.id}
+                className={cn(
+                  "flex flex-col justify-between p-4 min-h-[140px] rounded-lg border border-white/5 bg-surface-1/60 backdrop-blur-sm transition-all duration-300 hover:border-white/10 hover:bg-surface-1",
+                  isExpanded && "min-h-[120px]"
+                )}
+              >
+                <div className="space-y-2.5">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[9px] font-bold uppercase tracking-[0.15em] text-white/35">
+                    <span
+                      className={cn(
+                        "rounded px-1.5 py-0.5 text-[8px] font-bold tracking-wider",
+                        evento.tipo.toLowerCase() === 'examen' ||
+                        evento.tipo.toLowerCase() === 'parcial' ||
+                        evento.tipo.toLowerCase() === 'final' ||
+                        evento.tipo.toLowerCase() === 'recuperatorio'
+                          ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                          : evento.tipo.toLowerCase() === 'trabajo práctico' ||
+                            evento.tipo.toLowerCase() === 'tp' ||
+                            evento.tipo.toLowerCase() === 'trabajo practico' ||
+                            evento.tipo.toLowerCase() === 'entrega'
+                          ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                          : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                      )}
+                    >
+                      {evento.tipo}
+                    </span>
+                    <span>•</span>
+                    <Link
+                      href={buildSubjectHref({
+                        yearSlug: evento.yearSlug,
+                        subjectSlug: evento.subjectSlug,
+                        commissionSlug: evento.commissionSlug,
+                      })}
+                      className="hover:text-white transition-colors truncate max-w-[120px]"
+                      title={evento.materiaNombre}
+                    >
+                      {evento.materiaNombre}
+                    </Link>
+                    {evento.commissionNombre ? (
+                      <>
+                        <span>•</span>
+                        <span className="truncate max-w-[80px]" title={evento.commissionNombre}>
+                          {evento.commissionNombre}
+                        </span>
+                      </>
+                    ) : null}
+                  </div>
+
+                  <h3 className="text-sm font-black tracking-tight text-white leading-snug line-clamp-2">
+                    {evento.titulo}
+                  </h3>
+
+                  {evento.descripcionHtml ? (
+                    <div
+                      className="text-xs leading-relaxed text-white/55 line-clamp-2 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
+                      dangerouslySetInnerHTML={{
+                        __html: sanitizeRichHtml(evento.descripcionHtml),
+                      }}
+                    />
+                  ) : null}
+                </div>
+
+                <div className="mt-4 pt-2.5 border-t border-white/5 flex items-center justify-between">
+                  <span className="inline-flex max-w-full rounded border border-white/8 bg-white/[0.02] px-2 py-1 text-[8px] font-bold uppercase tracking-[0.1em] text-white/60">
+                    {formatDateTime(evento.fecha)}
+                  </span>
+                </div>
+              </DarkCard>
+            ))
+          )}
+        </div>
+      </div>
+
+      <div className="flex justify-center pt-2">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs font-bold text-white/80 transition-all hover:bg-white/10 hover:text-white"
+        >
+          {isExpanded ? (
+            <>
+              <ChevronUp className="h-4 w-4 text-white/60" />
+              Ocultar calendario completo
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-4 w-4 text-white/60" />
+              Ver calendario completo
+            </>
+          )}
+        </button>
+      </div>
     </section>
   )
 }
