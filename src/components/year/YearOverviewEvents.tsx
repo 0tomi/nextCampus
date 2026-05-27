@@ -195,7 +195,7 @@ export function YearOverviewEvents({
 
                 {evento.descripcionHtml ? (
                   <div
-                    className="space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
+                    className="mt-3 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
                     dangerouslySetInnerHTML={{
                       __html: sanitizeRichHtml(evento.descripcionHtml),
                     }}

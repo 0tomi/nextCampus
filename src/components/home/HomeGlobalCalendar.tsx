@@ -112,27 +112,22 @@ export function HomeGlobalCalendar({
       </div>
 
       <div className="flex flex-col gap-6 lg:flex-row items-start">
-        {/* Calendario con transición de expansión */}
-        <div
-          className={cn(
-            "transition-all duration-500 ease-in-out overflow-hidden w-full shrink-0",
-            isExpanded
-              ? "lg:w-[62%] xl:w-[66%] 2xl:w-[70%] opacity-100 max-h-[2000px] visible"
-              : "lg:w-0 opacity-0 max-h-0 lg:max-h-[2000px] invisible pointer-events-none"
-          )}
-        >
-          <EventCalendar
-            events={calendarEvents}
-            emptyMessage="Por ahora no hay eventos con tu selección actual."
-            className="home-global-calendar"
-            dayMaxEvents={4}
-          />
-        </div>
+        {/* Calendario condicional */}
+        {isExpanded && (
+          <div className="w-full lg:w-[62%] xl:w-[66%] 2xl:w-[70%] shrink-0">
+            <EventCalendar
+              events={calendarEvents}
+              emptyMessage="Por ahora no hay eventos con tu selección actual."
+              className="home-global-calendar"
+              dayMaxEvents={4}
+            />
+          </div>
+        )}
 
         {/* Tarjetas de eventos */}
         <div
           className={cn(
-            "transition-all duration-500 ease-in-out w-full flex-1",
+            "w-full flex-1",
             isExpanded
               ? "flex flex-col gap-3 lg:max-h-[600px] lg:overflow-y-auto lg:pr-1"
               : "grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
