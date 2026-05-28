@@ -14,19 +14,19 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: 'es-AR',
     icons: [
       {
-        src: '/education.png',
+        src: '/icon-192.png',
         sizes: '192x192',
         type: 'image/png',
         purpose: 'any',
       },
       {
-        src: '/education.png',
+        src: '/icon-512.png',
         sizes: '512x512',
         type: 'image/png',
         purpose: 'any',
       },
       {
-        src: '/education.svg',
+        src: '/mascot-icon.svg',
         sizes: 'any',
         type: 'image/svg+xml',
         purpose: 'maskable',
