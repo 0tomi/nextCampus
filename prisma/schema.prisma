@@ -170,12 +170,14 @@ model Apunte {
   subject         Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   subjectId       String
   titulo          String
+  slug            String
   /// HTML enriquecido y SANITIZADO (links a Drive/Docs, formato).
   descripcionHtml String          @default("")
   recursos        ApunteRecurso[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
+  @@unique([subjectId, slug])
   @@index([subjectId])
 }
 
@@ -185,6 +187,7 @@ model ApunteRecurso {
   apunteId  String
   tipo      RecursoTipo
   url       String
+  nombre    String?
   orden     Int         @db.SmallInt
   createdAt DateTime    @default(now())
 

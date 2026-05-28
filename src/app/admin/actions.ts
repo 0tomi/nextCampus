@@ -14,7 +14,7 @@ import {
   requireYearAdminForYearId,
 } from '@/lib/auth'
 import { sanitizeRichHtml } from '@/lib/sanitize'
-import { slugify, uniqueSlug } from '@/lib/slug'
+import { ensureUniqueSlug, slugify, uniqueSlug } from '@/lib/slug'
 import {
   uploadQuizBank,
   deleteQuizBank,
@@ -348,6 +348,12 @@ const recursoSchema = z
     url: z.string().url(),
     tipo: z.enum(['YOUTUBE', 'DRIVE']),
     orden: z.number().int().min(0).max(255),
+    nombre: z
+      .string()
+      .trim()
+      .max(120, 'El nombre del recurso no puede superar los 120 caracteres.')
+      .optional()
+      .transform((v) => (v && v.length > 0 ? v : null)),
   })
   .refine(
     (r) => {
@@ -360,6 +366,22 @@ const recursoSchema = z
 const apunteContentSchema = z.object({
   titulo: z.string().trim().min(1).max(200),
   descripcionHtml: z.string().max(20000).default(''),
+  slug: z.preprocess(
+    (v) => {
+      if (typeof v !== 'string') return undefined
+      const trimmed = v.trim().toLowerCase()
+      return trimmed.length === 0 ? undefined : trimmed
+    },
+    z
+      .string()
+      .min(1)
+      .max(80, 'El link compartible no puede superar los 80 caracteres.')
+      .regex(
+        /^[a-z0-9-]+$/,
+        'El link solo puede contener letras, números y guiones.',
+      )
+      .optional(),
+  ),
   recursos: z
     .array(recursoSchema)
     .max(50)
@@ -402,13 +424,34 @@ export async function createApunteAction(
   const parsed = apunteContentSchema.safeParse({
     titulo: formData.get('titulo'),
     descripcionHtml: formData.get('descripcionHtml') ?? '',
+    slug: formData.get('slug') ?? undefined,
     recursos: recursosRaw,
   })
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0].message }
   }
 
-  const { titulo, descripcionHtml, recursos } = parsed.data
+  const { titulo, descripcionHtml, slug: slugInput, recursos } = parsed.data
+
+  // Resolver slug final.
+  let finalSlug: string
+  if (slugInput) {
+    const collision = await prisma.apunte.findFirst({
+      where: { subjectId: subjectId.data, slug: slugInput },
+      select: { id: true },
+    })
+    if (collision) {
+      return { ok: false, message: 'Ese link ya está usado en esta materia.' }
+    }
+    finalSlug = slugInput
+  } else {
+    const existing = await prisma.apunte.findMany({
+      where: { subjectId: subjectId.data },
+      select: { slug: true },
+    })
+    const taken = new Set(existing.map((a) => a.slug))
+    finalSlug = ensureUniqueSlug(slugify(titulo), taken)
+  }
 
   let apunteId: string
   try {
@@ -416,12 +459,14 @@ export async function createApunteAction(
       data: {
         subjectId: subjectId.data,
         titulo,
+        slug: finalSlug,
         descripcionHtml: sanitizeRichHtml(descripcionHtml),
         recursos: {
           create: recursos.map((r) => ({
             tipo: r.tipo,
             url: r.url,
             orden: r.orden,
+            nombre: r.nombre,
           })),
         },
       },
@@ -440,6 +485,7 @@ export async function createApunteAction(
     entityId: apunteId,
     detail: {
       titulo,
+      slug: finalSlug,
       subjectSlug: scope.subjectSlug,
       yearSlug: scope.yearSlug,
       recursosCount: recursos.length,
@@ -468,13 +514,39 @@ export async function updateApunteAction(
   const parsed = apunteContentSchema.safeParse({
     titulo: formData.get('titulo'),
     descripcionHtml: formData.get('descripcionHtml') ?? '',
+    slug: formData.get('slug') ?? undefined,
     recursos: recursosRaw,
   })
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0].message }
   }
 
-  const { titulo, descripcionHtml, recursos } = parsed.data
+  const { titulo, descripcionHtml, slug: slugInput, recursos } = parsed.data
+
+  // Resolver slug final: si llega y cambia, validar unicidad excluyendo el propio id.
+  const apunteActual = await prisma.apunte.findUnique({
+    where: { id: apunteId.data },
+    select: { slug: true, subjectId: true },
+  })
+  if (!apunteActual) {
+    return { ok: false, message: 'Apunte no encontrado.' }
+  }
+
+  let finalSlug = apunteActual.slug
+  if (slugInput && slugInput !== apunteActual.slug) {
+    const collision = await prisma.apunte.findFirst({
+      where: {
+        subjectId: apunteActual.subjectId,
+        slug: slugInput,
+        NOT: { id: apunteId.data },
+      },
+      select: { id: true },
+    })
+    if (collision) {
+      return { ok: false, message: 'Ese link ya está usado en esta materia.' }
+    }
+    finalSlug = slugInput
+  }
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -482,6 +554,7 @@ export async function updateApunteAction(
         where: { id: apunteId.data },
         data: {
           titulo,
+          slug: finalSlug,
           descripcionHtml: sanitizeRichHtml(descripcionHtml),
         },
       })
@@ -492,6 +565,7 @@ export async function updateApunteAction(
           tipo: r.tipo,
           url: r.url,
           orden: r.orden,
+          nombre: r.nombre,
         })),
       })
     })
@@ -507,6 +581,7 @@ export async function updateApunteAction(
     entityId: apunteId.data,
     detail: {
       titulo,
+      slug: finalSlug,
       subjectSlug: scope.subjectSlug,
       recursosCount: recursos.length,
     },

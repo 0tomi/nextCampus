@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { detectarRecurso, extraerYoutubeId, youtubeEmbedUrl } from './recursos'
+import {
+  detectarRecurso,
+  extraerYoutubeId,
+  youtubeEmbedUrl,
+  extraerDriveFileId,
+  driveEmbedUrl,
+  nombreFallbackRecurso,
+} from './recursos'
 
 describe('detectarRecurso', () => {
   describe('YouTube', () => {
@@ -108,5 +115,104 @@ describe('youtubeEmbedUrl', () => {
     expect(youtubeEmbedUrl('dQw4w9WgXcQ')).toBe(
       'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
     )
+  })
+})
+
+describe('extraerDriveFileId', () => {
+  it('parsea drive.google.com/file/d/{ID}/view', () => {
+    expect(
+      extraerDriveFileId('https://drive.google.com/file/d/1aBcDeF_g-h/view'),
+    ).toEqual({ kind: 'file', id: '1aBcDeF_g-h' })
+  })
+
+  it('parsea drive.google.com/open?id={ID}', () => {
+    expect(
+      extraerDriveFileId('https://drive.google.com/open?id=1aBcDeF_g-h'),
+    ).toEqual({ kind: 'file', id: '1aBcDeF_g-h' })
+  })
+
+  it('parsea docs.google.com/document/d/{ID}/edit', () => {
+    expect(
+      extraerDriveFileId('https://docs.google.com/document/d/1aBcDeF_g-h/edit'),
+    ).toEqual({ kind: 'document', id: '1aBcDeF_g-h' })
+  })
+
+  it('parsea docs.google.com/spreadsheets/d/{ID}/edit', () => {
+    expect(
+      extraerDriveFileId(
+        'https://docs.google.com/spreadsheets/d/1aBcDeF_g-h/edit',
+      ),
+    ).toEqual({ kind: 'spreadsheet', id: '1aBcDeF_g-h' })
+  })
+
+  it('parsea docs.google.com/presentation/d/{ID}/edit', () => {
+    expect(
+      extraerDriveFileId(
+        'https://docs.google.com/presentation/d/1aBcDeF_g-h/edit',
+      ),
+    ).toEqual({ kind: 'presentation', id: '1aBcDeF_g-h' })
+  })
+
+  it('rechaza protocolo http', () => {
+    expect(
+      extraerDriveFileId('http://drive.google.com/file/d/abc123/view'),
+    ).toBeNull()
+  })
+
+  it('rechaza host desconocido', () => {
+    expect(
+      extraerDriveFileId('https://evil.com/file/d/abc123/view'),
+    ).toBeNull()
+  })
+
+  it('rechaza path desconocido en drive.google.com', () => {
+    expect(extraerDriveFileId('https://drive.google.com/drive/u/0/my-drive'))
+      .toBeNull()
+  })
+
+  it('rechaza URL malformada', () => {
+    expect(extraerDriveFileId('not a url')).toBeNull()
+  })
+
+  it('rechaza ID con caracteres inválidos', () => {
+    expect(
+      extraerDriveFileId('https://drive.google.com/file/d/abc$123/view'),
+    ).toBeNull()
+  })
+})
+
+describe('driveEmbedUrl', () => {
+  it('genera preview para file', () => {
+    expect(driveEmbedUrl({ kind: 'file', id: 'abc123' })).toBe(
+      'https://drive.google.com/file/d/abc123/preview',
+    )
+  })
+
+  it('genera preview para document', () => {
+    expect(driveEmbedUrl({ kind: 'document', id: 'abc123' })).toBe(
+      'https://docs.google.com/document/d/abc123/preview',
+    )
+  })
+
+  it('genera preview para spreadsheet', () => {
+    expect(driveEmbedUrl({ kind: 'spreadsheet', id: 'abc123' })).toBe(
+      'https://docs.google.com/spreadsheets/d/abc123/preview',
+    )
+  })
+
+  it('genera preview para presentation', () => {
+    expect(driveEmbedUrl({ kind: 'presentation', id: 'abc123' })).toBe(
+      'https://docs.google.com/presentation/d/abc123/preview',
+    )
+  })
+})
+
+describe('nombreFallbackRecurso', () => {
+  it('YOUTUBE → "Video de YouTube"', () => {
+    expect(nombreFallbackRecurso('YOUTUBE')).toBe('Video de YouTube')
+  })
+
+  it('DRIVE → "Archivo de Drive"', () => {
+    expect(nombreFallbackRecurso('DRIVE')).toBe('Archivo de Drive')
   })
 })

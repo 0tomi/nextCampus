@@ -21,6 +21,8 @@ const prismaMock = {
   apunte: {
     create: vi.fn(),
     findUnique: vi.fn(),
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
     delete: vi.fn(),
   },
   $transaction: vi.fn(),
@@ -51,8 +53,9 @@ vi.mock('@/lib/sanitize', () => ({
 }))
 
 vi.mock('@/lib/slug', () => ({
-  slugify: vi.fn(),
-  uniqueSlug: vi.fn(),
+  slugify: vi.fn((text: string) => String(text).toLowerCase().replace(/\s+/g, '-')),
+  uniqueSlug: vi.fn((base: string) => base),
+  ensureUniqueSlug: vi.fn((base: string) => base),
 }))
 
 vi.mock('@/lib/storage', () => ({
@@ -121,6 +124,8 @@ beforeEach(() => {
     year: { slug: 'primer-anio' },
     commissions: [],
   })
+  prismaMock.apunte.findMany.mockResolvedValue([])
+  prismaMock.apunte.findFirst.mockResolvedValue(null)
   prismaMock.$transaction.mockImplementation(async (callback) => callback({
     apunte: {
       update: vi.fn().mockResolvedValue(undefined),
@@ -162,6 +167,10 @@ describe('admin apunte actions', () => {
       subjectSlug: 'calculo',
       yearSlug: 'primer-anio',
       admin: { id: 'admin-1' },
+    })
+    prismaMock.apunte.findUnique.mockResolvedValue({
+      slug: 'resumen-actual',
+      subjectId: 'subject-1',
     })
 
     const { updateApunteAction } = await import('./actions')

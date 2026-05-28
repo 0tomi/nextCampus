@@ -250,6 +250,7 @@ export function getSubjectPageBySlug(slug: string) {
             select: {
               id: true,
               titulo: true,
+              slug: true,
               descripcionHtml: true,
               recursos: {
                 orderBy: { orden: 'asc' },
@@ -258,6 +259,7 @@ export function getSubjectPageBySlug(slug: string) {
                   tipo: true,
                   url: true,
                   orden: true,
+                  nombre: true,
                 },
               },
             },

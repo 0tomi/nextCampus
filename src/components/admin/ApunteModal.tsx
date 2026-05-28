@@ -9,6 +9,7 @@ import {
   type ApunteActionState,
 } from '@/app/admin/actions'
 import { detectarRecurso, type RecursoTipo } from '@/lib/recursos'
+import { slugify } from '@/lib/slug'
 import { RichTextEditor } from './RichTextEditor'
 
 // ---------------------------------------------------------------------------
@@ -19,7 +20,16 @@ export type ApunteFull = {
   id: string
   titulo: string
   descripcionHtml: string
-  recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE'; url: string; orden: number }>
+  /** Link compartible del apunte. Opcional para no romper callsites que aún no lo proveen. */
+  slug?: string | null
+  recursos: Array<{
+    id: string
+    tipo: 'YOUTUBE' | 'DRIVE'
+    url: string
+    orden: number
+    /** Nombre custom del recurso (fallback genérico cuando es null). */
+    nombre?: string | null
+  }>
 }
 
 interface RecursoDraft {
@@ -27,6 +37,7 @@ interface RecursoDraft {
   localId: string
   url: string
   tipo: RecursoTipo | null
+  nombre: string
   error?: string
 }
 
@@ -45,9 +56,15 @@ interface ApunteModalProps {
 
 const emptyState: ApunteActionState = { ok: false, message: '' }
 
-function makeDraft(url: string, tipo: RecursoTipo | null): RecursoDraft {
-  return { localId: crypto.randomUUID(), url, tipo }
+function makeDraft(
+  url: string,
+  tipo: RecursoTipo | null,
+  nombre: string = '',
+): RecursoDraft {
+  return { localId: crypto.randomUUID(), url, tipo, nombre }
 }
+
+const SLUG_REGEX = /^[a-z0-9-]+$/
 
 function detectTipo(url: string): RecursoTipo | null {
   if (!url.trim()) return null
@@ -67,18 +84,38 @@ export function ApunteModal({
   onSuccess,
 }: ApunteModalProps) {
   const isEditMode = Boolean(apunte)
-  void subjectSlug
 
   const action = isEditMode ? updateApunteAction : createApunteAction
   const [state, formAction, pending] = useActionState(action, emptyState)
 
   const [titulo, setTitulo] = useState(apunte?.titulo ?? '')
+  const [slug, setSlug] = useState(apunte?.slug ?? '')
+  // Si ya hay slug cargado al abrir el modal (modo edición con slug), tratamos
+  // el campo como "tocado por el usuario" para no auto-sobrescribirlo al editar
+  // el título. Si está vacío, el slug se autogenera del título.
+  const [slugTouched, setSlugTouched] = useState<boolean>(
+    Boolean(apunte?.slug && apunte.slug.length > 0),
+  )
+  const [slugError, setSlugError] = useState('')
   const [recursos, setRecursos] = useState<RecursoDraft[]>(() =>
     apunte
-      ? apunte.recursos.map((r) => makeDraft(r.url, r.tipo))
+      ? apunte.recursos.map((r) =>
+          makeDraft(r.url, r.tipo, r.nombre ?? ''),
+        )
       : [],
   )
   const [validationError, setValidationError] = useState('')
+
+  // Auto-sync slug desde el título mientras el usuario no haya tocado el campo.
+  useEffect(() => {
+    if (slugTouched) return
+    const trimmed = titulo.trim()
+    if (trimmed.length === 0) {
+      setSlug('')
+      return
+    }
+    setSlug(slugify(trimmed))
+  }, [titulo, slugTouched])
 
   // Close modal on success
   useEffect(() => {
@@ -91,6 +128,24 @@ export function ApunteModal({
   // -------------------------------------------------------------------------
   // Recurso handlers
   // -------------------------------------------------------------------------
+
+  const handleSlugChange = useCallback((value: string) => {
+    setSlugTouched(true)
+    // Normalizamos a lowercase para que coincida con la regla del backend.
+    const normalized = value.toLowerCase()
+    setSlug(normalized)
+    if (normalized.length === 0) {
+      setSlugError('')
+      return
+    }
+    if (!SLUG_REGEX.test(normalized)) {
+      setSlugError('Solo letras, números y guiones (sin espacios ni acentos).')
+    } else if (normalized.length > 80) {
+      setSlugError('Demasiado largo, máximo 80 caracteres.')
+    } else {
+      setSlugError('')
+    }
+  }, [])
 
   const addRecurso = useCallback(() => {
     setRecursos((prev) => [...prev, makeDraft('', null)])
@@ -125,6 +180,17 @@ export function ApunteModal({
           r.localId === localId
             ? { ...r, url: value, tipo: null, error: undefined }
             : r,
+        ),
+      )
+    },
+    [],
+  )
+
+  const handleNombreChange = useCallback(
+    (localId: string, value: string) => {
+      setRecursos((prev) =>
+        prev.map((r) =>
+          r.localId === localId ? { ...r, nombre: value } : r,
         ),
       )
     },
@@ -171,16 +237,32 @@ export function ApunteModal({
         return
       }
 
+      if (slugError) {
+        e.preventDefault()
+        setValidationError(
+          'Revisá el link compartible: ' + slugError.toLowerCase(),
+        )
+        return
+      }
+
       // Nothing to prevent — let the form action run
     },
-    [recursos],
+    [recursos, slugError],
   )
 
   // Serialize recursos for the hidden input
   const recursosJson = JSON.stringify(
     recursos
       .filter((r) => r.url.trim() && r.tipo)
-      .map((r, idx) => ({ url: r.url.trim(), tipo: r.tipo!, orden: idx })),
+      .map((r, idx) => {
+        const nombre = r.nombre.trim()
+        return {
+          url: r.url.trim(),
+          tipo: r.tipo!,
+          orden: idx,
+          ...(nombre.length > 0 ? { nombre } : {}),
+        }
+      }),
   )
 
   return (
@@ -223,6 +305,42 @@ export function ApunteModal({
           />
         </div>
 
+        {/* Link compartible (slug) */}
+        <div className="space-y-1">
+          <label
+            htmlFor="apunte-slug"
+            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
+          >
+            Link compartible{' '}
+            <span className="font-normal normal-case tracking-normal text-white/30">
+              (opcional)
+            </span>
+          </label>
+          <input
+            id="apunte-slug"
+            type="text"
+            name="slug"
+            value={slug}
+            onChange={(e) => handleSlugChange(e.target.value)}
+            placeholder="se-genera-desde-el-titulo"
+            maxLength={80}
+            autoComplete="off"
+            spellCheck={false}
+            className={`w-full rounded border bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none ${
+              slugError
+                ? 'border-rose-400/50 focus:border-rose-400/70'
+                : 'border-white/10 focus:border-white/20'
+            }`}
+          />
+          {slugError ? (
+            <p className="text-[11px] text-rose-400">{slugError}</p>
+          ) : (
+            <p className="text-[11px] text-white/40">
+              Link: /{subjectSlug}/apuntes/{slug || 'mi-apunte'}
+            </p>
+          )}
+        </div>
+
         {/* Descripción — Rich Text */}
         <div className="space-y-1">
           <label className="block text-xs font-semibold uppercase tracking-widest text-white/40">
@@ -248,7 +366,7 @@ export function ApunteModal({
           </p>
 
           {recursos.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {recursos.map((recurso, idx) => (
                 <RecursoRow
                   key={recurso.localId}
@@ -257,6 +375,7 @@ export function ApunteModal({
                   total={recursos.length}
                   onUrlChange={handleUrlChange}
                   onUrlBlur={handleUrlBlur}
+                  onNombreChange={handleNombreChange}
                   onRemove={removeRecurso}
                   onMoveUp={moveUp}
                   onMoveDown={moveDown}
@@ -323,9 +442,16 @@ interface RecursoRowProps {
   total: number
   onUrlChange: (localId: string, value: string) => void
   onUrlBlur: (localId: string, value: string) => void
+  onNombreChange: (localId: string, value: string) => void
   onRemove: (localId: string) => void
   onMoveUp: (index: number) => void
   onMoveDown: (index: number) => void
+}
+
+function nombreFallbackHint(tipo: RecursoTipo | null): string | null {
+  if (tipo === 'DRIVE') return "Se mostrará como “Archivo de Drive”"
+  if (tipo === 'YOUTUBE') return "Se mostrará como “Video de YouTube”"
+  return null
 }
 
 function RecursoRow({
@@ -334,81 +460,101 @@ function RecursoRow({
   total,
   onUrlChange,
   onUrlBlur,
+  onNombreChange,
   onRemove,
   onMoveUp,
   onMoveDown,
 }: RecursoRowProps) {
+  const hint = nombreFallbackHint(recurso.tipo)
+  const showHint = recurso.nombre.trim().length === 0 && hint !== null
+
   return (
-    <div className="flex items-center gap-2">
-      {/* URL input + icon */}
-      <div className="relative flex-1">
-        <input
-          type="url"
-          value={recurso.url}
-          onChange={(e) => onUrlChange(recurso.localId, e.target.value)}
-          onBlur={(e) => onUrlBlur(recurso.localId, e.target.value)}
-          placeholder="https://youtube.com/watch?v=... o https://drive.google.com/..."
-          className={`w-full rounded border bg-surface-0 px-3 py-2 pr-9 text-sm text-white placeholder:text-white/30 focus:outline-none ${
-            recurso.error
-              ? 'border-rose-400/50 focus:border-rose-400/70'
-              : 'border-white/10 focus:border-white/20'
-          }`}
-        />
-        {/* Type indicator */}
-        <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2">
-          {recurso.tipo === 'YOUTUBE' && (
-            <CirclePlay className="h-4 w-4 text-red-400" />
-          )}
-          {recurso.tipo === 'DRIVE' && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src="/resources/google_drive_logo_icon_159334.png"
-              alt="Drive"
-              className="h-4 w-4"
-            />
-          )}
-          {recurso.error && (
-            <AlertCircle className="h-4 w-4 text-rose-400" />
-          )}
+    <div className="rounded-lg border border-white/10 bg-surface-1/40 p-2.5">
+      <div className="flex items-center gap-2">
+        {/* URL input + icon */}
+        <div className="relative flex-1">
+          <input
+            type="url"
+            value={recurso.url}
+            onChange={(e) => onUrlChange(recurso.localId, e.target.value)}
+            onBlur={(e) => onUrlBlur(recurso.localId, e.target.value)}
+            placeholder="https://youtube.com/watch?v=... o https://drive.google.com/..."
+            className={`w-full rounded border bg-surface-0 px-3 py-2 pr-9 text-sm text-white placeholder:text-white/30 focus:outline-none ${
+              recurso.error
+                ? 'border-rose-400/50 focus:border-rose-400/70'
+                : 'border-white/10 focus:border-white/20'
+            }`}
+          />
+          {/* Type indicator */}
+          <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2">
+            {recurso.tipo === 'YOUTUBE' && (
+              <CirclePlay className="h-4 w-4 text-red-400" />
+            )}
+            {recurso.tipo === 'DRIVE' && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src="/resources/google_drive_logo_icon_159334.png"
+                alt="Drive"
+                className="h-4 w-4"
+              />
+            )}
+            {recurso.error && (
+              <AlertCircle className="h-4 w-4 text-rose-400" />
+            )}
+          </div>
         </div>
+
+        {/* Reorder buttons */}
+        <div className="flex flex-col">
+          <button
+            type="button"
+            onClick={() => onMoveUp(index)}
+            disabled={index === 0}
+            title="Subir"
+            className="inline-flex h-5 w-6 items-center justify-center rounded-t border border-white/8 bg-surface-0 text-white/40 transition-colors enabled:hover:bg-white/5 enabled:hover:text-white disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+          >
+            <ChevronUp className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onMoveDown(index)}
+            disabled={index === total - 1}
+            title="Bajar"
+            className="inline-flex h-5 w-6 items-center justify-center rounded-b border-x border-b border-white/8 bg-surface-0 text-white/40 transition-colors enabled:hover:bg-white/5 enabled:hover:text-white disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+          >
+            <ChevronDown className="h-3 w-3" />
+          </button>
+        </div>
+
+        {/* Remove */}
+        <button
+          type="button"
+          onClick={() => onRemove(recurso.localId)}
+          title="Eliminar recurso"
+          className="inline-flex h-8 w-8 items-center justify-center rounded text-rose-400/60 transition-colors hover:bg-rose-500/10 hover:text-rose-300 cursor-pointer"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
       </div>
 
-      {/* Validation message */}
       {recurso.error && (
-        <p className="absolute mt-6 text-[10px] text-rose-400">{recurso.error}</p>
+        <p className="mt-1.5 text-[11px] text-rose-400">{recurso.error}</p>
       )}
 
-      {/* Reorder buttons */}
-      <div className="flex flex-col">
-        <button
-          type="button"
-          onClick={() => onMoveUp(index)}
-          disabled={index === 0}
-          title="Subir"
-          className="inline-flex h-5 w-6 items-center justify-center rounded-t border border-white/8 bg-surface-0 text-white/40 transition-colors enabled:hover:bg-white/5 enabled:hover:text-white disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
-        >
-          <ChevronUp className="h-3 w-3" />
-        </button>
-        <button
-          type="button"
-          onClick={() => onMoveDown(index)}
-          disabled={index === total - 1}
-          title="Bajar"
-          className="inline-flex h-5 w-6 items-center justify-center rounded-b border-x border-b border-white/8 bg-surface-0 text-white/40 transition-colors enabled:hover:bg-white/5 enabled:hover:text-white disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
-        >
-          <ChevronDown className="h-3 w-3" />
-        </button>
+      {/* Nombre del recurso */}
+      <div className="mt-2 space-y-1">
+        <input
+          type="text"
+          value={recurso.nombre}
+          onChange={(e) => onNombreChange(recurso.localId, e.target.value)}
+          placeholder="Nombre del recurso (opcional)"
+          maxLength={120}
+          className="w-full rounded border border-white/10 bg-surface-0 px-3 py-1.5 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
+        />
+        {showHint && (
+          <p className="text-[11px] text-white/40">{hint}</p>
+        )}
       </div>
-
-      {/* Remove */}
-      <button
-        type="button"
-        onClick={() => onRemove(recurso.localId)}
-        title="Eliminar recurso"
-        className="inline-flex h-8 w-8 items-center justify-center rounded text-rose-400/60 transition-colors hover:bg-rose-500/10 hover:text-rose-300 cursor-pointer"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </button>
     </div>
   )
 }

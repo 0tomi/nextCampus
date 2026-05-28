@@ -1,0 +1,341 @@
+meta:
+  nombre: apuntes-mejoras
+  objetivo: |
+    Tres mejoras sobre la sección de apuntes de materias:
+      1) Permitir poner nombre a cada recurso (opcional, con fallback genérico).
+      2) Crear ruta compartible por apunte basada en slug auto-generado desde el título.
+      3) Mostrar preview inline de archivos de Drive usando el iframe oficial /preview (sin OAuth, sin heurísticas).
+  plan_origen: /home/tomi/.claude/plans/planificame-la-integracion-de-melodic-twilight.md
+  stack: Next.js 16 (App Router) + Prisma 7 + Supabase + Tailwind + TipTap
+  fecha_inicio: 2026-05-28
+
+restricciones:
+  R1: |
+    Vocabulario user-friendly NO técnico en TODO el frontend. Nada de "Server Component",
+    "wrapper client-only" o referencias al framework. Los textos visibles para el
+    usuario deben hablar como estudiante a estudiante.
+  R2: |
+    Botones interactivos deben llevar la clase cursor-pointer. Estilo visual sigue
+    DESIGN.md (paleta dark, superficies surface-0..3, bordes border-white/5..10,
+    rounded sm 6px / DEFAULT 8px / lg 12px / xl 16px, tipografía Jakarta/Sora).
+  R3: |
+    Conventional Commits estrictos (feat(db):, feat(ui):, etc.). Nunca incluir
+    "Co-Authored-By" ni atribución a IA en los mensajes de commit.
+  R4: |
+    No hacer build automáticamente (regla del repo). El test/verify es por dev server
+    cuando aplica. No correr pnpm build después de cambios.
+  R5: |
+    Si Vitest está instalado, escribir tests antes o junto a la implementación. Si no,
+    omitir tests automatizados — no improvisar runner nuevo.
+  R6: |
+    Cero heurísticas frágiles. Para Drive usar SOLO el embed oficial /preview. Si la
+    URL no parsea con extraerDriveFileId, fallback al link clásico SIN intentar adivinar.
+  R7: |
+    Para Supabase/Postgres hay MCP disponible. Usarlo solo para consultar estado o
+    aplicar migraciones generadas por Prisma, NO para modificar el schema saltándose
+    a Prisma.
+
+fases:
+  F1:
+    titulo: Schema Prisma + migración con backfill de slug
+    criticidad: critica
+    estado: completada
+    cierre:
+      fecha: 2026-05-28
+      archivos:
+        - prisma/schema.prisma
+        - prisma/migrations/20260519221627_enable_rls_on_public_tables/migration.sql (ALTER de _prisma_migrations envuelto en DO $$ IF EXISTS)
+        - prisma/migrations/20260528145421_apunte_slug_y_recurso_nombre/migration.sql (NUEVA)
+      desvios:
+        - prisma migrate resolve --rolled-back falló P3012 (migración no estaba "failed"); workaround DELETE manual de la fila vía MCP Supabase, luego --applied OK
+        - prisma migrate dev --create-only falló en entorno no-interactivo por columna NOT NULL sin default; workaround crear directorio y SQL a mano (SQL correcto, igual al planeado)
+      validacion:
+        - migrate status "up to date"
+        - 0 duplicados (subjectId, slug)
+        - 0 slugs null
+        - 3 apuntes con slugs legibles ("video-para-redes-neuronales", "apunte-de-redes-neuronales", "resumen-de-unidad-1-hasta-la-4-parcial-1")
+    descripcion: |
+      Agregar a prisma/schema.prisma:
+        - Apunte.slug: String, unique compuesto @@unique([subjectId, slug])
+        - ApunteRecurso.nombre: String? (max ~120 chars a nivel app)
+      Generar migración con `pnpm prisma migrate dev --name apunte_slug_y_recurso_nombre`.
+      La migración SQL DEBE incluir backfill de slugs para apuntes existentes:
+        - slugify del titulo (lowercase, sin acentos, espacios -> -, recorte ~80).
+        - Resolución de colisiones por subjectId con sufijo -2, -3.
+      Hacerlo en SQL puro en la misma migración, NO en script aparte.
+    archivos:
+      - prisma/schema.prisma
+      - prisma/migrations/<timestamp>_apunte_slug_y_recurso_nombre/migration.sql
+    validacion: |
+      - prisma format pasa
+      - prisma migrate aplica limpio en local
+      - SELECT verifica que NO hay apuntes con slug null ni colisiones por subjectId
+      - Prisma Client regenerado refleja los nuevos campos
+    estado_cierre: null
+
+  F2:
+    titulo: Utilidades slug y Drive en src/lib
+    criticidad: estandar
+    estado: completada
+    cierre:
+      fecha: 2026-05-28
+      archivos:
+        - src/lib/slug.ts (reescrito, mantiene uniqueSlug y yearSlugFromNumber; agrega slugify nuevo y ensureUniqueSlug)
+        - src/lib/recursos.ts (extendido, exports nuevos sin tocar los existentes)
+        - src/lib/slug.test.ts (11 tests)
+        - src/lib/recursos.test.ts (append, +16 tests)
+      validacion:
+        - vitest 49 passed
+        - tsc --noEmit OK
+      desvios:
+        - slug.ts existía como re-export. Reescritura mantiene compat (uniqueSlug, yearSlugFromNumber) pero cambia comportamiento de slugify (trunca a 80 y fallback 'apunte' si queda vacío). En práctica no rompe porque zod valida nombres no vacíos en años/materias.
+      deuda_menor:
+        - Existen dos slugify divergentes (@/lib/slug y @/lib/utils). Sería conveniente unificar pasando fallback como parámetro opcional. NO bloquea ninguna fase del plan.
+    depende_de: [F1]
+    descripcion: |
+      Crear src/lib/slug.ts:
+        - slugify(text: string): string (NFD normalize, strip diacritics, lowercase,
+          espacios -> -, recorta a 80 chars, sin guiones finales/iniciales).
+        - ensureUniqueSlug(base: string, existing: Set<string>): string.
+
+      Extender src/lib/recursos.ts (mantener API existente intacta):
+        - extraerDriveFileId(url: string): { kind: 'file'|'document'|'spreadsheet'|'presentation', id: string } | null
+          Soporta formatos:
+            drive.google.com/file/d/{ID}/...
+            drive.google.com/open?id={ID}
+            docs.google.com/document/d/{ID}/...
+            docs.google.com/spreadsheets/d/{ID}/...
+            docs.google.com/presentation/d/{ID}/...
+        - driveEmbedUrl(parsed): string
+            file -> https://drive.google.com/file/d/{id}/preview
+            document -> https://docs.google.com/document/d/{id}/preview
+            spreadsheet -> https://docs.google.com/spreadsheets/d/{id}/preview
+            presentation -> https://docs.google.com/presentation/d/{id}/preview
+        - nombreFallbackRecurso(tipo: RecursoTipo): string
+            'YOUTUBE' -> 'Video de YouTube'
+            'DRIVE' -> 'Archivo de Drive'
+    archivos:
+      - src/lib/slug.ts
+      - src/lib/recursos.ts
+    validacion: |
+      - Funciones puras, fáciles de tipar. tsc no debe romper.
+      - Si Vitest está instalado, agregar tests mínimos para slugify, ensureUniqueSlug,
+        extraerDriveFileId (incluyendo fallback null para URL desconocida).
+    estado_cierre: null
+
+  F3:
+    titulo: Server actions de Apunte con slug y nombre de recurso
+    criticidad: critica
+    estado: completada
+    cierre:
+      fecha: 2026-05-28
+      archivos:
+        - src/app/admin/actions.ts (schemas zod + create/update con slug y nombre + audit con slug)
+        - src/app/admin/actions.test.ts (mocks actualizados, 3/3 passing)
+      validacion:
+        - tsc --noEmit OK (tras pnpm prisma generate)
+        - vitest 3/3 OK
+      desvios:
+        - update agrega guard "Apunte no encontrado" cuando findUnique devuelve null (TS narrowing). Aceptado.
+    depende_de: [F1, F2]
+    descripcion: |
+      En src/app/admin/actions.ts:
+        - recursoSchema: agregar nombre opcional (string trim max 120). String vacío -> null.
+        - apunteContentSchema: agregar slug opcional regex /^[a-z0-9-]+$/ max 80.
+        - createApunteAction:
+            * Si slug viene vacío, slugify(titulo).
+            * Consultar apuntes existentes del subjectId, aplicar ensureUniqueSlug.
+            * Persistir nombre en cada recurso (null cuando vacío).
+        - updateApunteAction:
+            * Si slug cambia, validar unicidad por subjectId (excluyendo el propio id).
+            * Si no cambia, mantener el existente.
+            * Mantener el reemplazo deleteMany + createMany de recursos, sumando nombre.
+        - deleteApunteAction: sin cambios.
+      Mantener auditLog si la action actual lo hace; pasar slug en el detail.
+    archivos:
+      - src/app/admin/actions.ts
+    validacion: |
+      - Validar a mano por dev server que crear/editar pasa con y sin slug manual.
+      - Validar que slug duplicado dentro de la misma materia es rechazado con error claro.
+      - Validar que recurso sin nombre se guarda como null (no string vacío).
+    estado_cierre: null
+
+  F4:
+    titulo: UI modal admin ApunteModal (slug auto-sync + nombre recurso)
+    criticidad: estandar
+    es_frontend: true
+    estado: completada
+    cierre:
+      fecha: 2026-05-28
+      archivos:
+        - src/components/admin/ApunteModal.tsx
+      validacion:
+        - tsc --noEmit OK
+        - vitest 3/3 OK
+      desvios:
+        - Modal usa recursosJson (un único hidden JSON), no recursos[i][...]. Ajustado.
+        - Tipo ApunteFull: campos slug/nombre marcados opcionales para no romper TS mientras los callsites no los pasen — F5 debe ajustar el callsite.
+        - slugTouched no se re-resetea al vaciar el slug. Decisión consciente (volver al auto-sync al limpiar daría comportamientos confusos). Si lo querés, reabrir modal restablece.
+    depende_de: [F1, F2, F3]
+    descripcion: |
+      En src/components/admin/ApunteModal.tsx:
+        - Nuevo input slug debajo del título.
+          * Valor inicial: si el apunte existe, su slug actual; si es nuevo,
+            slugify del título en vivo.
+          * Auto-sincroniza con el título solo mientras el usuario NO haya tocado
+            manualmente el campo slug. Una vez tocado, no auto-sobrescribe.
+          * Label: "Link compartible" o similar (lenguaje no técnico).
+          * Hint: muestra preview tipo "/{materia}/apuntes/{slug}".
+        - Por cada recurso del array dinámico:
+          * Nuevo input nombre, opcional, max 120, placeholder "Nombre del recurso (opcional)".
+          * Hint cuando vacío: "Se mostrará como 'Archivo de Drive' / 'Video de YouTube'".
+        - Mantener estética DESIGN.md: surfaces surface-1/2, bordes border-white/10,
+          rounded sm/DEFAULT, Jakarta. Botones con cursor-pointer.
+        - El FormData debe enviar slug y por cada recurso su nombre.
+    archivos:
+      - src/components/admin/ApunteModal.tsx
+    validacion: |
+      - Verificación visual en dev server con materia real.
+      - Probar: crear nuevo, slug se rellena, edito título y slug sigue sincronizando.
+        Toco el slug, edito título: slug ya no cambia. Guardo, persiste.
+      - Probar: agregar recurso sin nombre, otro con nombre. Guardar. Recargar. OK.
+    estado_cierre: null
+
+  F5:
+    titulo: Ruta dedicada para apunte + botón copiar link + wiring de campos nuevos
+    criticidad: critica
+    es_frontend: true
+    estado: completada
+    cierre:
+      fecha: 2026-05-28
+      archivos:
+        - src/lib/queries.ts (select agregó slug + nombre)
+        - src/app/[yearSlug]/[subjectSlug]/SubjectRoutePage.tsx (prop focusApunteSlug + fix callsite del modal)
+        - src/components/mobile/subject/MobileSubject.tsx (tipos + pass-through)
+        - src/components/mobile/subject/SubjectTabs.tsx (initial tab + props)
+        - src/components/mobile/subject/tabs/ApuntesTab.tsx (refs + scroll + botón Copiar link)
+        - src/components/apuntes/ApunteRecursoView.tsx (limpieza del fallback redundante)
+        - src/app/[yearSlug]/[subjectSlug]/apuntes/[apunteSlug]/page.tsx (NUEVO)
+      validacion:
+        - tsc --noEmit OK
+        - vitest 127/127 OK
+      desvios:
+        - Botón "Copiar link" solo en vista mobile (ApuntesTab). Desktop muestra apuntes inline sin tabs — agregarlo ahí queda como follow-up trivial si lo querés.
+        - Indicador visual del apunte enfocado: border-white/20 (sutil). No estaba en el plan, decisión de UX para reforzar el scroll.
+    scope_extendido:
+      - Actualizar getSubjectPageBySlug en src/lib/queries.ts para incluir slug en Apunte y nombre en ApunteRecurso (BLOCKER reportado por F6).
+      - Actualizar tipos ApunteFull / Recurso en ApuntesTab.tsx / SubjectRoutePage.tsx para reflejar los campos nuevos (no opcionales, ya que la query los traerá).
+      - Actualizar callsite del ApunteModal para pasar slug del apunte existente (reportado por F4).
+      - Quitar el botón redundante "Abrir en Drive" en el fallback de ApunteRecursoView (reportado por F6).
+    depende_de: [F1, F2, F3]
+    descripcion: |
+      1) Refactor liviano de SubjectRoutePage (src/.../SubjectRoutePage.tsx u
+         equivalente desde src/app/[yearSlug]/[subjectSlug]/page.tsx):
+           - Aceptar prop opcional focusApunteSlug?: string.
+           - Forzar tab "Apuntes" activo cuando viene focusApunteSlug.
+      2) ApuntesTab.tsx (src/components/mobile/subject/tabs/ApuntesTab.tsx):
+           - Aceptar focusApunteSlug?: string.
+           - Si llega, expandir ese apunte y scrollear a su card al montar.
+             Usar useEffect + ref + scrollIntoView({ behavior: 'smooth', block: 'start' }).
+           - Agregar botón "Copiar link" en cada card de apunte:
+               * Genera URL absoluta /{yearSlug}/{subjectSlug}/apuntes/{slug}.
+               * navigator.clipboard.writeText + feedback inline ("Link copiado").
+               * Botón con cursor-pointer, estilo DESIGN.md.
+      3) Nueva ruta src/app/[yearSlug]/[subjectSlug]/apuntes/[apunteSlug]/page.tsx:
+           - Reutiliza el lookup que ya hace la página de materia.
+           - Busca apunte por subjectId + slug. notFound() si no existe.
+           - Renderiza SubjectRoutePage con focusApunteSlug={apunteSlug}.
+      Mantener vocabulario user-friendly (R1) en cualquier texto visible.
+    archivos:
+      - src/app/[yearSlug]/[subjectSlug]/apuntes/[apunteSlug]/page.tsx
+      - src/app/[yearSlug]/[subjectSlug]/page.tsx (si requiere ajuste mínimo)
+      - src/components/mobile/subject/tabs/ApuntesTab.tsx
+      - src/components/.../SubjectRoutePage.tsx (a confirmar path real)
+    validacion: |
+      - Dev server: abrir /[year]/[subject]/apuntes/[slug-real] carga la materia
+        con el tab Apuntes activo y la card del apunte enfocada.
+      - Slug inexistente devuelve 404.
+      - Botón "Copiar link" copia URL correcta. Pega en otra pestaña abre el apunte focado.
+      - Ruta antigua /[year]/[subject] sigue funcionando igual (sin foco).
+    estado_cierre: null
+
+  F6:
+    titulo: Preview de Drive inline + nombre/fallback en cada recurso
+    criticidad: estandar
+    es_frontend: true
+    estado: completada
+    cierre:
+      fecha: 2026-05-28
+      archivos:
+        - src/components/apuntes/ApunteRecursoView.tsx
+      validacion:
+        - tsc --noEmit OK
+        - sin tests previos del componente
+      desvios:
+        - "BLOCKER detectado: getSubjectPageBySlug (src/lib/queries.ts:254-262) NO selecciona nombre en recursos. Hasta arreglar eso, el nombre llega undefined y se ve siempre el fallback. F5 debe actualizar la query."
+        - Tipo Recurso en ApuntesTab.tsx tampoco tiene nombre. Mismo motivo. F5 debe ajustar.
+        - Aspect ratio aspect-video para PDFs/Docs es cosmético; podría afinarse a futuro. No bloqueante.
+        - Header siempre muestra "Abrir en Drive" y el fallback (URL no parseable) también muestra su botón con icono. Redundancia visual en ese caso de borde; consciente. F5 puede ajustar opcionalmente.
+    depende_de: [F1, F2, F3]
+    descripcion: |
+      En src/components/apuntes/ApunteRecursoView.tsx:
+        - YOUTUBE: sin cambios funcionales.
+        - DRIVE:
+            * parsed = extraerDriveFileId(recurso.url)
+            * Si parsed -> iframe con src={driveEmbedUrl(parsed)},
+              allow="autoplay", allowFullScreen, wrapper aspect-video (mismo
+              tratamiento que YouTube ya usa), bordes/redondeo DESIGN.md.
+            * Si no parsea -> fallback al link con icono actual.
+        - Header del recurso para AMBOS tipos:
+            * Título mostrado = recurso.nombre ?? nombreFallbackRecurso(recurso.tipo)
+            * Link secundario "Abrir en {Drive|YouTube}" → href=recurso.url, target=_blank,
+              cursor-pointer.
+        - Estética: surface-1/2 con border-white/10, rounded-DEFAULT,
+          tipografía Jakarta. Vocabulario user-friendly (R1).
+    archivos:
+      - src/components/apuntes/ApunteRecursoView.tsx
+    validacion: |
+      - Dev server: probar con un archivo Drive público (imagen, video, PDF, doc)
+        y un archivo NO compartido (debe mostrar el aviso nativo "necesitas permiso"
+        dentro del iframe, no romper la app).
+      - YouTube embed sigue funcionando igual.
+      - Recurso sin nombre muestra el fallback correcto.
+    estado_cierre: null
+
+estado_global:
+  fase_actual: completado
+  proxima_fase: null
+  bloqueada: false
+  auditoria_final:
+    fecha: 2026-05-28
+    resultado: ok
+    tsc: clean
+    vitest: 127/127
+    cobertura_objetivo:
+      - "1) Nombre opcional al recurso: implementado en schema (ApunteRecurso.nombre String?), server action (recursoSchema), modal admin (input + hint), vista pública (header con fallback)."
+      - "2) Slug compartible por apunte: implementado en schema (slug + unique compuesto), backfill SQL para apuntes existentes, server action (validación + unicidad por materia), modal admin (auto-sync con título, hint preview), nueva ruta /[year]/[subject]/apuntes/[slug] con focus y scroll, botón Copiar link."
+      - "3) Preview Drive inline: implementado con iframe oficial /preview en ApunteRecursoView usando extraerDriveFileId/driveEmbedUrl; fallback al link clásico cuando la URL no parsea."
+    deuda_aceptada:
+      - slugify divergente entre @/lib/slug y @/lib/utils. F2 documentó. No bloquea ningún flujo actual.
+      - Copy link solo en mobile. Follow-up trivial si se quiere también en desktop.
+      - aspect-video uniforme para todos los embeds de Drive (PDFs/Docs se ven en 16:9). Cosmético.
+      - Migración RLS editada con DO $$ IF EXISTS para fix de shadow DB. Resincronización de checksum requirió DELETE manual + resolve --applied. Documentado en engram.
+    pendiente_del_usuario:
+      - Verificación manual end-to-end con dev server.
+      - Decidir estrategia de commits (sugerencia abajo).
+  notas: |
+    F1 BLOQUEADA por blocker pre-existente del repo.
+    Migración 20260519221627_enable_rls_on_public_tables hace ALTER TABLE "_prisma_migrations"
+    ENABLE ROW LEVEL SECURITY, que falla en la shadow DB efímera que Prisma genera para
+    validar nuevas migraciones (tabla aún no existe ahí). Esto bloquea TODO `migrate dev` futuro.
+
+    Deuda secundaria detectada: migración local 20260526120000_slug_simplification existe en
+    repo pero NO está aplicada en remoto. Repo tiene 9, remoto tiene 8.
+
+    Esperando decisión del usuario sobre el workaround a usar.
+
+historial:
+  - fecha: 2026-05-28
+    fase: F1
+    evento: bloqueada
+    detalle: shadow database falla por ALTER en _prisma_migrations en migración RLS preexistente

@@ -22,6 +22,8 @@ import {
 } from '@/components/admin/SubjectPageAdminOverlay'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { ApunteRecursoView } from '@/components/apuntes/ApunteRecursoView'
+import { ApunteFocusScroll } from '@/components/apuntes/ApunteFocusScroll'
+import { CopyApunteLinkButton } from '@/components/apuntes/CopyApunteLinkButton'
 import { EditApunteButton } from '@/components/admin/EditApunteButton'
 import { formatDescription } from '@/lib/text'
 import { sanitizeRichHtml } from '@/lib/sanitize'
@@ -51,7 +53,8 @@ export function SubjectRoutePage({
   activeCommission,
   visibleEvents,
   agendaId,
-}: SubjectRouteContext) {
+  focusApunteSlug,
+}: SubjectRouteContext & { focusApunteSlug?: string }) {
   const colors = getYearColorClasses(subject.year.slug)
   const subjectHref = buildSubjectHref({
     yearSlug: subject.year.slug,
@@ -323,53 +326,70 @@ export function SubjectRoutePage({
             ) : (
               <div className="stagger-children grid gap-4 xl:grid-cols-2">
                 {subject.apuntes.map((apunte) => (
-                  <DarkCard key={apunte.id} className="flex h-full flex-col p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38">
-                          Apunte
-                        </p>
-                        <h3 className="mt-2 text-xl font-black tracking-tight text-white">
-                          {apunte.titulo}
-                        </h3>
+                  <ApunteFocusScroll
+                    key={apunte.id}
+                    slug={apunte.slug}
+                    focusedSlug={focusApunteSlug}
+                    className="scroll-mt-24"
+                    focusedClassName="rounded-lg ring-1 ring-white/20"
+                  >
+                    <DarkCard className="flex h-full flex-col p-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38">
+                            Apunte
+                          </p>
+                          <h3 className="mt-2 text-xl font-black tracking-tight text-white">
+                            {apunte.titulo}
+                          </h3>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <AdminControls yearId={subject.year.id}>
+                            <EditApunteButton
+                              apunte={{
+                                id: apunte.id,
+                                titulo: apunte.titulo,
+                                slug: apunte.slug,
+                                descripcionHtml: apunte.descripcionHtml ?? '',
+                                recursos: apunte.recursos,
+                              }}
+                            />
+                          </AdminControls>
+                          <DeleteApunteButton
+                            apunteId={apunte.id}
+                            subjectSlug={subject.slug}
+                            yearId={subject.year.id}
+                          />
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <AdminControls yearId={subject.year.id}>
-                          <EditApunteButton
-                            apunte={{
-                              id: apunte.id,
-                              titulo: apunte.titulo,
-                              descripcionHtml: apunte.descripcionHtml,
-                              recursos: apunte.recursos,
-                            }}
-                          />
-                        </AdminControls>
-                        <DeleteApunteButton
-                          apunteId={apunte.id}
+                      {apunte.descripcionHtml ? (
+                        <div
+                          className="mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
+                          dangerouslySetInnerHTML={{
+                            __html: sanitizeRichHtml(apunte.descripcionHtml),
+                          }}
+                        />
+                      ) : null}
+
+                      {apunte.recursos.length > 0 && (
+                        <div className="mt-4 flex flex-col gap-3">
+                          {apunte.recursos.map((recurso) => (
+                            <ApunteRecursoView key={recurso.id} recurso={recurso} />
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="mt-4 flex">
+                        <CopyApunteLinkButton
+                          yearSlug={subject.year.slug}
                           subjectSlug={subject.slug}
-                          yearId={subject.year.id}
+                          apunteSlug={apunte.slug}
                         />
                       </div>
-                    </div>
-
-                    {apunte.descripcionHtml ? (
-                      <div
-                        className="mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
-                        dangerouslySetInnerHTML={{
-                          __html: sanitizeRichHtml(apunte.descripcionHtml),
-                        }}
-                      />
-                    ) : null}
-
-                    {apunte.recursos.length > 0 && (
-                      <div className="mt-4 flex flex-col gap-3">
-                        {apunte.recursos.map((recurso) => (
-                          <ApunteRecursoView key={recurso.id} recurso={recurso} />
-                        ))}
-                      </div>
-                    )}
-                  </DarkCard>
+                    </DarkCard>
+                  </ApunteFocusScroll>
                 ))}
               </div>
             )}
@@ -381,6 +401,7 @@ export function SubjectRoutePage({
         <MobileSubject
           subject={subject}
           allYears={allYears}
+          focusApunteSlug={focusApunteSlug}
           commissions={subject.commissions}
           events={visibleEvents.map((evento) => ({
             id: evento.id,

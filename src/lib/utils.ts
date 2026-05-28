@@ -44,11 +44,13 @@ export function formatAgendaTime(date: string | Date): string {
   return dayPeriod ? `${hour}:${minute} ${dayPeriod}` : `${hour}:${minute}`
 }
 
+import { slugify as slugifyCore } from './slug'
+
+/**
+ * Slug ligero para IDs/clases CSS donde el truncado y el fallback genérico
+ * no aplican (ej: keys de eventos del calendario). Para slugs persistidos
+ * en base usar directamente `@/lib/slug.slugify`.
+ */
 export function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
+  return slugifyCore(input, { maxLength: Infinity, fallback: '' })
 }

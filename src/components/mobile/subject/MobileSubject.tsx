@@ -27,7 +27,7 @@ interface SubjectForMobile {
   playlistEnabled: boolean
   year: { id: string; slug: string; nombre: string; career: { nombre: string } }
   agenda: { id: string; eventos: Array<{ id: string; titulo: string; descripcionHtml: string | null; fecha: Date | string; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId?: string | null; commissionSlug?: string | null; commissionNombre?: string | null }> } | null
-  apuntes: Array<{ id: string; titulo: string; descripcionHtml: string | null; recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE'; url: string; orden: number }> }>
+  apuntes: Array<{ id: string; titulo: string; slug: string; descripcionHtml: string | null; recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE'; url: string; orden: number; nombre: string | null }> }>
 }
 
 interface AllYear { slug: string; nombre: string; subjectsCount: number }
@@ -61,6 +61,7 @@ export function MobileSubject({
   events,
   activeCommissionName,
   tiposEvento,
+  focusApunteSlug,
 }: {
   subject: SubjectForMobile
   allYears: AllYear[]
@@ -68,6 +69,7 @@ export function MobileSubject({
   events?: SubjectMobileEvent[]
   activeCommissionName?: string
   tiposEvento: readonly TipoEvento[]
+  focusApunteSlug?: string
 }) {
   const colors = getYearColorClasses(subject.year.slug)
   const drawerYears: MobileShellDrawerYear[] = allYears
@@ -258,6 +260,7 @@ export function MobileSubject({
             commissionNombre: e.commissionNombre ?? null,
           }))}
           apuntes={subject.apuntes}
+          focusApunteSlug={focusApunteSlug}
           tiposEvento={tiposEvento}
           subjects={[{
             id: subject.id,

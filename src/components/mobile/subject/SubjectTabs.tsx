@@ -31,10 +31,11 @@ interface SubjectTabsProps {
   yearId: string
   agendaId: string
   events: MobileCalendarEvent[]
-  apuntes: Array<{ id: string; titulo: string; descripcionHtml: string | null; recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE'; url: string; orden: number }> }>
+  apuntes: Array<{ id: string; titulo: string; slug: string; descripcionHtml: string | null; recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE'; url: string; orden: number; nombre: string | null }> }>
   tiposEvento: readonly TipoEvento[]
   subjects?: readonly EventModalSubject[]
   commissions: readonly CommissionOption[]
+  focusApunteSlug?: string
 }
 
 const TABS: Array<{ key: TabKey; label: string; Icon: typeof CalendarDays }> = [
@@ -49,8 +50,9 @@ const HASH_MAP: Record<string, TabKey> = {
   '#apuntes': 'apuntes',
 }
 
-export function SubjectTabs({ subjectSlug, subjectName, yearSlug, yearId, agendaId, events, apuntes, tiposEvento, subjects, commissions }: SubjectTabsProps) {
+export function SubjectTabs({ subjectSlug, subjectName, yearSlug, yearId, agendaId, events, apuntes, tiposEvento, subjects, commissions, focusApunteSlug }: SubjectTabsProps) {
   const [active, setActive] = useState<TabKey>(() => {
+    if (focusApunteSlug) return 'apuntes'
     if (typeof window === 'undefined') return 'agenda'
     const hash = window.location.hash
     return hash in HASH_MAP ? HASH_MAP[hash] : 'agenda'
@@ -107,7 +109,15 @@ export function SubjectTabs({ subjectSlug, subjectName, yearSlug, yearId, agenda
           />
         )}
         {active === 'quiz' && <QuizTab subjectSlug={subjectSlug} subjectName={subjectName} yearSlug={yearSlug} yearId={yearId} />}
-        {active === 'apuntes' && <ApuntesTab apuntes={apuntes} yearId={yearId} subjectSlug={subjectSlug} />}
+        {active === 'apuntes' && (
+          <ApuntesTab
+            apuntes={apuntes}
+            yearId={yearId}
+            yearSlug={yearSlug}
+            subjectSlug={subjectSlug}
+            focusApunteSlug={focusApunteSlug}
+          />
+        )}
       </div>
     </div>
   )
