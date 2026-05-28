@@ -66,7 +66,7 @@ export async function proxy(request: NextRequest) {
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
     "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com https://drive.google.com https://docs.google.com",
     "object-src 'none'",
-    "frame-ancestors 'none'",
+    "frame-ancestors 'self'",
     "base-uri 'self'",
     "form-action 'self'",
   ].join('; ')
