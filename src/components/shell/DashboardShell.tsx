@@ -25,7 +25,7 @@ export function DashboardShell({
   mainClassName,
 }: DashboardShellProps) {
   const resolvedHeaderOverlay = headerOverlay === undefined ? (
-    <div className="pointer-events-none absolute bottom-[-1px] left-[332px] z-10 hidden lg:block">
+    <div className="absolute bottom-[-1px] left-[332px] z-10 hidden lg:block">
       <Mascot size={60} />
     </div>
   ) : headerOverlay
