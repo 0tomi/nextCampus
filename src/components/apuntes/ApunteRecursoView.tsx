@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import {
   driveEmbedUrl,
@@ -13,8 +13,7 @@ import {
   type DriveKind,
   type RecursoTipo,
 } from '@/lib/recursos'
-import { ExternalLink, FileCode2, FileText, ImageIcon, PlayCircle } from 'lucide-react'
-import { Sheet } from '@/components/ui/Sheet'
+import { ExternalLink, FileCode2, FileText, ImageIcon, PlayCircle, X } from 'lucide-react'
 
 function driveEmbedClassName(kind: DriveKind): string {
   const base = 'w-full rounded-md border border-white/10'
@@ -169,15 +168,48 @@ function HtmlPreviewCard({
   recursoId: string
 }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [animate, setAnimate] = useState(false)
+
+  const handleOpen = () => {
+    setIsOpen(true)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setAnimate(true)
+      })
+    })
+  }
+
+  const handleClose = () => {
+    setAnimate(false)
+    setTimeout(() => {
+      setIsOpen(false)
+    }, 300)
+  }
 
   const handleClick = (e: React.MouseEvent) => {
     if (!href) return
-    // Si es desktop (ancho >= 1024px), abrimos el modal en vez de navegar
     if (window.matchMedia('(min-width: 1024px)').matches) {
       e.preventDefault()
-      setIsOpen(true)
+      handleOpen()
     }
   }
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = originalOverflow
+    }
+  }, [isOpen])
 
   const content = (
     <div className="rounded-md border border-cyan-300/15 bg-[radial-gradient(circle_at_18%_24%,rgba(34,211,238,0.14),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.045),rgba(255,255,255,0.015))] p-4">
@@ -213,23 +245,50 @@ function HtmlPreviewCard({
         content
       )}
 
-      {/* Modal para previsualizar en desktop */}
-      <Sheet
-        open={isOpen}
-        onClose={() => setIsOpen(false)}
-        title={title}
-        className="max-w-4xl"
-      >
-        <div className="h-[75vh] w-full py-2">
-          <iframe
-            src={`/api/apuntes/recursos/${recursoId}/preview`}
-            className="h-full w-full rounded-md border border-white/10 bg-black/20"
-            loading="lazy"
-            sandbox=""
-            title={title}
-          />
+      {isOpen && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity duration-300 ${
+            animate ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={handleClose}
+          role="presentation"
+        >
+          <div
+            className={`relative w-[85vw] h-[80vh] max-w-6xl rounded-2xl border border-white/10 bg-surface-1 shadow-[0_24px_64px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden transition-all duration-300 ${
+              animate ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+              <h2 className="text-base font-black tracking-tight text-white">
+                {title}
+              </h2>
+              <button
+                type="button"
+                onClick={handleClose}
+                aria-label="Cerrar"
+                className="inline-flex h-8 w-8 items-center justify-center rounded text-white/50 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 w-full p-6">
+              <iframe
+                src={`/api/apuntes/recursos/${recursoId}/preview`}
+                className="h-full w-full rounded-md border border-white/10 bg-black/20"
+                loading="lazy"
+                sandbox=""
+                title={title}
+              />
+            </div>
+          </div>
         </div>
-      </Sheet>
+      )}
     </>
   )
 }
