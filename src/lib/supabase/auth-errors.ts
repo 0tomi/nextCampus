@@ -24,6 +24,15 @@ export function isAuthSessionMissingError(error: unknown): boolean {
   return message.includes('auth session missing')
 }
 
+export function isInvalidLoginCredentialsError(error: unknown): boolean {
+  const message = getErrorMessage(error).toLowerCase()
+
+  return (
+    message.includes('invalid login credentials') ||
+    (message.includes('email') && message.includes('password') && message.includes('invalid'))
+  )
+}
+
 export function isSupabaseAuthCookie(name: string): boolean {
   return (
     name.startsWith('sb-') &&

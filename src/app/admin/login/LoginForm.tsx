@@ -1,9 +1,31 @@
 'use client'
 
-import { useState } from 'react'
-import { ArrowRight, Shield } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { AlertTriangle, ArrowRight, Shield } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DarkCard } from '@/components/ui/DarkCard'
+
+type LoginResponsePayload = {
+  message?: string
+  ok?: boolean
+  redirectTo?: string
+  retryAfterSeconds?: number
+}
+
+function formatRetryTime(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+
+  if (minutes <= 0) {
+    return `${seconds} segundo${seconds === 1 ? '' : 's'}`
+  }
+
+  if (seconds === 0) {
+    return `${minutes} minuto${minutes === 1 ? '' : 's'}`
+  }
+
+  return `${minutes} min ${seconds.toString().padStart(2, '0')} s`
+}
 
 export function LoginForm() {
   const router = useRouter()
@@ -12,9 +34,24 @@ export function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [blockedSeconds, setBlockedSeconds] = useState(0)
+
+  const isBlocked = blockedSeconds > 0
+
+  useEffect(() => {
+    if (blockedSeconds <= 0) return
+
+    const timer = window.setInterval(() => {
+      setBlockedSeconds((current) => (current <= 1 ? 0 : current - 1))
+    }, 1000)
+
+    return () => window.clearInterval(timer)
+  }, [blockedSeconds])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (isBlocked) return
+
     setLoading(true)
     setError(null)
 
@@ -33,15 +70,18 @@ export function LoginForm() {
         }),
       })
 
-      const payload = (await response.json().catch(() => null)) as
-        | { message?: string; ok?: boolean; redirectTo?: string }
-        | null
+      const payload = (await response.json().catch(() => null)) as LoginResponsePayload | null
+
+      if (response.status === 429 && payload?.retryAfterSeconds) {
+        setBlockedSeconds(payload.retryAfterSeconds)
+      }
 
       if (!response.ok || !payload?.ok) {
         setError(payload?.message ?? 'No pudimos iniciar sesión. Intentá de nuevo.')
         return
       }
 
+      setBlockedSeconds(0)
       router.push(payload.redirectTo ?? '/')
       router.refresh()
     } catch {
@@ -87,6 +127,7 @@ export function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            disabled={loading || isBlocked}
             className="block w-full rounded-none border border-white/5 bg-[#0a0a0a] px-3 py-3 text-sm text-white placeholder:text-white/28 focus:border-white/10 focus:outline-none"
           />
           <input
@@ -95,15 +136,38 @@ export function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            disabled={loading || isBlocked}
             className="block w-full rounded-none border border-white/5 bg-[#0a0a0a] px-3 py-3 text-sm text-white placeholder:text-white/28 focus:border-white/10 focus:outline-none"
           />
+          {isBlocked ? (
+            <div className="relative overflow-hidden rounded-none border border-amber-300/20 bg-gradient-to-br from-amber-400/12 via-[#1a1304] to-rose-400/10 px-4 py-4 text-amber-50 shadow-[0_0_0_1px_rgba(251,191,36,0.06),0_18px_50px_rgba(251,191,36,0.08)]">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/70 to-transparent" />
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center border border-amber-200/20 bg-amber-200/10 text-amber-100">
+                  <AlertTriangle className="h-4 w-4" />
+                </span>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold tracking-[0.02em] text-amber-50">
+                    Acceso pausado
+                  </p>
+                  <p className="text-sm leading-6 text-amber-100/82">
+                    Se excedió el límite de intentos. Por seguridad, esperá un momento y
+                    volvé a intentar más tarde.
+                  </p>
+                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-amber-200/72">
+                    Disponible otra vez en {formatRetryTime(blockedSeconds)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
           {error ? <p className="text-sm text-rose-300">{error}</p> : null}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || isBlocked}
             className="inline-flex w-full items-center justify-center gap-2 rounded-none border border-violet-400/20 bg-gradient-to-r from-violet-500 to-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_24px_80px_rgba(109,40,217,0.28)] transition hover:from-violet-400 hover:to-purple-500 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
-            {loading ? 'Ingresando…' : 'Ingresar'}
+            {loading ? 'Ingresando…' : isBlocked ? 'Intentá más tarde' : 'Ingresar'}
             <ArrowRight className="h-4 w-4" />
           </button>
         </form>

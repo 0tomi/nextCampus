@@ -6,6 +6,7 @@ import {
   registerAdminLoginFailure,
 } from '@/lib/admin-login-rate-limit'
 import { getClientIp } from '@/lib/ratelimit'
+import { isInvalidLoginCredentialsError } from '@/lib/supabase/auth-errors'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 const loginSchema = z.object({
@@ -54,12 +55,29 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createSupabaseServerClient()
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
+  let authError: unknown = null
 
-  if (error) {
+  try {
+    const result = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+    authError = result.error
+  } catch (error) {
+    authError = error
+  }
+
+  if (authError) {
+    if (!isInvalidLoginCredentialsError(authError)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: 'No pudimos validar el acceso ahora. Intentá de nuevo en unos minutos.',
+        },
+        { status: 503 },
+      )
+    }
+
     const failureStatus = await registerAdminLoginFailure(email, ip)
 
     if (!failureStatus.allowed) {
