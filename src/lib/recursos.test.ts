@@ -5,6 +5,8 @@ import {
   youtubeEmbedUrl,
   extraerDriveFileId,
   driveEmbedUrl,
+  driveThumbnailUrl,
+  inferDrivePreviewMode,
   nombreFallbackRecurso,
 } from './recursos'
 
@@ -131,6 +133,26 @@ describe('extraerDriveFileId', () => {
     ).toEqual({ kind: 'file', id: '1aBcDeF_g-h' })
   })
 
+  it('parsea drive.google.com/uc?id={ID}', () => {
+    expect(
+      extraerDriveFileId('https://drive.google.com/uc?export=view&id=1aBcDeF_g-h'),
+    ).toEqual({ kind: 'file', id: '1aBcDeF_g-h' })
+  })
+
+  it('parsea drive.google.com/thumbnail?id={ID}', () => {
+    expect(
+      extraerDriveFileId('https://drive.google.com/thumbnail?id=1aBcDeF_g-h&sz=w800'),
+    ).toEqual({ kind: 'file', id: '1aBcDeF_g-h' })
+  })
+
+  it('preserva resourcekey cuando existe', () => {
+    expect(
+      extraerDriveFileId(
+        'https://drive.google.com/file/d/1aBcDeF_g-h/view?resourcekey=0-testKey',
+      ),
+    ).toEqual({ kind: 'file', id: '1aBcDeF_g-h', resourceKey: '0-testKey' })
+  })
+
   it('parsea docs.google.com/document/d/{ID}/edit', () => {
     expect(
       extraerDriveFileId('https://docs.google.com/document/d/1aBcDeF_g-h/edit'),
@@ -188,6 +210,12 @@ describe('driveEmbedUrl', () => {
     )
   })
 
+  it('agrega resourcekey a la preview si corresponde', () => {
+    expect(driveEmbedUrl({ kind: 'file', id: 'abc123', resourceKey: '0-key' })).toBe(
+      'https://drive.google.com/file/d/abc123/preview?resourcekey=0-key',
+    )
+  })
+
   it('genera preview para document', () => {
     expect(driveEmbedUrl({ kind: 'document', id: 'abc123' })).toBe(
       'https://docs.google.com/document/d/abc123/preview',
@@ -204,6 +232,44 @@ describe('driveEmbedUrl', () => {
     expect(driveEmbedUrl({ kind: 'presentation', id: 'abc123' })).toBe(
       'https://docs.google.com/presentation/d/abc123/preview',
     )
+  })
+})
+
+describe('driveThumbnailUrl', () => {
+  it('genera thumbnail para archivos de Drive', () => {
+    expect(driveThumbnailUrl({ kind: 'file', id: 'abc123' }, 800)).toBe(
+      'https://drive.google.com/thumbnail?id=abc123&sz=w800',
+    )
+  })
+
+  it('preserva resourcekey en thumbnails', () => {
+    expect(driveThumbnailUrl({ kind: 'file', id: 'abc123', resourceKey: '0-key' }, 800)).toBe(
+      'https://drive.google.com/thumbnail?id=abc123&sz=w800&resourcekey=0-key',
+    )
+  })
+})
+
+describe('inferDrivePreviewMode', () => {
+  it('embebe documentos nativos de Google', () => {
+    expect(inferDrivePreviewMode({ kind: 'document', id: 'abc123' }, 'Resumen')).toBe('embed')
+  })
+
+  it('usa thumbnail para imágenes', () => {
+    expect(inferDrivePreviewMode({ kind: 'file', id: 'abc123' }, 'foto.png')).toBe('thumbnail')
+  })
+
+  it('embebe PDFs y videos con extensión conocida', () => {
+    expect(inferDrivePreviewMode({ kind: 'file', id: 'abc123' }, 'clase.pdf')).toBe('embed')
+    expect(inferDrivePreviewMode({ kind: 'file', id: 'abc123' }, 'clase.mp4')).toBe('embed')
+  })
+
+  it('evita previews automáticas para HTML y PowerPoint', () => {
+    expect(inferDrivePreviewMode({ kind: 'file', id: 'abc123' }, 'laboratorio.html')).toBe('fallback')
+    expect(inferDrivePreviewMode({ kind: 'file', id: 'abc123' }, 'PPT de RNN')).toBe('fallback')
+  })
+
+  it('usa thumbnail para archivos Drive genéricos', () => {
+    expect(inferDrivePreviewMode({ kind: 'file', id: 'abc123' }, 'Material')).toBe('thumbnail')
   })
 })
 

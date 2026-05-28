@@ -11,6 +11,7 @@ import { formatDate } from '@/lib/utils'
 export interface HomeLatestApunte {
   id: string
   titulo: string
+  slug: string
   createdAt: Date | string
   subjectSlug: string
   subjectNombre: string
@@ -24,16 +25,16 @@ interface HomeLatestApuntesProps {
   variant?: 'desktop' | 'mobile'
 }
 
-export function buildLatestApunteHref(
-  apunte: Pick<HomeLatestApunte, 'yearSlug' | 'subjectSlug'>,
+function buildLatestApunteHref(
+  apunte: Pick<HomeLatestApunte, 'yearSlug' | 'subjectSlug' | 'slug'>,
 ) {
-  return buildSubjectHref({
+  return `${buildSubjectHref({
     yearSlug: apunte.yearSlug,
     subjectSlug: apunte.subjectSlug,
-  })
+  })}/apuntes/${apunte.slug}`
 }
 
-export function isLatestApunteVisible(
+function isLatestApunteVisible(
   apunte: Pick<HomeLatestApunte, 'yearSlug' | 'subjectSlug'>,
   prefs: UserPreferences | null,
 ) {

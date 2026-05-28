@@ -92,6 +92,7 @@ export type DriveKind = 'file' | 'document' | 'spreadsheet' | 'presentation'
 export interface DriveParsed {
   kind: DriveKind
   id: string
+  resourceKey?: string
 }
 
 // IDs de Google Drive/Docs son alfanuméricos + `_` y `-`.
@@ -102,6 +103,8 @@ const DRIVE_ID_RE = /^[a-zA-Z0-9_-]+$/
  * Soporta:
  *   - drive.google.com/file/d/{ID}/...
  *   - drive.google.com/open?id={ID}
+ *   - drive.google.com/uc?id={ID}
+ *   - drive.google.com/thumbnail?id={ID}
  *   - docs.google.com/document/d/{ID}/...
  *   - docs.google.com/spreadsheets/d/{ID}/...
  *   - docs.google.com/presentation/d/{ID}/...
@@ -123,16 +126,17 @@ export function extraerDriveFileId(rawUrl: string): DriveParsed | null {
 
   let kind: DriveKind | null = null
   let id: string | null = null
+  const resourceKey = u.searchParams.get('resourcekey') ?? undefined
 
   if (host === 'drive.google.com') {
     if (segments[0] === 'file' && segments[1] === 'd' && segments[2]) {
       kind = 'file'
       id = segments[2]
-    } else if (u.pathname === '/open') {
-      const openId = u.searchParams.get('id')
-      if (openId) {
+    } else if (u.pathname === '/open' || u.pathname === '/uc' || u.pathname === '/thumbnail') {
+      const queryId = u.searchParams.get('id')
+      if (queryId) {
         kind = 'file'
-        id = openId
+        id = queryId
       }
     }
   } else if (host === 'docs.google.com') {
@@ -153,7 +157,14 @@ export function extraerDriveFileId(rawUrl: string): DriveParsed | null {
   if (!kind || !id) return null
   if (!DRIVE_ID_RE.test(id)) return null
 
-  return { kind, id }
+  return resourceKey ? { kind, id, resourceKey } : { kind, id }
+}
+
+function withResourceKey(url: string, resourceKey?: string): string {
+  if (!resourceKey) return url
+  const u = new URL(url)
+  u.searchParams.set('resourcekey', resourceKey)
+  return u.toString()
 }
 
 /**
@@ -162,16 +173,66 @@ export function extraerDriveFileId(rawUrl: string): DriveParsed | null {
  * el aviso nativo de Google pidiendo permisos.
  */
 export function driveEmbedUrl(parsed: DriveParsed): string {
+  const resourceKey = parsed.resourceKey
   switch (parsed.kind) {
     case 'file':
-      return `https://drive.google.com/file/d/${parsed.id}/preview`
+      return withResourceKey(`https://drive.google.com/file/d/${parsed.id}/preview`, resourceKey)
     case 'document':
-      return `https://docs.google.com/document/d/${parsed.id}/preview`
+      return withResourceKey(`https://docs.google.com/document/d/${parsed.id}/preview`, resourceKey)
     case 'spreadsheet':
-      return `https://docs.google.com/spreadsheets/d/${parsed.id}/preview`
+      return withResourceKey(`https://docs.google.com/spreadsheets/d/${parsed.id}/preview`, resourceKey)
     case 'presentation':
-      return `https://docs.google.com/presentation/d/${parsed.id}/preview`
+      return withResourceKey(`https://docs.google.com/presentation/d/${parsed.id}/preview`, resourceKey)
   }
+}
+
+export function driveThumbnailUrl(parsed: DriveParsed, width = 1200): string {
+  const u = new URL('https://drive.google.com/thumbnail')
+  u.searchParams.set('id', parsed.id)
+  u.searchParams.set('sz', `w${width}`)
+  if (parsed.resourceKey) u.searchParams.set('resourcekey', parsed.resourceKey)
+  return u.toString()
+}
+
+export type DrivePreviewMode = 'embed' | 'thumbnail' | 'fallback'
+
+const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'avif'])
+const VIDEO_EXTENSIONS = new Set(['mp4', 'webm', 'mov', 'm4v'])
+const DOCUMENT_EXTENSIONS = new Set(['pdf'])
+const UNSAFE_PREVIEW_EXTENSIONS = new Set([
+  'html',
+  'htm',
+  'ppt',
+  'pptx',
+  'doc',
+  'docx',
+  'xls',
+  'xlsx',
+  'zip',
+  'rar',
+  '7z',
+])
+
+export function inferDrivePreviewMode(
+  parsed: DriveParsed,
+  label?: string | null,
+): DrivePreviewMode {
+  if (parsed.kind !== 'file') return 'embed'
+
+  const normalized = label?.trim().toLowerCase() ?? ''
+  const extension = normalized.match(/\.([a-z0-9]+)$/)?.[1]
+
+  if (extension) {
+    if (IMAGE_EXTENSIONS.has(extension)) return 'thumbnail'
+    if (VIDEO_EXTENSIONS.has(extension) || DOCUMENT_EXTENSIONS.has(extension)) return 'embed'
+    if (UNSAFE_PREVIEW_EXTENSIONS.has(extension)) return 'fallback'
+  }
+
+  if (/\b(html?|pptx?|docx?|xlsx?|zip|rar|7z)\b/.test(normalized)) {
+    return 'fallback'
+  }
+
+  return 'thumbnail'
 }
 
 /**

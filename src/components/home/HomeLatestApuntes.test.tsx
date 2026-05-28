@@ -14,6 +14,7 @@ function makeApunte(overrides: Partial<HomeLatestApunte> = {}): HomeLatestApunte
   return {
     id: 'apunte-1',
     titulo: 'Parcial 1 resuelto',
+    slug: 'parcial-1-resuelto',
     createdAt: new Date('2026-05-20T12:00:00.000Z'),
     subjectSlug: 'calculo',
     subjectNombre: 'Cálculo',
@@ -38,7 +39,7 @@ describe('HomeLatestApuntes', () => {
     expect(markup).toContain('Material nuevo para repasar')
     expect(markup).toContain('Primer año')
     expect(markup).toContain('Cálculo')
-    expect(markup).toContain('href="/primer-anio/calculo"')
+    expect(markup).toContain('href="/primer-anio/calculo/apuntes/parcial-1-resuelto"')
     expect(markup).toContain('Parcial 1 resuelto')
   })
 

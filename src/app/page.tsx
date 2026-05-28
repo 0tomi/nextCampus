@@ -181,6 +181,7 @@ export default async function HomePage() {
   const latestApuntes = latestApuntesRaw.map((apunte) => ({
     id: apunte.id,
     titulo: apunte.titulo,
+    slug: apunte.slug,
     createdAt: apunte.createdAt,
     subjectSlug: apunte.subject.slug,
     subjectNombre: apunte.subject.nombre,

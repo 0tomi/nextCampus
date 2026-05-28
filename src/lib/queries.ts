@@ -276,6 +276,64 @@ export function getSubjectPageBySlug(slug: string) {
   )()
 }
 
+export function getApuntePageBySlug(subjectSlug: string, apunteSlug: string) {
+  return unstable_cache(
+    async () => {
+      const subject = await prisma.subject.findUnique({
+        where: { slug: subjectSlug },
+        select: {
+          id: true,
+          slug: true,
+          nombre: true,
+          year: {
+            select: {
+              id: true,
+              slug: true,
+              nombre: true,
+              career: { select: { nombre: true } },
+            },
+          },
+          apuntes: {
+            where: { slug: apunteSlug },
+            take: 1,
+            select: {
+              id: true,
+              titulo: true,
+              slug: true,
+              descripcionHtml: true,
+              recursos: {
+                orderBy: { orden: 'asc' },
+                select: {
+                  id: true,
+                  tipo: true,
+                  url: true,
+                  orden: true,
+                  nombre: true,
+                },
+              },
+            },
+          },
+        },
+      })
+
+      const apunte = subject?.apuntes[0]
+      if (!subject || !apunte) return null
+
+      return {
+        subject: {
+          id: subject.id,
+          slug: subject.slug,
+          nombre: subject.nombre,
+          year: subject.year,
+        },
+        apunte,
+      }
+    },
+    ['apunte-page', subjectSlug, apunteSlug],
+    { tags: [TAGS.subject(subjectSlug)], revalidate: 3600 },
+  )()
+}
+
 // Metadata mínima para resolver la key de Storage del banco de preguntas
 // (quizzes/{anioSlug}/{materiaSlug}/...) y los títulos de la UI de quiz.
 export function getSubjectQuizMeta(slug: string) {
@@ -460,6 +518,7 @@ export function getLatestApuntes(limit = 6) {
         select: {
           id: true,
           titulo: true,
+          slug: true,
           createdAt: true,
           subject: {
             select: {
