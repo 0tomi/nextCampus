@@ -21,7 +21,7 @@
 
   <rect width="256" height="256" rx="64" fill="url(#bg)" />
 
-  <g filter="url(#shadow)" transform="translate(-35 -40) scale(1.27)">
+  <g filter="url(#shadow)" transform="translate(-24 -27) scale(1.19)">
     <path
       fill="url(#face)"
       d="M72 64
