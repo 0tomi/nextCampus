@@ -30,10 +30,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/mascot-mark.svg', type: 'image/svg+xml' },
+      { url: '/mascot-icon.svg', type: 'image/svg+xml' },
       { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
     ],
-    shortcut: '/mascot-mark.svg',
+    shortcut: '/mascot-icon.svg',
     apple: '/apple-icon.png',
   },
 }
