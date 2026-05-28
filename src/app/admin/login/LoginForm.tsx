@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { ArrowRight, Shield } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { DarkCard } from '@/components/ui/DarkCard'
 
 export function LoginForm() {
@@ -18,23 +17,38 @@ export function LoginForm() {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    const supabase = createSupabaseBrowserClient()
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    setLoading(false)
-    if (authError) {
-      setError('Credenciales inválidas')
-      return
-    }
+
     const raw = searchParams.get('redirectTo') ?? '/'
-    let safe = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/'
-    if (safe === '/admin' || safe === '/admin/') {
-      safe = '/'
+
+    try {
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          redirectTo: raw,
+        }),
+      })
+
+      const payload = (await response.json().catch(() => null)) as
+        | { message?: string; ok?: boolean; redirectTo?: string }
+        | null
+
+      if (!response.ok || !payload?.ok) {
+        setError(payload?.message ?? 'No pudimos iniciar sesión. Intentá de nuevo.')
+        return
+      }
+
+      router.push(payload.redirectTo ?? '/')
+      router.refresh()
+    } catch {
+      setError('No pudimos iniciar sesión. Intentá de nuevo.')
+    } finally {
+      setLoading(false)
     }
-    router.push(safe)
-    router.refresh()
   }
 
   return (
