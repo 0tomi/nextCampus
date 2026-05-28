@@ -13,7 +13,7 @@ import {
   type DriveKind,
   type RecursoTipo,
 } from '@/lib/recursos'
-import { FileText, ImageIcon, PlayCircle } from 'lucide-react'
+import { ExternalLink, FileCode2, FileText, ImageIcon, PlayCircle } from 'lucide-react'
 
 function driveEmbedClassName(kind: DriveKind): string {
   const base = 'w-full rounded-md border border-white/10'
@@ -35,33 +35,52 @@ interface ApunteRecursoViewProps {
     url: string
     orden: number
     nombre?: string | null
+    storageKey?: string | null
+    mimeType?: string | null
+    sizeBytes?: number | null
   }
   variant?: 'card' | 'wide'
+  apunteHref?: string
 }
 
-export function ApunteRecursoView({ recurso, variant = 'card' }: ApunteRecursoViewProps) {
+export function ApunteRecursoView({ recurso, variant = 'card', apunteHref }: ApunteRecursoViewProps) {
   const titulo = recurso.nombre?.trim()
     ? recurso.nombre
     : nombreFallbackRecurso(recurso.tipo)
 
   const linkLabel =
-    recurso.tipo === 'YOUTUBE' ? 'Abrir en YouTube' : 'Abrir en Drive'
+    recurso.tipo === 'YOUTUBE'
+      ? 'Abrir en YouTube'
+      : recurso.tipo === 'DRIVE'
+        ? 'Abrir en Drive'
+        : 'Abrir apunte'
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-surface-1 p-4">
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-semibold text-white">{titulo}</p>
-        <a
-          href={recurso.url}
-          target="_blank"
-          rel="noopener noreferrer nofollow"
-          className="shrink-0 text-xs font-medium text-white/60 transition-colors hover:text-white/90 cursor-pointer"
-        >
-          {linkLabel}
-        </a>
+        {recurso.tipo === 'HTML' ? (
+          apunteHref ? (
+            <a
+              href={apunteHref}
+              className="shrink-0 text-xs font-medium text-white/60 transition-colors hover:text-white/90 cursor-pointer"
+            >
+              {linkLabel}
+            </a>
+          ) : null
+        ) : (
+          <a
+            href={recurso.url}
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            className="shrink-0 text-xs font-medium text-white/60 transition-colors hover:text-white/90 cursor-pointer"
+          >
+            {linkLabel}
+          </a>
+        )}
       </div>
 
-      <ApunteRecursoMedia recurso={recurso} titulo={titulo} variant={variant} />
+      <ApunteRecursoMedia recurso={recurso} titulo={titulo} variant={variant} apunteHref={apunteHref} />
     </div>
   )
 }
@@ -70,11 +89,21 @@ function ApunteRecursoMedia({
   recurso,
   titulo,
   variant,
+  apunteHref,
 }: {
   recurso: ApunteRecursoViewProps['recurso']
   titulo: string
   variant: NonNullable<ApunteRecursoViewProps['variant']>
+  apunteHref?: string
 }) {
+  if (recurso.tipo === 'HTML') {
+    if (variant === 'wide') {
+      return <HtmlPreviewIframe recursoId={recurso.id} titulo={titulo} />
+    }
+
+    return <HtmlPreviewCard href={apunteHref} title={titulo} />
+  }
+
   if (recurso.tipo === 'YOUTUBE') {
     const id = extraerYoutubeId(recurso.url)
     if (!id) return null
@@ -126,6 +155,48 @@ function ApunteRecursoMedia({
   // Fallback: URL de Drive no parseable → mensaje sutil (el link ya está en el header).
   return (
     <DriveFallback href={recurso.url} title={titulo} />
+  )
+}
+
+function HtmlPreviewCard({ href, title }: { href?: string; title: string }) {
+  const content = (
+    <div className="rounded-md border border-cyan-300/15 bg-[radial-gradient(circle_at_18%_24%,rgba(34,211,238,0.14),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.045),rgba(255,255,255,0.015))] p-4">
+      <div className="flex items-start gap-3">
+        <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-md border border-cyan-300/20 bg-cyan-300/10 text-cyan-200">
+          <FileCode2 className="size-5" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-black text-white">Vista interactiva</p>
+          <p className="mt-1 text-xs leading-5 text-white/50">
+            Abrí el apunte completo para ver {title}.
+          </p>
+        </div>
+      </div>
+      <span className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-cyan-100/80">
+        Abrir apunte completo
+        <ExternalLink className="size-3.5" />
+      </span>
+    </div>
+  )
+
+  if (!href) return content
+
+  return (
+    <a href={href} className="block cursor-pointer transition-opacity hover:opacity-90">
+      {content}
+    </a>
+  )
+}
+
+function HtmlPreviewIframe({ recursoId, titulo }: { recursoId: string; titulo: string }) {
+  return (
+    <iframe
+      src={`/api/apuntes/recursos/${recursoId}/preview`}
+      className="min-h-[640px] w-full rounded-md border border-white/10 bg-black/20"
+      loading="lazy"
+      sandbox=""
+      title={titulo}
+    />
   )
 }
 

@@ -17,6 +17,10 @@ import { sanitizeRichHtml } from '@/lib/sanitize'
 import { ensureUniqueSlug, slugify, uniqueSlug } from '@/lib/slug'
 import {
   uploadQuizBank,
+  uploadApunteHtml,
+  deleteApunteHtml,
+  MAX_APUNTE_HTML_BYTES,
+  APUNTE_HTML_MIME,
   deleteQuizBank,
   deleteSubjectStorage,
   deleteYearStorage,
@@ -343,17 +347,20 @@ export interface ApunteActionState {
   message: string
 }
 
-const recursoSchema = z
-  .object({
+const baseRecursoSchema = z.object({
+  orden: z.number().int().min(0).max(255),
+  nombre: z
+    .string()
+    .trim()
+    .max(120, 'El nombre del recurso no puede superar los 120 caracteres.')
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : null)),
+})
+
+const linkRecursoSchema = baseRecursoSchema
+  .extend({
     url: z.string().url(),
     tipo: z.enum(['YOUTUBE', 'DRIVE']),
-    orden: z.number().int().min(0).max(255),
-    nombre: z
-      .string()
-      .trim()
-      .max(120, 'El nombre del recurso no puede superar los 120 caracteres.')
-      .optional()
-      .transform((v) => (v && v.length > 0 ? v : null)),
   })
   .refine(
     (r) => {
@@ -362,6 +369,138 @@ const recursoSchema = z
     },
     { message: 'URL no permitida o tipo inconsistente' },
   )
+
+const htmlRecursoSchema = baseRecursoSchema.extend({
+  tipo: z.literal('HTML'),
+  url: z.string().optional().default(''),
+  localId: z.string().min(1).max(120).optional(),
+  storageKey: z.string().min(1).max(500).optional(),
+  mimeType: z.string().optional(),
+  sizeBytes: z.number().int().min(1).optional(),
+})
+
+const recursoSchema = z.union([linkRecursoSchema, htmlRecursoSchema])
+
+type ParsedRecurso = z.infer<typeof recursoSchema>
+
+type RecursoCreateData = {
+  apunteId: string
+  tipo: ParsedRecurso['tipo']
+  url: string
+  orden: number
+  nombre: string | null
+  storageKey?: string | null
+  mimeType?: string | null
+  sizeBytes?: number | null
+}
+
+function isHtmlFileName(name: string): boolean {
+  return /\.html?$/i.test(name.trim())
+}
+
+function looksLikeHtml(text: string): boolean {
+  const sample = text.slice(0, 500).toLowerCase()
+  return sample.includes('<!doctype html') || sample.includes('<html')
+}
+
+async function readHtmlUpload(formData: FormData, localId: string): Promise<{
+  html: string
+  sizeBytes: number
+} | { error: string }> {
+  const raw = formData.get(`htmlFile:${localId}`)
+  if (!(raw instanceof File) || raw.size === 0) {
+    return { error: 'Seleccioná un archivo HTML para el recurso.' }
+  }
+
+  if (!isHtmlFileName(raw.name)) {
+    return { error: 'El archivo debe tener extensión .html o .htm.' }
+  }
+
+  if (raw.type && raw.type !== 'text/html') {
+    return { error: 'El archivo debe ser HTML.' }
+  }
+
+  if (raw.size > MAX_APUNTE_HTML_BYTES) {
+    return { error: 'El HTML no puede superar los 2 MB.' }
+  }
+
+  const html = await raw.text()
+  if (!looksLikeHtml(html)) {
+    return { error: 'El archivo no parece ser un HTML completo.' }
+  }
+
+  return { html, sizeBytes: Buffer.byteLength(html, 'utf8') }
+}
+
+async function buildApunteRecursos(params: {
+  apunteId: string
+  yearSlug: string
+  subjectSlug: string
+  formData: FormData
+  recursos: ParsedRecurso[]
+}): Promise<{
+  data: RecursoCreateData[]
+  uploadedStorageKeys: string[]
+} | { error: string; uploadedStorageKeys: string[] }> {
+  const data: RecursoCreateData[] = []
+  const uploadedStorageKeys: string[] = []
+
+  for (const recurso of params.recursos) {
+    if (recurso.tipo !== 'HTML') {
+      data.push({
+        apunteId: params.apunteId,
+        tipo: recurso.tipo,
+        url: recurso.url,
+        orden: recurso.orden,
+        nombre: recurso.nombre,
+      })
+      continue
+    }
+
+    if (recurso.storageKey) {
+      data.push({
+        apunteId: params.apunteId,
+        tipo: 'HTML',
+        url: '',
+        orden: recurso.orden,
+        nombre: recurso.nombre,
+        storageKey: recurso.storageKey,
+        mimeType: APUNTE_HTML_MIME,
+        sizeBytes: recurso.sizeBytes ?? null,
+      })
+      continue
+    }
+
+    if (!recurso.localId) {
+      return { error: 'No se pudo identificar el archivo HTML.', uploadedStorageKeys }
+    }
+
+    const upload = await readHtmlUpload(params.formData, recurso.localId)
+    if ('error' in upload) {
+      return { error: upload.error, uploadedStorageKeys }
+    }
+
+    const storageKey = await uploadApunteHtml({
+      yearSlug: params.yearSlug,
+      subjectSlug: params.subjectSlug,
+      apunteId: params.apunteId,
+      html: upload.html,
+    })
+    uploadedStorageKeys.push(storageKey)
+    data.push({
+      apunteId: params.apunteId,
+      tipo: 'HTML',
+      url: '',
+      orden: recurso.orden,
+      nombre: recurso.nombre,
+      storageKey,
+      mimeType: APUNTE_HTML_MIME,
+      sizeBytes: upload.sizeBytes,
+    })
+  }
+
+  return { data, uploadedStorageKeys }
+}
 
 const apunteContentSchema = z.object({
   titulo: z.string().trim().min(1).max(200),
@@ -395,7 +534,7 @@ const apunteContentSchema = z.object({
     ),
 })
 
-function parseRecursosJson(raw: unknown): z.infer<typeof recursoSchema>[] | null {
+function parseRecursosJson(raw: unknown): ParsedRecurso[] | null {
   if (typeof raw !== 'string' || raw.trim() === '') return []
   try {
     return JSON.parse(raw) as z.infer<typeof recursoSchema>[]
@@ -461,19 +600,35 @@ export async function createApunteAction(
         titulo,
         slug: finalSlug,
         descripcionHtml: sanitizeRichHtml(descripcionHtml),
-        recursos: {
-          create: recursos.map((r) => ({
-            tipo: r.tipo,
-            url: r.url,
-            orden: r.orden,
-            nombre: r.nombre,
-          })),
-        },
       },
       select: { id: true },
     })
     apunteId = apunte.id
   } catch {
+    return { ok: false, message: 'No se pudo crear el apunte. Intentá de nuevo.' }
+  }
+
+  const built = await buildApunteRecursos({
+    apunteId,
+    yearSlug: scope.yearSlug,
+    subjectSlug: scope.subjectSlug,
+    formData,
+    recursos,
+  })
+
+  if ('error' in built) {
+    await deleteApunteHtml(built.uploadedStorageKeys)
+    await prisma.apunte.delete({ where: { id: apunteId } }).catch(() => undefined)
+    return { ok: false, message: built.error }
+  }
+
+  try {
+    if (built.data.length > 0) {
+      await prisma.apunteRecurso.createMany({ data: built.data })
+    }
+  } catch {
+    await deleteApunteHtml(built.uploadedStorageKeys)
+    await prisma.apunte.delete({ where: { id: apunteId } }).catch(() => undefined)
     return { ok: false, message: 'No se pudo crear el apunte. Intentá de nuevo.' }
   }
 
@@ -488,7 +643,7 @@ export async function createApunteAction(
       slug: finalSlug,
       subjectSlug: scope.subjectSlug,
       yearSlug: scope.yearSlug,
-      recursosCount: recursos.length,
+      recursosCount: built.data.length,
     },
   })
   return { ok: true, message: 'Apunte creado correctamente.' }
@@ -526,7 +681,14 @@ export async function updateApunteAction(
   // Resolver slug final: si llega y cambia, validar unicidad excluyendo el propio id.
   const apunteActual = await prisma.apunte.findUnique({
     where: { id: apunteId.data },
-    select: { slug: true, subjectId: true },
+    select: {
+      slug: true,
+      subjectId: true,
+      recursos: {
+        where: { tipo: 'HTML', storageKey: { not: null } },
+        select: { storageKey: true },
+      },
+    },
   })
   if (!apunteActual) {
     return { ok: false, message: 'Apunte no encontrado.' }
@@ -548,6 +710,26 @@ export async function updateApunteAction(
     finalSlug = slugInput
   }
 
+  const built = await buildApunteRecursos({
+    apunteId: apunteId.data,
+    yearSlug: scope.yearSlug,
+    subjectSlug: scope.subjectSlug,
+    formData,
+    recursos,
+  })
+
+  if ('error' in built) {
+    await deleteApunteHtml(built.uploadedStorageKeys)
+    return { ok: false, message: built.error }
+  }
+
+  const keptStorageKeys = new Set(
+    built.data.map((r) => r.storageKey).filter((key): key is string => Boolean(key)),
+  )
+  const storageKeysToDelete = apunteActual.recursos
+    .map((r) => r.storageKey)
+    .filter((key): key is string => key !== null && !keptStorageKeys.has(key))
+
   try {
     await prisma.$transaction(async (tx) => {
       await tx.apunte.update({
@@ -559,19 +741,16 @@ export async function updateApunteAction(
         },
       })
       await tx.apunteRecurso.deleteMany({ where: { apunteId: apunteId.data } })
-      await tx.apunteRecurso.createMany({
-        data: recursos.map((r) => ({
-          apunteId: apunteId.data,
-          tipo: r.tipo,
-          url: r.url,
-          orden: r.orden,
-          nombre: r.nombre,
-        })),
-      })
+      if (built.data.length > 0) {
+        await tx.apunteRecurso.createMany({ data: built.data })
+      }
     })
   } catch {
+    await deleteApunteHtml(built.uploadedStorageKeys)
     return { ok: false, message: 'No se pudo actualizar el apunte. Intentá de nuevo.' }
   }
+
+  await deleteApunteHtml(storageKeysToDelete)
 
   await revalidateSubjectContent(scope.subjectSlug)
   await recordAudit({
@@ -583,7 +762,7 @@ export async function updateApunteAction(
       titulo,
       slug: finalSlug,
       subjectSlug: scope.subjectSlug,
-      recursosCount: recursos.length,
+      recursosCount: built.data.length,
     },
   })
   return { ok: true, message: 'Apunte actualizado correctamente.' }
@@ -596,11 +775,22 @@ export async function deleteApunteAction(formData: FormData): Promise<void> {
 
   const apunte = await prisma.apunte.findUnique({
     where: { id },
-    select: { titulo: true },
+    select: {
+      titulo: true,
+      recursos: {
+        where: { tipo: 'HTML', storageKey: { not: null } },
+        select: { storageKey: true },
+      },
+    },
   })
 
   // La FK con onDelete: Cascade borra los ApunteRecurso automáticamente.
   await prisma.apunte.delete({ where: { id } })
+  await deleteApunteHtml(
+    (apunte?.recursos ?? [])
+      .map((r) => r.storageKey)
+      .filter((key): key is string => Boolean(key)) ?? [],
+  )
 
   await revalidateSubjectContent(scope.subjectSlug)
   if (apunte) {

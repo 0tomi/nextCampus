@@ -281,4 +281,8 @@ describe('nombreFallbackRecurso', () => {
   it('DRIVE → "Archivo de Drive"', () => {
     expect(nombreFallbackRecurso('DRIVE')).toBe('Archivo de Drive')
   })
+
+  it('HTML → "Vista interactiva"', () => {
+    expect(nombreFallbackRecurso('HTML')).toBe('Vista interactiva')
+  })
 })

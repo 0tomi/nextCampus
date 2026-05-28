@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import Link from 'next/link'
 import { ApunteRecursoView } from '@/components/apuntes/ApunteRecursoView'
 import { CopyApunteLinkButton } from '@/components/apuntes/CopyApunteLinkButton'
 import type { RecursoTipo } from '@/lib/recursos'
@@ -14,6 +15,9 @@ interface Recurso {
   url: string
   orden: number
   nombre: string | null
+  storageKey?: string | null
+  mimeType?: string | null
+  sizeBytes?: number | null
 }
 
 interface Apunte {
@@ -79,6 +83,7 @@ export function ApuntesTab({
       {addApunteButton}
       {apuntes.map(a => {
         const enfocado = focusApunteSlug === a.slug
+        const apunteHref = `/${yearSlug}/${subjectSlug}/apuntes/${a.slug}`
         return (
           <div
             key={a.id}
@@ -129,11 +134,17 @@ export function ApuntesTab({
             {a.recursos.length > 0 && (
               <div className="flex flex-col gap-3">
                 {a.recursos.map(r => (
-                  <ApunteRecursoView key={r.id} recurso={r} />
+                  <ApunteRecursoView key={r.id} recurso={r} apunteHref={apunteHref} />
                 ))}
               </div>
             )}
-            <div className="flex">
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href={apunteHref}
+                className="inline-flex cursor-pointer items-center rounded-md bg-uader-red px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-uader-red-light"
+              >
+                Abrir apunte completo
+              </Link>
               <CopyApunteLinkButton
                 yearSlug={yearSlug}
                 subjectSlug={subjectSlug}

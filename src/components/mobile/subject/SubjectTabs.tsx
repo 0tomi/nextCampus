@@ -31,7 +31,7 @@ interface SubjectTabsProps {
   yearId: string
   agendaId: string
   events: MobileCalendarEvent[]
-  apuntes: Array<{ id: string; titulo: string; slug: string; descripcionHtml: string | null; recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE'; url: string; orden: number; nombre: string | null }> }>
+  apuntes: Array<{ id: string; titulo: string; slug: string; descripcionHtml: string | null; recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE' | 'HTML'; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }> }>
   tiposEvento: readonly TipoEvento[]
   subjects?: readonly EventModalSubject[]
   commissions: readonly CommissionOption[]
@@ -74,6 +74,7 @@ export function SubjectTabs({ subjectSlug, subjectName, yearSlug, yearId, agenda
             const isActive = active === key
             return (
               <button
+                type="button"
                 key={key}
                 role="tab"
                 aria-selected={isActive}

@@ -1,4 +1,4 @@
-export type RecursoTipo = 'YOUTUBE' | 'DRIVE'
+export type RecursoTipo = 'YOUTUBE' | 'DRIVE' | 'HTML'
 
 const YOUTUBE_HOSTS = new Set([
   'youtube.com',
@@ -245,5 +245,7 @@ export function nombreFallbackRecurso(tipo: RecursoTipo): string {
       return 'Video de YouTube'
     case 'DRIVE':
       return 'Archivo de Drive'
+    case 'HTML':
+      return 'Vista interactiva'
   }
 }

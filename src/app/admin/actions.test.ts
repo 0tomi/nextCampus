@@ -13,6 +13,8 @@ const requireYearAdminForYearIdMock = vi.fn()
 const sanitizeRichHtmlMock = vi.fn()
 const detectarRecursoMock = vi.fn()
 const recordAuditMock = vi.fn()
+const uploadApunteHtmlMock = vi.fn()
+const deleteApunteHtmlMock = vi.fn()
 
 const prismaMock = {
   subject: {
@@ -24,6 +26,9 @@ const prismaMock = {
     findFirst: vi.fn(),
     findMany: vi.fn(),
     delete: vi.fn(),
+  },
+  apunteRecurso: {
+    createMany: vi.fn(),
   },
   $transaction: vi.fn(),
 }
@@ -60,6 +65,10 @@ vi.mock('@/lib/slug', () => ({
 
 vi.mock('@/lib/storage', () => ({
   uploadQuizBank: vi.fn(),
+  uploadApunteHtml: uploadApunteHtmlMock,
+  deleteApunteHtml: deleteApunteHtmlMock,
+  MAX_APUNTE_HTML_BYTES: 2 * 1024 * 1024,
+  APUNTE_HTML_MIME: 'text/html; charset=utf-8',
   deleteQuizBank: vi.fn(),
   deleteSubjectStorage: vi.fn(),
   deleteYearStorage: vi.fn(),
@@ -126,6 +135,7 @@ beforeEach(() => {
   })
   prismaMock.apunte.findMany.mockResolvedValue([])
   prismaMock.apunte.findFirst.mockResolvedValue(null)
+  prismaMock.apunteRecurso.createMany.mockResolvedValue(undefined)
   prismaMock.$transaction.mockImplementation(async (callback) => callback({
     apunte: {
       update: vi.fn().mockResolvedValue(undefined),
@@ -136,6 +146,8 @@ beforeEach(() => {
     },
   }))
   recordAuditMock.mockResolvedValue(undefined)
+  uploadApunteHtmlMock.mockResolvedValue('apuntes/primer-anio/calculo/apunte-1/html-1.html')
+  deleteApunteHtmlMock.mockResolvedValue(undefined)
 })
 
 describe('admin apunte actions', () => {
@@ -171,6 +183,7 @@ describe('admin apunte actions', () => {
     prismaMock.apunte.findUnique.mockResolvedValue({
       slug: 'resumen-actual',
       subjectId: 'subject-1',
+      recursos: [],
     })
 
     const { updateApunteAction } = await import('./actions')
@@ -194,12 +207,78 @@ describe('admin apunte actions', () => {
       yearSlug: 'primer-anio',
       admin: { id: 'admin-1' },
     })
-    prismaMock.apunte.findUnique.mockResolvedValue({ titulo: 'Resumen viejo' })
+    prismaMock.apunte.findUnique.mockResolvedValue({ titulo: 'Resumen viejo', recursos: [] })
     prismaMock.apunte.delete.mockResolvedValue(undefined)
 
     const { deleteApunteAction } = await import('./actions')
     await deleteApunteAction(makeFormData({ id: 'apunte-1' }))
 
     expect(revalidateTagRawMock).toHaveBeenCalledWith('latest-apuntes', 'max')
+  })
+
+  it('valida backend antes de subir un recurso HTML', async () => {
+    requireYearAdminForSubjectIdMock.mockResolvedValue({
+      subjectSlug: 'calculo',
+      yearSlug: 'primer-anio',
+      admin: { id: 'admin-1' },
+    })
+    prismaMock.apunte.create.mockResolvedValue({ id: 'apunte-1' })
+
+    const formData = makeFormData({
+      subjectId: 'subject-1',
+      titulo: 'Laboratorio HTML',
+      descripcionHtml: '<p>Interactivo</p>',
+      recursosJson: JSON.stringify([
+        { tipo: 'HTML', localId: 'html-1', orden: 0, nombre: 'Demo' },
+      ]),
+    })
+    formData.set('htmlFile:html-1', new File(['no soy html'], 'demo.txt', { type: 'text/plain' }))
+
+    const { createApunteAction } = await import('./actions')
+    const result = await createApunteAction({ ok: false, message: '' }, formData)
+
+    expect(result).toEqual({ ok: false, message: 'El archivo debe tener extensión .html o .htm.' })
+    expect(uploadApunteHtmlMock).not.toHaveBeenCalled()
+    expect(prismaMock.apunte.delete).toHaveBeenCalledWith({ where: { id: 'apunte-1' } })
+  })
+
+  it('sube recursos HTML validados y los registra en el apunte', async () => {
+    requireYearAdminForSubjectIdMock.mockResolvedValue({
+      subjectSlug: 'calculo',
+      yearSlug: 'primer-anio',
+      admin: { id: 'admin-1' },
+    })
+    prismaMock.apunte.create.mockResolvedValue({ id: 'apunte-1' })
+
+    const formData = makeFormData({
+      subjectId: 'subject-1',
+      titulo: 'Laboratorio HTML',
+      descripcionHtml: '<p>Interactivo</p>',
+      recursosJson: JSON.stringify([
+        { tipo: 'HTML', localId: 'html-1', orden: 0, nombre: 'Demo' },
+      ]),
+    })
+    formData.set(
+      'htmlFile:html-1',
+      new File(['<!doctype html><html><body>Demo</body></html>'], 'demo.html', { type: 'text/html' }),
+    )
+
+    const { createApunteAction } = await import('./actions')
+    const result = await createApunteAction({ ok: false, message: '' }, formData)
+
+    expect(result).toEqual({ ok: true, message: 'Apunte creado correctamente.' })
+    expect(uploadApunteHtmlMock).toHaveBeenCalledWith({
+      yearSlug: 'primer-anio',
+      subjectSlug: 'calculo',
+      apunteId: 'apunte-1',
+      html: '<!doctype html><html><body>Demo</body></html>',
+    })
+    expect(prismaMock.apunteRecurso.createMany).toHaveBeenCalledWith({
+      data: [expect.objectContaining({
+        tipo: 'HTML',
+        storageKey: 'apuntes/primer-anio/calculo/apunte-1/html-1.html',
+        mimeType: 'text/html; charset=utf-8',
+      })],
+    })
   })
 })

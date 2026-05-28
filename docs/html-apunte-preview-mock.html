@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mock HTML en apuntes - nextCampus</title>
+    <style>
+      :root {
+        --bg: #0f0f0f;
+        --surface-1: #1a1a1a;
+        --surface-2: #141414;
+        --line: rgba(255, 255, 255, 0.08);
+        --line-soft: rgba(255, 255, 255, 0.05);
+        --text: #ffffff;
+        --text-2: rgba(255, 255, 255, 0.66);
+        --text-3: rgba(255, 255, 255, 0.42);
+        --red: #cc0000;
+        --red-light: #e80000;
+        --blue: #1e5a8f;
+        --cyan: #22d3ee;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Plus Jakarta Sans", Inter, system-ui, sans-serif;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .page {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 36px 0 64px;
+      }
+
+      .hero {
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 24px;
+        margin-bottom: 28px;
+      }
+
+      .eyebrow {
+        margin: 0;
+        color: var(--text-3);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        margin-top: 10px;
+        max-width: 780px;
+        font-size: clamp(34px, 6vw, 64px);
+        line-height: 0.96;
+        letter-spacing: -0.05em;
+      }
+
+      .hero p:last-child {
+        margin-top: 14px;
+        max-width: 660px;
+        color: var(--text-2);
+        line-height: 1.7;
+      }
+
+      .mock-grid {
+        display: grid;
+        grid-template-columns: 320px minmax(0, 1fr);
+        gap: 18px;
+      }
+
+      .sidebar,
+      .card,
+      .fullscreen-panel,
+      .html-frame,
+      .side-note {
+        border: 1px solid var(--line-soft);
+        background: var(--surface-1);
+      }
+
+      .sidebar {
+        min-height: 680px;
+        padding: 22px;
+      }
+
+      .sidebar-title {
+        margin-top: 8px;
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: -0.04em;
+      }
+
+      .nav-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 28px;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+        padding: 12px;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .content {
+        display: grid;
+        gap: 24px;
+      }
+
+      .section-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .section-head h2 {
+        margin-top: 8px;
+        font-size: 32px;
+        letter-spacing: -0.04em;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 0 14px;
+        color: rgba(255, 255, 255, 0.76);
+        font-size: 13px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .button.primary {
+        border-color: rgba(204, 0, 0, 0.48);
+        background: var(--red);
+        color: white;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .card {
+        padding: 20px;
+      }
+
+      .card h3 {
+        margin-top: 8px;
+        font-size: 22px;
+        letter-spacing: -0.04em;
+      }
+
+      .card-copy {
+        margin-top: 12px;
+        color: var(--text-2);
+        font-size: 14px;
+        line-height: 1.65;
+      }
+
+      .mini-html {
+        margin-top: 16px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        background: #0b1216;
+      }
+
+      .mini-html-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        padding: 10px 12px;
+        color: rgba(255, 255, 255, 0.62);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .mini-html-body {
+        min-height: 170px;
+        padding: 18px;
+        background:
+          radial-gradient(circle at 20% 20%, rgba(34, 211, 238, 0.18), transparent 32%),
+          linear-gradient(135deg, #0b1216, #151515);
+      }
+
+      .demo-widget {
+        display: grid;
+        grid-template-columns: 92px 1fr;
+        gap: 14px;
+        align-items: center;
+      }
+
+      .demo-node {
+        display: grid;
+        place-items: center;
+        width: 92px;
+        height: 92px;
+        border-radius: 999px;
+        border: 1px solid rgba(34, 211, 238, 0.42);
+        color: var(--cyan);
+        font-size: 30px;
+        font-weight: 950;
+      }
+
+      .demo-widget h4 {
+        margin: 0;
+        font-size: 19px;
+        letter-spacing: -0.03em;
+      }
+
+      .demo-widget p {
+        margin-top: 8px;
+        color: rgba(255, 255, 255, 0.62);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .card-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      .fullscreen-wrap {
+        margin-top: 48px;
+        border-top: 1px solid var(--line);
+        padding-top: 28px;
+      }
+
+      .fullscreen-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 280px;
+        gap: 18px;
+      }
+
+      .fullscreen-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 18px;
+        margin-bottom: 18px;
+      }
+
+      .crumbs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .pill {
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+        padding: 6px 8px;
+        color: rgba(255, 255, 255, 0.58);
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .fullscreen-panel {
+        padding: 28px;
+      }
+
+      .fullscreen-panel h2 {
+        margin-top: 10px;
+        max-width: 720px;
+        font-size: clamp(34px, 5vw, 56px);
+        line-height: 1;
+        letter-spacing: -0.06em;
+      }
+
+      .lead {
+        margin-top: 18px;
+        max-width: 760px;
+        color: var(--text-2);
+        line-height: 1.8;
+      }
+
+      .html-frame {
+        margin-top: 18px;
+        overflow: hidden;
+        background: #090d10;
+      }
+
+      .html-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        padding: 12px 14px;
+        color: rgba(255, 255, 255, 0.62);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .dots {
+        display: flex;
+        gap: 6px;
+      }
+
+      .dots span {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.22);
+      }
+
+      .html-document {
+        min-height: 440px;
+        padding: 34px;
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+          radial-gradient(circle at 24% 24%, rgba(34, 211, 238, 0.16), transparent 30%),
+          radial-gradient(circle at 84% 18%, rgba(204, 0, 0, 0.18), transparent 26%),
+          #0b1114;
+        background-size: 32px 32px, 32px 32px, auto, auto, auto;
+      }
+
+      .html-document h3 {
+        max-width: 680px;
+        font-size: clamp(34px, 6vw, 74px);
+        line-height: 0.9;
+        letter-spacing: -0.07em;
+      }
+
+      .html-document p {
+        margin-top: 18px;
+        max-width: 560px;
+        color: rgba(255, 255, 255, 0.66);
+        line-height: 1.8;
+      }
+
+      .network {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        max-width: 680px;
+        margin-top: 28px;
+      }
+
+      .network div {
+        min-height: 88px;
+        border: 1px solid rgba(34, 211, 238, 0.22);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 12px;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .side-note {
+        align-self: start;
+        padding: 20px;
+      }
+
+      .side-note h3 {
+        margin-top: 12px;
+        font-size: 20px;
+        letter-spacing: -0.04em;
+      }
+
+      .side-note p {
+        margin-top: 10px;
+        color: var(--text-2);
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      @media (max-width: 920px) {
+        .mock-grid,
+        .fullscreen-shell {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          min-height: auto;
+        }
+
+        .cards {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">Mock de apuntes</p>
+        <h1>Preview HTML segura para materiales interactivos.</h1>
+        <p>
+          La idea: desde la materia se ve una tarjeta compacta con una muestra del HTML y una llamada clara para abrir el apunte completo.
+          En fullscreen el HTML queda como pieza principal del material.
+        </p>
+      </section>
+
+      <section class="mock-grid" aria-label="Vista desde la materia">
+        <aside class="sidebar">
+          <p class="eyebrow">Materia</p>
+          <h2 class="sidebar-title">Redes Neuronales</h2>
+          <nav class="nav-list">
+            <a class="nav-item" href="#">Calendario <span>3 eventos</span></a>
+            <a class="nav-item" href="#">Quiz <span>Practicá</span></a>
+            <a class="nav-item" href="#">Apuntes <span>2 recursos</span></a>
+          </nav>
+        </aside>
+
+        <div class="content">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Recursos</p>
+              <h2>Apuntes y descargas</h2>
+            </div>
+            <button class="button">Agregar nuevos apuntes</button>
+          </div>
+
+          <div class="cards">
+            <article class="card">
+              <p class="eyebrow">Apunte</p>
+              <h3>Laboratorio visual de backpropagation</h3>
+              <p class="card-copy">
+                Un resumen con una visualización HTML para repasar el flujo de datos, pesos y error.
+              </p>
+
+              <div class="mini-html">
+                <div class="mini-html-top">
+                  <span>Vista interactiva</span>
+                  <span>HTML</span>
+                </div>
+                <div class="mini-html-body">
+                  <div class="demo-widget">
+                    <div class="demo-node">Σ</div>
+                    <div>
+                      <h4>Red mínima</h4>
+                      <p>Entrada, peso, activación y salida explicados como un recorrido visual.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card-actions">
+                <a class="button primary" href="#fullscreen">Abrir apunte completo</a>
+                <button class="button">Copiar link</button>
+              </div>
+            </article>
+
+            <article class="card">
+              <p class="eyebrow">Apunte</p>
+              <h3>PPT de RNN</h3>
+              <p class="card-copy">
+                Material complementario para abrir en Drive. La tarjeta no intenta forzar una preview cuando no suma.
+              </p>
+              <div class="card-actions">
+                <button class="button">Abrir archivo</button>
+                <button class="button">Copiar link</button>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="fullscreen" class="fullscreen-wrap" aria-label="Vista fullscreen del apunte">
+        <div class="fullscreen-header">
+          <div>
+            <a class="button" href="#">Volver a la materia</a>
+            <div class="crumbs">
+              <span class="pill">Redes Neuronales</span>
+              <span class="pill">Tercer año</span>
+              <span class="pill">Licenciatura</span>
+            </div>
+          </div>
+          <button class="button">Copiar link</button>
+        </div>
+
+        <div class="fullscreen-shell">
+          <article class="fullscreen-panel">
+            <p class="eyebrow">Material de estudio</p>
+            <h2>Laboratorio visual de backpropagation</h2>
+            <p class="lead">
+              Este apunte incluye una vista HTML para estudiar el proceso completo sin salir de nextCampus.
+              El archivo se mostraría aislado dentro de un marco seguro.
+            </p>
+
+            <div class="html-frame">
+              <div class="html-bar">
+                <div class="dots"><span></span><span></span><span></span></div>
+                <span>laboratorio-backpropagation.html</span>
+              </div>
+              <div class="html-document">
+                <h3>Backpropagation, paso a paso.</h3>
+                <p>
+                  Este bloque representa el HTML subido como recurso: una explicación visual, portable y compartible.
+                  En la implementación real viviría en un iframe aislado.
+                </p>
+                <div class="network">
+                  <div>Entrada<br />x₁, x₂</div>
+                  <div>Pesos<br />w₁, w₂</div>
+                  <div>Activación<br />σ(z)</div>
+                  <div>Error<br />ajuste</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <aside class="side-note">
+            <p class="eyebrow">Apunte compartible</p>
+            <h3>Un link, un material.</h3>
+            <p>
+              La materia queda como contexto arriba. El foco de esta pantalla es estudiar o compartir este apunte puntual.
+            </p>
+            <div class="card-actions">
+              <button class="button primary">Copiar link</button>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

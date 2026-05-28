@@ -15,6 +15,80 @@ export function quizBanksCacheTag(yearSlug: string, subjectSlug: string): string
 
 const BUCKET = env.SUPABASE_STORAGE_BUCKET
 const MAX_BANK_BYTES = 1 * 1024 * 1024 // 1 MB de JSON es de sobra
+export const MAX_APUNTE_HTML_BYTES = 2 * 1024 * 1024
+export const APUNTE_HTML_MIME = 'text/html; charset=utf-8'
+
+function apunteHtmlDir(yearSlug: string, subjectSlug: string, apunteId: string): string {
+  return `apuntes/${yearSlug}/${subjectSlug}/${apunteId}`
+}
+
+export function apunteHtmlKey(params: {
+  yearSlug: string
+  subjectSlug: string
+  apunteId: string
+  fileId?: string
+}): string {
+  const fileId = params.fileId ?? crypto.randomUUID()
+  return `${apunteHtmlDir(params.yearSlug, params.subjectSlug, params.apunteId)}/${fileId}.html`
+}
+
+export async function uploadApunteHtml(params: {
+  yearSlug: string
+  subjectSlug: string
+  apunteId: string
+  html: string
+}): Promise<string> {
+  if (Buffer.byteLength(params.html, 'utf8') > MAX_APUNTE_HTML_BYTES) {
+    throw new Error('BAD_REQUEST: el HTML supera el límite permitido')
+  }
+
+  const key = apunteHtmlKey(params)
+  const supabase = createSupabaseAdminClient()
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(key, new Blob([params.html], { type: APUNTE_HTML_MIME }), {
+      contentType: APUNTE_HTML_MIME,
+      upsert: false,
+    })
+
+  if (error) {
+    throw new Error(`STORAGE: no se pudo subir el HTML (${error.message})`)
+  }
+
+  return key
+}
+
+export async function readApunteHtml(storageKey: string): Promise<string | null> {
+  const supabase = createSupabaseAdminClient()
+  const { data, error } = await supabase.storage.from(BUCKET).download(storageKey)
+  if (error || !data) return null
+  return data.text()
+}
+
+export async function deleteApunteHtml(storageKeys: string[]): Promise<void> {
+  const keys = storageKeys.filter(Boolean)
+  if (keys.length === 0) return
+  const supabase = createSupabaseAdminClient()
+  await supabase.storage.from(BUCKET).remove(keys)
+}
+
+async function listStorageKeysRecursive(prefix: string, maxDepth = 3): Promise<string[]> {
+  const supabase = createSupabaseAdminClient()
+  const { data } = await supabase.storage.from(BUCKET).list(prefix, { limit: 1000 })
+  if (!data || data.length === 0) return []
+
+  const keys: string[] = []
+  for (const item of data) {
+    const key = `${prefix}/${item.name}`
+    if (item.id || maxDepth <= 0) {
+      keys.push(key)
+      continue
+    }
+    const nestedKeys = await listStorageKeysRecursive(key, maxDepth - 1)
+    keys.push(...nestedKeys)
+  }
+  return keys
+}
 
 // ---------------------------------------------------------------------------
 // Bancos de preguntas (quiz). JSON privado en Storage, recuperado por
@@ -242,6 +316,12 @@ export async function deleteSubjectStorage(
   if (pdfFiles && pdfFiles.length > 0) {
     const pdfKeys = pdfFiles.map((f) => `${subjectSlug}/${f.name}`)
     await supabase.storage.from(BUCKET).remove(pdfKeys)
+  }
+
+  // 1b. HTML de apuntes nuevos: apuntes/{yearSlug}/{subjectSlug}/{apunteId}/*.html
+  const htmlKeys = await listStorageKeysRecursive(`apuntes/${yearSlug}/${subjectSlug}`)
+  if (htmlKeys.length > 0) {
+    await supabase.storage.from(BUCKET).remove(htmlKeys)
   }
 
   // 2. Bancos de quiz

@@ -163,6 +163,7 @@ model Evento {
 enum RecursoTipo {
   YOUTUBE
   DRIVE
+  HTML
 }
 
 model Apunte {
@@ -186,8 +187,11 @@ model ApunteRecurso {
   apunte    Apunte      @relation(fields: [apunteId], references: [id], onDelete: Cascade)
   apunteId  String
   tipo      RecursoTipo
-  url       String
+  url       String      @default("")
   nombre    String?
+  storageKey String?
+  mimeType  String?
+  sizeBytes Int?
   orden     Int         @db.SmallInt
   createdAt DateTime    @default(now())
 

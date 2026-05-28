@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useActionState, useState, useCallback } from 'react'
+import { useEffect, useActionState, useState, useCallback, useRef } from 'react'
+import Image from 'next/image'
 import { Modal } from '@/components/ui/Modal'
-import { Plus, Trash2, AlertCircle, CirclePlay, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, Trash2, AlertCircle, CirclePlay, ChevronUp, ChevronDown, FileCode2 } from 'lucide-react'
 import {
   createApunteAction,
   updateApunteAction,
@@ -24,20 +25,30 @@ export type ApunteFull = {
   slug?: string | null
   recursos: Array<{
     id: string
-    tipo: 'YOUTUBE' | 'DRIVE'
+    tipo: 'YOUTUBE' | 'DRIVE' | 'HTML'
     url: string
     orden: number
     /** Nombre custom del recurso (fallback genérico cuando es null). */
     nombre?: string | null
+    storageKey?: string | null
+    mimeType?: string | null
+    sizeBytes?: number | null
   }>
 }
+
+type RecursoDraftKind = 'LINK' | 'HTML'
 
 interface RecursoDraft {
   /** Local key — nunca se manda al server */
   localId: string
+  kind: RecursoDraftKind
   url: string
   tipo: RecursoTipo | null
   nombre: string
+  storageKey?: string | null
+  mimeType?: string | null
+  sizeBytes?: number | null
+  fileName?: string
   error?: string
 }
 
@@ -60,8 +71,16 @@ function makeDraft(
   url: string,
   tipo: RecursoTipo | null,
   nombre: string = '',
+  extra?: Partial<RecursoDraft>,
 ): RecursoDraft {
-  return { localId: crypto.randomUUID(), url, tipo, nombre }
+  return {
+    localId: crypto.randomUUID(),
+    kind: tipo === 'HTML' ? 'HTML' : 'LINK',
+    url,
+    tipo,
+    nombre,
+    ...extra,
+  }
 }
 
 const SLUG_REGEX = /^[a-z0-9-]+$/
@@ -93,29 +112,20 @@ export function ApunteModal({
   // Si ya hay slug cargado al abrir el modal (modo edición con slug), tratamos
   // el campo como "tocado por el usuario" para no auto-sobrescribirlo al editar
   // el título. Si está vacío, el slug se autogenera del título.
-  const [slugTouched, setSlugTouched] = useState<boolean>(
-    Boolean(apunte?.slug && apunte.slug.length > 0),
-  )
+  const slugTouchedRef = useRef(Boolean(apunte?.slug && apunte.slug.length > 0))
   const [slugError, setSlugError] = useState('')
   const [recursos, setRecursos] = useState<RecursoDraft[]>(() =>
     apunte
       ? apunte.recursos.map((r) =>
-          makeDraft(r.url, r.tipo, r.nombre ?? ''),
+          makeDraft(r.url, r.tipo, r.nombre ?? '', {
+            storageKey: r.storageKey,
+            mimeType: r.mimeType,
+            sizeBytes: r.sizeBytes,
+          }),
         )
       : [],
   )
   const [validationError, setValidationError] = useState('')
-
-  // Auto-sync slug desde el título mientras el usuario no haya tocado el campo.
-  useEffect(() => {
-    if (slugTouched) return
-    const trimmed = titulo.trim()
-    if (trimmed.length === 0) {
-      setSlug('')
-      return
-    }
-    setSlug(slugify(trimmed))
-  }, [titulo, slugTouched])
 
   // Close modal on success
   useEffect(() => {
@@ -130,7 +140,7 @@ export function ApunteModal({
   // -------------------------------------------------------------------------
 
   const handleSlugChange = useCallback((value: string) => {
-    setSlugTouched(true)
+    slugTouchedRef.current = true
     // Normalizamos a lowercase para que coincida con la regla del backend.
     const normalized = value.toLowerCase()
     setSlug(normalized)
@@ -147,8 +157,35 @@ export function ApunteModal({
     }
   }, [])
 
+  const handleTituloChange = useCallback((value: string) => {
+    setTitulo(value)
+    if (slugTouchedRef.current) return
+    const trimmed = value.trim()
+    setSlug(trimmed.length === 0 ? '' : slugify(trimmed))
+  }, [])
+
   const addRecurso = useCallback(() => {
     setRecursos((prev) => [...prev, makeDraft('', null)])
+  }, [])
+
+  const handleKindChange = useCallback((localId: string, kind: RecursoDraftKind) => {
+    setRecursos((prev) =>
+      prev.map((r) =>
+        r.localId === localId
+          ? {
+              ...r,
+              kind,
+              url: kind === 'HTML' ? '' : r.url,
+              tipo: kind === 'HTML' ? 'HTML' : detectTipo(r.url),
+              storageKey: undefined,
+              mimeType: undefined,
+              sizeBytes: undefined,
+              fileName: undefined,
+              error: undefined,
+            }
+          : r,
+      ),
+    )
   }, [])
 
   const removeRecurso = useCallback((localId: string) => {
@@ -197,6 +234,24 @@ export function ApunteModal({
     [],
   )
 
+  const handleHtmlFileChange = useCallback((localId: string, file: File | null) => {
+    setRecursos((prev) =>
+      prev.map((r) => {
+        if (r.localId !== localId) return r
+        if (!file) {
+          return { ...r, fileName: undefined, tipo: 'HTML', error: undefined }
+        }
+        const isHtml = /\.html?$/i.test(file.name) && (!file.type || file.type === 'text/html')
+        return {
+          ...r,
+          tipo: 'HTML',
+          fileName: file.name,
+          error: isHtml ? undefined : 'Subí un archivo .html o .htm',
+        }
+      }),
+    )
+  }, [])
+
   const handleUrlBlur = useCallback((localId: string, value: string) => {
     if (!value.trim()) {
       setRecursos((prev) =>
@@ -237,6 +292,22 @@ export function ApunteModal({
         return
       }
 
+      const invalidHtml = recursos.find(
+        (r) => r.kind === 'HTML' && !r.storageKey && !r.fileName,
+      )
+      if (invalidHtml) {
+        e.preventDefault()
+        setValidationError('Seleccioná un archivo HTML para cada recurso interactivo.')
+        return
+      }
+
+      const htmlWithErrors = recursos.find((r) => r.kind === 'HTML' && r.error)
+      if (htmlWithErrors) {
+        e.preventDefault()
+        setValidationError('Revisá los archivos HTML antes de guardar.')
+        return
+      }
+
       if (slugError) {
         e.preventDefault()
         setValidationError(
@@ -253,9 +324,21 @@ export function ApunteModal({
   // Serialize recursos for the hidden input
   const recursosJson = JSON.stringify(
     recursos
-      .filter((r) => r.url.trim() && r.tipo)
+      .filter((r) => (r.kind === 'HTML' ? r.tipo === 'HTML' : r.url.trim() && r.tipo))
       .map((r, idx) => {
         const nombre = r.nombre.trim()
+        if (r.kind === 'HTML') {
+          return {
+            tipo: 'HTML',
+            localId: r.localId,
+            url: '',
+            orden: idx,
+            ...(nombre.length > 0 ? { nombre } : {}),
+            ...(r.storageKey ? { storageKey: r.storageKey } : {}),
+            ...(r.mimeType ? { mimeType: r.mimeType } : {}),
+            ...(r.sizeBytes ? { sizeBytes: r.sizeBytes } : {}),
+          }
+        }
         return {
           url: r.url.trim(),
           tipo: r.tipo!,
@@ -299,7 +382,7 @@ export function ApunteModal({
             name="titulo"
             required
             value={titulo}
-            onChange={(e) => setTitulo(e.target.value)}
+            onChange={(e) => handleTituloChange(e.target.value)}
             placeholder="Ej: Resumen Unidad 3"
             className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
           />
@@ -361,7 +444,7 @@ export function ApunteModal({
           <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
             Recursos{' '}
             <span className="font-normal normal-case tracking-normal text-white/30">
-              (YouTube o Drive)
+              (links o HTML)
             </span>
           </p>
 
@@ -373,8 +456,10 @@ export function ApunteModal({
                   recurso={recurso}
                   index={idx}
                   total={recursos.length}
+                  onKindChange={handleKindChange}
                   onUrlChange={handleUrlChange}
                   onUrlBlur={handleUrlBlur}
+                  onHtmlFileChange={handleHtmlFileChange}
                   onNombreChange={handleNombreChange}
                   onRemove={removeRecurso}
                   onMoveUp={moveUp}
@@ -440,8 +525,10 @@ interface RecursoRowProps {
   recurso: RecursoDraft
   index: number
   total: number
+  onKindChange: (localId: string, kind: RecursoDraftKind) => void
   onUrlChange: (localId: string, value: string) => void
   onUrlBlur: (localId: string, value: string) => void
+  onHtmlFileChange: (localId: string, file: File | null) => void
   onNombreChange: (localId: string, value: string) => void
   onRemove: (localId: string) => void
   onMoveUp: (index: number) => void
@@ -449,6 +536,7 @@ interface RecursoRowProps {
 }
 
 function nombreFallbackHint(tipo: RecursoTipo | null): string | null {
+  if (tipo === 'HTML') return 'Se mostrará como vista interactiva'
   if (tipo === 'DRIVE') return "Se mostrará como “Archivo de Drive”"
   if (tipo === 'YOUTUBE') return "Se mostrará como “Video de YouTube”"
   return null
@@ -458,8 +546,10 @@ function RecursoRow({
   recurso,
   index,
   total,
+  onKindChange,
   onUrlChange,
   onUrlBlur,
+  onHtmlFileChange,
   onNombreChange,
   onRemove,
   onMoveUp,
@@ -470,39 +560,88 @@ function RecursoRow({
 
   return (
     <div className="rounded-lg border border-white/10 bg-surface-1/40 p-2.5">
+      <div className="mb-2 flex gap-1 rounded border border-white/8 bg-surface-0 p-1">
+        <button
+          type="button"
+          onClick={() => onKindChange(recurso.localId, 'LINK')}
+          className={[
+            'flex-1 rounded px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+            recurso.kind === 'LINK'
+              ? 'bg-white/10 text-white'
+              : 'text-white/45 hover:bg-white/5 hover:text-white/70',
+          ].join(' ')}
+        >
+          Link
+        </button>
+        <button
+          type="button"
+          onClick={() => onKindChange(recurso.localId, 'HTML')}
+          className={[
+            'flex-1 rounded px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+            recurso.kind === 'HTML'
+              ? 'bg-white/10 text-white'
+              : 'text-white/45 hover:bg-white/5 hover:text-white/70',
+          ].join(' ')}
+        >
+          Archivo HTML
+        </button>
+      </div>
+
       <div className="flex items-center gap-2">
-        {/* URL input + icon */}
-        <div className="relative flex-1">
-          <input
-            type="url"
-            value={recurso.url}
-            onChange={(e) => onUrlChange(recurso.localId, e.target.value)}
-            onBlur={(e) => onUrlBlur(recurso.localId, e.target.value)}
-            placeholder="https://youtube.com/watch?v=... o https://drive.google.com/..."
-            className={`w-full rounded border bg-surface-0 px-3 py-2 pr-9 text-sm text-white placeholder:text-white/30 focus:outline-none ${
-              recurso.error
-                ? 'border-rose-400/50 focus:border-rose-400/70'
-                : 'border-white/10 focus:border-white/20'
-            }`}
-          />
-          {/* Type indicator */}
-          <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2">
-            {recurso.tipo === 'YOUTUBE' && (
-              <CirclePlay className="h-4 w-4 text-red-400" />
-            )}
-            {recurso.tipo === 'DRIVE' && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src="/resources/google_drive_logo_icon_159334.png"
-                alt="Drive"
-                className="h-4 w-4"
+        {recurso.kind === 'LINK' ? (
+          <div className="relative flex-1">
+            <input
+              type="url"
+              aria-label="Link del recurso"
+              value={recurso.url}
+              onChange={(e) => onUrlChange(recurso.localId, e.target.value)}
+              onBlur={(e) => onUrlBlur(recurso.localId, e.target.value)}
+              placeholder="https://youtube.com/watch?v=... o https://drive.google.com/..."
+              className={`w-full rounded border bg-surface-0 px-3 py-2 pr-9 text-sm text-white placeholder:text-white/30 focus:outline-none ${
+                recurso.error
+                  ? 'border-rose-400/50 focus:border-rose-400/70'
+                  : 'border-white/10 focus:border-white/20'
+              }`}
+            />
+            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2">
+              {recurso.tipo === 'YOUTUBE' && (
+                <CirclePlay className="size-4 text-red-400" />
+              )}
+              {recurso.tipo === 'DRIVE' && (
+                <Image
+                  src="/resources/google_drive_logo_icon_159334.png"
+                  alt="Drive"
+                  width={16}
+                  height={16}
+                  className="size-4"
+                />
+              )}
+              {recurso.error && (
+                <AlertCircle className="size-4 text-rose-400" />
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1">
+            {recurso.storageKey ? (
+              <div className="flex min-h-10 items-center gap-2 rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white/70">
+                <FileCode2 className="size-4 text-cyan-300" />
+                HTML cargado
+              </div>
+            ) : (
+              <input
+                type="file"
+                aria-label="Archivo HTML del recurso"
+                name={`htmlFile:${recurso.localId}`}
+                accept=".html,.htm,text/html"
+                onChange={(e) => onHtmlFileChange(recurso.localId, e.target.files?.[0] ?? null)}
+                className={`w-full cursor-pointer rounded border bg-surface-0 px-3 py-2 text-sm text-white file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white hover:file:bg-white/15 ${
+                  recurso.error ? 'border-rose-400/50' : 'border-white/10'
+                }`}
               />
             )}
-            {recurso.error && (
-              <AlertCircle className="h-4 w-4 text-rose-400" />
-            )}
           </div>
-        </div>
+        )}
 
         {/* Reorder buttons */}
         <div className="flex flex-col">
@@ -513,7 +652,7 @@ function RecursoRow({
             title="Subir"
             className="inline-flex h-5 w-6 items-center justify-center rounded-t border border-white/8 bg-surface-0 text-white/40 transition-colors enabled:hover:bg-white/5 enabled:hover:text-white disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
           >
-            <ChevronUp className="h-3 w-3" />
+            <ChevronUp className="size-3" />
           </button>
           <button
             type="button"
@@ -522,7 +661,7 @@ function RecursoRow({
             title="Bajar"
             className="inline-flex h-5 w-6 items-center justify-center rounded-b border-x border-b border-white/8 bg-surface-0 text-white/40 transition-colors enabled:hover:bg-white/5 enabled:hover:text-white disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
           >
-            <ChevronDown className="h-3 w-3" />
+            <ChevronDown className="size-3" />
           </button>
         </div>
 
@@ -533,7 +672,7 @@ function RecursoRow({
           title="Eliminar recurso"
           className="inline-flex h-8 w-8 items-center justify-center rounded text-rose-400/60 transition-colors hover:bg-rose-500/10 hover:text-rose-300 cursor-pointer"
         >
-          <Trash2 className="h-3.5 w-3.5" />
+          <Trash2 className="size-3.5" />
         </button>
       </div>
 
@@ -545,6 +684,7 @@ function RecursoRow({
       <div className="mt-2 space-y-1">
         <input
           type="text"
+          aria-label="Nombre del recurso"
           value={recurso.nombre}
           onChange={(e) => onNombreChange(recurso.localId, e.target.value)}
           placeholder="Nombre del recurso (opcional)"

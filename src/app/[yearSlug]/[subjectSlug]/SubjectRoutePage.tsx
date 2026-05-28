@@ -325,14 +325,16 @@ export function SubjectRoutePage({
               <p className="text-sm text-white/58">Sin apuntes.</p>
             ) : (
               <div className="stagger-children grid gap-4 xl:grid-cols-2">
-                {subject.apuntes.map((apunte) => (
-                  <ApunteFocusScroll
-                    key={apunte.id}
-                    slug={apunte.slug}
-                    focusedSlug={focusApunteSlug}
-                    className="scroll-mt-24"
-                    focusedClassName="rounded-lg ring-1 ring-white/20"
-                  >
+                {subject.apuntes.map((apunte) => {
+                  const apunteHref = `/${subject.year.slug}/${subject.slug}/apuntes/${apunte.slug}`
+                  return (
+                    <ApunteFocusScroll
+                      key={apunte.id}
+                      slug={apunte.slug}
+                      focusedSlug={focusApunteSlug}
+                      className="scroll-mt-24"
+                      focusedClassName="rounded-lg ring-1 ring-white/20"
+                    >
                     <DarkCard className="flex h-full flex-col p-5">
                       <div className="flex items-start justify-between gap-4">
                         <div>
@@ -376,12 +378,22 @@ export function SubjectRoutePage({
                       {apunte.recursos.length > 0 && (
                         <div className="mt-4 flex flex-col gap-3">
                           {apunte.recursos.map((recurso) => (
-                            <ApunteRecursoView key={recurso.id} recurso={recurso} />
+                            <ApunteRecursoView
+                              key={recurso.id}
+                              recurso={recurso}
+                              apunteHref={apunteHref}
+                            />
                           ))}
                         </div>
                       )}
 
-                      <div className="mt-4 flex">
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Link
+                          href={apunteHref}
+                          className="inline-flex cursor-pointer items-center rounded-md bg-uader-red px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-uader-red-light"
+                        >
+                          Abrir apunte completo
+                        </Link>
                         <CopyApunteLinkButton
                           yearSlug={subject.year.slug}
                           subjectSlug={subject.slug}
@@ -390,7 +402,8 @@ export function SubjectRoutePage({
                       </div>
                     </DarkCard>
                   </ApunteFocusScroll>
-                ))}
+                  )
+                })}
               </div>
             )}
           </section>
