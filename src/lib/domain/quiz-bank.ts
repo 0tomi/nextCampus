@@ -60,6 +60,7 @@ export type UserAnswer = number | number[] | boolean | null
 
 export interface GradeResult {
   id: string
+  unitName: string
   correcta: boolean
   respuestaCorrecta: number | number[] | boolean
   explicacion: string
@@ -301,14 +302,15 @@ function shuffle<T>(items: T[]): T[] {
   return copy
 }
 
-// Arma el set del intento. `practica` conserva el orden; el resto mezcla.
-// `count <= 0` => todas.
+// Arma el set del intento. Siempre mezcla: las preguntas se eligen al azar de
+// todas las unidades, sin balanceo (igual que un examen real). `count <= 0` o
+// `count` mayor al total => todas (igual mezcladas).
 export function buildSet(
   flat: FlatQuestion[],
-  mode: QuizMode,
+  _mode: QuizMode,
   count: number,
 ): FlatQuestion[] {
-  const ordered = mode === 'practica' ? flat : shuffle(flat)
+  const ordered = shuffle(flat)
   if (count <= 0 || count >= ordered.length) return ordered
   return ordered.slice(0, count)
 }
@@ -346,11 +348,13 @@ export function isCorrect(
 
 export function gradeQuestion(
   id: string,
+  unitName: string,
   question: BankQuestion,
   userAnswer: UserAnswer,
 ): GradeResult {
   return {
     id,
+    unitName,
     correcta: isCorrect(question, userAnswer),
     respuestaCorrecta: question.answer,
     explicacion: question.explanation,

@@ -87,7 +87,8 @@ export async function POST(request: Request) {
         { status: 404 },
       )
     }
-    resultados.push(gradeQuestion(id, question, answer))
+    const unitName = bank?.units[loc.unitIdx]?.name ?? ''
+    resultados.push(gradeQuestion(id, unitName, question, answer))
   }
 
   return NextResponse.json({ resultados })

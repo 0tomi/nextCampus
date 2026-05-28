@@ -170,9 +170,19 @@ describe('buildSet', () => {
   const bank = parseQuizBank(JSON.stringify(VALID))
   const flat = bank.ok ? flattenBank('b1', bank.bank) : []
 
-  it('practica conserva el orden', () => {
+  it('practica mezcla pero conserva el conjunto completo de preguntas', () => {
     const set = buildSet(flat, 'practica', 0)
-    expect(set.map((f) => f.id)).toEqual(flat.map((f) => f.id))
+    expect(set).toHaveLength(flat.length)
+    expect(new Set(set.map((f) => f.id))).toEqual(
+      new Set(flat.map((f) => f.id)),
+    )
+  })
+
+  it('recorta a count eligiendo ids válidos del banco', () => {
+    const allIds = new Set(flat.map((f) => f.id))
+    const set = buildSet(flat, 'practica', 2)
+    expect(set).toHaveLength(2)
+    expect(set.every((f) => allIds.has(f.id))).toBe(true)
   })
 
   it('count recorta', () => {
@@ -190,9 +200,9 @@ describe('gradeQuestion + resumen', () => {
     if (!bank.ok) throw new Error('banco inválido')
     const flat = flattenBank('b1', bank.bank)
     const results = [
-      gradeQuestion(flat[0].id, flat[0].question, 1), // ok
-      gradeQuestion(flat[1].id, flat[1].question, [0, 2]), // ok
-      gradeQuestion(flat[2].id, flat[2].question, true), // mal (answer false)
+      gradeQuestion(flat[0].id, flat[0].unitName, flat[0].question, 1), // ok
+      gradeQuestion(flat[1].id, flat[1].unitName, flat[1].question, [0, 2]), // ok
+      gradeQuestion(flat[2].id, flat[2].unitName, flat[2].question, true), // mal (answer false)
     ]
     const resumen = resumirIntento(results)
     expect(resumen).toEqual({ total: 3, correctas: 2, porcentaje: 67 })
