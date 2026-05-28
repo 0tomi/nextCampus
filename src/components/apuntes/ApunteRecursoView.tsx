@@ -169,8 +169,10 @@ function HtmlPreviewCard({
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [animate, setAnimate] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   const handleOpen = () => {
+    setIsLoading(true)
     setIsOpen(true)
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -277,13 +279,24 @@ function HtmlPreviewCard({
             </div>
 
             {/* Content */}
-            <div className="flex-1 w-full p-6">
+            <div className="relative flex-1 w-full p-6">
+              {isLoading && (
+                <div className="absolute inset-6 flex flex-col items-center justify-center rounded-md border border-white/5 bg-black/35 backdrop-blur-sm transition-opacity duration-300">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
+                  <p className="mt-3 text-xs font-semibold text-white/50 tracking-wide">
+                    Cargando apunte...
+                  </p>
+                </div>
+              )}
               <iframe
                 src={`/api/apuntes/recursos/${recursoId}/preview`}
-                className="h-full w-full rounded-md border border-white/10 bg-black/20"
+                className={`h-full w-full rounded-md border border-white/10 bg-black/20 transition-opacity duration-300 ${
+                  isLoading ? 'opacity-0' : 'opacity-100'
+                }`}
                 loading="lazy"
                 sandbox=""
                 title={title}
+                onLoad={() => setIsLoading(false)}
               />
             </div>
           </div>
@@ -294,14 +307,29 @@ function HtmlPreviewCard({
 }
 
 function HtmlPreviewIframe({ recursoId, titulo }: { recursoId: string; titulo: string }) {
+  const [isLoading, setIsLoading] = useState(true)
+
   return (
-    <iframe
-      src={`/api/apuntes/recursos/${recursoId}/preview`}
-      className="min-h-[640px] w-full rounded-md border border-white/10 bg-black/20"
-      loading="lazy"
-      sandbox=""
-      title={titulo}
-    />
+    <div className="relative w-full min-h-[640px]">
+      {isLoading && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center rounded-md border border-white/5 bg-black/35 backdrop-blur-sm transition-opacity duration-300">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
+          <p className="mt-3 text-xs font-semibold text-white/50 tracking-wide">
+            Cargando apunte...
+          </p>
+        </div>
+      )}
+      <iframe
+        src={`/api/apuntes/recursos/${recursoId}/preview`}
+        className={`min-h-[640px] w-full rounded-md border border-white/10 bg-black/20 transition-opacity duration-300 ${
+          isLoading ? 'opacity-0' : 'opacity-100'
+        }`}
+        loading="lazy"
+        sandbox=""
+        title={titulo}
+        onLoad={() => setIsLoading(false)}
+      />
+    </div>
   )
 }
 
