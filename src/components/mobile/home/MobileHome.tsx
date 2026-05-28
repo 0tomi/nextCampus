@@ -28,6 +28,7 @@ interface CareerForMobile {
     id: string
     slug: string
     nombre: string
+    orden: number
     subjects: Array<{
       id: string
       slug: string
@@ -133,6 +134,7 @@ export function MobileHome({
     slug: y.slug,
     nombre: y.nombre,
     subjectsCount: y.subjects.length,
+    orden: y.orden,
   }))
 
   const agendaIdBySubjectId = new Map(

@@ -26,6 +26,7 @@ export interface MobileShellDrawerYear {
   slug: string
   nombre: string
   subjectsCount: number
+  orden: number
 }
 
 interface MobileShellProps {
@@ -261,7 +262,7 @@ export function MobileShell({
                       )}
                     >
                       <span className="text-[13px] font-black leading-none">
-                        {idx + 1}
+                        {year.orden}
                       </span>
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col">

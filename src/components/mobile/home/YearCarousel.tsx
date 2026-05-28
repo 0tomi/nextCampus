@@ -16,6 +16,7 @@ interface CarouselYear {
   id: string
   slug: string
   nombre: string
+  orden: number
   subjects: Array<{
     id: string
     slug: string
@@ -69,7 +70,7 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
                 className="block w-2 h-2 rounded-sm"
                 style={{ background: colors.tone }}
               />
-              Año {idx + 1}
+              Año {y.orden}
             </button>
           )
         })}
@@ -103,7 +104,7 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
                 >
                   <div>
                     <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/72">
-                      Año {idx + 1} · {y.subjects.length} {y.subjects.length === 1 ? 'materia' : 'materias'}
+                      Año {y.orden} · {y.subjects.length} {y.subjects.length === 1 ? 'materia' : 'materias'}
                     </p>
                     <h3 className="mt-1 text-xl font-black tracking-tight text-white">
                       {y.nombre}
@@ -161,7 +162,7 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
                       id: y.id,
                       slug: y.slug,
                       nombre: y.nombre,
-                      orden: idx + 1,
+                      orden: y.orden,
                       subjects: y.subjects,
                     }}
                   />
@@ -181,7 +182,7 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
             <button
               key={y.id}
               type="button"
-              aria-label={`Ir al año ${idx + 1}`}
+              aria-label={`Ir al año ${y.orden}`}
               onClick={() => scrollTo(idx)}
               className="h-1.5 rounded-full cursor-pointer transition-all duration-[280ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
               style={{

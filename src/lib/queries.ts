@@ -147,6 +147,7 @@ export function getCareer() {
           id: true,
           slug: true,
           nombre: true,
+          orden: true,
           subjects: {
             orderBy: { nombre: 'asc' },
             select: {
