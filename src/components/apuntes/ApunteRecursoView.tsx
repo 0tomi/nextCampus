@@ -15,16 +15,19 @@ import {
 } from '@/lib/recursos'
 import { ExternalLink, FileCode2, FileText, ImageIcon, PlayCircle, X, Maximize2, Minimize2 } from 'lucide-react'
 
-function driveEmbedClassName(kind: DriveKind): string {
-  const base = 'w-full rounded-md border border-white/10'
+function driveEmbedClassName(kind: DriveKind, variant: 'card' | 'wide'): string {
+  const rounded = variant === 'wide' ? 'rounded-xl' : 'rounded-md'
+  const border = variant === 'wide' ? 'border border-white/5' : 'border border-white/10'
+  const base = `w-full ${rounded} ${border}`
+  
   switch (kind) {
     case 'document':
-      return `${base} min-h-[600px]`
+      return `${base} h-[70vh] min-h-[500px] sm:min-h-[750px]`
     case 'spreadsheet':
-      return `${base} aspect-video min-h-[420px]`
+      return `${base} aspect-video h-[55vh] min-h-[400px] sm:min-h-[600px]`
     case 'presentation':
     case 'file':
-      return `${base} aspect-video`
+      return `${base} h-[65vh] min-h-[450px] sm:min-h-[650px]`
   }
 }
 
@@ -54,6 +57,44 @@ export function ApunteRecursoView({ recurso, variant = 'card', apunteHref }: Apu
       : recurso.tipo === 'DRIVE'
         ? 'Abrir en Drive'
         : 'Abrir apunte'
+
+  if (variant === 'wide') {
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between border-b border-white/5 pb-2">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)] shrink-0" />
+            <h3 className="font-display text-sm font-bold tracking-tight text-white/90 sm:text-base">
+              {titulo}
+            </h3>
+          </div>
+          {recurso.tipo === 'HTML' ? (
+            apunteHref ? (
+              <a
+                href={apunteHref}
+                className="shrink-0 text-xs font-semibold text-white/40 transition-colors hover:text-white/80 cursor-pointer inline-flex items-center gap-1"
+              >
+                {linkLabel}
+                <ExternalLink className="size-3" />
+              </a>
+            ) : null
+          ) : (
+            <a
+              href={recurso.url}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="shrink-0 text-xs font-semibold text-white/40 transition-colors hover:text-white/80 cursor-pointer inline-flex items-center gap-1"
+            >
+              {linkLabel}
+              <ExternalLink className="size-3" />
+            </a>
+          )}
+        </div>
+
+        <ApunteRecursoMedia recurso={recurso} titulo={titulo} variant={variant} apunteHref={apunteHref} />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-surface-1 p-4">
@@ -131,18 +172,19 @@ function ApunteRecursoMedia({
           href={recurso.url}
           src={driveThumbnailUrl(parsed, variant === 'wide' ? 1600 : 1000)}
           title={titulo}
+          variant={variant}
         />
       )
     }
 
     if (previewMode === 'fallback') {
-      return <DriveFallback href={recurso.url} title={titulo} />
+      return <DriveFallback href={recurso.url} title={titulo} variant={variant} />
     }
 
     return (
       <iframe
         src={driveEmbedUrl(parsed)}
-        className={`${driveEmbedClassName(parsed.kind)} bg-black/20`}
+        className={`${driveEmbedClassName(parsed.kind, variant)} bg-black/20`}
         loading="lazy"
         allow="autoplay"
         sandbox="allow-scripts allow-forms allow-popups allow-downloads"
@@ -154,7 +196,7 @@ function ApunteRecursoMedia({
 
   // Fallback: URL de Drive no parseable → mensaje sutil (el link ya está en el header).
   return (
-    <DriveFallback href={recurso.url} title={titulo} />
+    <DriveFallback href={recurso.url} title={titulo} variant={variant} />
   )
 }
 
@@ -389,9 +431,9 @@ function HtmlPreviewIframe({ recursoId, titulo }: { recursoId: string; titulo: s
   const [isLoading, setIsLoading] = useState(true)
 
   return (
-    <div className="relative w-full min-h-[640px]">
+    <div className="relative w-full h-[70vh] min-h-[500px] sm:min-h-[750px]">
       {isLoading && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center rounded-md border border-white/5 bg-black/35 backdrop-blur-sm transition-opacity duration-300">
+        <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl border border-white/5 bg-black/35 backdrop-blur-sm transition-opacity duration-300">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
           <p className="mt-3 text-xs font-semibold text-white/50 tracking-wide">
             Cargando apunte...
@@ -400,7 +442,7 @@ function HtmlPreviewIframe({ recursoId, titulo }: { recursoId: string; titulo: s
       )}
       <iframe
         src={`/api/apuntes/recursos/${recursoId}/preview`}
-        className={`min-h-[640px] w-full rounded-md border border-white/10 bg-black/20 transition-opacity duration-300 ${
+        className={`h-full w-full rounded-xl border border-white/5 bg-black/20 transition-opacity duration-300 ${
           isLoading ? 'opacity-0' : 'opacity-100'
         }`}
         loading="lazy"
@@ -416,23 +458,28 @@ function DriveThumbnailPreview({
   href,
   src,
   title,
+  variant,
 }: {
   href: string
   src: string
   title: string
+  variant: 'card' | 'wide'
 }) {
   const [failed, setFailed] = useState(false)
 
   if (failed) {
-    return <DriveFallback href={href} title={title} />
+    return <DriveFallback href={href} title={title} variant={variant} />
   }
+
+  const rounded = variant === 'wide' ? 'rounded-xl' : 'rounded-md'
+  const border = variant === 'wide' ? 'border border-white/5' : 'border border-white/10'
 
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer nofollow"
-      className="group relative block aspect-video overflow-hidden rounded-md border border-white/10 bg-white/[0.03] cursor-pointer"
+      className={`group relative block aspect-video overflow-hidden ${rounded} border ${border} bg-white/[0.03] cursor-pointer`}
     >
       <Image
         src={src}
@@ -445,27 +492,37 @@ function DriveThumbnailPreview({
         unoptimized
       />
       <span className="absolute bottom-3 left-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-xs font-semibold text-white/80 backdrop-blur">
-          <ImageIcon className="size-3.5" />
+        <ImageIcon className="size-3.5" />
         Abrir archivo
       </span>
     </a>
   )
 }
 
-function DriveFallback({ href, title }: { href: string; title: string }) {
+function DriveFallback({
+  href,
+  title,
+  variant = 'card',
+}: {
+  href: string
+  title: string
+  variant?: 'card' | 'wide'
+}) {
   const isVideo = /\.(mp4|webm|mov|m4v)$/i.test(title)
   const Icon = isVideo ? PlayCircle : FileText
 
   return (
-    <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-white/10 bg-white/[0.025] p-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex min-w-0 items-start gap-3">
-        <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] text-white/60">
-          <Icon className="size-5" />
+    <div className="flex flex-col items-start gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-center gap-3.5">
+        <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-white/5 bg-white/[0.04] text-white/70 shadow-sm">
+          <Icon className="size-5.5" />
         </span>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-white">{title}</p>
-          <p className="mt-1 text-xs leading-5 text-white/45">
-            Este archivo se ve mejor directamente en Drive.
+          {variant !== 'wide' && (
+            <p className="text-sm font-bold text-white tracking-tight">{title}</p>
+          )}
+          <p className="text-xs leading-relaxed text-white/45">
+            Este archivo no tiene vista previa disponible y se ve mejor directamente en Google Drive.
           </p>
         </div>
       </div>
@@ -473,9 +530,10 @@ function DriveFallback({ href, title }: { href: string; title: string }) {
         href={href}
         target="_blank"
         rel="noopener noreferrer nofollow"
-        className="inline-flex shrink-0 cursor-pointer items-center rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+        className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
       >
-        Abrir archivo
+        Abrir en Drive
+        <ExternalLink className="size-3" />
       </a>
     </div>
   )
