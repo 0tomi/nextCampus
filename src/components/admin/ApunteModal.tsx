@@ -175,12 +175,7 @@ export function ApunteModal({
           ? {
               ...r,
               kind,
-              url: kind === 'HTML' ? '' : r.url,
               tipo: kind === 'HTML' ? 'HTML' : detectTipo(r.url),
-              storageKey: undefined,
-              mimeType: undefined,
-              sizeBytes: undefined,
-              fileName: undefined,
               error: undefined,
             }
           : r,

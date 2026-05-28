@@ -103,42 +103,44 @@ export function Modal({
   return (
     /* Overlay */
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex justify-center overflow-y-auto bg-black/70 backdrop-blur-sm p-4 md:p-10"
       onClick={handleOverlayClick}
       onKeyDown={handleOverlayKey}
       role="presentation"
     >
-      {/* Dialog */}
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        className={cn(
-          'relative w-full max-w-lg rounded-none border border-white/8 bg-surface-1 shadow-[0_24px_64px_rgba(0,0,0,0.72)] animate-in',
-          className,
-        )}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/6 px-6 py-4">
-          <h2
-            id={titleId}
-            className="text-base font-black tracking-tight text-white"
-          >
-            {title}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="inline-flex h-8 w-8 items-center justify-center text-white/46 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 cursor-pointer"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+      <div className="flex min-h-full w-full items-center justify-center">
+        {/* Dialog */}
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          className={cn(
+            'relative w-full max-w-lg rounded-none border border-white/8 bg-surface-1 shadow-[0_24px_64px_rgba(0,0,0,0.72)] animate-in my-auto',
+            className,
+          )}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-white/6 px-6 py-4">
+            <h2
+              id={titleId}
+              className="text-base font-black tracking-tight text-white"
+            >
+              {title}
+            </h2>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="inline-flex h-8 w-8 items-center justify-center text-white/46 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
 
-        {/* Content */}
-        <div className={cn('px-6 py-5', contentClassName)}>{children}</div>
+          {/* Content */}
+          <div className={cn('px-6 py-5', contentClassName)}>{children}</div>
+        </div>
       </div>
     </div>
   )
