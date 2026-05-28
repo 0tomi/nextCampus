@@ -65,10 +65,16 @@ export function useInstallPrompt(): UseInstallPromptResult {
 
   useEffect(() => {
     const stored = readStatus()
+    // Estado disponible solo en el cliente (localStorage, matchMedia, user-agent).
+    // Se inicializa tras el montaje a propósito: `isReady` arranca en false en
+    // server y cliente, así no hay mismatch de hidratación. El set sincrónico acá
+    // es intencional, no una cascada de renders accidental.
+    /* eslint-disable react-hooks/set-state-in-effect */
     setIsInstalled(detectStandalone() || stored === 'installed')
     setIsDismissed(stored === 'dismissed')
     setIsIOS(detectIOS())
     setIsReady(true)
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     const onBeforeInstall = (event: Event) => {
       event.preventDefault()

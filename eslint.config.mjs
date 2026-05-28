@@ -14,6 +14,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "src/generated/**",
     "docs/MobileDesign/**",
+    // Scripts de skills locales (CommonJS): no son código de la app.
+    ".agents/**",
+    ".claude/**",
   ]),
   {
     rules: {

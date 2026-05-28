@@ -73,7 +73,6 @@ export default async function QuizPage({
           subjectSlug={subject.slug}
           bancos={bancos}
           yearId={subject.year.id}
-          yearSlug={subject.year.slug}
         />
       </main>
     </div>

@@ -54,8 +54,13 @@ export function MobileShell({
   const pathname = usePathname()
   const [drawer, setDrawer] = useState({ open: false, pathname })
   const open = drawer.open && drawer.pathname === pathname
+  // Espejo del estado `open` para leerlo dentro de listeners de larga vida
+  // (el effect de gestos se monta una sola vez). Se sincroniza en un effect,
+  // nunca durante el render.
   const openRef = useRef(open)
-  openRef.current = open
+  useEffect(() => {
+    openRef.current = open
+  }, [open])
 
   const openDrawer = useCallback(() => setDrawer({ open: true, pathname }), [pathname])
   const closeDrawer = useCallback(() => setDrawer({ open: false, pathname }), [pathname])
@@ -242,7 +247,7 @@ export function MobileShell({
             AÑOS ACADÉMICOS
           </span>
           <ul className="flex flex-col gap-1">
-            {drawerYears.map((year, idx) => {
+            {drawerYears.map((year) => {
               const colorClasses = getYearColorClasses(year.slug)
               const isActive = year.slug === currentYearSlug
               return (
