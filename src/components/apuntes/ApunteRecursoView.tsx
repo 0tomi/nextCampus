@@ -14,6 +14,7 @@ import {
   type RecursoTipo,
 } from '@/lib/recursos'
 import { ExternalLink, FileCode2, FileText, ImageIcon, PlayCircle } from 'lucide-react'
+import { Sheet } from '@/components/ui/Sheet'
 
 function driveEmbedClassName(kind: DriveKind): string {
   const base = 'w-full rounded-md border border-white/10'
@@ -101,7 +102,7 @@ function ApunteRecursoMedia({
       return <HtmlPreviewIframe recursoId={recurso.id} titulo={titulo} />
     }
 
-    return <HtmlPreviewCard href={apunteHref} title={titulo} />
+    return <HtmlPreviewCard href={apunteHref} title={titulo} recursoId={recurso.id} />
   }
 
   if (recurso.tipo === 'YOUTUBE') {
@@ -158,7 +159,26 @@ function ApunteRecursoMedia({
   )
 }
 
-function HtmlPreviewCard({ href, title }: { href?: string; title: string }) {
+function HtmlPreviewCard({
+  href,
+  title,
+  recursoId,
+}: {
+  href?: string
+  title: string
+  recursoId: string
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (!href) return
+    // Si es desktop (ancho >= 1024px), abrimos el modal en vez de navegar
+    if (window.matchMedia('(min-width: 1024px)').matches) {
+      e.preventDefault()
+      setIsOpen(true)
+    }
+  }
+
   const content = (
     <div className="rounded-md border border-cyan-300/15 bg-[radial-gradient(circle_at_18%_24%,rgba(34,211,238,0.14),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.045),rgba(255,255,255,0.015))] p-4">
       <div className="flex items-start gap-3">
@@ -179,12 +199,38 @@ function HtmlPreviewCard({ href, title }: { href?: string; title: string }) {
     </div>
   )
 
-  if (!href) return content
-
   return (
-    <a href={href} className="block cursor-pointer transition-opacity hover:opacity-90">
-      {content}
-    </a>
+    <>
+      {href ? (
+        <a
+          href={href}
+          onClick={handleClick}
+          className="block cursor-pointer transition-opacity hover:opacity-90"
+        >
+          {content}
+        </a>
+      ) : (
+        content
+      )}
+
+      {/* Modal para previsualizar en desktop */}
+      <Sheet
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        title={title}
+        className="max-w-4xl"
+      >
+        <div className="h-[75vh] w-full py-2">
+          <iframe
+            src={`/api/apuntes/recursos/${recursoId}/preview`}
+            className="h-full w-full rounded-md border border-white/10 bg-black/20"
+            loading="lazy"
+            sandbox=""
+            title={title}
+          />
+        </div>
+      </Sheet>
+    </>
   )
 }
 
