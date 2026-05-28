@@ -82,6 +82,7 @@ export default async function MapaVisualPage() {
             slug: year.slug,
             nombre: year.nombre,
             subjectsCount: year.subjects.length,
+            orden: year.orden,
           }))}
           availableSubjectSlugs={availableSubjectSlugs}
           initialMode="ruta"

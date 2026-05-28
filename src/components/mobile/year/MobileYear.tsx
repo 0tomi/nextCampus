@@ -34,6 +34,7 @@ interface AllYear {
   slug: string
   nombre: string
   subjectsCount: number
+  orden: number
 }
 
 interface TipoEvento {
@@ -128,6 +129,7 @@ export function MobileYear({
     slug: y.slug,
     nombre: y.nombre,
     subjectsCount: y.subjectsCount,
+    orden: y.orden,
   }))
 
   const modalSubjects = year.subjects

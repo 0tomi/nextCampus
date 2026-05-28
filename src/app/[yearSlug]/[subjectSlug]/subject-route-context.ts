@@ -59,6 +59,7 @@ export async function getSubjectRouteContext({
     slug: year.slug,
     nombre: year.nombre,
     subjectsCount: year.subjects.length,
+    orden: year.orden,
   }))
 
   return {

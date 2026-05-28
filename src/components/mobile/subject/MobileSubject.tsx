@@ -30,7 +30,7 @@ interface SubjectForMobile {
   apuntes: Array<{ id: string; titulo: string; slug: string; descripcionHtml: string | null; recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE' | 'HTML'; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }> }>
 }
 
-interface AllYear { slug: string; nombre: string; subjectsCount: number }
+interface AllYear { slug: string; nombre: string; subjectsCount: number; orden: number }
 
 interface TipoEvento {
   id: string

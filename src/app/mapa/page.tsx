@@ -90,6 +90,7 @@ export default async function MapaPage() {
             slug: year.slug,
             nombre: year.nombre,
             subjectsCount: year.subjects.length,
+            orden: year.orden,
           }))}
           availableSubjectSlugs={availableSubjectSlugs}
           initialMode="plan"
