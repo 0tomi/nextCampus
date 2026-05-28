@@ -13,7 +13,7 @@ import {
   type DriveKind,
   type RecursoTipo,
 } from '@/lib/recursos'
-import { ExternalLink, FileCode2, FileText, ImageIcon, PlayCircle, X } from 'lucide-react'
+import { ExternalLink, FileCode2, FileText, ImageIcon, PlayCircle, X, Maximize2, Minimize2 } from 'lucide-react'
 
 function driveEmbedClassName(kind: DriveKind): string {
   const base = 'w-full rounded-md border border-white/10'
@@ -170,9 +170,21 @@ function HtmlPreviewCard({
   const [isOpen, setIsOpen] = useState(false)
   const [animate, setAnimate] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isMaximized, setIsMaximized] = useState(false)
+  const [isResizing, setIsResizing] = useState(false)
+  const [width, setWidth] = useState(0)
+  const [height, setHeight] = useState(0)
 
   const handleOpen = () => {
     setIsLoading(true)
+    setIsMaximized(false)
+    
+    // Inicializamos al 94vw y 90vh
+    const initialWidth = Math.round(window.innerWidth * 0.94)
+    const initialHeight = Math.round(window.innerHeight * 0.90)
+    setWidth(initialWidth)
+    setHeight(initialHeight)
+
     setIsOpen(true)
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -194,6 +206,37 @@ function HtmlPreviewCard({
       e.preventDefault()
       handleOpen()
     }
+  }
+
+  const handleResizeMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+    const startWidth = width
+    const startHeight = height
+    const startX = e.clientX
+    const startY = e.clientY
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX
+      const deltaY = moveEvent.clientY - startY
+
+      const minWidth = 500
+      const minHeight = 400
+      const maxWidth = window.innerWidth * 0.98
+      const maxHeight = window.innerHeight * 0.98
+
+      setWidth(Math.min(maxWidth, Math.max(minWidth, startWidth + deltaX)))
+      setHeight(Math.min(maxHeight, Math.max(minHeight, startHeight + deltaY)))
+    }
+
+    const handleMouseUp = () => {
+      setIsResizing(false)
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
   }
 
   useEffect(() => {
@@ -256,30 +299,48 @@ function HtmlPreviewCard({
           role="presentation"
         >
           <div
-            className={`relative w-[85vw] h-[80vh] max-w-6xl rounded-2xl border border-white/10 bg-surface-1 shadow-[0_24px_64px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden transition-all duration-300 ${
+            className={`relative rounded-2xl border border-white/10 bg-surface-1 shadow-[0_24px_64px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden transition-all duration-300 ${
+              isMaximized
+                ? 'w-[98vw] h-[95vh]'
+                : 'w-[94vw] h-[90vh]'
+            } ${
               animate ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
             }`}
+            style={!isMaximized && width > 0 && height > 0 ? { width: `${width}px`, height: `${height}px` } : undefined}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
-              <h2 className="text-base font-black tracking-tight text-white">
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 select-none">
+              <h2 className="text-base font-black tracking-tight text-white truncate pr-4">
                 {title}
               </h2>
-              <button
-                type="button"
-                onClick={handleClose}
-                aria-label="Cerrar"
-                className="inline-flex h-8 w-8 items-center justify-center rounded text-white/50 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsMaximized(!isMaximized)}
+                  aria-label={isMaximized ? "Restaurar" : "Maximizar"}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded text-white/50 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+                >
+                  {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  aria-label="Cerrar"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded text-white/50 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             {/* Content */}
             <div className="relative flex-1 w-full p-6">
+              {isResizing && (
+                <div className="absolute inset-0 z-40 bg-transparent cursor-se-resize" />
+              )}
               {isLoading && (
                 <div className="absolute inset-6 flex flex-col items-center justify-center rounded-md border border-white/5 bg-black/35 backdrop-blur-sm transition-opacity duration-300">
                   <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
@@ -299,6 +360,24 @@ function HtmlPreviewCard({
                 onLoad={() => setIsLoading(false)}
               />
             </div>
+
+            {/* Resizer Handle */}
+            {!isMaximized && (
+              <div
+                className="absolute bottom-0 right-0 h-5 w-5 cursor-se-resize flex items-end justify-end p-0.5 z-45 group select-none"
+                onMouseDown={handleResizeMouseDown}
+              >
+                <svg
+                  className="size-3 text-white/20 group-hover:text-white/50 transition-colors"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <path d="M20 6L6 20M20 12L12 20M20 18L18 20" />
+                </svg>
+              </div>
+            )}
           </div>
         </div>
       )}
