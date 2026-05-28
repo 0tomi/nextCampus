@@ -341,8 +341,10 @@ export function SubjectRoutePage({
                           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38">
                             Apunte
                           </p>
-                          <h3 className="mt-2 text-xl font-black tracking-tight text-white">
-                            {apunte.titulo}
+                          <h3 className="mt-2 text-xl font-black tracking-tight text-white hover:underline transition-all">
+                            <Link href={apunteHref}>
+                              {apunte.titulo}
+                            </Link>
                           </h3>
                         </div>
 
@@ -388,12 +390,6 @@ export function SubjectRoutePage({
                       )}
 
                       <div className="mt-4 flex flex-wrap gap-2">
-                        <Link
-                          href={apunteHref}
-                          className="inline-flex cursor-pointer items-center rounded-md bg-uader-red px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-uader-red-light"
-                        >
-                          Abrir apunte completo
-                        </Link>
                         <CopyApunteLinkButton
                           yearSlug={subject.year.slug}
                           subjectSlug={subject.slug}

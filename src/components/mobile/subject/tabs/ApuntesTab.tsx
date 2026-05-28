@@ -99,7 +99,11 @@ export function ApuntesTab({
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Apunte</p>
-                <h3 className="mt-1 text-base font-black text-white leading-tight">{a.titulo}</h3>
+                <h3 className="mt-1 text-base font-black text-white leading-tight hover:underline transition-all">
+                  <Link href={apunteHref}>
+                    {a.titulo}
+                  </Link>
+                </h3>
               </div>
               <AdminControls yearId={yearId} noWrapper>
                 <div className="flex gap-1 shrink-0">
@@ -139,12 +143,6 @@ export function ApuntesTab({
               </div>
             )}
             <div className="flex flex-wrap gap-2">
-              <Link
-                href={apunteHref}
-                className="inline-flex cursor-pointer items-center rounded-md bg-uader-red px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-uader-red-light"
-              >
-                Abrir apunte completo
-              </Link>
               <CopyApunteLinkButton
                 yearSlug={yearSlug}
                 subjectSlug={subjectSlug}

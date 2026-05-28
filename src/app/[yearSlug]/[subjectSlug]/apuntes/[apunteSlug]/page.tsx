@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
-import { ArrowLeft, BookOpen, FileText } from 'lucide-react'
+import { ArrowLeft, BookOpen } from 'lucide-react'
 import { ApunteRecursoView } from '@/components/apuntes/ApunteRecursoView'
 import { CopyApunteLinkButton } from '@/components/apuntes/CopyApunteLinkButton'
 import { DarkCard } from '@/components/ui/DarkCard'
@@ -86,7 +86,7 @@ export default async function ApuntePage({
           />
         </header>
 
-        <article className="grid flex-1 gap-5 py-6 lg:grid-cols-[minmax(0,1fr)_280px] lg:py-8">
+        <article className="flex-1 py-6 lg:py-8">
           <section className="min-w-0 space-y-5">
             <DarkCard className="rounded-xl p-5 sm:p-7">
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/40">
@@ -114,27 +114,6 @@ export default async function ApuntePage({
               </div>
             ) : null}
           </section>
-
-          <aside className="lg:sticky lg:top-8 lg:self-start">
-            <DarkCard className="rounded-xl p-5">
-              <span className="inline-flex size-10 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] text-white/60">
-                <FileText className="size-5" />
-              </span>
-              <h2 className="mt-4 text-lg font-black text-white">
-                Apunte compartible
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-white/52">
-                Este link abre directamente este material, sin tener que buscarlo dentro de la materia.
-              </p>
-              <div className="mt-4">
-                <CopyApunteLinkButton
-                  yearSlug={subject.year.slug}
-                  subjectSlug={subject.slug}
-                  apunteSlug={apunte.slug}
-                />
-              </div>
-            </DarkCard>
-          </aside>
         </article>
       </div>
     </main>

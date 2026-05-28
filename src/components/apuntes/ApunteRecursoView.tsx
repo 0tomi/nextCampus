@@ -113,7 +113,7 @@ function ApunteRecursoMedia({
         className="aspect-video w-full rounded-md border border-white/10 bg-black/20"
         loading="lazy"
         allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        sandbox="allow-scripts allow-presentation allow-popups"
+        sandbox="allow-scripts allow-presentation allow-popups allow-same-origin"
         allowFullScreen
         title={titulo}
       />
