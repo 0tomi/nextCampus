@@ -49,6 +49,7 @@ export default async function YearCalendarPage({
     slug: y.slug,
     nombre: y.nombre,
     subjectsCount: y.subjects.length,
+    orden: y.orden,
   }))
 
   const drawerYears: MobileShellDrawerYear[] = allYears
