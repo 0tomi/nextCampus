@@ -233,23 +233,27 @@ export function MobileHome({
           <div className="relative overflow-hidden rounded-[24px] border border-white/6 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] px-5 py-4">
             <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-orange-400/12 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-10 left-0 h-24 w-24 rounded-full bg-amber-200/8 blur-2xl" />
-            <div className="relative min-h-[136px] pr-1 pb-10">
+            <div className="relative min-h-[136px] pr-1 pb-12">
               <div className="min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">CARRERA</p>
                 <h1 className="mt-2 text-2xl font-black tracking-tight text-white leading-tight">{career.nombre}</h1>
                 {career.descripcion && (
                   <p className="mt-3 max-w-[26ch] text-sm leading-relaxed text-white/55">{career.descripcion}</p>
                 )}
-                <button
-                  type="button"
-                  onClick={() => setIsAboutOpen(true)}
-                  className="mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-                >
-                  Nosotros
-                </button>
               </div>
-              <div className="absolute bottom-[-14px] right-[-6px]">
-                <Mascot size={74} className="opacity-95" />
+              <div className="absolute bottom-[-14px] left-0 right-[-6px] flex items-center justify-between pointer-events-none">
+                <div className="pointer-events-auto">
+                  <button
+                    type="button"
+                    onClick={() => setIsAboutOpen(true)}
+                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                  >
+                    Nosotros
+                  </button>
+                </div>
+                <div className="pointer-events-auto">
+                  <Mascot size={74} className="opacity-95" />
+                </div>
               </div>
             </div>
           </div>

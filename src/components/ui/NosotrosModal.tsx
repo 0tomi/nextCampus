@@ -33,10 +33,11 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
     if (open) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
       setMounted(true)
-      const frame = requestAnimationFrame(() => {
+      // Use a brief timeout to ensure the browser repaints the initial scale-95 opacity-0 state
+      const timer = setTimeout(() => {
         setVisible(true)
-      })
-      return () => cancelAnimationFrame(frame)
+      }, 20)
+      return () => clearTimeout(timer)
     } else {
       setVisible(false)
       timeoutRef.current = setTimeout(() => {
