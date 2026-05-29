@@ -114,11 +114,11 @@ export function Mascot({
     >
       <div
         className={cn(
-          'absolute pointer-events-none rounded-full blur-2xl transition-all duration-700 ease-out z-0',
+          'absolute pointer-events-none rounded-full transition-all duration-700 ease-out z-0',
           showGlow ? 'opacity-70 scale-110' : 'opacity-0 scale-90'
         )}
         style={{
-          backgroundColor: glowColor || '#f97316',
+          background: `radial-gradient(circle, ${glowColor || '#f97316'} 0%, transparent 70%)`,
           width: `${size * 0.75}px`,
           height: `${size * 0.75}px`,
         }}

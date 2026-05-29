@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { CalendarDays, SlidersHorizontal } from 'lucide-react'
+import { CalendarDays, SlidersHorizontal, ArrowRight } from 'lucide-react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { YearCarousel } from './YearCarousel'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
@@ -136,8 +136,9 @@ export function MobileHome({
   const uniqueSubjectsInEvents = new Set(filteredUpcomingEvents.map((e) => e.subjectId)).size
 
   const totalSubjects = visibleYears.reduce((acc, y) => acc + y.subjects.length, 0)
+  const isConfigured = totalSubjects > 0
 
-  const drawerYears: MobileShellDrawerYear[] = visibleYears.map((y) => ({
+  const drawerYears: MobileShellDrawerYear[] = (isConfigured ? visibleYears : career.years).map((y) => ({
     slug: y.slug,
     nombre: y.nombre,
     subjectsCount: y.subjects.length,
@@ -185,40 +186,6 @@ export function MobileHome({
     })
   }
 
-  if (visibleYears.length === 0) {
-    return (
-      <MobileShell
-        title="NextCampus"
-        subtitle={career.nombre}
-        drawerYears={[]}
-        careerName={career.nombre}
-      >
-        <div className="px-[18px] pt-6 flex flex-col gap-4">
-          <div className="flex justify-center">
-            <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-5 py-3">
-              <Mascot size={96} className="opacity-95" />
-            </div>
-          </div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
-            Inicio personalizado
-          </p>
-          <h2 className="text-2xl font-bold text-white">
-            No tenés años o materias visibles
-          </h2>
-          <p className="text-sm leading-relaxed text-white/55">
-            Elegí los que querés ver en tu inicio desde la pantalla de personalización.
-          </p>
-          <Link
-            href="/configurar"
-            className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-uader-red px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-uader-red-light self-start"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            Configurar
-          </Link>
-        </div>
-      </MobileShell>
-    )
-  }
 
   return (
     <MobileShell
@@ -261,42 +228,67 @@ export function MobileHome({
           </div>
         </section>
 
-        {/* PRÓXIMOS EVENTOS */}
-        <section className="flex flex-col gap-3">
-          <div className="px-[18px]">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">Agenda</p>
-            <h2 className="mt-1 text-lg font-black text-white">
-              Próximos eventos - {uniqueSubjectsInEvents} {uniqueSubjectsInEvents === 1 ? 'Materia' : 'Materias'}
-            </h2>
-          </div>
-          <div className="px-[18px] flex flex-col gap-2.5">
-            {!hasConfiguredSubjects ? (
-              <ConfigureAgendaNotice />
-            ) : filteredUpcomingEvents.length === 0 ? (
-              <EmptyAgenda />
-            ) : (
-              filteredUpcomingEvents.map((e) => (
-                <AgendaCard
-                  key={e.id}
-                  fecha={e.fecha}
-                  hora={e.hora}
-                  tipo={e.tipo}
-                  titulo={e.titulo}
-                  materia={e.subjectNombre}
-                  onClick={() => openEventDetail(e)}
-                />
-              ))
-            )}
-          </div>
-        </section>
+        {isConfigured ? (
+          <>
+            {/* PRÓXIMOS EVENTOS */}
+            <section className="flex flex-col gap-3">
+              <div className="px-[18px]">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">Agenda</p>
+                <h2 className="mt-1 text-lg font-black text-white">
+                  Próximos eventos - {uniqueSubjectsInEvents} {uniqueSubjectsInEvents === 1 ? 'Materia' : 'Materias'}
+                </h2>
+              </div>
+              <div className="px-[18px] flex flex-col gap-2.5">
+                {!hasConfiguredSubjects ? (
+                  <ConfigureAgendaNotice />
+                ) : filteredUpcomingEvents.length === 0 ? (
+                  <EmptyAgenda />
+                ) : (
+                  filteredUpcomingEvents.map((e) => (
+                    <AgendaCard
+                      key={e.id}
+                      fecha={e.fecha}
+                      hora={e.hora}
+                      tipo={e.tipo}
+                      titulo={e.titulo}
+                      materia={e.subjectNombre}
+                      onClick={() => openEventDetail(e)}
+                    />
+                  ))
+                )}
+              </div>
+            </section>
 
-        {/* ÚLTIMOS APUNTES */}
-        <HomeLatestApuntes
-          variant="mobile"
-          initialPrefs={initialPrefs}
-          notes={latestApuntes}
-          hasAnyNotes={hasAnyNotes}
-        />
+            {/* ÚLTIMOS APUNTES */}
+            <HomeLatestApuntes
+              variant="mobile"
+              initialPrefs={initialPrefs}
+              notes={latestApuntes}
+              hasAnyNotes={hasAnyNotes}
+            />
+          </>
+        ) : (
+          /* CONFIGURATION CTA CARD */
+          <section className="px-[18px]">
+            <div className="flex flex-col items-start gap-4 rounded-[20px] border border-white/5 bg-[#1a1a1a] p-5">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-white/70">
+                <SlidersHorizontal className="h-5 w-5" />
+              </span>
+              <div className="space-y-1">
+                <h3 className="text-[17px] font-bold leading-snug text-white/90">
+                  Configurá qué materias querés visualizar en el inicio
+                </h3>
+              </div>
+              <Link
+                href="/configurar"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-uader-red px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-uader-red-light self-stretch justify-center"
+              >
+                <span>Configurar inicio</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </section>
+        )}
 
         {/* CAROUSEL */}
         <section className="flex flex-col gap-3">
@@ -309,7 +301,7 @@ export function MobileHome({
               <AddYearButton />
             </AdminControls>
           </div>
-          <YearCarousel years={visibleYears} />
+          <YearCarousel years={isConfigured ? visibleYears : career.years} />
         </section>
       </div>
       <MobileEventDetailSheet
