@@ -180,17 +180,17 @@ export function MobileSubject({
                     rel="noopener noreferrer"
                     className="flex-1 flex items-center justify-center gap-2 h-11 rounded-md bg-white/[0.04] border border-white/10 text-sm font-bold text-white cursor-pointer hover:bg-white/10 transition-colors"
                   >
-                    <GoogleDriveIcon className="h-5 w-5" />
+                    <GoogleDriveIcon className="size-5" />
                     Drive con contenido
                   </a>
                   <AdminControls yearId={subject.year.id} noWrapper>
                     <button
                       type="button"
                       onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-subject'))}
-                      className="flex items-center justify-center w-11 h-11 shrink-0 rounded-md bg-white/[0.04] border border-white/10 text-white cursor-pointer hover:bg-white/10 transition-colors"
+                      className="flex items-center justify-center size-11 shrink-0 rounded-md bg-white/[0.04] border border-white/10 text-white cursor-pointer hover:bg-white/10 transition-colors"
                       title="Editar materia"
                     >
-                      <Pencil className="h-4 w-4 text-white/70" />
+                      <Pencil className="size-4 text-white/70" />
                     </button>
                   </AdminControls>
                 </div>
@@ -201,7 +201,7 @@ export function MobileSubject({
                     onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-subject'))}
                     className="w-full flex items-center justify-center gap-2 h-11 rounded-md bg-white/[0.04] border border-white/10 text-sm font-bold text-white cursor-pointer hover:bg-white/10 transition-colors"
                   >
-                    <Plus className="h-4 w-4 text-white/70" />
+                    <Plus className="size-4 text-white/70" />
                     Vincular carpeta de Google Drive
                   </button>
                 </AdminControls>
@@ -215,7 +215,7 @@ export function MobileSubject({
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full h-11 rounded-md bg-white/[0.04] border border-white/10 text-sm font-bold text-white cursor-pointer hover:bg-white/10 transition-colors"
                 >
-                  <CirclePlay className="h-5 w-5 text-red-400" />
+                  <CirclePlay className="size-5 text-red-400" />
                   Playlist de clases
                 </a>
               )}

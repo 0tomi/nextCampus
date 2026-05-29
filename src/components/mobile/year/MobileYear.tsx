@@ -179,9 +179,9 @@ export function MobileYear({
         {/* HERO gradient */}
         <section className="px-[18px] pt-4">
           <div
-            className={['relative overflow-hidden rounded-xl px-5 py-5 bg-gradient-to-r', colors.progressClassName].join(' ')}
+            className={['relative overflow-hidden rounded-xl p-5 bg-gradient-to-r', colors.progressClassName].join(' ')}
           >
-            <div className="absolute -top-12 -right-10 w-40 h-40 rounded-full bg-white/20 blur-3xl pointer-events-none" />
+            <div className="absolute -top-12 -right-10 size-40 rounded-full bg-white/20 blur-3xl pointer-events-none" />
             <div className="relative">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">

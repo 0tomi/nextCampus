@@ -59,23 +59,24 @@ export function MobileShell({
   children,
   mainClassName,
 }: MobileShellProps) {
-  const router = useRouter()
+  const { push, back } = useRouter()
   const pathname = usePathname()
-  const { prefs, isHydrated } = usePreferences()
+  const { prefs } = usePreferences()
   const effectivePrefs = prefs
 
-  // Filter drawerYears and their subjects based on preferences
-  const yearsWithFilteredSubjects = drawerYears
-    .map((y) => {
+  // Filter drawerYears and their subjects based on preferences in a single iteration
+  const yearsWithFilteredSubjects = drawerYears.reduce<typeof drawerYears>((acc, y) => {
+    if (isYearVisible(y.slug, effectivePrefs)) {
       const filteredSubjects = (y.subjects ?? []).filter((s) =>
         isSubjectVisible(y.slug, s.slug, effectivePrefs),
       )
-      return {
+      acc.push({
         ...y,
         subjects: filteredSubjects,
-      }
-    })
-    .filter((y) => isYearVisible(y.slug, effectivePrefs))
+      })
+    }
+    return acc
+  }, [])
 
   const totalVisibleSubjects = yearsWithFilteredSubjects.reduce(
     (sum, y) => sum + (y.subjects?.length ?? 0),
@@ -175,8 +176,8 @@ export function MobileShell({
 
     document.addEventListener('touchstart', handleTouchStart, { passive: true })
     document.addEventListener('touchmove', handleTouchMove, { passive: true })
-    document.addEventListener('touchend', handleTouchEnd)
-    document.addEventListener('touchcancel', handleTouchEnd)
+    document.addEventListener('touchend', handleTouchEnd, { passive: true })
+    document.addEventListener('touchcancel', handleTouchEnd, { passive: true })
 
     return () => {
       document.removeEventListener('touchstart', handleTouchStart)
@@ -197,8 +198,8 @@ export function MobileShell({
             onClick={
               onBack
                 ? typeof onBack === 'string'
-                  ? () => router.push(onBack)
-                  : () => router.back()
+                  ? () => push(onBack)
+                  : () => back()
                 : openDrawer
             }
             className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white"
@@ -378,7 +379,7 @@ export function MobileShell({
           </ul>
         </nav>
 
-        <div className="border-t border-white/5 px-3 py-3">
+        <div className="border-t border-white/5 p-3">
           <div className="mb-3 flex flex-col gap-1">
             <Link
               href="/admin"
@@ -388,7 +389,7 @@ export function MobileShell({
                 pathname.startsWith('/admin') ? 'bg-white/5' : 'hover:bg-white/5',
               )}
             >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
                 <Shield size={16} strokeWidth={2} />
               </span>
               <span className="flex min-w-0 flex-1 flex-col">
