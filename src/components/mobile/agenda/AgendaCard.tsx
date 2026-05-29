@@ -1,11 +1,12 @@
 import { getEventTone } from '@/components/mobile/shared/tokens'
-import { cn, formatAgendaTime } from '@/lib/utils'
+import { cn, eventDateToLocal } from '@/lib/utils'
 
 const WEEKDAYS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
 const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
 interface AgendaCardProps {
-  fecha: Date | string
+  fecha: string
+  hora: string | null
   tipo: string
   titulo: string
   materia?: string
@@ -13,13 +14,14 @@ interface AgendaCardProps {
   className?: string
 }
 
-export function AgendaCard({ fecha, tipo, titulo, materia, onClick, className }: AgendaCardProps) {
-  const d = typeof fecha === 'string' ? new Date(fecha) : fecha
+export function AgendaCard({ fecha, hora, tipo, titulo, materia, onClick, className }: AgendaCardProps) {
+  const d = eventDateToLocal(fecha)
   const tone = getEventTone(tipo)
   const weekday = WEEKDAYS[d.getDay()]
   const day = d.getDate()
   const month = MONTHS[d.getMonth()]
-  const time = formatAgendaTime(d)
+  // Pie de la card: "Materia · 14:30 hs". Si no hay hora, se omite esa parte.
+  const meta = [materia, hora ? `${hora} hs` : null].filter(Boolean).join(' · ')
 
   const content = (
     <>
@@ -37,7 +39,7 @@ export function AgendaCard({ fecha, tipo, titulo, materia, onClick, className }:
         </span>
         <span className="text-sm font-bold leading-snug text-white">{titulo}</span>
         <span className="text-[11px] font-semibold text-white/45">
-          {materia ? `${materia} · ` : ''}{time} hs
+          {meta}
         </span>
       </div>
     </>

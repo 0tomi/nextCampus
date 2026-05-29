@@ -7,7 +7,7 @@ import { CalendarDays, SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-
 import { EventCalendar, type EventCalendarEvent } from '@/components/calendar/EventCalendar'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { usePreferences } from '@/hooks/usePreferences'
-import { cn, formatDateTime } from '@/lib/utils'
+import { cn, formatEventDateTime, todayKeyAR } from '@/lib/utils'
 import { sanitizeRichHtml } from '@/lib/sanitize'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import {
@@ -19,7 +19,8 @@ import {
 export interface HomeGlobalCalendarEvent {
   id: string
   titulo: string
-  fecha: Date | string
+  fecha: string
+  hora: string | null
   tipo: string
   tipoId: string
   yearNombre: string
@@ -91,12 +92,11 @@ export function HomeGlobalCalendar({
   )
 
   // Obtener los 5 eventos más cercanos a partir de hoy (ordenados cronológicamente)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const todayKey = todayKeyAR()
 
   const upcomingEvents = [...visibleEvents]
-    .filter((event) => new Date(event.fecha).getTime() >= today.getTime())
-    .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
+    .filter((event) => event.fecha >= todayKey)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? ''))
 
   const closestEvents = upcomingEvents.slice(0, 5)
 
@@ -105,6 +105,7 @@ export function HomeGlobalCalendar({
     titulo: `${event.titulo} · ${event.materiaNombre}`,
     tituloOriginal: event.titulo,
     fecha: event.fecha,
+    hora: event.hora,
     tipo: event.tipo,
     tipoId: event.tipoId,
     yearSlug: event.yearSlug,
@@ -208,7 +209,7 @@ export function HomeGlobalCalendar({
 
                 <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-2.5">
                   <span className="inline-flex max-w-full rounded border border-white/8 bg-white/[0.02] px-2 py-1 text-[8px] font-bold uppercase tracking-[0.1em] text-white/60">
-                    {formatDateTime(evento.fecha)}
+                    {formatEventDateTime(evento.fecha, evento.hora)}
                   </span>
                 </div>
               </DarkCard>

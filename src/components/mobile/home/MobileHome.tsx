@@ -49,7 +49,8 @@ interface UpcomingEvent {
   id: string
   titulo: string
   descripcionHtml: string | null
-  fecha: Date | string
+  fecha: string
+  hora: string | null
   tipo: string
   tipoId: string
   subjectId: string
@@ -164,6 +165,7 @@ export function MobileHome({
       titulo: event.titulo,
       tituloOriginal: event.titulo,
       fecha: event.fecha,
+      hora: event.hora,
       tipo: event.tipo,
       tipoId: event.tipoId,
       descripcionHtml: event.descripcionHtml,
@@ -278,6 +280,7 @@ export function MobileHome({
                 <AgendaCard
                   key={e.id}
                   fecha={e.fecha}
+                  hora={e.hora}
                   tipo={e.tipo}
                   titulo={e.titulo}
                   materia={e.subjectNombre}

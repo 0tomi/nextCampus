@@ -6,7 +6,13 @@ import { getEventTone } from '@/components/mobile/shared/tokens'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { MobileEventDetailSheet } from './MobileEventDetailSheet'
+import { eventDateToLocal } from '@/lib/utils'
 import type { CommissionOption } from '@/lib/commission-preferences'
+
+/** "YYYY-MM-DD" (o ISO) → Date local. Evita el off-by-one de `new Date(string)`. */
+function toLocalDate(value: Date | string): Date {
+  return typeof value === 'string' ? eventDateToLocal(value.slice(0, 10)) : value
+}
 
 const MONTH_NAMES_ES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -24,7 +30,8 @@ function sameDay(a: Date, b: Date): boolean {
 
 export interface MobileCalendarEvent {
   id: string
-  fecha: Date | string
+  fecha: string
+  hora: string | null
   titulo: string
   tipo: string
   tipoId?: string
@@ -83,12 +90,12 @@ export function MobileCalendar({
   const [detailEvent, setDetailEvent] = useState<MobileCalendarEvent | null>(null)
   const [cursor, setCursor] = useState<Date>(() => {
     if (initialDate) {
-      const d = new Date(initialDate)
+      const d = toLocalDate(initialDate)
       d.setDate(1)
       return d
     }
     if (events && events.length > 0) {
-      const d = new Date(events[0].fecha)
+      const d = eventDateToLocal(events[0].fecha)
       d.setDate(1)
       return d
     }
@@ -98,12 +105,12 @@ export function MobileCalendar({
   })
 
   const [selected, setSelected] = useState<Date | null>(() =>
-    initialSelected ? new Date(initialSelected) : null,
+    initialSelected ? toLocalDate(initialSelected) : null,
   )
 
   const monthEvents = useMemo(() => {
     return (events ?? []).filter((e) => {
-      const d = new Date(e.fecha)
+      const d = eventDateToLocal(e.fecha)
       return (
         d.getMonth() === cursor.getMonth() &&
         d.getFullYear() === cursor.getFullYear()
@@ -114,7 +121,7 @@ export function MobileCalendar({
   const dayMap = useMemo(() => {
     const m: Record<number, MobileCalendarEvent[]> = {}
     monthEvents.forEach((e) => {
-      const d = new Date(e.fecha).getDate()
+      const d = eventDateToLocal(e.fecha).getDate()
       ;(m[d] = m[d] ?? []).push(e)
     })
     return m
@@ -138,15 +145,17 @@ export function MobileCalendar({
 
   const today = new Date()
 
+  // Orden por día y, dentro del día, por hora (los sin hora primero).
+  const byFechaHora = (a: MobileCalendarEvent, b: MobileCalendarEvent) =>
+    a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? '')
+
   const selectedEvents = selected
     ? (events ?? [])
-        .filter((e) => sameDay(new Date(e.fecha), selected))
-        .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
+        .filter((e) => sameDay(eventDateToLocal(e.fecha), selected))
+        .sort(byFechaHora)
     : []
 
-  const monthEventsSorted = [...monthEvents].sort(
-    (a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime(),
-  )
+  const monthEventsSorted = [...monthEvents].sort(byFechaHora)
 
   const goPrev = () => {
     const d = new Date(cursor)
@@ -346,6 +355,7 @@ export function MobileCalendar({
                 <AgendaCard
                   key={e.id}
                   fecha={e.fecha}
+                  hora={e.hora}
                   tipo={e.tipo}
                   titulo={e.titulo}
                   materia={e.materiaNombre}
@@ -365,6 +375,7 @@ export function MobileCalendar({
               <AgendaCard
                 key={e.id}
                 fecha={e.fecha}
+                hora={e.hora}
                 tipo={e.tipo}
                 titulo={e.titulo}
                 materia={e.materiaNombre}

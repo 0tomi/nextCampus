@@ -100,14 +100,28 @@ const optionalEntityIdSchema = z.preprocess(
   z.string().min(1).nullable(),
 )
 
+// La hora es OPCIONAL: el input de hora vacío ("") se normaliza a null.
+const horaSchema = z.preprocess(
+  (value) => (value === '' || value == null ? null : value),
+  z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'La hora no es válida.')
+    .nullable(),
+)
+
 const eventoSchema = z.object({
   agendaId: z.string().trim().min(1),
   commissionId: optionalEntityIdSchema,
   tipoEventoId: z.string().trim().min(1),
   titulo: z.string().trim().min(1).max(200),
   descripcionHtml: z.string().max(20000).default(''),
-  fecha: z.coerce.date(),
+  // Día calendario "YYYY-MM-DD" (sin hora). La hora va aparte y es opcional.
+  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha no es válida.'),
+  hora: horaSchema,
 })
+
+// "YYYY-MM-DD" → Date a medianoche UTC para guardar en la columna `@db.Date`.
+const fechaToDbDate = (fecha: string): Date => new Date(`${fecha}T00:00:00.000Z`)
 
 async function resolveAgendaTarget(input: {
   agendaId: string
@@ -167,6 +181,7 @@ export async function createEvento(formData: FormData): Promise<void> {
     titulo: formData.get('titulo'),
     descripcionHtml: formData.get('descripcionHtml') ?? '',
     fecha: formData.get('fecha'),
+    hora: formData.get('hora'),
   })
   const scope = await resolveAgendaTarget({
     agendaId: data.agendaId,
@@ -179,7 +194,8 @@ export async function createEvento(formData: FormData): Promise<void> {
       tipoEventoId: data.tipoEventoId,
       titulo: data.titulo,
       descripcionHtml: sanitizeRichHtml(data.descripcionHtml),
-      fecha: data.fecha,
+      fecha: fechaToDbDate(data.fecha),
+      hora: data.hora,
     },
   })
   await revalidateSubjectContent(scope.subjectSlug)
@@ -266,6 +282,7 @@ export async function updateEventoAction(
       titulo: formData.get('titulo'),
       descripcionHtml: formData.get('descripcionHtml') ?? '',
       fecha: formData.get('fecha'),
+      hora: formData.get('hora'),
     })
     const currentScope = await requireYearAdminForEventoId(id)
     if (!currentScope) return { ok: false, message: 'No encontramos el evento que querés editar.' }
@@ -286,7 +303,8 @@ export async function updateEventoAction(
         tipoEventoId: data.tipoEventoId,
         titulo: data.titulo,
         descripcionHtml: sanitizeRichHtml(data.descripcionHtml),
-        fecha: data.fecha,
+        fecha: fechaToDbDate(data.fecha),
+        hora: data.hora,
       },
     })
     await revalidateSubjectContent(currentScope.subjectSlug)
@@ -297,7 +315,8 @@ export async function updateEventoAction(
       entityId: id,
       detail: {
         titulo: data.titulo,
-        fecha: data.fecha.toISOString(),
+        fecha: data.fecha,
+        hora: data.hora,
         subjectSlug: currentScope.subjectSlug,
         ...(targetScope.commissionSlug ? { commissionSlug: targetScope.commissionSlug } : {}),
       },

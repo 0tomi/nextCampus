@@ -8,9 +8,11 @@ type SubjectRouteContextInput = {
   commissionSlug?: string
 }
 
-function sortEvents<T extends { fecha: Date | string }>(events: T[]) {
+function sortEvents<T extends { fecha: string; hora: string | null }>(events: T[]) {
+  // Por día y, dentro del día, por hora (los sin hora primero).
   return [...events].sort(
-    (a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime(),
+    (a, b) =>
+      a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? ''),
   )
 }
 

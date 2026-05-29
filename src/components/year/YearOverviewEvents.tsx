@@ -11,7 +11,7 @@ import {
   DeleteEventoButton,
 } from '@/components/admin/SubjectPageAdminOverlay'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
-import { formatDateTime } from '@/lib/utils'
+import { formatEventDateTime } from '@/lib/utils'
 import { sanitizeRichHtml } from '@/lib/sanitize'
 import {
   filterEventsByPreferredCommission,
@@ -35,7 +35,8 @@ interface YearSubjectOption {
 interface YearOverviewEvent {
   id: string
   titulo: string
-  fecha: Date | string
+  fecha: string
+  hora: string | null
   tipo: string
   tipoId?: string
   subjectSlug: string
@@ -182,7 +183,7 @@ export function YearOverviewEvents({
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <span className="inline-flex max-w-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] border-white/10 bg-surface-1 text-white/72">
-                        {formatDateTime(evento.fecha)}
+                        {formatEventDateTime(evento.fecha, evento.hora)}
                       </span>
                       <DeleteEventoButton
                         eventoId={evento.id}

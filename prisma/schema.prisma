@@ -141,7 +141,10 @@ model Evento {
   titulo          String
   /// HTML enriquecido y SANITIZADO (hipervínculos, formato). Nunca crudo.
   descripcionHtml String     @default("")
-  fecha           DateTime
+  /// Solo fecha (sin hora). La hora vive aparte y es opcional.
+  fecha           DateTime   @db.Date
+  /// Hora opcional en formato "HH:mm" (24h). null = evento sin hora definida.
+  hora            String?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 

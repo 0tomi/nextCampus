@@ -26,7 +26,7 @@ interface SubjectForMobile {
   playlistUrl: string | null
   playlistEnabled: boolean
   year: { id: string; slug: string; nombre: string; career: { nombre: string } }
-  agenda: { id: string; eventos: Array<{ id: string; titulo: string; descripcionHtml: string | null; fecha: Date | string; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId?: string | null; commissionSlug?: string | null; commissionNombre?: string | null }> } | null
+  agenda: { id: string; eventos: Array<{ id: string; titulo: string; descripcionHtml: string | null; fecha: string; hora: string | null; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId?: string | null; commissionSlug?: string | null; commissionNombre?: string | null }> } | null
   apuntes: Array<{ id: string; titulo: string; slug: string; descripcionHtml: string | null; recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE' | 'HTML'; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }> }>
 }
 
@@ -41,7 +41,8 @@ interface SubjectMobileEvent {
   id: string
   titulo: string
   descripcionHtml: string | null
-  fecha: Date | string
+  fecha: string
+  hora: string | null
   tipoEventoId: string
   tipoEvento: { nombre: string }
   commissionId?: string | null
@@ -247,6 +248,7 @@ export function MobileSubject({
             titulo: e.titulo,
             tituloOriginal: e.titulo,
             fecha: e.fecha,
+            hora: e.hora,
             tipo: e.tipoEvento.nombre,
             tipoId: e.tipoEventoId,
             descripcionHtml: e.descripcionHtml,

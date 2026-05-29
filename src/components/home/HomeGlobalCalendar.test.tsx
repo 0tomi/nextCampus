@@ -26,7 +26,8 @@ function makeEvent(
   return {
     id: 'event-1',
     titulo: 'Primer parcial',
-    fecha: new Date('2026-06-10T12:00:00.000Z'),
+    fecha: '2026-06-10',
+    hora: '09:00',
     tipo: 'Parcial',
     tipoId: 'tipo-1',
     yearSlug: 'primer-anio',
@@ -75,6 +76,36 @@ describe('HomeGlobalCalendar', () => {
 
     expect(markup).toContain('Primer año')
     expect(markup).toContain('href="/primer-anio/calculo"')
+  })
+
+  it('renderiza el día calendario sin correrlo por zona horaria', async () => {
+    const { HomeGlobalCalendar } = await import('./HomeGlobalCalendar')
+
+    const markup = renderToStaticMarkup(
+      <HomeGlobalCalendar
+        initialPrefs={{ hiddenYears: [], hiddenSubjects: [], hiddenCommissions: [] }}
+        events={[makeEvent({ fecha: '2026-06-10', hora: '09:00' })]}
+      />,
+    )
+
+    // El evento es del 10; nunca debe verse como 9 (trampa de new Date("YYYY-MM-DD")).
+    expect(markup).toContain('10 de jun')
+    expect(markup).not.toContain('9 de jun')
+    expect(markup).toContain('09:00')
+  })
+
+  it('omite la hora cuando el evento no la tiene', async () => {
+    const { HomeGlobalCalendar } = await import('./HomeGlobalCalendar')
+
+    const markup = renderToStaticMarkup(
+      <HomeGlobalCalendar
+        initialPrefs={{ hiddenYears: [], hiddenSubjects: [], hiddenCommissions: [] }}
+        events={[makeEvent({ fecha: '2026-06-10', hora: null })]}
+      />,
+    )
+
+    expect(markup).toContain('10 de jun')
+    expect(markup).not.toContain(' · ')
   })
 
   it('mantiene el filtro de preferencias para comisiones ocultas', async () => {

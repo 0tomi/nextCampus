@@ -46,16 +46,13 @@ interface EventModalProps {
 
 const emptyState: EventoActionState = { ok: false, message: '' }
 
-function formatForDatetimeLocal(dateInput?: string | Date): string {
+// Extrae la clave de día "YYYY-MM-DD" para el input type="date". La fecha de un
+// evento ya viaja como string "YYYY-MM-DD"; si llegara un Date, tomamos su día
+// en UTC (así se guardó: medianoche UTC) para no correrlo un día.
+function toDateInputValue(dateInput?: string | Date | null): string {
   if (!dateInput) return ''
-  const d = typeof dateInput === 'string' ? new Date(dateInput) : dateInput
-  if (isNaN(d.getTime())) return ''
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  const hours = String(d.getHours()).padStart(2, '0')
-  const minutes = String(d.getMinutes()).padStart(2, '0')
-  return `${year}-${month}-${day}T${hours}:${minutes}`
+  if (typeof dateInput === 'string') return dateInput.slice(0, 10)
+  return isNaN(dateInput.getTime()) ? '' : dateInput.toISOString().slice(0, 10)
 }
 
 export function EventModal({
@@ -274,25 +271,46 @@ function EventModalContent({
           </select>
         </div>
 
-        <div className="space-y-1">
-          <label
-            htmlFor="evento-fecha"
-            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
-          >
-            Fecha
-          </label>
-          <input
-            id="evento-fecha"
-            type="datetime-local"
-            name="fecha"
-            required
-            defaultValue={
-              eventToEdit
-                ? formatForDatetimeLocal(eventToEdit.fecha ?? eventToEdit.start ?? eventToEdit.date)
-                : (initialDate ?? '')
-            }
-            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
-          />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label
+              htmlFor="evento-fecha"
+              className="block text-xs font-semibold uppercase tracking-widest text-white/40"
+            >
+              Fecha
+            </label>
+            <input
+              id="evento-fecha"
+              type="date"
+              name="fecha"
+              required
+              defaultValue={
+                eventToEdit
+                  ? toDateInputValue(eventToEdit.fecha ?? eventToEdit.start ?? eventToEdit.date)
+                  : toDateInputValue(initialDate)
+              }
+              className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none cursor-pointer"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label
+              htmlFor="evento-hora"
+              className="block text-xs font-semibold uppercase tracking-widest text-white/40"
+            >
+              Hora{' '}
+              <span className="font-normal normal-case tracking-normal text-white/30">
+                (opcional)
+              </span>
+            </label>
+            <input
+              id="evento-hora"
+              type="time"
+              name="hora"
+              defaultValue={eventToEdit?.hora ?? ''}
+              className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none cursor-pointer"
+            />
+          </div>
         </div>
 
         <div className="space-y-1">

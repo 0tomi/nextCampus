@@ -31,6 +31,7 @@ export default async function YearCalendarPage({
         id: e.id,
         titulo: `${e.titulo} · ${s.nombre}`,
         fecha: e.fecha,
+        hora: e.hora,
         tipo: e.tipoEvento.nombre,
         tipoId: e.tipoEventoId,
         subjectSlug: s.slug,
@@ -43,7 +44,7 @@ export default async function YearCalendarPage({
         commissionNombre: e.commission?.nombre ?? null,
       })),
     )
-    .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
+    .sort((a, b) => a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? ''))
 
   const allYears = (career?.years ?? []).map((y) => ({
     slug: y.slug,

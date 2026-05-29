@@ -10,7 +10,7 @@ import { Sheet } from '@/components/ui/Sheet'
 import { deleteEvento } from '@/app/admin/actions'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { getEventTone } from '@/components/mobile/shared/tokens'
-import { cn, formatDateTime } from '@/lib/utils'
+import { cn, formatEventDate } from '@/lib/utils'
 import type { CommissionOption } from '@/lib/commission-preferences'
 import type { MobileCalendarEvent } from './MobileCalendar'
 
@@ -112,16 +112,15 @@ export function MobileEventDetailSheet({
               <DetailRow
                 icon={<CalendarDays className="h-4 w-4" />}
                 label="Fecha"
-                value={formatDateTime(event.fecha)}
+                value={formatEventDate(event.fecha)}
               />
-              <DetailRow
-                icon={<Clock className="h-4 w-4" />}
-                label="Horario"
-                value={new Date(event.fecha).toLocaleTimeString('es-AR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              />
+              {event.hora ? (
+                <DetailRow
+                  icon={<Clock className="h-4 w-4" />}
+                  label="Horario"
+                  value={event.hora}
+                />
+              ) : null}
               {event.materiaNombre ? (
                 <DetailRow
                   label="Materia"
@@ -196,6 +195,7 @@ export function MobileEventDetailSheet({
             title: event.titulo,
             tituloOriginal: event.tituloOriginal ?? event.titulo,
             fecha: event.fecha,
+            hora: event.hora,
             tipo: event.tipo,
             tipoId: event.tipoId,
             subjectId: event.subjectId,

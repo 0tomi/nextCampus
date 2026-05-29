@@ -9,9 +9,19 @@ import { EventModal } from '@/components/admin/EventModal'
 import { useAdminAccess } from '@/components/admin/adminAccess'
 import { Sheet } from '@/components/ui/Sheet'
 import { updateEventoFechaAction, deleteEvento } from '@/app/admin/actions'
-import { cn, formatDateTime } from '@/lib/utils'
+import { cn, formatEventDateTime } from '@/lib/utils'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import type { CommissionOption } from '@/lib/commission-preferences'
+
+// "Fecha · hora" del evento seleccionado. La fecha llega como "YYYY-MM-DD"; si
+// viniera un Date (fallback de FullCalendar) tomamos su día en UTC.
+function formatSelectedEventDate(event: EventCalendarEvent): string {
+  const value = event.fecha ?? event.start
+  if (!value) return ''
+  const fechaKey =
+    typeof value === 'string' ? value.slice(0, 10) : value.toISOString().slice(0, 10)
+  return formatEventDateTime(fechaKey, event.hora ?? null)
+}
 
 interface TipoEvento {
   id: string
@@ -202,11 +212,7 @@ export function EventCalendarAdmin({
                   Fecha y Horario
                 </span>
                 <span className="text-sm font-medium text-white/80">
-                  {selectedEvent.fecha
-                    ? formatDateTime(selectedEvent.fecha)
-                    : selectedEvent.start
-                    ? formatDateTime(selectedEvent.start)
-                    : ''}
+                  {formatSelectedEventDate(selectedEvent)}
                 </span>
               </div>
 

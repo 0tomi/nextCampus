@@ -1,13 +1,39 @@
 import 'server-only'
 import { unstable_cache } from 'next/cache'
+import type { Prisma } from '../../prisma/generated/client/client'
 import { prisma } from './prisma'
 import { countSubjectQuizBanks } from './storage'
+
+// Una fecha "calendario" (sin hora) no es un instante: serializarla como Date
+// arrastra el bug de zona horaria (medianoche UTC se ve como el día anterior en
+// AR). Por eso la mandamos al cliente como string "YYYY-MM-DD" y la hora como
+// "HH:mm" | null aparte. `@db.Date` devuelve un Date a medianoche UTC, así que
+// `toISOString().slice(0,10)` extrae el día correcto sin tocar zonas horarias.
+const toDateKey = (d: Date): string => d.toISOString().slice(0, 10)
+
+// Inicio del día calendario ACTUAL en zona AR, expresado como Date a medianoche
+// UTC para comparar contra una columna `@db.Date`. Evita que los eventos de hoy
+// "desaparezcan" de próximos al avanzar la hora del reloj.
+function arTodayBoundary(): Date {
+  const ar = new Date().toLocaleDateString('en-CA', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+  })
+  return new Date(`${ar}T00:00:00.000Z`)
+}
+
+// Orden canónico de eventos: por día y, dentro del día, por hora. Los eventos
+// sin hora van PRIMERO (nulls first).
+const eventoOrderBy: Prisma.EventoOrderByWithRelationInput[] = [
+  { fecha: 'asc' },
+  { hora: { sort: 'asc', nulls: 'first' } },
+]
 
 const eventoSelect = {
   id: true,
   titulo: true,
   descripcionHtml: true,
   fecha: true,
+  hora: true,
   tipoEventoId: true,
   tipoEvento: { select: { nombre: true } },
 } as const
@@ -23,7 +49,7 @@ const agendaWithEventosSelect = {
     },
   },
   eventos: {
-    orderBy: { fecha: 'asc' },
+    orderBy: eventoOrderBy,
     select: eventoSelect,
   },
 } as const
@@ -34,26 +60,35 @@ type QueryCommission = {
   nombre: string
 }
 
+// Shape de salida (consumida por componentes): fecha como string "YYYY-MM-DD".
 type QueryEvent = {
   id: string
   titulo: string
   descripcionHtml: string
-  fecha: Date
+  fecha: string
+  hora: string | null
   tipoEventoId: string
   tipoEvento: {
     nombre: string
   }
 }
 
+// Shape cruda (lo que devuelve Prisma): fecha como Date a medianoche UTC.
+type RawQueryEvent = Omit<QueryEvent, 'fecha'> & { fecha: Date }
+
 type QueryEventWithCommissionMetadata = QueryEvent & {
   commissionId: string | null
   commission: QueryCommission | null
 }
 
-type QueryAgenda = {
+type RawQueryAgenda = {
   id: string
   commissionId: string | null
   commission: QueryCommission | null
+  eventos: RawQueryEvent[]
+}
+
+type QueryAgenda = Omit<RawQueryAgenda, 'eventos'> & {
   eventos: QueryEvent[]
 }
 
@@ -64,7 +99,7 @@ type QueryAgendaWithCommissionMetadata = Omit<QueryAgenda, 'eventos'> & {
 
 type SubjectWithCommissionMetadata<
   T extends {
-    agendas: QueryAgenda[]
+    agendas: RawQueryAgenda[]
     commissions: QueryCommission[]
   },
 > = Omit<T, 'agendas' | 'commissions'> & {
@@ -75,7 +110,7 @@ type SubjectWithCommissionMetadata<
 }
 
 function attachCommissionMetadataToAgenda(
-  agenda: QueryAgenda,
+  agenda: RawQueryAgenda,
 ): QueryAgendaWithCommissionMetadata {
 
   const commission = agenda.commission ?? null
@@ -85,6 +120,7 @@ function attachCommissionMetadataToAgenda(
     isGeneral: agenda.commissionId === null,
     eventos: agenda.eventos.map((evento) => ({
       ...evento,
+      fecha: toDateKey(evento.fecha),
       commissionId: agenda.commissionId,
       commission,
     })),
@@ -93,7 +129,7 @@ function attachCommissionMetadataToAgenda(
 
 function attachCommissionMetadataToSubject<
   T extends {
-    agendas: QueryAgenda[]
+    agendas: RawQueryAgenda[]
     commissions: QueryCommission[]
   },
 >(subject: T): SubjectWithCommissionMetadata<T> {
@@ -372,7 +408,7 @@ export function getAdminSubjectBySlug(slug: string) {
         include: {
           commission: true,
           eventos: {
-            orderBy: { fecha: 'asc' },
+            orderBy: eventoOrderBy,
             include: { tipoEvento: true },
           },
         },
@@ -384,7 +420,7 @@ export function getAdminSubjectBySlug(slug: string) {
             include: {
               commission: true,
               eventos: {
-                orderBy: { fecha: 'asc' },
+                orderBy: eventoOrderBy,
                 include: { tipoEvento: true },
               },
             },
@@ -433,15 +469,19 @@ export const getTiposEvento = unstable_cache(
 // 5 min viejos. 60s es un buen balance entre frescura y carga a la DB.
 export function getUpcomingEventsCrossYear(limit = 6) {
   return unstable_cache(
-    () =>
-      prisma.evento.findMany({
-        where: { fecha: { gte: new Date() } },
-        orderBy: { fecha: 'asc' },
+    async () => {
+      const rows = await prisma.evento.findMany({
+        // "Próximo" es por DÍA, no por instante: un evento de hoy sigue
+        // apareciendo todo el día (incluido uno sin hora). Comparamos contra
+        // el inicio del día calendario de AR.
+        where: { fecha: { gte: arTodayBoundary() } },
+        orderBy: eventoOrderBy,
         take: limit,
         select: {
           id: true,
           titulo: true,
           fecha: true,
+          hora: true,
           tipoEvento: { select: { nombre: true } },
           agenda: {
             select: {
@@ -459,7 +499,9 @@ export function getUpcomingEventsCrossYear(limit = 6) {
             },
           },
         },
-      }),
+      })
+      return rows.map((row) => ({ ...row, fecha: toDateKey(row.fecha) }))
+    },
     ['upcoming-events', String(limit)],
     { tags: [TAGS.upcomingEvents], revalidate: 60 },
   )()
@@ -467,14 +509,15 @@ export function getUpcomingEventsCrossYear(limit = 6) {
 
 export function getHomeCalendarEvents() {
   return unstable_cache(
-    () =>
-      prisma.evento.findMany({
-        orderBy: { fecha: 'asc' },
+    async () => {
+      const rows = await prisma.evento.findMany({
+        orderBy: eventoOrderBy,
         select: {
           id: true,
           titulo: true,
           descripcionHtml: true,
           fecha: true,
+          hora: true,
           tipoEventoId: true,
           tipoEvento: { select: { nombre: true } },
           agenda: {
@@ -510,7 +553,9 @@ export function getHomeCalendarEvents() {
             },
           },
         },
-      }),
+      })
+      return rows.map((row) => ({ ...row, fecha: toDateKey(row.fecha) }))
+    },
     ['home-calendar-events'],
     { tags: [TAGS.upcomingEvents, TAGS.career], revalidate: 300 },
   )()

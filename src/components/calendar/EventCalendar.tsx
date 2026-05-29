@@ -15,6 +15,8 @@ export interface EventCalendarEvent {
   titulo?: string
   date?: EventCalendarDateInput
   fecha?: EventCalendarDateInput
+  /** Hora opcional "HH:mm" | null. null = evento sin hora definida. */
+  hora?: string | null
   start?: EventCalendarDateInput
   end?: EventCalendarDateInput
   allDay?: boolean

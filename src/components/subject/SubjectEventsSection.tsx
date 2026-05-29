@@ -10,7 +10,7 @@ import {
 } from '@/components/admin/SubjectPageAdminOverlay'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { sanitizeRichHtml } from '@/lib/sanitize'
-import { formatDateTime } from '@/lib/utils'
+import { formatEventDateTime } from '@/lib/utils'
 import {
   ALL_COMMISSIONS_VALUE,
   filterEventsByPreferredCommission,
@@ -30,7 +30,8 @@ interface TipoEvento {
 interface SubjectEventItem extends CommissionAwareEvent {
   id: string
   titulo: string
-  fecha: Date | string
+  fecha: string
+  hora: string | null
   descripcionHtml: string | null
   tipoEvento: {
     nombre: string
@@ -149,6 +150,7 @@ export function SubjectEventsSection({
             id: evento.id,
             titulo: evento.titulo,
             fecha: evento.fecha,
+            hora: evento.hora,
             tipo: evento.tipoEvento.nombre,
             tipoId: evento.tipoEventoId,
             materiaNombre: subject.nombre,
@@ -206,7 +208,7 @@ export function SubjectEventsSection({
                     <span
                       className={`inline-flex border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${chipClassName}`}
                     >
-                      {formatDateTime(evento.fecha)}
+                      {formatEventDateTime(evento.fecha, evento.hora)}
                     </span>
                     <DeleteEventoButton
                       eventoId={evento.id}

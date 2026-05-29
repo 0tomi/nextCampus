@@ -30,7 +30,8 @@ interface YearSubjectOption {
 interface YearCalendarEvent {
   id: string
   titulo: string
-  fecha: Date | string
+  fecha: string
+  hora: string | null
   tipo: string
   tipoId: string
   subjectSlug: string
@@ -163,6 +164,7 @@ export function YearCalendarView({
               events={filteredEvents.map((event) => ({
                 id: event.id,
                 fecha: event.fecha,
+                hora: event.hora,
                 titulo: event.titulo,
                 tituloOriginal: event.tituloOriginal ?? event.titulo,
                 tipo: event.tipo,

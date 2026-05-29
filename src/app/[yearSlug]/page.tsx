@@ -10,6 +10,7 @@ import { YearPageAdminOverlay } from '@/components/admin/YearPageAdminOverlay'
 import { MobileYear } from '@/components/mobile/year/MobileYear'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { YearOverviewEvents } from '@/components/year/YearOverviewEvents'
+import { todayKeyAR } from '@/lib/utils'
 
 export const revalidate = 300
 
@@ -38,13 +39,14 @@ export default async function YearPage({
 
   const yearIndex = (career?.years ?? []).findIndex(y => y.id === year.id)
 
-  // eslint-disable-next-line react-hooks/purity -- el corte "próximos eventos" depende del momento actual del render
-  const now = Date.now()
+  // El corte "próximos eventos" depende del día actual del render.
+  const todayKey = todayKeyAR()
   const nextEvents = year.subjects
     .flatMap(s => getSubjectVisibleEvents(s).map(e => ({
       id: e.id,
       titulo: e.titulo,
       fecha: e.fecha,
+      hora: e.hora,
       tipo: e.tipoEvento.nombre,
       tipoId: e.tipoEventoId,
       subjectId: s.id,
@@ -56,8 +58,8 @@ export default async function YearPage({
       commissionSlug: e.commission?.slug ?? null,
       commissionNombre: e.commission?.nombre ?? null,
     })))
-    .filter(e => new Date(e.fecha).getTime() >= now)
-    .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
+    .filter(e => e.fecha >= todayKey)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? ''))
 
   const colors = getYearColorClasses(year.slug)
   const sidebarItems = year.subjects.map((subject, index) => ({
@@ -76,6 +78,7 @@ export default async function YearPage({
         id: evento.id,
         titulo: `${evento.titulo} (${subject.nombre})`,
         fecha: evento.fecha,
+        hora: evento.hora,
         tipo: evento.tipoEvento.nombre,
         tipoId: evento.tipoEventoId,
         subjectSlug: subject.slug,
@@ -88,7 +91,7 @@ export default async function YearPage({
         commissionNombre: evento.commission?.nombre ?? null,
       }))
     })
-    .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
+    .sort((a, b) => a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? ''))
 
   const mobileYear = {
     ...year,

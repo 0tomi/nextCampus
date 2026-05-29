@@ -25,7 +25,7 @@ interface YearForMobile {
     slug: string
     nombre: string
     commissions: CommissionOption[]
-    agenda: { id: string; eventos: Array<{ id: string; titulo: string; fecha: Date | string; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId: string | null; commissionSlug: string | null; commissionNombre: string | null }> } | null
+    agenda: { id: string; eventos: Array<{ id: string; titulo: string; fecha: string; hora: string | null; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId: string | null; commissionSlug: string | null; commissionNombre: string | null }> } | null
   }>
   career: { nombre: string }
 }
@@ -45,7 +45,8 @@ interface TipoEvento {
 interface NextEvent {
   id: string
   titulo: string
-  fecha: Date | string
+  fecha: string
+  hora: string | null
   tipo: string
   tipoId: string
   subjectId: string
@@ -148,6 +149,7 @@ export function MobileYear({
       titulo: event.titulo,
       tituloOriginal: event.titulo,
       fecha: event.fecha,
+      hora: event.hora,
       tipo: event.tipo,
       tipoId: event.tipoId,
       descripcionHtml: event.descripcionHtml ?? null,
@@ -251,6 +253,7 @@ export function MobileYear({
                 <AgendaCard
                   key={e.id}
                   fecha={e.fecha}
+                  hora={e.hora}
                   tipo={e.tipo}
                   titulo={e.titulo}
                   materia={e.subjectNombre}

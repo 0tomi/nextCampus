@@ -8,6 +8,7 @@ import {
   getLatestApuntes,
   getTiposEvento,
 } from '@/lib/queries'
+import { todayKeyAR } from '@/lib/utils'
 import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
 import { AnimateIn } from '@/components/ui/AnimateIn'
@@ -105,8 +106,8 @@ export default async function HomePage() {
     )
   }
 
-  // eslint-disable-next-line react-hooks/purity -- el corte "próximos eventos" depende del momento actual del render
-  const now = Date.now()
+  // El corte "próximos eventos" depende del día actual del render.
+  const todayKey = todayKeyAR()
 
   // El filtrado por materias/comisiones del usuario se hace acá, en el servidor,
   // usando las preferencias de la cookie. Así al navegador viaja solo lo que la
@@ -133,7 +134,7 @@ export default async function HomePage() {
   }
 
   const upcomingEvents = homeCalendarEventsRaw
-    .filter((event) => new Date(event.fecha).getTime() >= now)
+    .filter((event) => event.fecha >= todayKey)
     .map((event) => {
       const subject = event.agenda?.subject
       const year = subject?.year
@@ -143,6 +144,7 @@ export default async function HomePage() {
         titulo: event.titulo,
         descripcionHtml: event.descripcionHtml,
         fecha: event.fecha,
+        hora: event.hora,
         tipo: event.tipoEvento.nombre,
         tipoId: event.tipoEventoId,
         subjectId: subject?.id ?? '',
@@ -157,7 +159,7 @@ export default async function HomePage() {
     })
     .filter((event) => event.subjectSlug && event.yearSlug)
     .filter(isEventVisibleForPrefs)
-    .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
+    .sort((a, b) => a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? ''))
     .slice(0, 50)
 
 
@@ -165,7 +167,8 @@ export default async function HomePage() {
     Array<{
       id: string
       titulo: string
-      fecha: Date
+      fecha: string
+      hora: string | null
       tipo: string
       tipoId: string
       yearNombre: string
@@ -191,6 +194,7 @@ export default async function HomePage() {
       id: event.id,
       titulo: event.titulo,
       fecha: event.fecha,
+      hora: event.hora,
       tipo: event.tipoEvento.nombre,
       tipoId: event.tipoEventoId,
       yearNombre: year.nombre,
