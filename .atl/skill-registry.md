@@ -1,6 +1,6 @@
 # Skill Registry
 
-**Delegator use only.** Any agent working in this repo MUST consult this registry before a code task, resolve the matching skills, and read the corresponding `SKILL.md` before writing code.
+**Agent-facing registry.** Any agent working in this repo MUST consult this registry before a code task, resolve the matching skills, and read the corresponding `SKILL.md` before writing code.
 
 ## Project Standards
 
