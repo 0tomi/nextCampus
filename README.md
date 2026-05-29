@@ -12,8 +12,6 @@ Porque el campus que nos da la facultad no alcanza.
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Prisma](https://img.shields.io/badge/Prisma_7-2D3748?style=for-the-badge&logo=prisma)](https://www.prisma.io/)
 
-🌐 **[Accedé al sitio →]()**  <!-- reemplazá con la URL cuando esté disponible -->
-
 </div>
 
 ---
