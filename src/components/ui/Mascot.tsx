@@ -42,6 +42,10 @@ export function Mascot({
   const softShadowId = `${svgId}-soft-shadow`
 
   useEffect(() => {
+    // Set initial random color on client mount to avoid hydration mismatch
+    const initialColor = GLOW_COLORS[Math.floor(Math.random() * GLOW_COLORS.length)]
+    setGlowColor(initialColor)
+
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
 
     const syncPreference = () => {
@@ -116,7 +120,7 @@ export function Mascot({
     >
       <div
         className={cn(
-          'absolute pointer-events-none rounded-full transition-all duration-700 ease-out z-0',
+          'absolute pointer-events-none rounded-full transition-[transform,opacity] duration-700 ease-out z-0',
           showGlow ? 'opacity-70 scale-110' : 'opacity-0 scale-90'
         )}
         style={{
