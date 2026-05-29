@@ -44,7 +44,7 @@ Repositorio de material de estudio por materia. Soporta PDFs (almacenados en Sup
 | Frontend | React 19 + Tailwind CSS 4 |
 | ORM | Prisma 7 con driver adapter (`@prisma/adapter-pg`) |
 | Base de datos | Supabase Postgres |
-| Storage | Supabase Storage (bucket privado `apuntes`: PDFs y bancos de quiz) |
+| Storage | Supabase Storage |
 | Auth | Supabase Auth — solo admins, sin registro público |
 | Validación | Zod 4 |
 | Package manager | pnpm |
