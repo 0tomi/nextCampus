@@ -1,6 +1,6 @@
 'use client'
 
-import { Sidebar } from '@/components/shell/Sidebar'
+import { Sidebar, type SidebarItem } from '@/components/shell/Sidebar'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { usePreferences } from '@/hooks/usePreferences'
 import { isYearVisible, isSubjectVisible, type UserPreferences } from '@/lib/preferences'
@@ -41,7 +41,7 @@ export function HomeSidebar({ careerName, initialPrefs, years }: HomeSidebarProp
     0,
   )
 
-  const items: any[] = []
+  const items: SidebarItem[] = []
   const isSubjectsView = totalVisibleSubjects < 10
 
   if (isSubjectsView) {

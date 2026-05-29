@@ -346,7 +346,7 @@ export async function deleteEvento(formData: FormData): Promise<void> {
 
   const evento = await prisma.evento.findUnique({
     where: { id },
-    select: { titulo: true, fecha: true },
+    select: { titulo: true, fecha: true, hora: true },
   })
 
   await prisma.evento.delete({ where: { id } })
@@ -359,7 +359,8 @@ export async function deleteEvento(formData: FormData): Promise<void> {
       entityId: id,
       detail: {
         titulo: evento.titulo,
-        fecha: evento.fecha.toISOString(),
+        fecha: evento.fecha.toISOString().slice(0, 10),
+        hora: evento.hora,
         subjectSlug: scope.subjectSlug,
       },
     })
