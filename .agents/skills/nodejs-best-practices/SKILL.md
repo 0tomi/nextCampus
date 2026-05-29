@@ -1,6 +1,9 @@
 ---
 name: nodejs-best-practices
-description: "Node.js development principles and decision-making. Framework selection, async patterns, security, and architecture. Teaches thinking, not copying."
+description: >
+  Use when making Node.js architecture decisions, choosing Express/Fastify or
+  another framework, designing async patterns, reviewing security/deployment
+  tradeoffs, or explaining Node.js fundamentals behind backend implementation.
 risk: unknown
 source: community
 date_added: "2026-02-27"

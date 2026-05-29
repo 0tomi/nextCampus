@@ -1,6 +1,9 @@
 ---
 name: next-cache-components
-description: Next.js 16 Cache Components - PPR, use cache directive, cacheLife, cacheTag, updateTag
+description: >
+  Use when implementing or reviewing Next.js 16 Cache Components: Partial
+  Prerendering, the `use cache` directive, cacheLife, cacheTag, updateTag,
+  Suspense boundaries for dynamic data, or migrations from unstable_cache.
 ---
 
 # Cache Components (Next.js 16+)

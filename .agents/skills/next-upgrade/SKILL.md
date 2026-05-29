@@ -1,6 +1,9 @@
 ---
 name: next-upgrade
-description: Upgrade Next.js to the latest version following official migration guides and codemods
+description: >
+  Use when upgrading Next.js, running official Next.js codemods, migrating major
+  versions, updating React/Next peer dependencies, or resolving breaking changes
+  from Next.js upgrade guides.
 argument-hint: "[target-version]"
 ---
 
