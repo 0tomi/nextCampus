@@ -3,7 +3,7 @@
 import { useEffect, useActionState, useState, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { Modal } from '@/components/ui/Modal'
-import { Plus, Trash2, AlertCircle, CirclePlay, ChevronUp, ChevronDown, FileCode2 } from 'lucide-react'
+import { Plus, Trash2, AlertCircle, CirclePlay, ChevronUp, ChevronDown, FileCode2, Info } from 'lucide-react'
 import {
   createApunteAction,
   updateApunteAction,
@@ -513,6 +513,37 @@ export function ApunteModal({
 }
 
 // ---------------------------------------------------------------------------
+// Prompt copiable para generar apuntes HTML con IA.
+// Editá libremente este texto: es lo que se copia al tocar "Tocá acá".
+// ---------------------------------------------------------------------------
+
+const HTML_PROMPT = `Revisá los apuntes que te voy a pasar. Identificá la idea general y cada concepto que aparece, sin dejar ninguno afuera. Después armá una clase didáctica y entretenida que explique cada concepto de forma progresiva, iterando uno por uno.
+
+Exportá esa clase como un ÚNICO archivo HTML que incluya todos los estilos (CSS) y scripts (JS) necesarios para funcionar de forma autónoma, sin dependencias externas. Ese HTML tiene que funcionar como un apunte interactivo: que vaya explicando los conceptos paso a paso y que aproveche los medios de expresividad e interactividad que ofrece el HTML (animaciones, ejemplos en vivo, autoevaluaciones, diagramas) para que quien lo use aprenda al máximo.`
+
+// ---------------------------------------------------------------------------
+// InfoTooltip — icono de ayuda con explicación al hacer hover
+// ---------------------------------------------------------------------------
+
+function InfoTooltip({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="group/info relative inline-flex">
+      <Info
+        className="size-3.5 text-white/40 transition-colors group-hover/info:text-white/80"
+        aria-hidden
+      />
+      <span className="sr-only">Más información</span>
+      <span
+        role="tooltip"
+        className="pointer-events-none invisible absolute left-1/2 top-[calc(100%+8px)] z-50 w-64 -translate-x-1/2 rounded-lg border border-white/10 bg-surface-0 p-3 text-left text-[11px] font-normal normal-case leading-relaxed tracking-normal text-white/70 opacity-0 shadow-xl transition-opacity duration-150 group-hover/info:visible group-hover/info:pointer-events-auto group-hover/info:opacity-100"
+      >
+        {children}
+      </span>
+    </span>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // RecursoRow — individual resource row in the list
 // ---------------------------------------------------------------------------
 
@@ -553,33 +584,83 @@ function RecursoRow({
   const hint = nombreFallbackHint(recurso.tipo)
   const showHint = recurso.nombre.trim().length === 0 && hint !== null
 
+  const [promptCopiado, setPromptCopiado] = useState(false)
+
+  const copiarPrompt = useCallback(() => {
+    navigator.clipboard
+      .writeText(HTML_PROMPT)
+      .then(() => {
+        setPromptCopiado(true)
+        setTimeout(() => setPromptCopiado(false), 2000)
+      })
+      .catch(() => {
+        /* clipboard no disponible — ignoramos silenciosamente */
+      })
+  }, [])
+
   return (
     <div className="rounded-lg border border-white/10 bg-surface-1/40 p-2.5">
       <div className="mb-2 flex gap-1 rounded border border-white/8 bg-surface-0 p-1">
-        <button
-          type="button"
-          onClick={() => onKindChange(recurso.localId, 'LINK')}
-          className={[
-            'flex-1 rounded px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
-            recurso.kind === 'LINK'
-              ? 'bg-white/10 text-white'
-              : 'text-white/45 hover:bg-white/5 hover:text-white/70',
-          ].join(' ')}
-        >
-          Link
-        </button>
-        <button
-          type="button"
-          onClick={() => onKindChange(recurso.localId, 'HTML')}
-          className={[
-            'flex-1 rounded px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
-            recurso.kind === 'HTML'
-              ? 'bg-white/10 text-white'
-              : 'text-white/45 hover:bg-white/5 hover:text-white/70',
-          ].join(' ')}
-        >
-          Archivo HTML
-        </button>
+        <div className="relative flex-1">
+          <button
+            type="button"
+            onClick={() => onKindChange(recurso.localId, 'LINK')}
+            className={[
+              'flex w-full items-center justify-center gap-1.5 rounded px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+              recurso.kind === 'LINK'
+                ? 'bg-white/10 text-white'
+                : 'text-white/45 hover:bg-white/5 hover:text-white/70',
+            ].join(' ')}
+          >
+            Link
+            <InfoTooltip>
+              Al ser un proyecto gratuito, contamos con almacenamiento limitado.
+              Por eso preferimos que compartas un link hacia el recurso vía Drive,
+              o un video vía YouTube. Ambos recursos ofrecen una previsualización
+              una vez subido el apunte.
+            </InfoTooltip>
+          </button>
+        </div>
+        <div className="relative flex-1">
+          <button
+            type="button"
+            onClick={() => onKindChange(recurso.localId, 'HTML')}
+            className={[
+              'flex w-full items-center justify-center gap-1.5 rounded px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+              recurso.kind === 'HTML'
+                ? 'bg-white/10 text-white'
+                : 'text-white/45 hover:bg-white/5 hover:text-white/70',
+            ].join(' ')}
+          >
+            Archivo HTML
+            <InfoTooltip>
+              Los archivos HTML (los de las páginas web) permiten subir apuntes
+              interactivos mucho más efectivos y súper útiles para estudiar. Este
+              recurso está pensado para que subas un HTML hecho con IA explicando
+              algo sobre el apunte, o el apunte en sí mismo.{' '}
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  copiarPrompt()
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    copiarPrompt()
+                  }
+                }}
+                className="cursor-pointer font-semibold text-cyan-300 underline decoration-dotted underline-offset-2 hover:text-cyan-200"
+              >
+                {promptCopiado ? '¡Prompt copiado!' : 'Tocá acá'}
+              </span>{' '}
+              para copiar un prompt que podés usar para que tu IA favorita te arme
+              un apunte en HTML.
+            </InfoTooltip>
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
