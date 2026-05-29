@@ -13,8 +13,7 @@ Este proyecto tiene skills disponibles que DEBES usar para trabajar de forma int
 
 1. **ANTES de cualquier tarea de código** (escribir, refactorizar, revisar, debuggear), abrí `.atl/skill-registry.md` y escaneá la tabla de skills.
 2. Identificá toda skill cuyo **Trigger / Context** matchee con la tarea — considerá tanto los archivos/tecnologías que vas a tocar (ej: `.tsx`, Prisma, Supabase, Tailwind) como la acción que vas a hacer (estilar UI, query a la DB, crear un commit, planificar).
-3. **Leé el `SKILL.md` correspondiente ANTES de escribir código** y aplicá sus reglas. Pueden aplicar varias skills a la vez.
-4. No esperes a que el usuario te nombre la skill. Si el Trigger matchea, la usás.
+3. No esperes a que el usuario te nombre la skill. Si el Trigger matchea, la usás.
 
 ### Coding rules
 ## Frontend rules
@@ -25,5 +24,6 @@ Este proyecto tiene skills disponibles que DEBES usar para trabajar de forma int
 ## Git Commit rules
 - Cada vez que se termine de implementar un feature, bugfix, refactor o configuración, es obligatorio hacer un commit con los cambios.
 - Los commits deben seguir estrictamente la especificación de **Conventional Commits** (ej: `feat(db): ...`, `fix(ui): ...`).
+- Los commits deben tener descripciones claras de lo implementado.
 - **NUNCA** agregar "Co-Authored-By" ni ninguna atribución a IA en los mensajes de commit.
 
