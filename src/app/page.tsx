@@ -18,7 +18,12 @@ import { HomeGlobalCalendar } from '@/components/home/HomeGlobalCalendar'
 import { HomeLatestApuntes } from '@/components/home/HomeLatestApuntes'
 import { HomeSidebar } from '@/components/home/HomeSidebar'
 import { Mascot } from '@/components/ui/Mascot'
-import { PREFERENCES_KEY, readPreferencesFromCookie } from '@/lib/preferences'
+import {
+  PREFERENCES_KEY,
+  isCommissionVisible,
+  isSubjectVisible,
+  readPreferencesFromCookie,
+} from '@/lib/preferences'
 export const revalidate = 300
 
 export default async function HomePage() {
@@ -103,6 +108,30 @@ export default async function HomePage() {
   // eslint-disable-next-line react-hooks/purity -- el corte "próximos eventos" depende del momento actual del render
   const now = Date.now()
 
+  // El filtrado por materias/comisiones del usuario se hace acá, en el servidor,
+  // usando las preferencias de la cookie. Así al navegador viaja solo lo que la
+  // persona eligió, en vez de todo el material de la carrera. El caché de las
+  // queries se mantiene sin filtrar (compartido entre todos); el filtro vive
+  // fuera de él. Sin preferencias guardadas no mandamos material: el home
+  // muestra el aviso para configurar.
+  const hasPrefs = initialPrefs !== null
+
+  const isEventVisibleForPrefs = (event: {
+    yearSlug: string | null
+    subjectSlug: string
+    commissionSlug: string | null
+  }): boolean => {
+    if (!hasPrefs || !event.yearSlug) return false
+    if (!isSubjectVisible(event.yearSlug, event.subjectSlug, initialPrefs)) return false
+    if (!event.commissionSlug) return true
+    return isCommissionVisible(
+      event.yearSlug,
+      event.subjectSlug,
+      event.commissionSlug,
+      initialPrefs,
+    )
+  }
+
   const upcomingEvents = homeCalendarEventsRaw
     .filter((event) => new Date(event.fecha).getTime() >= now)
     .map((event) => {
@@ -127,6 +156,7 @@ export default async function HomePage() {
       }
     })
     .filter((event) => event.subjectSlug && event.yearSlug)
+    .filter(isEventVisibleForPrefs)
     .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
     .slice(0, 50)
 
@@ -176,18 +206,27 @@ export default async function HomePage() {
     })
 
     return acc
-  }, [])
+  }, []).filter(isEventVisibleForPrefs)
 
-  const latestApuntes = latestApuntesRaw.map((apunte) => ({
-    id: apunte.id,
-    titulo: apunte.titulo,
-    slug: apunte.slug,
-    createdAt: apunte.createdAt,
-    subjectSlug: apunte.subject.slug,
-    subjectNombre: apunte.subject.nombre,
-    yearSlug: apunte.subject.year.slug,
-    yearNombre: apunte.subject.year.nombre,
-  }))
+  // Señal aparte: ¿existe algún apunte en todo el sistema? El mensaje de estado
+  // vacío de la sección depende de esto, no de cuántos quedaron tras filtrar.
+  const hasAnyApuntes = latestApuntesRaw.length > 0
+
+  const latestApuntes = latestApuntesRaw
+    .map((apunte) => ({
+      id: apunte.id,
+      titulo: apunte.titulo,
+      slug: apunte.slug,
+      createdAt: apunte.createdAt,
+      subjectSlug: apunte.subject.slug,
+      subjectNombre: apunte.subject.nombre,
+      yearSlug: apunte.subject.year.slug,
+      yearNombre: apunte.subject.year.nombre,
+    }))
+    .filter((apunte) =>
+      hasPrefs && isSubjectVisible(apunte.yearSlug, apunte.subjectSlug, initialPrefs),
+    )
+    .slice(0, 6)
 
   return (
     <>
@@ -232,7 +271,11 @@ export default async function HomePage() {
               events={homeCalendarEvents}
             />
 
-            <HomeLatestApuntes initialPrefs={initialPrefs} notes={latestApuntes} />
+            <HomeLatestApuntes
+              initialPrefs={initialPrefs}
+              notes={latestApuntes}
+              hasAnyNotes={hasAnyApuntes}
+            />
 
             <section className="space-y-5">
               <div className="px-1">
@@ -254,6 +297,7 @@ export default async function HomePage() {
           tiposEvento={tiposEvento}
           calendarEvents={homeCalendarEvents}
           latestApuntes={latestApuntes}
+          hasAnyNotes={hasAnyApuntes}
         />
       </div>
     </>

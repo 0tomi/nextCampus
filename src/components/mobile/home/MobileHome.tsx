@@ -79,6 +79,7 @@ export function MobileHome({
   tiposEvento,
   calendarEvents,
   latestApuntes,
+  hasAnyNotes,
 }: {
   career: CareerForMobile
   initialPrefs: UserPreferences | null
@@ -86,6 +87,7 @@ export function MobileHome({
   tiposEvento: readonly TipoEvento[]
   calendarEvents: readonly HomeCalendarEventForMobile[]
   latestApuntes: readonly HomeLatestApunte[]
+  hasAnyNotes: boolean
 }) {
   const [detailEvent, setDetailEvent] = useState<MobileCalendarEvent | null>(null)
   const { prefs, isHydrated } = usePreferences(initialPrefs)
@@ -290,6 +292,7 @@ export function MobileHome({
           variant="mobile"
           initialPrefs={initialPrefs}
           notes={latestApuntes}
+          hasAnyNotes={hasAnyNotes}
         />
       </div>
       <MobileEventDetailSheet

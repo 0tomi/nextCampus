@@ -22,6 +22,13 @@ export interface HomeLatestApunte {
 interface HomeLatestApuntesProps {
   initialPrefs: UserPreferences | null
   notes: readonly HomeLatestApunte[]
+  /**
+   * Indica si existe algún apunte en el sistema (independiente del filtro del
+   * usuario). El mensaje de estado vacío depende de esto, no de cuántos apuntes
+   * llegaron ya filtrados: distingue "no hay nada cargado" de "nada con tu
+   * selección actual".
+   */
+  hasAnyNotes: boolean
   variant?: 'desktop' | 'mobile'
 }
 
@@ -44,6 +51,7 @@ function isLatestApunteVisible(
 export function HomeLatestApuntes({
   initialPrefs,
   notes,
+  hasAnyNotes,
   variant = 'desktop',
 }: HomeLatestApuntesProps) {
   const { prefs, isHydrated } = usePreferences(initialPrefs)
@@ -63,23 +71,26 @@ export function HomeLatestApuntes({
       : <HomeLatestApuntesDesktopSetupNotice />
   }
 
+  // `notes` ya llega filtrado desde el servidor; este filtro queda como red de
+  // seguridad para cubrir el caso borde de que las preferencias del cliente
+  // difieran de la cookie.
   const visibleNotes = notes
     .filter((note) => isLatestApunteVisible(note, effectivePrefs))
     .slice(0, 6)
 
   if (variant === 'mobile') {
-    return <HomeLatestApuntesMobile notes={visibleNotes} totalNotes={notes.length} />
+    return <HomeLatestApuntesMobile notes={visibleNotes} hasAnyNotes={hasAnyNotes} />
   }
 
-  return <HomeLatestApuntesDesktop notes={visibleNotes} totalNotes={notes.length} />
+  return <HomeLatestApuntesDesktop notes={visibleNotes} hasAnyNotes={hasAnyNotes} />
 }
 
 function HomeLatestApuntesDesktop({
   notes,
-  totalNotes,
+  hasAnyNotes,
 }: {
   notes: readonly HomeLatestApunte[]
-  totalNotes: number
+  hasAnyNotes: boolean
 }) {
   return (
     <section className="space-y-4">
@@ -99,7 +110,7 @@ function HomeLatestApuntesDesktop({
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {notes.length === 0 ? (
-          <HomeLatestApuntesDesktopEmpty totalNotes={totalNotes} />
+          <HomeLatestApuntesDesktopEmpty hasAnyNotes={hasAnyNotes} />
         ) : (
           notes.map((note) => (
             <DarkCard
@@ -144,11 +155,11 @@ function HomeLatestApuntesDesktop({
   )
 }
 
-function HomeLatestApuntesDesktopEmpty({ totalNotes }: { totalNotes: number }) {
+function HomeLatestApuntesDesktopEmpty({ hasAnyNotes }: { hasAnyNotes: boolean }) {
   return (
     <DarkCard className="col-span-full flex flex-col items-center justify-center gap-2 border-dashed p-6 py-16 text-center text-sm leading-6 text-white/50">
       <FileText className="h-6 w-6 opacity-40" />
-      <span>{getEmptyStateMessage(totalNotes)}</span>
+      <span>{getEmptyStateMessage(hasAnyNotes)}</span>
     </DarkCard>
   )
 }
@@ -211,10 +222,10 @@ function HomeLatestApuntesDesktopSkeleton() {
 
 function HomeLatestApuntesMobile({
   notes,
-  totalNotes,
+  hasAnyNotes,
 }: {
   notes: readonly HomeLatestApunte[]
-  totalNotes: number
+  hasAnyNotes: boolean
 }) {
   return (
     <section className="flex flex-col gap-3">
@@ -227,7 +238,7 @@ function HomeLatestApuntesMobile({
       <div className="px-[18px] flex flex-col gap-2.5">
         {notes.length === 0 ? (
           <div className="rounded-lg border border-dashed border-white/10 bg-[#1a1a1a] p-4 text-center text-sm text-white/45">
-            {getEmptyStateMessage(totalNotes)}
+            {getEmptyStateMessage(hasAnyNotes)}
           </div>
         ) : (
           notes.map((note) => (
@@ -312,8 +323,8 @@ function HomeLatestApuntesMobileSkeleton() {
   )
 }
 
-function getEmptyStateMessage(totalNotes: number) {
-  return totalNotes === 0
-    ? 'Todavía no hay apuntes nuevos para mostrar.'
-    : 'Con tu selección actual no aparece material nuevo todavía.'
+function getEmptyStateMessage(hasAnyNotes: boolean) {
+  return hasAnyNotes
+    ? 'Con tu selección actual no aparece material nuevo todavía.'
+    : 'Todavía no hay apuntes nuevos para mostrar.'
 }

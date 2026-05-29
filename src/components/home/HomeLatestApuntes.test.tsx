@@ -32,6 +32,7 @@ describe('HomeLatestApuntes', () => {
       <HomeLatestApuntes
         initialPrefs={{ hiddenYears: [], hiddenSubjects: [], hiddenCommissions: [] }}
         notes={[makeApunte()]}
+        hasAnyNotes
       />,
     )
 
@@ -54,11 +55,30 @@ describe('HomeLatestApuntes', () => {
           hiddenCommissions: [],
         }}
         notes={[makeApunte()]}
+        hasAnyNotes
       />,
     )
 
     expect(markup).not.toContain('Parcial 1 resuelto')
     expect(markup).toContain('Con tu selección actual no aparece material nuevo todavía.')
+  })
+
+  it('muestra el mensaje de selección vacía cuando el sistema tiene apuntes pero ninguno coincide', async () => {
+    const { HomeLatestApuntes } = await import('./HomeLatestApuntes')
+
+    // Caso del filtrado server-side: las notas llegan ya filtradas (lista
+    // vacía), pero SÍ existen apuntes en el sistema. El mensaje debe hablar de
+    // la selección, no insinuar que no hay nada cargado.
+    const markup = renderToStaticMarkup(
+      <HomeLatestApuntes
+        initialPrefs={{ hiddenYears: [], hiddenSubjects: [], hiddenCommissions: [] }}
+        notes={[]}
+        hasAnyNotes
+      />,
+    )
+
+    expect(markup).toContain('Con tu selección actual no aparece material nuevo todavía.')
+    expect(markup).not.toContain('Todavía no hay apuntes nuevos para mostrar.')
   })
 
   it('mantiene un empty state amigable cuando todavía no hay apuntes', async () => {
@@ -69,6 +89,7 @@ describe('HomeLatestApuntes', () => {
         variant="mobile"
         initialPrefs={{ hiddenYears: [], hiddenSubjects: [], hiddenCommissions: [] }}
         notes={[]}
+        hasAnyNotes={false}
       />,
     )
 
