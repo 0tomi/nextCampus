@@ -104,6 +104,8 @@ export function Mascot({
     })
   }
 
+  const baseColor = glowColor || '#f97316'
+
   return (
     <button
       type="button"
@@ -118,9 +120,10 @@ export function Mascot({
           showGlow ? 'opacity-70 scale-110' : 'opacity-0 scale-90'
         )}
         style={{
-          background: `radial-gradient(circle, ${glowColor || '#f97316'} 0%, transparent 70%)`,
-          width: `${size * 0.75}px`,
-          height: `${size * 0.75}px`,
+          background: `radial-gradient(circle, ${baseColor} 0%, ${baseColor}00 70%)`,
+          width: `${size * 1.125}px`,
+          height: `${size * 1.125}px`,
+          willChange: 'transform, opacity',
         }}
       />
       <svg
