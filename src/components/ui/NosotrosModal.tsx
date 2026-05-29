@@ -161,7 +161,7 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
             necesidades que tenemos, por lo que decidimos actuar implementando nuestra propia visión de un campus
             universitario inteligente. En este campus podés encontrar diversas herramientas como un{' '}
             <strong className="font-bold text-white">Calendario</strong> con eventos por materia,{' '}
-            <strong className="font-bold text-white">Quizzes</strong> para autoevaluarse, y{' '}
+            <strong className="font-bold text-white">Quiz</strong> para autoevaluarse, y{' '}
             <strong className="font-bold text-white">Apuntes interactivos</strong>.
           </p>
 
