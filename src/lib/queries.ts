@@ -516,12 +516,15 @@ export function getHomeCalendarEvents() {
   )()
 }
 
-export function getLatestApuntes(limit = 6) {
+export function getLatestApuntes() {
+  // Traemos todos los apuntes ordenados por fecha y dejamos que el cliente
+  // filtre según los años/materias elegidos y recorte a los últimos. Si
+  // limitáramos acá, un año podría quedarse sin apuntes en el home solo
+  // porque sus apuntes no entran en los más nuevos del campus entero.
   return unstable_cache(
     () =>
       prisma.apunte.findMany({
         orderBy: { createdAt: 'desc' },
-        take: limit,
         select: {
           id: true,
           titulo: true,
@@ -541,7 +544,7 @@ export function getLatestApuntes(limit = 6) {
           },
         },
       }),
-    ['latest-apuntes', String(limit)],
+    ['latest-apuntes'],
     { tags: [TAGS.latestApuntes, TAGS.career], revalidate: 300 },
   )()
 }
