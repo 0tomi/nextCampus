@@ -51,6 +51,11 @@ export default async function YearCalendarPage({
     nombre: y.nombre,
     subjectsCount: y.subjects.length,
     orden: y.orden,
+    subjects: y.subjects.map(s => ({
+      id: s.id,
+      slug: s.slug,
+      nombre: s.nombre,
+    })),
   }))
 
   const drawerYears: MobileShellDrawerYear[] = allYears

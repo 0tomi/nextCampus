@@ -42,8 +42,8 @@ interface EventCalendarProps {
   dayMaxEvents?: number
   /** Habilita drag-and-drop y dateClick para el admin. Anónimos siempre read-only. */
   editable?: boolean
-  /** Callback cuando se arrastra un evento a otra fecha. Si retorna false o lanza, el drag se revierte. */
-  onEventDrop?: (id: string, nuevaFecha: Date) => Promise<boolean>
+  /** Callback cuando se arrastra un evento a otra fecha. Recibe el día destino como "YYYY-MM-DD". Si retorna false o lanza, el drag se revierte. */
+  onEventDrop?: (id: string, nuevaFechaKey: string) => Promise<boolean>
   /** Callback cuando el admin hace clic en un día vacío. */
   onDateClick?: (fecha: string) => void
   /** Callback cuando se hace clic en un evento. */
@@ -143,12 +143,15 @@ export function EventCalendar({
 }: EventCalendarProps) {
   const calendarRef = useRef<FullCalendar>(null)
 
-  async function handleEventDrop(info: { event: { id: string; start: Date | null }; revert: () => void }) {
+  async function handleEventDrop(info: { event: { id: string; startStr: string }; revert: () => void }) {
     if (!onEventDrop) {
       info.revert()
       return
     }
-    const ok = await onEventDrop(info.event.id, info.event.start ?? new Date())
+    // `startStr` de un evento all-day es "YYYY-MM-DD" (sin zona horaria). Lo usamos
+    // como día destino para no reintroducir el off-by-one que evitamos en todo el resto.
+    const nuevaFechaKey = info.event.startStr.slice(0, 10)
+    const ok = await onEventDrop(info.event.id, nuevaFechaKey)
     if (!ok) info.revert()
   }
 

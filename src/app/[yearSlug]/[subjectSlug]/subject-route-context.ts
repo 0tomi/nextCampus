@@ -62,6 +62,11 @@ export async function getSubjectRouteContext({
     nombre: year.nombre,
     subjectsCount: year.subjects.length,
     orden: year.orden,
+    subjects: year.subjects.map((s) => ({
+      id: s.id,
+      slug: s.slug,
+      nombre: s.nombre,
+    })),
   }))
 
   return {

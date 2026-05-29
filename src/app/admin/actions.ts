@@ -206,7 +206,8 @@ export async function createEvento(formData: FormData): Promise<void> {
     entityId: evento.id,
     detail: {
       titulo: evento.titulo,
-      fecha: evento.fecha.toISOString(),
+      fecha: data.fecha,
+      hora: data.hora,
       subjectSlug: scope.subjectSlug,
       yearSlug: scope.yearSlug,
       ...(scope.commissionSlug ? { commissionSlug: scope.commissionSlug } : {}),
@@ -240,18 +241,23 @@ export async function createEventoAction(
 
 export async function updateEventoFechaAction(
   id: string,
-  nuevaFecha: Date,
+  nuevaFecha: string,
   _subjectSlug: string,
 ): Promise<{ ok: boolean }> {
   void _subjectSlug
   const validId = z.string().min(1).parse(id)
-  const validFecha = z.coerce.date().parse(nuevaFecha)
+  // El drag de calendario manda el día como "YYYY-MM-DD" (sin hora). La hora del
+  // evento NO se toca al arrastrar.
+  const validFecha = z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha no es válida.')
+    .parse(nuevaFecha)
   const scope = await requireYearAdminForEventoId(validId)
   if (!scope) return { ok: false }
 
   const updated = await prisma.evento.update({
     where: { id: validId },
-    data: { fecha: validFecha },
+    data: { fecha: fechaToDbDate(validFecha) },
     select: { titulo: true },
   })
   await revalidateSubjectContent(scope.subjectSlug)
@@ -262,7 +268,7 @@ export async function updateEventoFechaAction(
     entityId: validId,
     detail: {
       titulo: updated.titulo,
-      fecha: validFecha.toISOString(),
+      fecha: validFecha,
       subjectSlug: scope.subjectSlug,
     },
   })

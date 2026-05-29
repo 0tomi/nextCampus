@@ -79,12 +79,12 @@ export function EventCalendarAdmin({
   const [sheetOpen, setSheetOpen] = useState(false)
 
   const handleEventDrop = useCallback(
-    async (id: string, nuevaFecha: Date): Promise<boolean> => {
+    async (id: string, nuevaFechaKey: string): Promise<boolean> => {
       try {
         const eventObj = events.find((e) => e.id === id)
         const activeSlug = eventObj?.subjectSlug ?? subjectSlug
         if (!activeSlug) return false
-        const result = await updateEventoFechaAction(id, nuevaFecha, activeSlug)
+        const result = await updateEventoFechaAction(id, nuevaFechaKey, activeSlug)
         return result.ok
       } catch {
         return false

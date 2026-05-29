@@ -14,6 +14,7 @@ export interface SidebarItem {
   meta?: string
   active?: boolean
   badgeClassName?: string
+  isHeader?: boolean
 }
 
 interface SidebarProps {
@@ -67,41 +68,52 @@ export function Sidebar({
           </div>
         ) : (
           <ul className="space-y-2">
-            {items.map((item) => (
-              <li key={item.id}>
-                <Link
-                  href={item.href}
-                  aria-current={item.active ? 'page' : undefined}
-                  className={cn(
-                    'group flex items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors duration-200 hover:bg-white/5',
-                    item.active && 'bg-white/5',
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'inline-flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded-sm bg-gradient-to-br text-xs font-black tracking-normal',
-                      item.badgeClassName ?? DEFAULT_BADGE_CLASSNAME,
-                      'text-white',
-                    )}
-                  >
-                    {item.badge}
-                  </span>
-
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-white">
+            {items.map((item) => {
+              if (item.isHeader) {
+                return (
+                  <li key={item.id} className="px-3 pt-4 pb-1.5 first:pt-0">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
                       {item.label}
                     </span>
-                    {item.meta ? (
-                      <span className="mt-1 block truncate text-[11px] uppercase tracking-[0.16em] text-white/42">
-                        {item.meta}
-                      </span>
-                    ) : null}
-                  </span>
+                  </li>
+                )
+              }
+              return (
+                <li key={item.id}>
+                  <Link
+                    href={item.href}
+                    aria-current={item.active ? 'page' : undefined}
+                    className={cn(
+                      'group flex items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors duration-200 hover:bg-white/5',
+                      item.active && 'bg-white/5',
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'inline-flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded-sm bg-gradient-to-br text-xs font-black tracking-normal',
+                        item.badgeClassName ?? DEFAULT_BADGE_CLASSNAME,
+                        'text-white',
+                      )}
+                    >
+                      {item.badge}
+                    </span>
 
-                  <ChevronRight className="h-4 w-4 shrink-0 text-white/24 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-white/54" />
-                </Link>
-              </li>
-            ))}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-white">
+                        {item.label}
+                      </span>
+                      {item.meta ? (
+                        <span className="mt-1 block truncate text-[11px] uppercase tracking-[0.16em] text-white/42">
+                          {item.meta}
+                        </span>
+                      ) : null}
+                    </span>
+
+                    <ChevronRight className="h-4 w-4 shrink-0 text-white/24 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-white/54" />
+                  </Link>
+                </li>
+              )
+            })}
           </ul>
         )}
       </nav>

@@ -35,6 +35,11 @@ export default async function YearPage({
     nombre: y.nombre,
     subjectsCount: y.subjects.length,
     orden: y.orden,
+    subjects: y.subjects.map(s => ({
+      id: s.id,
+      slug: s.slug,
+      nombre: s.nombre,
+    })),
   }))
 
   const yearIndex = (career?.years ?? []).findIndex(y => y.id === year.id)

@@ -16,17 +16,26 @@ import {
 import { cn } from '@/lib/utils'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { InstallPWATopbarButton } from '@/components/pwa/InstallPWA'
+import { usePreferences } from '@/hooks/usePreferences'
+import { isYearVisible, isSubjectVisible } from '@/lib/preferences'
 
 const SWIPE_EDGE_PX = 28
 const SWIPE_OPEN_PX = 70
 const SWIPE_CLOSE_PX = 60
 const SWIPE_AXIS_BIAS = 1.4
 
+export interface MobileShellDrawerSubject {
+  id: string
+  slug: string
+  nombre: string
+}
+
 export interface MobileShellDrawerYear {
   slug: string
   nombre: string
   subjectsCount: number
   orden: number
+  subjects?: MobileShellDrawerSubject[]
 }
 
 interface MobileShellProps {
@@ -52,6 +61,29 @@ export function MobileShell({
 }: MobileShellProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const { prefs, isHydrated } = usePreferences()
+  const effectivePrefs = prefs
+
+  // Filter drawerYears and their subjects based on preferences
+  const yearsWithFilteredSubjects = drawerYears
+    .map((y) => {
+      const filteredSubjects = (y.subjects ?? []).filter((s) =>
+        isSubjectVisible(y.slug, s.slug, effectivePrefs),
+      )
+      return {
+        ...y,
+        subjects: filteredSubjects,
+      }
+    })
+    .filter((y) => isYearVisible(y.slug, effectivePrefs))
+
+  const totalVisibleSubjects = yearsWithFilteredSubjects.reduce(
+    (sum, y) => sum + (y.subjects?.length ?? 0),
+    0,
+  )
+
+  const isSubjectsView = totalVisibleSubjects < 10
+
   const [drawer, setDrawer] = useState({ open: false, pathname })
   const open = drawer.open && drawer.pathname === pathname
   // Espejo del estado `open` para leerlo dentro de listeners de larga vida
@@ -244,50 +276,105 @@ export function MobileShell({
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <span className="mb-2 block px-3 text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
-            AÑOS ACADÉMICOS
+            {isSubjectsView ? 'MATERIAS' : 'AÑOS ACADÉMICOS'}
           </span>
           <ul className="flex flex-col gap-1">
-            {drawerYears.map((year) => {
-              const colorClasses = getYearColorClasses(year.slug)
-              const isActive = year.slug === currentYearSlug
-              return (
-                <li key={year.slug}>
-                  <Link
-                    href={`/${year.slug}`}
-                    onClick={closeDrawer}
-                    className={cn(
-                      'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
-                      isActive ? 'bg-white/5' : 'hover:bg-white/5',
-                    )}
-                  >
-                    <div
+            {isSubjectsView ? (
+              yearsWithFilteredSubjects.flatMap((year) => {
+                if (!year.subjects || year.subjects.length === 0) return []
+
+                const header = (
+                  <li key={`header-${year.slug}`} className="px-3 pt-3 pb-1 first:pt-0">
+                    <span className="text-[10px] font-black uppercase tracking-[0.15em] text-white/30">
+                      {year.nombre}
+                    </span>
+                  </li>
+                )
+
+                const items = year.subjects.map((subject, subjectIndex) => {
+                  const colors = getYearColorClasses(year.slug)
+                  const isActive = pathname === `/${year.slug}/${subject.slug}`
+                  return (
+                    <li key={subject.id}>
+                      <Link
+                        href={`/${year.slug}/${subject.slug}`}
+                        onClick={closeDrawer}
+                        className={cn(
+                          'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
+                          isActive ? 'bg-white/5' : 'hover:bg-white/5',
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            'flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-md bg-gradient-to-br text-white',
+                            colors.badgeClassName,
+                          )}
+                        >
+                          <span className="text-[13px] font-black leading-none">
+                            {subjectIndex + 1}
+                          </span>
+                        </div>
+                        <div className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate text-sm font-bold leading-tight text-white">
+                            {subject.nombre}
+                          </span>
+                        </div>
+                        <ChevronRight
+                          size={15}
+                          strokeWidth={2}
+                          className="shrink-0 text-white/30"
+                        />
+                      </Link>
+                    </li>
+                  )
+                })
+
+                return [header, ...items]
+              })
+            ) : (
+              yearsWithFilteredSubjects.map((year) => {
+                const colorClasses = getYearColorClasses(year.slug)
+                const isActive = year.slug === currentYearSlug
+                const subjectsCount = year.subjects?.length ?? 0
+                return (
+                  <li key={year.slug}>
+                    <Link
+                      href={`/${year.slug}`}
+                      onClick={closeDrawer}
                       className={cn(
-                        'flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-md bg-gradient-to-br',
-                        colorClasses.badgeClassName,
+                        'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
+                        isActive ? 'bg-white/5' : 'hover:bg-white/5',
                       )}
                     >
-                      <span className="text-[13px] font-black leading-none">
-                        {year.orden}
-                      </span>
-                    </div>
-                    <div className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate text-sm font-bold leading-tight text-white">
-                        {year.nombre}
-                      </span>
-                      <span className="mt-0.5 text-[10px] font-bold uppercase leading-tight tracking-[0.16em] text-white/40">
-                        {year.subjectsCount}{' '}
-                        {year.subjectsCount === 1 ? 'materia' : 'materias'}
-                      </span>
-                    </div>
-                    <ChevronRight
-                      size={15}
-                      strokeWidth={2}
-                      className="shrink-0 text-white/30"
-                    />
-                  </Link>
-                </li>
-              )
-            })}
+                      <div
+                        className={cn(
+                          'flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-md bg-gradient-to-br',
+                          colorClasses.badgeClassName,
+                        )}
+                      >
+                        <span className="text-[13px] font-black leading-none">
+                          {year.orden}
+                        </span>
+                      </div>
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <span className="truncate text-sm font-bold leading-tight text-white">
+                          {year.nombre}
+                        </span>
+                        <span className="mt-0.5 text-[10px] font-bold uppercase leading-tight tracking-[0.16em] text-white/40">
+                          {subjectsCount}{' '}
+                          {subjectsCount === 1 ? 'materia' : 'materias'}
+                        </span>
+                      </div>
+                      <ChevronRight
+                        size={15}
+                        strokeWidth={2}
+                        className="shrink-0 text-white/30"
+                      />
+                    </Link>
+                  </li>
+                )
+              })
+            )}
           </ul>
         </nav>
 

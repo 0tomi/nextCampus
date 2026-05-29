@@ -30,7 +30,13 @@ interface SubjectForMobile {
   apuntes: Array<{ id: string; titulo: string; slug: string; descripcionHtml: string | null; recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE' | 'HTML'; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }> }>
 }
 
-interface AllYear { slug: string; nombre: string; subjectsCount: number; orden: number }
+interface AllYear {
+  slug: string
+  nombre: string
+  subjectsCount: number
+  orden: number
+  subjects?: Array<{ id: string; slug: string; nombre: string }>
+}
 
 interface TipoEvento {
   id: string
@@ -73,7 +79,13 @@ export function MobileSubject({
   focusApunteSlug?: string
 }) {
   const colors = getYearColorClasses(subject.year.slug)
-  const drawerYears: MobileShellDrawerYear[] = allYears
+  const drawerYears: MobileShellDrawerYear[] = allYears.map((y) => ({
+    slug: y.slug,
+    nombre: y.nombre,
+    subjectsCount: y.subjectsCount,
+    orden: y.orden,
+    subjects: y.subjects,
+  }))
   const preferredCommissionId = usePreferredCommissionId(
     subject.slug,
     commissions,
