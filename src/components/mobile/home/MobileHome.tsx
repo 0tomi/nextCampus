@@ -140,6 +140,7 @@ export function MobileHome({
     nombre: y.nombre,
     subjectsCount: y.subjects.length,
     orden: y.orden,
+    subjects: y.subjects,
   }))
 
   const agendaIdBySubjectId = new Map(
