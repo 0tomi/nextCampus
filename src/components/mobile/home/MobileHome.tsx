@@ -131,6 +131,8 @@ export function MobileHome({
       }).slice(0, 6)
     : []
 
+  const uniqueSubjectsInEvents = new Set(filteredUpcomingEvents.map((e) => e.subjectId)).size
+
   const totalSubjects = visibleYears.reduce((acc, y) => acc + y.subjects.length, 0)
 
   const drawerYears: MobileShellDrawerYear[] = visibleYears.map((y) => ({
@@ -243,32 +245,13 @@ export function MobileHome({
           </div>
         </section>
 
-        {/* STATS — 3 cards 1fr */}
-        <section className="px-[18px] grid grid-cols-3 gap-2">
-          <StatTile label="Años" value={visibleYears.length} />
-          <StatTile label="Materias" value={totalSubjects} />
-          <StatTile label="Próximos" value={filteredUpcomingEvents.length} />
-        </section>
-
-        {/* CAROUSEL */}
-        <section className="flex flex-col gap-3">
-          <div className="px-[18px] flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">Nivel</p>
-              <h2 className="mt-1 text-lg font-black text-white">Años académicos</h2>
-            </div>
-            <AdminControls requireGlobal noWrapper>
-              <AddYearButton />
-            </AdminControls>
-          </div>
-          <YearCarousel years={visibleYears} />
-        </section>
-
         {/* PRÓXIMOS EVENTOS */}
         <section className="flex flex-col gap-3">
           <div className="px-[18px]">
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">Agenda</p>
-            <h2 className="mt-1 text-lg font-black text-white">Próximos eventos</h2>
+            <h2 className="mt-1 text-lg font-black text-white">
+              Próximos eventos - {uniqueSubjectsInEvents} {uniqueSubjectsInEvents === 1 ? 'Materia' : 'Materias'}
+            </h2>
           </div>
           <div className="px-[18px] flex flex-col gap-2.5">
             {!hasConfiguredSubjects ? (
@@ -291,12 +274,27 @@ export function MobileHome({
           </div>
         </section>
 
+        {/* ÚLTIMOS APUNTES */}
         <HomeLatestApuntes
           variant="mobile"
           initialPrefs={initialPrefs}
           notes={latestApuntes}
           hasAnyNotes={hasAnyNotes}
         />
+
+        {/* CAROUSEL */}
+        <section className="flex flex-col gap-3">
+          <div className="px-[18px] flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">Nivel</p>
+              <h2 className="mt-1 text-lg font-black text-white">Años académicos</h2>
+            </div>
+            <AdminControls requireGlobal noWrapper>
+              <AddYearButton />
+            </AdminControls>
+          </div>
+          <YearCarousel years={visibleYears} />
+        </section>
       </div>
       <MobileEventDetailSheet
         event={detailEvent}
@@ -312,35 +310,23 @@ export function MobileHome({
   )
 }
 
-function StatTile({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="bg-[#1a1a1a] border border-white/5 rounded-lg p-3 flex flex-col gap-1">
-      <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">{label}</span>
-      <span className="text-xl font-black text-white">{value}</span>
-    </div>
-  )
-}
-
 function MobileHomeSkeleton() {
   return (
     <div className="flex flex-col gap-7 px-[18px] pt-4" aria-hidden="true">
+      {/* Hero skeleton */}
       <section>
         <div className="h-3 w-20 animate-pulse rounded bg-white/[0.06]" />
         <div className="mt-3 h-8 w-4/5 animate-pulse rounded bg-white/[0.06]" />
         <div className="mt-4 h-4 w-full animate-pulse rounded bg-white/[0.06]" />
         <div className="mt-2 h-4 w-2/3 animate-pulse rounded bg-white/[0.06]" />
       </section>
-      <section className="grid grid-cols-3 gap-2">
-        {[0, 1, 2].map((item) => (
-          <div
-            key={item}
-            className="h-[70px] animate-pulse rounded-lg border border-white/5 bg-[#1a1a1a]"
-          />
-        ))}
-      </section>
-      <section>
+      {/* Agenda skeleton */}
+      <section className="flex flex-col gap-3">
         <div className="h-3 w-16 animate-pulse rounded bg-white/[0.06]" />
-        <div className="mt-3 h-[260px] animate-pulse rounded-xl border border-white/5 bg-[#1a1a1a]" />
+        <div className="flex flex-col gap-2.5">
+          <div className="h-[76px] animate-pulse rounded-lg border border-white/5 bg-[#1a1a1a]" />
+          <div className="h-[76px] animate-pulse rounded-lg border border-white/5 bg-[#1a1a1a]" />
+        </div>
       </section>
     </div>
   )

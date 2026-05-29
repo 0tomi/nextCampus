@@ -275,7 +275,7 @@ export function MobileShell({
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <nav className="flex-1 overflow-y-auto scrollbar-none px-3 py-4">
           <span className="mb-2 block px-3 text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
             {isSubjectsView ? 'MATERIAS' : 'AÑOS ACADÉMICOS'}
           </span>
