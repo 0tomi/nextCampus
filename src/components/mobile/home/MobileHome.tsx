@@ -13,6 +13,7 @@ import { MobileEventDetailSheet } from '@/components/mobile/calendar/MobileEvent
 import type { MobileCalendarEvent } from '@/components/mobile/calendar/MobileCalendar'
 import { Mascot } from '@/components/ui/Mascot'
 import { usePreferences } from '@/hooks/usePreferences'
+import { NosotrosModal } from '@/components/ui/NosotrosModal'
 import {
   isCommissionVisible,
   isSubjectVisible,
@@ -91,6 +92,7 @@ export function MobileHome({
   hasAnyNotes: boolean
 }) {
   const [detailEvent, setDetailEvent] = useState<MobileCalendarEvent | null>(null)
+  const [isAboutOpen, setIsAboutOpen] = useState(false)
   const { prefs, isHydrated } = usePreferences(initialPrefs)
   const shouldWaitForStoredPrefs = !isHydrated && initialPrefs === null
   const effectivePrefs = isHydrated ? prefs : initialPrefs
@@ -238,6 +240,13 @@ export function MobileHome({
                 {career.descripcion && (
                   <p className="mt-3 max-w-[26ch] text-sm leading-relaxed text-white/55">{career.descripcion}</p>
                 )}
+                <button
+                  type="button"
+                  onClick={() => setIsAboutOpen(true)}
+                  className="mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  Nosotros
+                </button>
               </div>
               <div className="absolute bottom-[-14px] right-[-6px]">
                 <Mascot size={74} className="opacity-95" />
@@ -307,6 +316,7 @@ export function MobileHome({
         tiposEvento={tiposEvento}
         subjects={modalSubjects}
       />
+      <NosotrosModal open={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
     </MobileShell>
   )
 }

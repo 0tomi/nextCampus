@@ -1,12 +1,22 @@
 'use client'
 
 import { useEffect, useId, useRef, useState } from 'react'
+import { cn } from '@/lib/utils'
 
 interface MascotProps {
   size?: number
   className?: string
   alt?: string
 }
+
+const GLOW_COLORS = [
+  '#f59e0b', // Amber
+  '#f97316', // Orange
+  '#a855f7', // Violet
+  '#10b981', // Emerald
+  '#06b6d4', // Cyan
+  '#ec4899', // Rose
+]
 
 /**
  * Campito mantiene los libros estáticos y anima solo al búho al hacer click.
@@ -19,7 +29,12 @@ export function Mascot({
   const svgId = useId().replace(/:/g, '')
   const [isHopping, setIsHopping] = useState(false)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
+  const [glowColor, setGlowColor] = useState('')
+  const [showGlow, setShowGlow] = useState(false)
+
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const glowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const bodyGradientId = `${svgId}-body-gradient`
   const bellyGradientId = `${svgId}-belly-gradient`
   const capBoardGradientId = `${svgId}-cap-board-gradient`
@@ -42,10 +57,34 @@ export function Mascot({
       if (resetTimerRef.current) {
         clearTimeout(resetTimerRef.current)
       }
+      if (glowTimerRef.current) {
+        clearTimeout(glowTimerRef.current)
+      }
     }
   }, [])
 
   const triggerHop = () => {
+    // Vibrate device on mobile
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try {
+        navigator.vibrate(15)
+      } catch (e) {
+        // Ignorar errores de vibración
+      }
+    }
+
+    // Set random glow color
+    const randomColor = GLOW_COLORS[Math.floor(Math.random() * GLOW_COLORS.length)]
+    setGlowColor(randomColor)
+    setShowGlow(true)
+
+    if (glowTimerRef.current) {
+      clearTimeout(glowTimerRef.current)
+    }
+    glowTimerRef.current = setTimeout(() => {
+      setShowGlow(false)
+    }, 800)
+
     if (prefersReducedMotion) {
       return
     }
@@ -73,6 +112,18 @@ export function Mascot({
       aria-label={alt}
       title="Campito"
     >
+      {/* Luz difuminada por detrás del búho */}
+      <div
+        className={cn(
+          'absolute pointer-events-none rounded-full blur-3xl transition-all duration-700 ease-out z-0',
+          showGlow ? 'opacity-40 scale-110' : 'opacity-0 scale-90'
+        )}
+        style={{
+          backgroundColor: glowColor || '#f97316',
+          width: `${size * 0.75}px`,
+          height: `${size * 0.75}px`,
+        }}
+      />
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 400 400"
@@ -80,7 +131,7 @@ export function Mascot({
         height={size}
         preserveAspectRatio="xMidYMid meet"
         aria-hidden="true"
-        className="overflow-visible drop-shadow-[0_8px_16px_rgba(249,115,22,0.1)]"
+        className="overflow-visible drop-shadow-[0_8px_16px_rgba(249,115,22,0.1)] relative z-10"
       >
         <defs>
           <linearGradient id={bodyGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
