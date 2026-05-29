@@ -112,11 +112,10 @@ export function Mascot({
       aria-label={alt}
       title="Campito"
     >
-      {/* Luz difuminada por detrás del búho */}
       <div
         className={cn(
-          'absolute pointer-events-none rounded-full blur-3xl transition-all duration-700 ease-out z-0',
-          showGlow ? 'opacity-40 scale-110' : 'opacity-0 scale-90'
+          'absolute pointer-events-none rounded-full blur-2xl transition-all duration-700 ease-out z-0',
+          showGlow ? 'opacity-70 scale-110' : 'opacity-0 scale-90'
         )}
         style={{
           backgroundColor: glowColor || '#f97316',
