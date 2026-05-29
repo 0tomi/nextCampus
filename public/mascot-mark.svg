@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">NextCampus mascot mark</title>
+  <desc id="desc">A transparent geometric owl mark used for the NextCampus brand.</desc>
+  <defs>
+    <linearGradient id="face" x1="76" y1="68" x2="180" y2="188" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFDF6" />
+      <stop offset="1" stop-color="#F1EBDD" />
+    </linearGradient>
+    <linearGradient id="beak" x1="118" y1="122" x2="138" y2="144" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F04C4C" />
+      <stop offset="1" stop-color="#B91C1C" />
+    </linearGradient>
+  </defs>
+
+  <path
+    fill="url(#face)"
+    stroke="#0A2340"
+    stroke-width="8"
+    stroke-linejoin="round"
+    d="M78 56
+       L108 80
+       Q128 68 148 80
+       L178 56
+       Q198 72 200 100
+       L200 146
+       Q200 184 173 205
+       Q151 222 128 222
+       Q105 222 83 205
+       Q56 184 56 146
+       L56 100
+       Q58 72 78 56Z"
+  />
+
+  <path
+    fill="#0A2340"
+    d="M94 94
+       Q128 76 162 94
+       Q152 110 128 116
+       Q104 110 94 94Z"
+    opacity="0.12"
+  />
+
+  <path
+    fill="#0A2340"
+    d="M87 118
+       C87 102 98 92 112 92
+       C122 92 131 97 137 108
+       C132 125 124 137 112 145
+       C99 137 91 126 87 118Z"
+  />
+
+  <path
+    fill="#0A2340"
+    d="M169 118
+       C169 102 158 92 144 92
+       C134 92 125 97 119 108
+       C124 125 132 137 144 145
+       C157 137 165 126 169 118Z"
+  />
+
+  <path
+    fill="url(#beak)"
+    d="M128 126
+       L139 137
+       L128 148
+       L117 137Z"
+  />
+</svg>

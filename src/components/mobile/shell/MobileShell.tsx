@@ -1,10 +1,10 @@
 'use client'
 
+import Image from 'next/image'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
-  GraduationCap,
   Menu,
   ChevronLeft,
   Shield,
@@ -215,9 +215,14 @@ export function MobileShell({
             href="/"
             className="mx-3 flex min-w-0 flex-1 items-center gap-2.5 cursor-pointer"
           >
-            <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-amber-400 to-orange-500 text-black">
-              <GraduationCap size={16} strokeWidth={2.5} />
-            </div>
+            <Image
+              src="/mascot-icon.svg"
+              alt=""
+              aria-hidden
+              width={30}
+              height={30}
+              className="h-[30px] w-[30px] shrink-0"
+            />
             <div className="flex min-w-0 flex-col">
               {title && (
                 <span className="truncate text-sm font-bold leading-tight text-white">

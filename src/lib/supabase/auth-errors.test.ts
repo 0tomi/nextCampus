@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { isAuthSessionMissingError, isInvalidRefreshTokenError } from './auth-errors'
+import {
+  isAuthSessionMissingError,
+  isInvalidLoginCredentialsError,
+  isInvalidRefreshTokenError,
+} from './auth-errors'
 
 describe('supabase auth error helpers', () => {
   it('detecta ausencia de sesión como usuario anónimo', () => {
@@ -13,6 +17,13 @@ describe('supabase auth error helpers', () => {
       true,
     )
     expect(isAuthSessionMissingError(new Error('Invalid Refresh Token: Refresh Token Not Found'))).toBe(
+      false,
+    )
+  })
+
+  it('reconoce credenciales inválidas sin confundirlo con otros errores', () => {
+    expect(isInvalidLoginCredentialsError(new Error('Invalid login credentials'))).toBe(true)
+    expect(isInvalidLoginCredentialsError(new Error('Database temporarily unavailable'))).toBe(
       false,
     )
   })

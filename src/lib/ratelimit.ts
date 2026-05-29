@@ -13,6 +13,8 @@ const redis = enabled
     })
   : null
 
+export { redis }
+
 // Ventana general por IP para endpoints de API/admin.
 export const apiRatelimit = redis
   ? new Ratelimit({
