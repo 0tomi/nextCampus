@@ -139,4 +139,29 @@ describe('HomeYearsGrid', () => {
       },
     })
   })
+
+  it('muestra las materias de un año revelado aunque estén marcadas como ocultas al ocultar el año', async () => {
+    const { getHomeYearsForDisplay } = await import('./HomeYearsGrid')
+
+    // Ocultar un año arrastra todas sus materias a hiddenSubjects, así que un
+    // año revelado por el admin debe seguir mostrando su contenido completo.
+    const result = getHomeYearsForDisplay({
+      years: makeYears(),
+      prefs: {
+        hiddenYears: ['segundo-anio'],
+        hiddenSubjects: ['fisica'],
+        hiddenCommissions: [],
+      },
+      isAdmin: true,
+      showHiddenYears: true,
+    })
+
+    expect(result[1]).toMatchObject({
+      isHiddenByPrefs: true,
+      year: {
+        slug: 'segundo-anio',
+        subjects: [{ slug: 'fisica' }],
+      },
+    })
+  })
 })

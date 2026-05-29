@@ -66,8 +66,11 @@ export function getHomeYearsForDisplay({
       if (!shouldIncludeYear) return null
 
       const subjects = year.subjects.filter((subject) => {
+        // Cuando el admin revela un año oculto mostramos todas sus materias:
+        // ocultar el año marca todas sus materias como ocultas, así que
+        // filtrar por ese mismo estado dejaría el año revelado sin contenido.
         if (isHiddenByPrefs && isAdmin && showHiddenYears) {
-          return !prefs?.hiddenSubjects.includes(subject.slug)
+          return true
         }
 
         return isSubjectVisible(year.slug, subject.slug, prefs)
