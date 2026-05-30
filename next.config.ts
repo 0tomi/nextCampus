@@ -19,6 +19,9 @@ const nextConfig: NextConfig = {
   // compilar apuntes React subidos por admins, así que Next no debe empaquetarlo
   // dentro del bundle de rutas.
   serverExternalPackages: ['esbuild'],
+  outputFileTracingIncludes: {
+    '/*': ['./node_modules/esbuild/**/*', './node_modules/@esbuild/**/*'],
+  },
   images: {
     remotePatterns: [
       {
