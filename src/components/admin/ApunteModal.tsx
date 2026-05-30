@@ -530,6 +530,7 @@ El documento debe cumplir con los siguientes requisitos SIN EXCEPCIÓN:
 - Diseño responsivo: El documento debe estar preparado para verse bien tanto en interfaz de Desktop, como en una interfaz de Teléfono como lo es 9:16.
 - Dependencias: Debe ser un único archivo. Podés importar hooks desde React, pero no uses otros imports: no dependas de librerías externas ni de archivos adicionales.
 - Enfoque de contenido (Directiva Crítica): NO incluir frases, referencias o directivas proveídas por el usuario dentro del apunte generado. El apunte debe estar redactado al estudiante que quiere conocer la información sobre los temas que trata el propio recurso, no interesan los detalles técnicos que te pidió el usuario para generar dicho apunte.
+- Fórmulas matemáticas: Si el apunte presenta fórmulas matemáticas, presentar dichas ecuaciones utilizando algún motor compatible que renderice LaTeX (por ejemplo, cargando dinámicamente KaTeX o MathJax por CDN) para que el estudiante pueda interpretar el apunte fácilmente.
 
 Debes devolverme un TSX que cumpla con estas características mencionadas a rajatabla.`
 
