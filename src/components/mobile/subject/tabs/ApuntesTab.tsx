@@ -137,9 +137,17 @@ export function ApuntesTab({
             )}
             {a.recursos.length > 0 && (
               <div className="flex flex-col gap-3">
-                {a.recursos.map(r => (
+                {a.recursos.slice(0, 3).map(r => (
                   <ApunteRecursoView key={r.id} recurso={r} apunteHref={apunteHref} />
                 ))}
+                {a.recursos.length > 3 && (
+                  <Link
+                    href={apunteHref}
+                    className="mt-1 text-center text-xs font-semibold text-cyan-400 hover:text-cyan-300 hover:underline cursor-pointer transition-colors block py-1"
+                  >
+                    Y otros {a.recursos.length - 3} recursos. Abrí el apunte para verlos todos.
+                  </Link>
+                )}
               </div>
             )}
             <div className="flex flex-wrap gap-2">

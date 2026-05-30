@@ -380,13 +380,21 @@ export function SubjectRoutePage({
 
                       {apunte.recursos.length > 0 && (
                         <div className="mt-4 flex flex-col gap-3">
-                          {apunte.recursos.map((recurso) => (
+                          {apunte.recursos.slice(0, 3).map((recurso) => (
                             <ApunteRecursoView
                               key={recurso.id}
                               recurso={recurso}
                               apunteHref={apunteHref}
                             />
                           ))}
+                          {apunte.recursos.length > 3 && (
+                            <Link
+                              href={apunteHref}
+                              className="mt-1 text-center text-xs font-semibold text-cyan-400 hover:text-cyan-300 hover:underline cursor-pointer transition-colors block py-1"
+                            >
+                              Y otros {apunte.recursos.length - 3} recursos. Abrí el apunte para verlos todos.
+                            </Link>
+                          )}
                         </div>
                       )}
 

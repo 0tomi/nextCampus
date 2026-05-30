@@ -22,12 +22,12 @@ function driveEmbedClassName(kind: DriveKind, variant: 'card' | 'wide'): string 
   
   switch (kind) {
     case 'document':
-      return `${base} h-[70vh] min-h-[500px] sm:min-h-[750px]`
+      return `${base} ${variant === 'wide' ? 'h-[70vh] min-h-[500px] sm:min-h-[750px]' : 'h-[35vh] min-h-[250px] sm:min-h-[375px]'}`
     case 'spreadsheet':
-      return `${base} aspect-video h-[55vh] min-h-[400px] sm:min-h-[600px]`
+      return `${base} aspect-video ${variant === 'wide' ? 'h-[55vh] min-h-[400px] sm:min-h-[600px]' : 'h-[27vh] min-h-[200px] sm:min-h-[300px]'}`
     case 'presentation':
     case 'file':
-      return `${base} h-[65vh] min-h-[450px] sm:min-h-[650px]`
+      return `${base} ${variant === 'wide' ? 'h-[65vh] min-h-[450px] sm:min-h-[650px]' : 'h-[32vh] min-h-[225px] sm:min-h-[325px]'}`
   }
 }
 
