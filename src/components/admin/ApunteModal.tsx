@@ -522,31 +522,16 @@ const HTML_PROMPT = `Revisa los siguientes apuntes que te voy a mandar. Identifi
 
 Exportá esa clase como un ÚNICO archivo React, preferiblemente TSX, con un componente default listo para renderizarse. Incluí los estilos dentro del mismo componente o dentro del mismo archivo. Ese archivo tiene que funcionar como un apunte interactivo: que vaya explicando los conceptos paso a paso y que aproveche todas las bondades de React para crear estado, interacciones, calculadoras, simulaciones, ejemplos en vivo, autoevaluaciones, diagramas y experiencias de aprendizaje realmente útiles para que quien lo use aprenda al máximo.
 
-El documento debe cumplir con los siguientes requisitos SIN EXCEPCIÓN: 
+El documento debe cumplir con los siguientes requisitos SIN EXCEPCIÓN:
 
+- Tono educativo: Explicado de forma sencilla sin perder rigor sobre la materia, sin dejar detalles afuera. Es un apunte para estudiar.
+- Gráficos: Completos, no deben ser representaciones parciales. Los gráficos son esenciales para representar las ideas, y con el poder de la expresividad de React se pueden llevar a otro nivel.
+- Laboratorio / Simulaciones: Prácticas completas, sin dejar cosas a medias. Crear simulaciones para explicar y profundizar sobre conceptos. Las prácticas deben estar bien explicadas previo a mostrarse, explicando cómo funcionan y qué representan. No pueden estar a medias, cada práctica orientada a explicar un tema debe abarcar tanto como pueda del tema para la mejor comprensión por parte del alumno.
+- Diseño responsivo: El documento debe estar preparado para verse bien tanto en interfaz de Desktop, como en una interfaz de Teléfono como lo es 9:16.
+- Dependencias: Debe ser un único archivo. Podés importar hooks desde React, pero no uses otros imports: no dependas de librerías externas ni de archivos adicionales.
+- Enfoque de contenido (Directiva Crítica): NO incluir frases, referencias o directivas proveídas por el usuario dentro del apunte generado. El apunte debe estar redactado al estudiante que quiere conocer la información sobre los temas que trata el propio recurso, no interesan los detalles técnicos que te pidió el usuario para generar dicho apunte.
 
-
-
-
-Tono eduactivo. Explicado de forma sencila sin perder rigor sobre la materia, sin dejar detalles afuera. Es un apunte para estudiar. 
-
-
-
-Graficos: Completos, no deben ser representaciones parciales. Los graficos son escenciales para representar las ideas, y con el poder de la expresividad de React se pueden llevar a otro nivel. 
-
-
-
-Laboratorio / Simulaciones: Practicas completas, sin dejar cosas a medias. Crear simulaciones para explicar y profundizar sobre conceptos. Las practicas deben estar bien explicadas previo a mostrarse, explicando como funcionan y que representan. No pueden estar a medias, cada practica orientada a explicar un tema debe abarcar tanto como pueda del tema para la mejor comprensión por parte del alumno.
-
-
-
-El documento debe estar preparado para verse bien tanto en interfaz de Desktop, como una interfaz de Teléfono como lo es 9:16. 
-
-
-
-Debe ser un único archivo. Podés importar hooks desde React, pero no uses otros imports: no dependas de librerías externas ni de archivos adicionales.
-
-Debes devolverme un TSX que cumpla con estas caracteristicas mencionadas a rajatabla.`
+Debes devolverme un TSX que cumpla con estas características mencionadas a rajatabla.`
 
 // ---------------------------------------------------------------------------
 // RecursoRow — individual resource row in the list
