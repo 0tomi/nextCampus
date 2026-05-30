@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import {
   driveEmbedUrl,
@@ -430,12 +430,31 @@ function HtmlPreviewCard({
 function HtmlPreviewIframe({ recursoId, titulo }: { recursoId: string; titulo: string }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isExpanded, setIsExpanded] = useState(false)
+  const [animate, setAnimate] = useState(false)
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const handleExpand = () => {
+    setIsExpanded(true)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setAnimate(true)
+      })
+    })
+  }
+
+  const handleReduce = () => {
+    setAnimate(false)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => {
+      setIsExpanded(false)
+    }, 300)
+  }
 
   useEffect(() => {
     if (!isExpanded) return
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsExpanded(false)
+      if (e.key === 'Escape') handleReduce()
     }
     window.addEventListener('keydown', handleKeyDown)
 
@@ -448,20 +467,30 @@ function HtmlPreviewIframe({ recursoId, titulo }: { recursoId: string; titulo: s
     }
   }, [isExpanded])
 
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
+
   return (
     <>
       {isExpanded && (
         <div
-          className="fixed inset-0 z-40 bg-black/85 backdrop-blur-sm transition-opacity duration-300"
-          onClick={() => setIsExpanded(false)}
+          className={`fixed inset-0 z-40 bg-black/85 backdrop-blur-sm transition-opacity duration-300 ${
+            animate ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={handleReduce}
         />
       )}
 
       <div
         className={
           isExpanded
-            ? 'fixed inset-4 sm:inset-6 z-50 flex flex-col bg-[#101010] border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,0.8)] rounded-2xl p-0 overflow-hidden transition-all duration-300'
-            : 'relative w-full h-[70vh] min-h-[500px] sm:min-h-[750px] rounded-xl overflow-hidden border border-white/5 bg-surface-1'
+            ? `fixed inset-4 sm:inset-6 z-50 flex flex-col bg-[#101010] border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,0.8)] rounded-2xl p-0 overflow-hidden transition-all duration-300 ${
+                animate ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
+              }`
+            : 'relative w-full h-[70vh] min-h-[500px] sm:min-h-[750px] rounded-xl overflow-hidden border border-white/5 bg-surface-1 transition-all duration-300'
         }
       >
         {isLoading && (
@@ -476,7 +505,7 @@ function HtmlPreviewIframe({ recursoId, titulo }: { recursoId: string; titulo: s
         {isExpanded && (
           <button
             type="button"
-            onClick={() => setIsExpanded(false)}
+            onClick={handleReduce}
             className="absolute top-3.5 right-3.5 z-30 cursor-pointer inline-flex items-center justify-center h-[34px] px-2.5 hover:px-3 gap-0 hover:gap-1.5 rounded-lg border border-white/10 bg-black/60 text-xs font-semibold text-white/90 backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-black/80 hover:border-white/20 group select-none"
             title="Reducir apunte"
           >
@@ -490,7 +519,7 @@ function HtmlPreviewIframe({ recursoId, titulo }: { recursoId: string; titulo: s
         {!isExpanded && !isLoading && (
           <button
             type="button"
-            onClick={() => setIsExpanded(true)}
+            onClick={handleExpand}
             className="absolute top-3.5 right-3.5 z-10 cursor-pointer inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/60 px-3 py-2 text-xs font-semibold text-white/90 backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-black/80 hover:border-white/20 hover:text-white"
             title="Expandir apunte"
           >
