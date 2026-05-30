@@ -96,10 +96,58 @@ export async function compileReactArtifact(params: {
           import { createRoot } from 'react-dom/client'
           import Artifact from './artifact'
 
-          const root = document.getElementById('root')
-          if (!root) throw new Error('No se encontró el contenedor del apunte.')
+          function ErrorFallback({ message }: { message: string }) {
+            return (
+              <div style={{ maxWidth: 640, margin: '40px auto', padding: 24, fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}>
+                <p style={{ color: '#f59e0b', fontWeight: 700, fontSize: 15, margin: '0 0 8px' }}>
+                  ⚠️ Este apunte tiene un error
+                </p>
+                <p style={{ color: '#a1a1aa', fontSize: 13, lineHeight: 1.5, margin: '0 0 16px' }}>
+                  Pasale el siguiente mensaje de error a quien lo creó para que lo corrija:
+                </p>
+                <pre style={{
+                  background: '#18181b', color: '#fca5a5', border: '1px solid #27272a',
+                  borderRadius: 8, padding: 16, fontSize: 12, overflowX: 'auto',
+                  whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0,
+                }}>
+                  {message}
+                </pre>
+              </div>
+            )
+          }
 
-          createRoot(root).render(React.createElement(Artifact))
+          class ErrorBoundary extends React.Component<
+            { children: React.ReactNode },
+            { error: string | null }
+          > {
+            state = { error: null as string | null }
+            static getDerivedStateFromError(err: Error) {
+              return { error: err.message }
+            }
+            render() {
+              if (this.state.error) return <ErrorFallback message={this.state.error} />
+              return this.props.children
+            }
+          }
+
+          const rootEl = document.getElementById('root')
+          if (!rootEl) throw new Error('No se encontró el contenedor del apunte.')
+
+          const reactRoot = createRoot(rootEl)
+
+          window.addEventListener('error', (e) => {
+            reactRoot.render(<ErrorFallback message={e.message || String(e)} />)
+          })
+          window.addEventListener('unhandledrejection', (e) => {
+            const msg = e.reason instanceof Error ? e.reason.message : String(e.reason)
+            reactRoot.render(<ErrorFallback message={msg} />)
+          })
+
+          reactRoot.render(
+            <ErrorBoundary>
+              <Artifact />
+            </ErrorBoundary>
+          )
         `,
         loader: 'tsx',
         sourcefile: 'nextcampus-entry.tsx',
