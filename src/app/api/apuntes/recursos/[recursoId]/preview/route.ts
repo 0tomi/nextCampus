@@ -2,25 +2,25 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { readApunteHtml } from '@/lib/storage'
 
-// Apuntes HTML suben SOLO admins (requireGeneralAdmin) y se sirven desde este
-// mismo origen, pero el sandbox SIN allow-same-origin fuerza un origen opaco:
-// el iframe no puede leer cookies, localStorage ni el DOM del campus.
-// Por eso es seguro habilitar scripts/recursos externos acá: el aislamiento
-// protege a la app aunque el HTML ejecute JS (MathJax, labs interactivos, etc.).
+// Apuntes interactivos suben SOLO admins y se sirven desde este mismo origen,
+// pero el sandbox SIN allow-same-origin fuerza un origen opaco: el iframe no
+// puede leer cookies, storage ni el DOM del campus. El permiso mínimo para no
+// romper React/calculadoras es ejecutar scripts; popups, downloads, forms y
+// navegación superior quedan bloqueados por defecto.
 const HTML_PREVIEW_CSP = [
   // allow-scripts habilita JS; NO incluir allow-same-origin (rompería el aislamiento).
-  'sandbox allow-scripts allow-popups allow-modals allow-forms allow-downloads',
+  'sandbox allow-scripts',
   "default-src 'none'",
-  "script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:",
-  "style-src 'unsafe-inline' https:",
+  "script-src 'unsafe-inline'",
+  "style-src 'unsafe-inline'",
   "img-src https: data: blob:",
   "font-src https: data:",
-  "connect-src https: data: blob:",
+  "connect-src 'none'",
   "media-src https: data: blob:",
-  "worker-src https: blob:",
-  "frame-src https:",
-  "child-src https: blob:",
-  "form-action https:",
+  "worker-src 'none'",
+  "frame-src 'none'",
+  "child-src 'none'",
+  "form-action 'none'",
   "base-uri 'none'",
   "object-src 'none'",
 ].join('; ')

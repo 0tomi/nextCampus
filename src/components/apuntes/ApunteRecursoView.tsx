@@ -397,7 +397,7 @@ function HtmlPreviewCard({
                   isLoading ? 'opacity-0' : 'opacity-100'
                 }`}
                 loading="lazy"
-                sandbox="allow-scripts allow-popups allow-modals allow-forms allow-downloads"
+                sandbox="allow-scripts"
                 title={title}
                 onLoad={() => setIsLoading(false)}
               />
@@ -446,7 +446,7 @@ function HtmlPreviewIframe({ recursoId, titulo }: { recursoId: string; titulo: s
           isLoading ? 'opacity-0' : 'opacity-100'
         }`}
         loading="lazy"
-        sandbox="allow-scripts allow-popups allow-modals allow-forms allow-downloads"
+        sandbox="allow-scripts"
         title={titulo}
         onLoad={() => setIsLoading(false)}
       />

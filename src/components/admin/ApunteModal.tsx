@@ -84,6 +84,7 @@ function makeDraft(
 }
 
 const SLUG_REGEX = /^[a-z0-9-]+$/
+const INTERACTIVE_NOTE_FILE_RE = /\.(html?|jsx|tsx)$/i
 
 function detectTipo(url: string): RecursoTipo | null {
   if (!url.trim()) return null
@@ -236,12 +237,12 @@ export function ApunteModal({
         if (!file) {
           return { ...r, fileName: undefined, tipo: 'HTML', error: undefined }
         }
-        const isHtml = /\.html?$/i.test(file.name) && (!file.type || file.type === 'text/html')
+        const isInteractiveNote = INTERACTIVE_NOTE_FILE_RE.test(file.name)
         return {
           ...r,
           tipo: 'HTML',
           fileName: file.name,
-          error: isHtml ? undefined : 'Subí un archivo .html o .htm',
+          error: isInteractiveNote ? undefined : 'Subí un archivo HTML, JSX o TSX',
         }
       }),
     )
@@ -292,14 +293,14 @@ export function ApunteModal({
       )
       if (invalidHtml) {
         e.preventDefault()
-        setValidationError('Seleccioná un archivo HTML para cada recurso interactivo.')
+        setValidationError('Seleccioná un archivo para cada apunte interactivo.')
         return
       }
 
       const htmlWithErrors = recursos.find((r) => r.kind === 'HTML' && r.error)
       if (htmlWithErrors) {
         e.preventDefault()
-        setValidationError('Revisá los archivos HTML antes de guardar.')
+        setValidationError('Revisá los apuntes interactivos antes de guardar.')
         return
       }
 
@@ -513,13 +514,39 @@ export function ApunteModal({
 }
 
 // ---------------------------------------------------------------------------
-// Prompt copiable para generar apuntes HTML con IA.
+// Prompt copiable para generar apuntes interactivos con IA.
 // Editá libremente este texto: es lo que se copia al tocar "Tocá acá".
 // ---------------------------------------------------------------------------
 
-const HTML_PROMPT = `Revisá los apuntes que te voy a pasar. Identificá la idea general y cada concepto que aparece, sin dejar ninguno afuera. Después armá una clase didáctica y entretenida que explique cada concepto de forma progresiva, iterando uno por uno.
+const HTML_PROMPT = `Revisa los siguientes apuntes que te voy a mandar. Identificá la idea general y cada concepto que aparece, sin dejar ninguno afuera. Después armá una clase didáctica y entretenida que explique cada concepto de forma progresiva, iterando uno por uno.
 
-Exportá esa clase como un ÚNICO archivo HTML que incluya todos los estilos (CSS) y scripts (JS) necesarios para funcionar de forma autónoma, sin dependencias externas. Ese HTML tiene que funcionar como un apunte interactivo: que vaya explicando los conceptos paso a paso y que aproveche los medios de expresividad e interactividad que ofrece el HTML (animaciones, ejemplos en vivo, autoevaluaciones, diagramas) para que quien lo use aprenda al máximo.`
+Exportá esa clase como un ÚNICO archivo React, preferiblemente TSX, con un componente default listo para renderizarse. Incluí los estilos dentro del mismo componente o dentro del mismo archivo. Ese archivo tiene que funcionar como un apunte interactivo: que vaya explicando los conceptos paso a paso y que aproveche todas las bondades de React para crear estado, interacciones, calculadoras, simulaciones, ejemplos en vivo, autoevaluaciones, diagramas y experiencias de aprendizaje realmente útiles para que quien lo use aprenda al máximo.
+
+El documento debe cumplir con los siguientes requisitos SIN EXCEPCIÓN: 
+
+
+
+
+
+Tono eduactivo. Explicado de forma sencila sin perder rigor sobre la materia, sin dejar detalles afuera. Es un apunte para estudiar. 
+
+
+
+Graficos: Completos, no deben ser representaciones parciales. Los graficos son escenciales para representar las ideas, y con el poder de la expresividad de React se pueden llevar a otro nivel. 
+
+
+
+Laboratorio / Simulaciones: Practicas completas, sin dejar cosas a medias. Crear simulaciones para explicar y profundizar sobre conceptos. Las practicas deben estar bien explicadas previo a mostrarse, explicando como funcionan y que representan. No pueden estar a medias, cada practica orientada a explicar un tema debe abarcar tanto como pueda del tema para la mejor comprensión por parte del alumno.
+
+
+
+El documento debe estar preparado para verse bien tanto en interfaz de Desktop, como una interfaz de Teléfono como lo es 9:16. 
+
+
+
+Debe ser un único archivo. Podés importar hooks desde React, pero no uses otros imports: no dependas de librerías externas ni de archivos adicionales.
+
+Debes devolverme un TSX que cumpla con estas caracteristicas mencionadas a rajatabla.`
 
 // ---------------------------------------------------------------------------
 // RecursoRow — individual resource row in the list
@@ -606,7 +633,7 @@ function RecursoRow({
               : 'text-white/45 hover:bg-white/5 hover:text-white/70',
           ].join(' ')}
         >
-          Archivo HTML
+          Apunte Interactivo
         </button>
         <button
           type="button"
@@ -642,10 +669,10 @@ function RecursoRow({
               </p>
             ) : (
               <p>
-                Los archivos HTML (los de las páginas web) permiten subir apuntes
-                interactivos mucho más efectivos y súper útiles para estudiar.
-                Este recurso está pensado para que subas un HTML hecho con IA
-                explicando algo sobre el apunte, o el apunte en sí mismo.{' '}
+                Los apuntes interactivos permiten subir explicaciones mucho más
+                efectivas y súper útiles para estudiar. Este recurso está pensado
+                para que subas un archivo hecho con IA explicando algo sobre el
+                apunte, o el apunte en sí mismo.{' '}
                 <button
                   type="button"
                   onClick={copiarPrompt}
@@ -654,7 +681,7 @@ function RecursoRow({
                   {promptCopiado ? '¡Prompt copiado!' : 'Tocá acá'}
                 </button>{' '}
                 para copiar un prompt que podés usar para que tu IA favorita te
-                arme un apunte en HTML.
+                arme un apunte interactivo.
               </p>
             )}
           </div>
@@ -700,14 +727,14 @@ function RecursoRow({
             {recurso.storageKey ? (
               <div className="flex min-h-10 items-center gap-2 rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white/70">
                 <FileCode2 className="size-4 text-cyan-300" />
-                HTML cargado
+                Apunte interactivo cargado
               </div>
             ) : (
               <input
                 type="file"
-                aria-label="Archivo HTML del recurso"
+                aria-label="Archivo del apunte interactivo"
                 name={`htmlFile:${recurso.localId}`}
-                accept=".html,.htm,text/html"
+                accept=".html,.htm,.jsx,.tsx,text/html,text/javascript,application/javascript"
                 onChange={(e) => onHtmlFileChange(recurso.localId, e.target.files?.[0] ?? null)}
                 className={`w-full cursor-pointer rounded border bg-surface-0 px-3 py-2 text-sm text-white file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white hover:file:bg-white/15 ${
                   recurso.error ? 'border-rose-400/50' : 'border-white/10'

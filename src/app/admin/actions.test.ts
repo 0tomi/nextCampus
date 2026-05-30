@@ -216,7 +216,7 @@ describe('admin apunte actions', () => {
     expect(revalidateTagRawMock).toHaveBeenCalledWith('latest-apuntes', 'max')
   })
 
-  it('valida backend antes de subir un recurso HTML', async () => {
+  it('valida backend antes de subir un apunte interactivo', async () => {
     requireYearAdminForSubjectIdMock.mockResolvedValue({
       subjectSlug: 'calculo',
       yearSlug: 'primer-anio',
@@ -237,7 +237,7 @@ describe('admin apunte actions', () => {
     const { createApunteAction } = await import('./actions')
     const result = await createApunteAction({ ok: false, message: '' }, formData)
 
-    expect(result).toEqual({ ok: false, message: 'El archivo debe tener extensión .html o .htm.' })
+    expect(result).toEqual({ ok: false, message: 'El archivo debe ser HTML, JSX o TSX.' })
     expect(uploadApunteHtmlMock).not.toHaveBeenCalled()
     expect(prismaMock.apunte.delete).toHaveBeenCalledWith({ where: { id: 'apunte-1' } })
   })
@@ -273,6 +273,53 @@ describe('admin apunte actions', () => {
       apunteId: 'apunte-1',
       html: '<!doctype html><html><body>Demo</body></html>',
     })
+    expect(prismaMock.apunteRecurso.createMany).toHaveBeenCalledWith({
+      data: [expect.objectContaining({
+        tipo: 'HTML',
+        storageKey: 'apuntes/primer-anio/calculo/apunte-1/html-1.html',
+        mimeType: 'text/html; charset=utf-8',
+      })],
+    })
+  })
+
+  it('compila recursos TSX y registra el HTML resultante', async () => {
+    requireYearAdminForSubjectIdMock.mockResolvedValue({
+      subjectSlug: 'calculo',
+      yearSlug: 'primer-anio',
+      admin: { id: 'admin-1' },
+    })
+    prismaMock.apunte.create.mockResolvedValue({ id: 'apunte-1' })
+
+    const formData = makeFormData({
+      subjectId: 'subject-1',
+      titulo: 'Calculadora interactiva',
+      descripcionHtml: '<p>Interactivo</p>',
+      recursosJson: JSON.stringify([
+        { tipo: 'HTML', localId: 'react-1', orden: 0, nombre: 'Calculadora' },
+      ]),
+    })
+    formData.set(
+      'htmlFile:react-1',
+      new File([
+        `import { useState } from 'react'
+
+        export default function Calculadora() {
+          const [valor, setValor] = useState(1)
+          return <button onClick={() => setValor(valor + 1)}>Resultado {valor}</button>
+        }`,
+      ], 'calculadora.tsx', { type: '' }),
+    )
+
+    const { createApunteAction } = await import('./actions')
+    const result = await createApunteAction({ ok: false, message: '' }, formData)
+
+    expect(result).toEqual({ ok: true, message: 'Apunte creado correctamente.' })
+    expect(uploadApunteHtmlMock).toHaveBeenCalledWith(expect.objectContaining({
+      yearSlug: 'primer-anio',
+      subjectSlug: 'calculo',
+      apunteId: 'apunte-1',
+      html: expect.stringContaining('<div id="root"></div>'),
+    }))
     expect(prismaMock.apunteRecurso.createMany).toHaveBeenCalledWith({
       data: [expect.objectContaining({
         tipo: 'HTML',

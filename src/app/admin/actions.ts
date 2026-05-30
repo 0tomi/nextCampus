@@ -35,6 +35,11 @@ import {
   type YearDeleteImpact,
 } from '@/lib/queries'
 import { parseQuizBank } from '@/lib/domain/quiz-bank'
+import {
+  compileReactArtifact,
+  MAX_APUNTE_REACT_SOURCE_BYTES,
+  type ReactArtifactExtension,
+} from '@/lib/domain/apunte-artifact'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
 
@@ -420,8 +425,20 @@ type RecursoCreateData = {
   sizeBytes?: number | null
 }
 
+type ExistingApunteResourceMeta = {
+  mimeType: string | null
+  sizeBytes: number | null
+}
+
 function isHtmlFileName(name: string): boolean {
   return /\.html?$/i.test(name.trim())
+}
+
+function getReactArtifactExtension(name: string): ReactArtifactExtension | null {
+  const normalized = name.trim().toLowerCase()
+  if (normalized.endsWith('.tsx')) return 'tsx'
+  if (normalized.endsWith('.jsx')) return 'jsx'
+  return null
 }
 
 function looksLikeHtml(text: string): boolean {
@@ -429,41 +446,59 @@ function looksLikeHtml(text: string): boolean {
   return sample.includes('<!doctype html') || sample.includes('<html')
 }
 
-async function readHtmlUpload(formData: FormData, localId: string): Promise<{
+async function readInteractiveUpload(formData: FormData, localId: string, title: string): Promise<{
   html: string
   sizeBytes: number
 } | { error: string }> {
   const raw = formData.get(`htmlFile:${localId}`)
   if (!(raw instanceof File) || raw.size === 0) {
-    return { error: 'Seleccioná un archivo HTML para el recurso.' }
+    return { error: 'Seleccioná un archivo de apunte interactivo.' }
   }
 
-  if (!isHtmlFileName(raw.name)) {
-    return { error: 'El archivo debe tener extensión .html o .htm.' }
+  if (isHtmlFileName(raw.name)) {
+    if (raw.type && raw.type !== 'text/html') {
+      return { error: 'El archivo debe ser HTML.' }
+    }
+
+    if (raw.size > MAX_APUNTE_HTML_BYTES) {
+      return { error: 'El HTML no puede superar los 2 MB.' }
+    }
+
+    const html = await raw.text()
+    if (!looksLikeHtml(html)) {
+      return { error: 'El archivo no parece ser un HTML completo.' }
+    }
+
+    return { html, sizeBytes: Buffer.byteLength(html, 'utf8') }
   }
 
-  if (raw.type && raw.type !== 'text/html') {
-    return { error: 'El archivo debe ser HTML.' }
+  const extension = getReactArtifactExtension(raw.name)
+  if (!extension) {
+    return { error: 'El archivo debe ser HTML, JSX o TSX.' }
   }
 
-  if (raw.size > MAX_APUNTE_HTML_BYTES) {
-    return { error: 'El HTML no puede superar los 2 MB.' }
+  if (raw.size > MAX_APUNTE_REACT_SOURCE_BYTES) {
+    return { error: 'El archivo React no puede superar los 500 KB.' }
   }
 
-  const html = await raw.text()
-  if (!looksLikeHtml(html)) {
-    return { error: 'El archivo no parece ser un HTML completo.' }
-  }
+  const compiled = await compileReactArtifact({
+    source: await raw.text(),
+    extension,
+    title,
+  })
+  if (!compiled.ok) return { error: compiled.error }
 
-  return { html, sizeBytes: Buffer.byteLength(html, 'utf8') }
+  return { html: compiled.html, sizeBytes: compiled.sizeBytes }
 }
 
 async function buildApunteRecursos(params: {
   apunteId: string
+  apunteTitulo: string
   yearSlug: string
   subjectSlug: string
   formData: FormData
   recursos: ParsedRecurso[]
+  existingResourceMetaByStorageKey: Map<string, ExistingApunteResourceMeta>
 }): Promise<{
   data: RecursoCreateData[]
   uploadedStorageKeys: string[]
@@ -484,6 +519,11 @@ async function buildApunteRecursos(params: {
     }
 
     if (recurso.storageKey) {
+      const existingMeta = params.existingResourceMetaByStorageKey.get(recurso.storageKey)
+      if (!existingMeta) {
+        return { error: 'No encontramos el apunte interactivo que querés conservar.', uploadedStorageKeys }
+      }
+
       data.push({
         apunteId: params.apunteId,
         tipo: 'HTML',
@@ -491,17 +531,17 @@ async function buildApunteRecursos(params: {
         orden: recurso.orden,
         nombre: recurso.nombre,
         storageKey: recurso.storageKey,
-        mimeType: APUNTE_HTML_MIME,
-        sizeBytes: recurso.sizeBytes ?? null,
+        mimeType: existingMeta.mimeType ?? APUNTE_HTML_MIME,
+        sizeBytes: existingMeta.sizeBytes,
       })
       continue
     }
 
     if (!recurso.localId) {
-      return { error: 'No se pudo identificar el archivo HTML.', uploadedStorageKeys }
+      return { error: 'No se pudo identificar el archivo de apunte interactivo.', uploadedStorageKeys }
     }
 
-    const upload = await readHtmlUpload(params.formData, recurso.localId)
+    const upload = await readInteractiveUpload(params.formData, recurso.localId, recurso.nombre ?? params.apunteTitulo)
     if ('error' in upload) {
       return { error: upload.error, uploadedStorageKeys }
     }
@@ -636,10 +676,12 @@ export async function createApunteAction(
 
   const built = await buildApunteRecursos({
     apunteId,
+    apunteTitulo: titulo,
     yearSlug: scope.yearSlug,
     subjectSlug: scope.subjectSlug,
     formData,
     recursos,
+    existingResourceMetaByStorageKey: new Map(),
   })
 
   if ('error' in built) {
@@ -712,7 +754,7 @@ export async function updateApunteAction(
       subjectId: true,
       recursos: {
         where: { tipo: 'HTML', storageKey: { not: null } },
-        select: { storageKey: true },
+        select: { storageKey: true, mimeType: true, sizeBytes: true },
       },
     },
   })
@@ -738,10 +780,16 @@ export async function updateApunteAction(
 
   const built = await buildApunteRecursos({
     apunteId: apunteId.data,
+    apunteTitulo: titulo,
     yearSlug: scope.yearSlug,
     subjectSlug: scope.subjectSlug,
     formData,
     recursos,
+    existingResourceMetaByStorageKey: new Map(
+      apunteActual.recursos
+        .filter((r): r is { storageKey: string; mimeType: string | null; sizeBytes: number | null } => Boolean(r.storageKey))
+        .map((r) => [r.storageKey, { mimeType: r.mimeType, sizeBytes: r.sizeBytes }]),
+    ),
   })
 
   if ('error' in built) {
