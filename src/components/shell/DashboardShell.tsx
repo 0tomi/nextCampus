@@ -68,14 +68,14 @@ export function DashboardShell({
             )}
           </div>
           <div className="flex items-center gap-3">
-            {pathname === '/' && (
+            {pathname === '/' ? (
               <button
                 onClick={() => setIsAboutOpen(true)}
                 className="hidden lg:inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
               >
                 Nosotros
               </button>
-            )}
+            ) : null}
             {topbar}
             <AdminControls>
               <SignOutButton />

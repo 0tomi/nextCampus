@@ -437,7 +437,7 @@ export function QuizRunner({
           </div>
         </section>
 
-        {availableUnits.length > 0 && (
+        {availableUnits.length > 0 ? (
           <section className="space-y-4 p-6 sm:p-8">
             <div>
               <h2 className="text-sm font-bold text-white">
@@ -494,7 +494,7 @@ export function QuizRunner({
               })}
             </div>
           </section>
-        )}
+        ) : null}
 
         <section className={cn(
           "grid gap-8 p-6 sm:p-8",
