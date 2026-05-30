@@ -460,7 +460,7 @@ function HtmlPreviewIframe({ recursoId, titulo }: { recursoId: string; titulo: s
       <div
         className={
           isExpanded
-            ? 'fixed inset-4 sm:inset-6 z-50 flex flex-col bg-[#101010] border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,0.8)] rounded-2xl p-4 sm:p-5 transition-all duration-300'
+            ? 'fixed inset-4 sm:inset-6 z-50 flex flex-col bg-[#101010] border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,0.8)] rounded-2xl p-0 overflow-hidden transition-all duration-300'
             : 'relative w-full h-[70vh] min-h-[500px] sm:min-h-[750px] rounded-xl overflow-hidden border border-white/5 bg-surface-1'
         }
       >
@@ -474,20 +474,17 @@ function HtmlPreviewIframe({ recursoId, titulo }: { recursoId: string; titulo: s
         )}
 
         {isExpanded && (
-          <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-3 shrink-0 select-none">
-            <h2 className="text-sm font-black tracking-tight text-white/90 sm:text-base truncate pr-4">
-              {titulo}
-            </h2>
-            <button
-              type="button"
-              onClick={() => setIsExpanded(false)}
-              className="inline-flex cursor-pointer h-8 px-3 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] text-xs font-semibold text-white/85 transition-all duration-300 hover:bg-white/10 hover:text-white"
-              aria-label="Reducir apunte"
-            >
-              <Minimize2 className="size-3.5" />
-              <span>Reducir</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsExpanded(false)}
+            className="absolute top-3.5 right-3.5 z-30 cursor-pointer inline-flex items-center justify-center h-[34px] px-2.5 hover:px-3 gap-0 hover:gap-1.5 rounded-lg border border-white/10 bg-black/60 text-xs font-semibold text-white/90 backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-black/80 hover:border-white/20 group select-none"
+            title="Reducir apunte"
+          >
+            <Minimize2 className="size-4 shrink-0" />
+            <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-out group-hover:max-w-[80px] group-hover:opacity-100">
+              Reducir
+            </span>
+          </button>
         )}
 
         {!isExpanded && !isLoading && (
@@ -502,12 +499,12 @@ function HtmlPreviewIframe({ recursoId, titulo }: { recursoId: string; titulo: s
           </button>
         )}
 
-        <div className={isExpanded ? 'flex-1 w-full h-full min-h-0' : 'h-full w-full'}>
+        <div className="w-full h-full">
           <iframe
             src={`/api/apuntes/recursos/${recursoId}/preview`}
-            className={`h-full w-full rounded-xl border border-white/5 bg-black/20 transition-opacity duration-300 ${
-              isLoading ? 'opacity-0' : 'opacity-100'
-            }`}
+            className={`h-full w-full rounded-xl bg-black/20 transition-opacity duration-300 ${
+              isExpanded ? 'border-none' : 'border border-white/5'
+            } ${isLoading ? 'opacity-0' : 'opacity-100'}`}
             loading="lazy"
             sandbox="allow-scripts"
             title={titulo}
