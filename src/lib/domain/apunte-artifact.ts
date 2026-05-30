@@ -1,3 +1,4 @@
+import { build, type Plugin } from 'esbuild'
 import { createRequire } from 'node:module'
 
 export const MAX_APUNTE_REACT_SOURCE_BYTES = 500 * 1024
@@ -14,37 +15,6 @@ export type ReactArtifactExtension = 'jsx' | 'tsx'
 export type CompileReactArtifactResult =
   | { ok: true; html: string; sizeBytes: number }
   | { ok: false; error: string }
-
-type EsbuildPluginBuild = {
-  onResolve: (
-    options: { filter: RegExp },
-    callback: (args: { path: string }) => { path: string; namespace?: string } | null,
-  ) => void
-  onLoad: (
-    options: { filter: RegExp; namespace?: string },
-    callback: () => { loader: ReactArtifactExtension | 'tsx'; contents: string },
-  ) => void
-}
-
-type EsbuildPlugin = {
-  name: string
-  setup: (pluginBuild: EsbuildPluginBuild) => void
-}
-
-async function loadEsbuild(): Promise<{
-  build: (options: unknown) => Promise<{ outputFiles?: Array<{ text: string }> }>
-}> {
-  // Carga diferida y no trazable por Turbopack: esbuild trae binarios nativos
-  // por plataforma y no debe entrar al grafo de módulos de Next. Solo se carga
-  // en runtime cuando un admin sube un archivo React para compilar.
-  const dynamicImport = new Function('specifier', 'return import(specifier)') as (
-    specifier: string,
-  ) => Promise<unknown>
-
-  return dynamicImport('esbuild') as Promise<{
-    build: (options: unknown) => Promise<{ outputFiles?: Array<{ text: string }> }>
-  }>
-}
 
 function escapeHtmlText(value: string): string {
   return value
@@ -73,7 +43,7 @@ function validateImports(source: string): string | null {
   return null
 }
 
-function reactArtifactPlugin(source: string, extension: ReactArtifactExtension): EsbuildPlugin {
+function reactArtifactPlugin(source: string, extension: ReactArtifactExtension): Plugin {
   const artifactPath = `nextcampus:artifact.${extension}`
   const require = createRequire(import.meta.url)
 
@@ -133,7 +103,6 @@ export async function compileReactArtifact(params: {
   if (importError) return { ok: false, error: importError }
 
   try {
-    const { build } = await loadEsbuild()
     const result = await build({
       absWorkingDir: process.cwd(),
       bundle: true,
@@ -152,7 +121,7 @@ export async function compileReactArtifact(params: {
       write: false,
     })
 
-    const script = result.outputFiles?.[0]?.text
+    const script = result.outputFiles[0]?.text
     if (!script) {
       return { ok: false, error: 'No se pudo preparar el apunte interactivo.' }
     }
