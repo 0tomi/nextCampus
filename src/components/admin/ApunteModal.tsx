@@ -563,10 +563,10 @@ function RecursoRow({
   const showHint = recurso.nombre.trim().length === 0 && hint !== null
 
   const [promptCopiado, setPromptCopiado] = useState(false)
-  const [infoAbierta, setInfoAbierta] = useState<RecursoDraftKind | null>(null)
+  const [infoAbierta, setInfoAbierta] = useState(false)
 
-  const toggleInfo = useCallback((kind: RecursoDraftKind) => {
-    setInfoAbierta((prev) => (prev === kind ? null : kind))
+  const toggleInfo = useCallback(() => {
+    setInfoAbierta((prev) => !prev)
   }, [])
 
   const copiarPrompt = useCallback(() => {
@@ -583,66 +583,46 @@ function RecursoRow({
 
   return (
     <div className="rounded-lg border border-white/10 bg-surface-1/40 p-2.5">
-      <div className="mb-2 flex gap-1 rounded border border-white/8 bg-surface-0 p-1">
-        <div className="flex flex-1 items-center justify-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => onKindChange(recurso.localId, 'LINK')}
-            className={[
-              'flex-1 rounded px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
-              recurso.kind === 'LINK'
-                ? 'bg-white/10 text-white'
-                : 'text-white/45 hover:bg-white/5 hover:text-white/70',
-            ].join(' ')}
-          >
-            Link
-          </button>
-          <button
-            type="button"
-            onClick={() => toggleInfo('LINK')}
-            aria-label="¿Qué es un recurso de tipo Link?"
-            aria-expanded={infoAbierta === 'LINK'}
-            className={[
-              'inline-flex size-6 shrink-0 items-center justify-center rounded transition-colors cursor-pointer',
-              infoAbierta === 'LINK'
-                ? 'text-cyan-300'
-                : 'text-white/40 hover:text-white/80',
-            ].join(' ')}
-          >
-            <Info className="size-3.5" />
-          </button>
-        </div>
-        <div className="flex flex-1 items-center justify-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => onKindChange(recurso.localId, 'HTML')}
-            className={[
-              'flex-1 rounded px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
-              recurso.kind === 'HTML'
-                ? 'bg-white/10 text-white'
-                : 'text-white/45 hover:bg-white/5 hover:text-white/70',
-            ].join(' ')}
-          >
-            Archivo HTML
-          </button>
-          <button
-            type="button"
-            onClick={() => toggleInfo('HTML')}
-            aria-label="¿Qué es un recurso de tipo Archivo HTML?"
-            aria-expanded={infoAbierta === 'HTML'}
-            className={[
-              'inline-flex size-6 shrink-0 items-center justify-center rounded transition-colors cursor-pointer',
-              infoAbierta === 'HTML'
-                ? 'text-cyan-300'
-                : 'text-white/40 hover:text-white/80',
-            ].join(' ')}
-          >
-            <Info className="size-3.5" />
-          </button>
-        </div>
+      <div className="mb-2 flex items-center gap-1 rounded border border-white/8 bg-surface-0 p-1">
+        <button
+          type="button"
+          onClick={() => onKindChange(recurso.localId, 'LINK')}
+          className={[
+            'flex-1 rounded px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+            recurso.kind === 'LINK'
+              ? 'bg-white/10 text-white'
+              : 'text-white/45 hover:bg-white/5 hover:text-white/70',
+          ].join(' ')}
+        >
+          Link
+        </button>
+        <button
+          type="button"
+          onClick={() => onKindChange(recurso.localId, 'HTML')}
+          className={[
+            'flex-1 rounded px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+            recurso.kind === 'HTML'
+              ? 'bg-white/10 text-white'
+              : 'text-white/45 hover:bg-white/5 hover:text-white/70',
+          ].join(' ')}
+        >
+          Archivo HTML
+        </button>
+        <button
+          type="button"
+          onClick={toggleInfo}
+          aria-label="¿Qué es este tipo de recurso?"
+          aria-expanded={infoAbierta}
+          className={[
+            'inline-flex size-6 shrink-0 items-center justify-center rounded transition-colors cursor-pointer',
+            infoAbierta ? 'text-cyan-300' : 'text-white/40 hover:text-white/80',
+          ].join(' ')}
+        >
+          <Info className="size-3.5" />
+        </button>
       </div>
 
-      {/* Panel de info desplegable */}
+      {/* Panel de info desplegable — muestra la info del tipo seleccionado */}
       <div
         className={[
           'grid transition-all duration-300 ease-out',
@@ -653,15 +633,14 @@ function RecursoRow({
       >
         <div className="overflow-hidden">
           <div className="rounded-lg border border-white/10 bg-surface-0 p-3 text-[12px] leading-relaxed text-white/70">
-            {infoAbierta === 'LINK' && (
+            {recurso.kind === 'LINK' ? (
               <p>
                 Al ser un proyecto gratuito, contamos con almacenamiento limitado.
                 Por eso preferimos que compartas un link hacia el recurso vía
                 Drive, o un video vía YouTube. Ambos recursos ofrecen una
                 previsualización una vez subido el apunte.
               </p>
-            )}
-            {infoAbierta === 'HTML' && (
+            ) : (
               <p>
                 Los archivos HTML (los de las páginas web) permiten subir apuntes
                 interactivos mucho más efectivos y súper útiles para estudiar.
