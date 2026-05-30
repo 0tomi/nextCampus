@@ -4,6 +4,7 @@ export const MAX_APUNTE_REACT_SOURCE_BYTES = 500 * 1024
 export const APUNTE_ARTIFACT_HTML_MIME = 'text/html; charset=utf-8'
 
 const ALLOWED_IMPORTS = new Set(['react'])
+const ARTIFACT_BUNDLER_IMPORT_RE = /^(react|react-dom\/client|react\/jsx-runtime)$/
 const IMPORT_RE = /(?:import|export)\s+(?:[^'";]+?\s+from\s+)?["']([^"']+)["']/g
 const DYNAMIC_IMPORT_RE = /\bimport\s*\(/
 const REQUIRE_RE = /\brequire\s*\(/
@@ -48,30 +49,13 @@ function reactArtifactPlugin(source: string, extension: ReactArtifactExtension):
   return {
     name: 'nextcampus-react-artifact',
     setup(pluginBuild) {
-      pluginBuild.onResolve({ filter: /^nextcampus:entry$/ }, (args) => ({
-        path: args.path,
-        namespace: 'nextcampus-artifact',
-      }))
       pluginBuild.onResolve({ filter: /^\.\/artifact$/ }, () => ({
         path: artifactPath,
         namespace: 'nextcampus-artifact',
       }))
-      pluginBuild.onLoad(
-        { filter: /^nextcampus:entry$/, namespace: 'nextcampus-artifact' },
-        () => ({
-          loader: 'tsx',
-          resolveDir,
-          contents: `
-            import React from 'react'
-            import { createRoot } from 'react-dom/client'
-            import Artifact from './artifact'
-
-            const root = document.getElementById('root')
-            if (!root) throw new Error('No se encontró el contenedor del apunte.')
-
-            createRoot(root).render(React.createElement(Artifact))
-          `,
-        }),
+      pluginBuild.onResolve(
+        { filter: ARTIFACT_BUNDLER_IMPORT_RE, namespace: 'nextcampus-artifact' },
+        (args) => pluginBuild.resolve(args.path, { kind: args.kind, resolveDir }),
       )
       pluginBuild.onLoad(
         { filter: /^nextcampus:artifact\.(jsx|tsx)$/, namespace: 'nextcampus-artifact' },
@@ -105,8 +89,22 @@ export async function compileReactArtifact(params: {
       define: {
         'process.env.NODE_ENV': '"production"',
       },
-      entryPoints: ['nextcampus:entry'],
       format: 'iife',
+      stdin: {
+        contents: `
+          import React from 'react'
+          import { createRoot } from 'react-dom/client'
+          import Artifact from './artifact'
+
+          const root = document.getElementById('root')
+          if (!root) throw new Error('No se encontró el contenedor del apunte.')
+
+          createRoot(root).render(React.createElement(Artifact))
+        `,
+        loader: 'tsx',
+        resolveDir: process.cwd(),
+        sourcefile: 'nextcampus-entry.tsx',
+      },
       jsx: 'automatic',
       legalComments: 'none',
       logLevel: 'silent',
