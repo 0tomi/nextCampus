@@ -1,5 +1,4 @@
 import { build, type Plugin } from 'esbuild'
-import { createRequire } from 'node:module'
 
 export const MAX_APUNTE_REACT_SOURCE_BYTES = 500 * 1024
 export const APUNTE_ARTIFACT_HTML_MIME = 'text/html; charset=utf-8'
@@ -8,12 +7,6 @@ const ALLOWED_IMPORTS = new Set(['react'])
 const IMPORT_RE = /(?:import|export)\s+(?:[^'";]+?\s+from\s+)?["']([^"']+)["']/g
 const DYNAMIC_IMPORT_RE = /\bimport\s*\(/
 const REQUIRE_RE = /\brequire\s*\(/
-const require = createRequire(import.meta.url)
-const BUNDLER_IMPORT_RESOLUTIONS = new Map<string, string>([
-  ['react', require.resolve('react')],
-  ['react-dom/client', require.resolve('react-dom/client')],
-  ['react/jsx-runtime', require.resolve('react/jsx-runtime')],
-])
 
 export type ReactArtifactExtension = 'jsx' | 'tsx'
 
@@ -50,15 +43,11 @@ function validateImports(source: string): string | null {
 
 function reactArtifactPlugin(source: string, extension: ReactArtifactExtension): Plugin {
   const artifactPath = `nextcampus:artifact.${extension}`
+  const resolveDir = process.cwd()
 
   return {
     name: 'nextcampus-react-artifact',
     setup(pluginBuild) {
-      pluginBuild.onResolve({ filter: /.*/ }, (args) => {
-        const resolvedPath = BUNDLER_IMPORT_RESOLUTIONS.get(args.path)
-        if (!resolvedPath) return null
-        return { path: resolvedPath }
-      })
       pluginBuild.onResolve({ filter: /^nextcampus:entry$/ }, (args) => ({
         path: args.path,
         namespace: 'nextcampus-artifact',
@@ -71,6 +60,7 @@ function reactArtifactPlugin(source: string, extension: ReactArtifactExtension):
         { filter: /^nextcampus:entry$/, namespace: 'nextcampus-artifact' },
         () => ({
           loader: 'tsx',
+          resolveDir,
           contents: `
             import React from 'react'
             import { createRoot } from 'react-dom/client'
@@ -87,6 +77,7 @@ function reactArtifactPlugin(source: string, extension: ReactArtifactExtension):
         { filter: /^nextcampus:artifact\.(jsx|tsx)$/, namespace: 'nextcampus-artifact' },
         () => ({
           loader: extension,
+          resolveDir,
           contents: source,
         }),
       )
