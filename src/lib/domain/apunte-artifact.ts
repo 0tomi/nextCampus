@@ -1,5 +1,4 @@
 import { build, type Plugin } from 'esbuild'
-import { createRequire } from 'node:module'
 
 export const MAX_APUNTE_REACT_SOURCE_BYTES = 500 * 1024
 export const APUNTE_ARTIFACT_HTML_MIME = 'text/html; charset=utf-8'
@@ -45,7 +44,6 @@ function validateImports(source: string): string | null {
 
 function reactArtifactPlugin(source: string, extension: ReactArtifactExtension): Plugin {
   const artifactPath = `nextcampus:artifact.${extension}`
-  const esmRequire = createRequire(import.meta.url)
 
   return {
     name: 'nextcampus-react-artifact',
@@ -54,16 +52,13 @@ function reactArtifactPlugin(source: string, extension: ReactArtifactExtension):
         path: artifactPath,
         namespace: 'nextcampus-artifact',
       }))
-      // Resolver react/react-dom desde CUALQUIER namespace usando paths absolutos.
-      // En producción (Vercel standalone) process.cwd() no tiene node_modules con
-      // React; require.resolve() usa el algoritmo de Node que sí los encuentra.
-      pluginBuild.onResolve({ filter: ARTIFACT_BUNDLER_IMPORT_RE }, (args) => {
-        try {
-          return { path: esmRequire.resolve(args.path) }
-        } catch {
-          return undefined
-        }
-      })
+      // Externalizar React: no se bundlea en el artifact. Se carga desde CDN
+      // via import map en el HTML generado. Esto evita que esbuild necesite
+      // los source files de react en disco (no existen en Vercel standalone).
+      pluginBuild.onResolve({ filter: ARTIFACT_BUNDLER_IMPORT_RE }, (args) => ({
+        path: args.path,
+        external: true,
+      }))
       pluginBuild.onLoad(
         { filter: /^nextcampus:artifact\.(jsx|tsx)$/, namespace: 'nextcampus-artifact' },
         () => ({
@@ -94,7 +89,7 @@ export async function compileReactArtifact(params: {
       define: {
         'process.env.NODE_ENV': '"production"',
       },
-      format: 'iife',
+      format: 'esm',
       stdin: {
         contents: `
           import React from 'react'
@@ -131,6 +126,15 @@ export async function compileReactArtifact(params: {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${title}</title>
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@19",
+      "react/jsx-runtime": "https://esm.sh/react@19/jsx-runtime",
+      "react-dom/client": "https://esm.sh/react-dom@19/client"
+    }
+  }
+  </script>
   <style>
     :root { color-scheme: light dark; }
     html, body, #root { min-height: 100%; margin: 0; }
@@ -140,7 +144,7 @@ export async function compileReactArtifact(params: {
 </head>
 <body>
   <div id="root"></div>
-  <script>${escapeInlineScript(script)}</script>
+  <script type="module">${escapeInlineScript(script)}</script>
 </body>
 </html>`
 
