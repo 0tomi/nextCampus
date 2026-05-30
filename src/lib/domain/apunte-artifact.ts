@@ -1,4 +1,5 @@
 import { build, type Plugin } from 'esbuild'
+import { createRequire } from 'node:module'
 
 export const MAX_APUNTE_REACT_SOURCE_BYTES = 500 * 1024
 export const APUNTE_ARTIFACT_HTML_MIME = 'text/html; charset=utf-8'
@@ -44,7 +45,7 @@ function validateImports(source: string): string | null {
 
 function reactArtifactPlugin(source: string, extension: ReactArtifactExtension): Plugin {
   const artifactPath = `nextcampus:artifact.${extension}`
-  const resolveDir = process.cwd()
+  const esmRequire = createRequire(import.meta.url)
 
   return {
     name: 'nextcampus-react-artifact',
@@ -53,15 +54,20 @@ function reactArtifactPlugin(source: string, extension: ReactArtifactExtension):
         path: artifactPath,
         namespace: 'nextcampus-artifact',
       }))
-      pluginBuild.onResolve(
-        { filter: ARTIFACT_BUNDLER_IMPORT_RE, namespace: 'nextcampus-artifact' },
-        (args) => pluginBuild.resolve(args.path, { kind: args.kind, resolveDir }),
-      )
+      // Resolver react/react-dom desde CUALQUIER namespace usando paths absolutos.
+      // En producción (Vercel standalone) process.cwd() no tiene node_modules con
+      // React; require.resolve() usa el algoritmo de Node que sí los encuentra.
+      pluginBuild.onResolve({ filter: ARTIFACT_BUNDLER_IMPORT_RE }, (args) => {
+        try {
+          return { path: esmRequire.resolve(args.path) }
+        } catch {
+          return undefined
+        }
+      })
       pluginBuild.onLoad(
         { filter: /^nextcampus:artifact\.(jsx|tsx)$/, namespace: 'nextcampus-artifact' },
         () => ({
           loader: extension,
-          resolveDir,
           contents: source,
         }),
       )
@@ -84,7 +90,6 @@ export async function compileReactArtifact(params: {
 
   try {
     const result = await build({
-      absWorkingDir: process.cwd(),
       bundle: true,
       define: {
         'process.env.NODE_ENV': '"production"',
@@ -102,7 +107,6 @@ export async function compileReactArtifact(params: {
           createRoot(root).render(React.createElement(Artifact))
         `,
         loader: 'tsx',
-        resolveDir: process.cwd(),
         sourcefile: 'nextcampus-entry.tsx',
       },
       jsx: 'automatic',
