@@ -11,11 +11,13 @@ const HTML_PREVIEW_CSP = [
   // allow-scripts habilita JS; NO incluir allow-same-origin (rompería el aislamiento).
   'sandbox allow-scripts',
   "default-src 'none'",
-  "script-src 'unsafe-inline'",
+  // 'unsafe-inline' para el script del artifact; https://esm.sh para React (import map).
+  "script-src 'unsafe-inline' https://esm.sh",
   "style-src 'unsafe-inline'",
   "img-src https: data: blob:",
   "font-src https: data:",
-  "connect-src 'none'",
+  // Los ESM imports a esm.sh necesitan connect-src para la negociación de módulos.
+  "connect-src https://esm.sh",
   "media-src https: data: blob:",
   "worker-src 'none'",
   "frame-src 'none'",
