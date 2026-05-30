@@ -19,7 +19,7 @@ describe('compileReactArtifact', () => {
     expect(result.ok).toBe(true)
     if (!result.ok) return
     expect(result.html).toContain('<div id="root"></div>')
-    expect(result.html).toContain('<script type="module">')
+    expect(result.html).toContain('<script>')
     expect(result.html).toContain('Calculadora')
   })
 
