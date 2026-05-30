@@ -17,10 +17,16 @@ import { deleteQuizBankAction } from '@/app/admin/actions'
 
 type Mode = 'practica' | 'examen'
 
+interface UnidadInfo {
+  nombre: string
+  totalPreguntas: number
+}
+
 interface BancoInfo {
   id: string
   nombre: string
   totalPreguntas: number
+  unidades?: UnidadInfo[]
 }
 
 interface PublicQuestion {
@@ -73,18 +79,41 @@ export function QuizRunner({
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
   const [showExitDialog, setShowExitDialog] = useState(false)
   const [showSubmitDialog, setShowSubmitDialog] = useState(false)
+  const [excludedUnits, setExcludedUnits] = useState<string[]>([])
 
-  const maxPreguntas = useMemo(
-    () =>
-      bancos
-        .filter((b) => selectedBancos.includes(b.id))
-        .reduce((acc, b) => acc + b.totalPreguntas, 0),
-    [bancos, selectedBancos],
-  )
+  const availableUnits = useMemo(() => {
+    const unitsMap = new Map<string, number>()
+    bancos
+      .filter((b) => selectedBancos.includes(b.id))
+      .forEach((b) => {
+        b.unidades?.forEach((u) => {
+          const current = unitsMap.get(u.nombre) || 0
+          unitsMap.set(u.nombre, current + u.totalPreguntas)
+        })
+      })
+    return Array.from(unitsMap.entries()).map(([nombre, totalPreguntas]) => ({
+      nombre,
+      totalPreguntas,
+    }))
+  }, [bancos, selectedBancos])
+
+  const maxPreguntas = useMemo(() => {
+    return availableUnits
+      .filter((u) => !excludedUnits.includes(u.nombre))
+      .reduce((acc, u) => acc + u.totalPreguntas, 0)
+  }, [availableUnits, excludedUnits])
 
   const toggleBanco = useCallback((id: string) => {
     setSelectedBancos((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    )
+  }, [])
+
+  const toggleUnit = useCallback((nombre: string) => {
+    setExcludedUnits((prev) =>
+      prev.includes(nombre)
+        ? prev.filter((u) => u !== nombre)
+        : [...prev, nombre],
     )
   }, [])
 
@@ -93,6 +122,15 @@ export function QuizRunner({
       setError('Elegí al menos un banco de preguntas.')
       return
     }
+    const activeUnits = availableUnits
+      .map((u) => u.nombre)
+      .filter((name) => !excludedUnits.includes(name))
+
+    if (activeUnits.length === 0) {
+      setError('Elegí al menos una unidad.')
+      return
+    }
+
     setLoading(true)
     setError(null)
     try {
@@ -101,6 +139,7 @@ export function QuizRunner({
         banks: selectedBancos.join(','),
         mode,
         count: String(count),
+        units: activeUnits.join(','),
       })
       const res = await fetch(`/api/quiz/set?${qs.toString()}`)
       if (!res.ok) throw new Error('No se pudo cargar el quiz.')
@@ -123,7 +162,7 @@ export function QuizRunner({
     } finally {
       setLoading(false)
     }
-  }, [subjectSlug, mode, count, selectedBancos, timeLimit])
+  }, [subjectSlug, mode, count, selectedBancos, timeLimit, availableUnits, excludedUnits])
 
   const reset = useCallback(() => {
     setPhase('config')
@@ -398,6 +437,65 @@ export function QuizRunner({
           </div>
         </section>
 
+        {availableUnits.length > 0 && (
+          <section className="space-y-4 p-6 sm:p-8">
+            <div>
+              <h2 className="text-sm font-bold text-white">
+                Elegir unidades
+              </h2>
+              <p className="mt-1 text-sm text-white/48">
+                De los bancos seleccionados, elegí qué unidades querés utilizar para autoevaluarte.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {availableUnits.map((unit) => {
+                const active = !excludedUnits.includes(unit.nombre)
+                return (
+                  <div
+                    key={unit.nombre}
+                    className={cn(
+                      'group relative flex items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors',
+                      active ? CONTROL_ACTIVE : CONTROL,
+                    )}
+                  >
+                    {/* Clickable area to toggle */}
+                    <button
+                      type="button"
+                      onClick={() => toggleUnit(unit.nombre)}
+                      className="absolute inset-0 w-full h-full cursor-pointer text-left"
+                      aria-pressed={active}
+                    >
+                      <span className="sr-only">Seleccionar {unit.nombre}</span>
+                    </button>
+
+                    {/* Text content */}
+                    <div className="relative min-w-0 pointer-events-none z-10">
+                      <span className="block truncate text-sm font-semibold text-white">
+                        {unit.nombre}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-white/44">
+                        {unit.totalPreguntas} preguntas
+                      </span>
+                    </div>
+
+                    {/* Check indicator */}
+                    <span
+                      className={cn(
+                        'flex h-5 w-5 shrink-0 items-center justify-center transition-colors pointer-events-none z-10',
+                        active
+                          ? 'bg-primary text-white'
+                          : 'border border-white/15',
+                      )}
+                    >
+                      {active && <Check className="h-3 w-3" strokeWidth={3} />}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
+
         <section className={cn(
           "grid gap-8 p-6 sm:p-8",
           mode === 'examen' ? "sm:grid-cols-3" : "sm:grid-cols-2"
@@ -596,7 +694,7 @@ export function QuizRunner({
           <button
             type="button"
             onClick={start}
-            disabled={loading || selectedBancos.length === 0}
+            disabled={loading || selectedBancos.length === 0 || maxPreguntas === 0}
             className="inline-flex w-full items-center justify-center gap-2 bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
           >
             {loading ? 'Cargando…' : 'Comenzar quiz'}

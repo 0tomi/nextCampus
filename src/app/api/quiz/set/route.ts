@@ -11,6 +11,7 @@ const querySchema = z.object({
   banks: z.string().min(1), // ids separados por coma
   mode: z.enum(['practica', 'examen', 'general']).default('general'),
   count: z.coerce.number().int().min(0).max(500).default(0),
+  units: z.string().optional(),
 })
 
 // Arma el set público (SIN answer ni explanation). El server lee los bancos
@@ -21,7 +22,7 @@ export async function GET(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 })
   }
-  const { subject: subjectSlug, banks, mode, count } = parsed.data
+  const { subject: subjectSlug, banks, mode, count, units } = parsed.data
 
   const subject = await getSubjectQuizMeta(subjectSlug)
   if (!subject) {
@@ -49,14 +50,19 @@ export async function GET(request: Request) {
     requested,
   )
 
-  const flat = requested.flatMap((bankId) => {
+  let flat = requested.flatMap((bankId) => {
     const bank = loaded.get(bankId)
     return bank ? flattenBank(bankId, bank) : []
   })
 
+  if (units) {
+    const allowedUnits = new Set(units.split(',').map((u) => u.trim()))
+    flat = flat.filter((q) => allowedUnits.has(q.unitName))
+  }
+
   if (flat.length === 0) {
     return NextResponse.json(
-      { error: 'Los bancos seleccionados no tienen preguntas' },
+      { error: 'Los bancos seleccionados no tienen preguntas o no coinciden con las unidades elegidas' },
       { status: 404 },
     )
   }

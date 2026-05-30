@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type ReactNode } from 'react'
 import { Menu, X } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { SignOutButton } from '@/components/admin/SignOutButton'
@@ -28,6 +29,7 @@ export function DashboardShell({
   className,
   mainClassName,
 }: DashboardShellProps) {
+  const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const [isAboutOpen, setIsAboutOpen] = useState(false)
 
@@ -66,12 +68,14 @@ export function DashboardShell({
             )}
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsAboutOpen(true)}
-              className="hidden lg:inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-            >
-              Nosotros
-            </button>
+            {pathname === '/' && (
+              <button
+                onClick={() => setIsAboutOpen(true)}
+                className="hidden lg:inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+              >
+                Nosotros
+              </button>
+            )}
             {topbar}
             <AdminControls>
               <SignOutButton />

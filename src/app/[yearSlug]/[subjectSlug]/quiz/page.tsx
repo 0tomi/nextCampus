@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { getSubjectQuizMeta } from '@/lib/queries'
-import { listQuizBanks } from '@/lib/storage'
+import { listQuizBanks, readQuizBanks } from '@/lib/storage'
 import { CampusHeaderBrand } from '@/components/shell/CampusHeaderBrand'
 import {
   buildSubjectHref,
@@ -31,11 +31,27 @@ export default async function QuizPage({
   }
 
   const banks = await listQuizBanks(subject.year.slug, subject.slug)
-  const bancos = banks.map((b) => ({
-    id: b.id,
-    nombre: b.nombre,
-    totalPreguntas: b.totalPreguntas,
-  }))
+  const loadedBanks = await readQuizBanks(
+    subject.year.slug,
+    subject.slug,
+    banks.map((b) => b.id),
+  )
+
+  const bancos = banks.map((b) => {
+    const file = loadedBanks.get(b.id)
+    const unidades = file
+      ? file.units.map((u) => ({
+          nombre: u.name,
+          totalPreguntas: u.questions.length,
+        }))
+      : []
+    return {
+      id: b.id,
+      nombre: b.nombre,
+      totalPreguntas: b.totalPreguntas,
+      unidades,
+    }
+  })
 
   return (
     <div className="min-h-screen bg-surface-0">
