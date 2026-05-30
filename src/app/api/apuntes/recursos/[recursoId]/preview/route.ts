@@ -11,13 +11,13 @@ const HTML_PREVIEW_CSP = [
   // allow-scripts habilita JS; NO incluir allow-same-origin (rompería el aislamiento).
   'sandbox allow-scripts',
   "default-src 'none'",
-  // 'unsafe-inline' para el script del artifact; https://esm.sh para React (import map).
-  "script-src 'unsafe-inline' https://esm.sh",
-  "style-src 'unsafe-inline'",
+  // 'unsafe-inline' para el script del artifact; CDNs comunes para React y librerías externas.
+  "script-src 'unsafe-inline' https://esm.sh https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com",
+  "style-src 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com",
   "img-src https: data: blob:",
   "font-src https: data:",
-  // Los ESM imports a esm.sh necesitan connect-src para la negociación de módulos.
-  "connect-src https://esm.sh",
+  // Los ESM imports a esm.sh y otros CDNs necesitan connect-src para la negociación de módulos y fetch.
+  "connect-src https://esm.sh https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com",
   "media-src https: data: blob:",
   "worker-src 'none'",
   "frame-src 'none'",

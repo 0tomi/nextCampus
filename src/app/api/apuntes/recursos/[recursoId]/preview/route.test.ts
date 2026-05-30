@@ -32,7 +32,7 @@ describe('apunte recurso preview route', () => {
     expect(csp).not.toContain('allow-downloads')
     expect(csp).not.toContain('allow-forms')
     expect(csp).not.toContain('allow-same-origin')
-    expect(csp).toContain("connect-src 'none'")
+    expect(csp).toContain("connect-src https://esm.sh")
     expect(csp).toContain("form-action 'none'")
   })
 })
