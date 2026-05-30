@@ -429,28 +429,93 @@ function HtmlPreviewCard({
 
 function HtmlPreviewIframe({ recursoId, titulo }: { recursoId: string; titulo: string }) {
   const [isLoading, setIsLoading] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  useEffect(() => {
+    if (!isExpanded) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsExpanded(false)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = originalOverflow
+    }
+  }, [isExpanded])
 
   return (
-    <div className="relative w-full h-[70vh] min-h-[500px] sm:min-h-[750px]">
-      {isLoading && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl border border-white/5 bg-black/35 backdrop-blur-sm transition-opacity duration-300">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
-          <p className="mt-3 text-xs font-semibold text-white/50 tracking-wide">
-            Cargando apunte...
-          </p>
-        </div>
+    <>
+      {isExpanded && (
+        <div
+          className="fixed inset-0 z-40 bg-black/85 backdrop-blur-sm transition-opacity duration-300"
+          onClick={() => setIsExpanded(false)}
+        />
       )}
-      <iframe
-        src={`/api/apuntes/recursos/${recursoId}/preview`}
-        className={`h-full w-full rounded-xl border border-white/5 bg-black/20 transition-opacity duration-300 ${
-          isLoading ? 'opacity-0' : 'opacity-100'
-        }`}
-        loading="lazy"
-        sandbox="allow-scripts"
-        title={titulo}
-        onLoad={() => setIsLoading(false)}
-      />
-    </div>
+
+      <div
+        className={
+          isExpanded
+            ? 'fixed inset-4 sm:inset-6 z-50 flex flex-col bg-[#101010] border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,0.8)] rounded-2xl p-4 sm:p-5 transition-all duration-300'
+            : 'relative w-full h-[70vh] min-h-[500px] sm:min-h-[750px] rounded-xl overflow-hidden border border-white/5 bg-surface-1'
+        }
+      >
+        {isLoading && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-black/35 backdrop-blur-sm transition-opacity duration-300 z-20">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
+            <p className="mt-3 text-xs font-semibold text-white/55 tracking-wide">
+              Cargando apunte...
+            </p>
+          </div>
+        )}
+
+        {isExpanded && (
+          <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-3 shrink-0 select-none">
+            <h2 className="text-sm font-black tracking-tight text-white/90 sm:text-base truncate pr-4">
+              {titulo}
+            </h2>
+            <button
+              type="button"
+              onClick={() => setIsExpanded(false)}
+              className="inline-flex cursor-pointer h-8 px-3 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] text-xs font-semibold text-white/85 transition-all duration-300 hover:bg-white/10 hover:text-white"
+              aria-label="Reducir apunte"
+            >
+              <Minimize2 className="size-3.5" />
+              <span>Reducir</span>
+            </button>
+          </div>
+        )}
+
+        {!isExpanded && !isLoading && (
+          <button
+            type="button"
+            onClick={() => setIsExpanded(true)}
+            className="absolute top-3.5 right-3.5 z-10 cursor-pointer inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/60 px-3 py-2 text-xs font-semibold text-white/90 backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-black/80 hover:border-white/20 hover:text-white"
+            title="Expandir apunte"
+          >
+            <Maximize2 className="size-3.5" />
+            <span>Expandir</span>
+          </button>
+        )}
+
+        <div className={isExpanded ? 'flex-1 w-full h-full min-h-0' : 'h-full w-full'}>
+          <iframe
+            src={`/api/apuntes/recursos/${recursoId}/preview`}
+            className={`h-full w-full rounded-xl border border-white/5 bg-black/20 transition-opacity duration-300 ${
+              isLoading ? 'opacity-0' : 'opacity-100'
+            }`}
+            loading="lazy"
+            sandbox="allow-scripts"
+            title={titulo}
+            onLoad={() => setIsLoading(false)}
+          />
+        </div>
+      </div>
+    </>
   )
 }
 
