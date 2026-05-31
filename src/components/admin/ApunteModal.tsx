@@ -11,7 +11,6 @@ import {
 } from '@/app/admin/actions'
 import { detectarRecurso, type RecursoTipo } from '@/lib/recursos'
 import { inferirCategoriasDeApunte } from '@/lib/apunte-categorias'
-import { slugify } from '@/lib/slug'
 import { RichTextEditor } from './RichTextEditor'
 
 // ---------------------------------------------------------------------------
@@ -87,7 +86,6 @@ function makeDraft(
   }
 }
 
-const SLUG_REGEX = /^[a-z0-9-]+$/
 const INTERACTIVE_NOTE_FILE_RE = /\.(html?|jsx|tsx)$/i
 
 function detectTipo(url: string): RecursoTipo | null {
@@ -165,13 +163,6 @@ export function ApunteModal({
   const [state, formAction, pending] = useActionState(action, emptyState)
 
   const [titulo, setTitulo] = useState(apunte?.titulo ?? '')
-  const [slug, setSlug] = useState(apunte?.slug ?? '')
-  // Si ya hay slug cargado al abrir el modal (modo edición con slug), tratamos
-  // el campo como "tocado por el usuario" para no auto-sobrescribirlo al editar
-  // el título. Si está vacío, el slug se autogenera del título.
-  const slugTouchedRef = useRef(Boolean(apunte?.slug && apunte.slug.length > 0))
-  const [slugError, setSlugError] = useState('')
-  const [linkOpen, setLinkOpen] = useState(false)
   const [descriptionOpen, setDescriptionOpen] = useState(false)
   const [recursos, setRecursos] = useState<RecursoDraft[]>(() =>
     apunte
@@ -292,29 +283,8 @@ export function ApunteModal({
   // Recurso handlers
   // -------------------------------------------------------------------------
 
-  const handleSlugChange = useCallback((value: string) => {
-    slugTouchedRef.current = true
-    // Normalizamos a lowercase para que coincida con la regla del backend.
-    const normalized = value.toLowerCase()
-    setSlug(normalized)
-    if (normalized.length === 0) {
-      setSlugError('')
-      return
-    }
-    if (!SLUG_REGEX.test(normalized)) {
-      setSlugError('Solo letras, números y guiones (sin espacios ni acentos).')
-    } else if (normalized.length > 80) {
-      setSlugError('Demasiado largo, máximo 80 caracteres.')
-    } else {
-      setSlugError('')
-    }
-  }, [])
-
   const handleTituloChange = useCallback((value: string) => {
     setTitulo(value)
-    if (slugTouchedRef.current) return
-    const trimmed = value.trim()
-    setSlug(trimmed.length === 0 ? '' : slugify(trimmed))
   }, [])
 
   const addRecurso = useCallback(() => {
@@ -462,17 +432,9 @@ export function ApunteModal({
         return
       }
 
-      if (slugError) {
-        e.preventDefault()
-        setValidationError(
-          'Revisá el link compartible: ' + slugError.toLowerCase(),
-        )
-        return
-      }
-
       // Nothing to prevent — let the form action run
     },
-    [recursos, slugError, submitCategoriaIds.length],
+    [recursos, submitCategoriaIds.length],
   )
 
   // Serialize recursos for the hidden input
@@ -542,40 +504,6 @@ export function ApunteModal({
             className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
           />
         </div>
-
-        {/* Link compartible (slug) */}
-        <CollapsibleFormSection
-          title="Link compartible"
-          hint="Opcional. Si no lo tocás, se crea desde el título."
-          open={linkOpen}
-          onToggle={() => setLinkOpen((value) => !value)}
-        >
-          <div className="space-y-1">
-            <input
-              id="apunte-slug"
-              type="text"
-              name="slug"
-              value={slug}
-              onChange={(e) => handleSlugChange(e.target.value)}
-              placeholder="se-genera-desde-el-titulo"
-              maxLength={80}
-              autoComplete="off"
-              spellCheck={false}
-              className={`w-full rounded border bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none ${
-                slugError
-                  ? 'border-rose-400/50 focus:border-rose-400/70'
-                  : 'border-white/10 focus:border-white/20'
-              }`}
-            />
-            {slugError ? (
-              <p className="text-[11px] text-rose-400">{slugError}</p>
-            ) : (
-              <p className="text-[11px] text-white/40">
-                Link: /{subjectSlug}/apuntes/{slug || 'mi-apunte'}
-              </p>
-            )}
-          </div>
-        </CollapsibleFormSection>
 
         {/* Descripción — Rich Text */}
         <CollapsibleFormSection
