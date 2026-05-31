@@ -712,7 +712,8 @@ export async function createApunteAction(
       return created
     })
     apunteId = apunte.id
-  } catch {
+  } catch (err) {
+    console.error('createApunteAction: failed to create note with categories', err)
     return { ok: false, message: 'No se pudo crear el apunte. Intentá de nuevo.' }
   }
 
@@ -736,7 +737,8 @@ export async function createApunteAction(
     if (built.data.length > 0) {
       await prisma.apunteRecurso.createMany({ data: built.data })
     }
-  } catch {
+  } catch (err) {
+    console.error('createApunteAction: failed to create note resources', err)
     await deleteApunteHtml(built.uploadedStorageKeys)
     await prisma.apunte.delete({ where: { id: apunteId } }).catch(() => undefined)
     return { ok: false, message: 'No se pudo crear el apunte. Intentá de nuevo.' }
@@ -880,7 +882,8 @@ export async function updateApunteAction(
         await tx.apunteRecurso.createMany({ data: built.data })
       }
     })
-  } catch {
+  } catch (err) {
+    console.error('updateApunteAction: failed to update note', err)
     await deleteApunteHtml(built.uploadedStorageKeys)
     return { ok: false, message: 'No se pudo actualizar el apunte. Intentá de nuevo.' }
   }

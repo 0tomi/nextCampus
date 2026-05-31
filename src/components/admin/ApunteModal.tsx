@@ -94,6 +94,56 @@ function detectTipo(url: string): RecursoTipo | null {
   return detectarRecurso(url)?.tipo ?? null
 }
 
+function CollapsibleFormSection({
+  title,
+  hint,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string
+  hint: string
+  open: boolean
+  onToggle: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <section className="rounded-xl border border-white/8 bg-white/[0.018]">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="group flex w-full cursor-pointer items-center justify-between gap-4 px-3 py-3 text-left transition-colors hover:bg-white/[0.025]"
+        aria-expanded={open}
+      >
+        <span>
+          <span className="block text-xs font-semibold uppercase tracking-widest text-white/45">
+            {title}
+          </span>
+          <span className="mt-1 block text-[11px] leading-4 text-white/35">
+            {hint}
+          </span>
+        </span>
+        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/55 transition-colors group-hover:text-white">
+          <ChevronDown
+            className={`h-4 w-4 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+          />
+        </span>
+      </button>
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${
+          open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="px-3 pb-3 pt-1">
+            {children}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 // ---------------------------------------------------------------------------
 // ApunteModal
 // ---------------------------------------------------------------------------
@@ -119,6 +169,8 @@ export function ApunteModal({
   // el título. Si está vacío, el slug se autogenera del título.
   const slugTouchedRef = useRef(Boolean(apunte?.slug && apunte.slug.length > 0))
   const [slugError, setSlugError] = useState('')
+  const [linkOpen, setLinkOpen] = useState(false)
+  const [descriptionOpen, setDescriptionOpen] = useState(false)
   const [recursos, setRecursos] = useState<RecursoDraft[]>(() =>
     apunte
       ? apunte.recursos.map((r) =>
@@ -489,55 +541,52 @@ export function ApunteModal({
         </div>
 
         {/* Link compartible (slug) */}
-        <div className="space-y-1">
-          <label
-            htmlFor="apunte-slug"
-            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
-          >
-            Link compartible{' '}
-            <span className="font-normal normal-case tracking-normal text-white/30">
-              (opcional)
-            </span>
-          </label>
-          <input
-            id="apunte-slug"
-            type="text"
-            name="slug"
-            value={slug}
-            onChange={(e) => handleSlugChange(e.target.value)}
-            placeholder="se-genera-desde-el-titulo"
-            maxLength={80}
-            autoComplete="off"
-            spellCheck={false}
-            className={`w-full rounded border bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none ${
-              slugError
-                ? 'border-rose-400/50 focus:border-rose-400/70'
-                : 'border-white/10 focus:border-white/20'
-            }`}
-          />
-          {slugError ? (
-            <p className="text-[11px] text-rose-400">{slugError}</p>
-          ) : (
-            <p className="text-[11px] text-white/40">
-              Link: /{subjectSlug}/apuntes/{slug || 'mi-apunte'}
-            </p>
-          )}
-        </div>
+        <CollapsibleFormSection
+          title="Link compartible"
+          hint="Opcional. Si no lo tocás, se crea desde el título."
+          open={linkOpen}
+          onToggle={() => setLinkOpen((value) => !value)}
+        >
+          <div className="space-y-1">
+            <input
+              id="apunte-slug"
+              type="text"
+              name="slug"
+              value={slug}
+              onChange={(e) => handleSlugChange(e.target.value)}
+              placeholder="se-genera-desde-el-titulo"
+              maxLength={80}
+              autoComplete="off"
+              spellCheck={false}
+              className={`w-full rounded border bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none ${
+                slugError
+                  ? 'border-rose-400/50 focus:border-rose-400/70'
+                  : 'border-white/10 focus:border-white/20'
+              }`}
+            />
+            {slugError ? (
+              <p className="text-[11px] text-rose-400">{slugError}</p>
+            ) : (
+              <p className="text-[11px] text-white/40">
+                Link: /{subjectSlug}/apuntes/{slug || 'mi-apunte'}
+              </p>
+            )}
+          </div>
+        </CollapsibleFormSection>
 
         {/* Descripción — Rich Text */}
-        <div className="space-y-1">
-          <label className="block text-xs font-semibold uppercase tracking-widest text-white/40">
-            Descripción{' '}
-            <span className="font-normal normal-case tracking-normal text-white/30">
-              (opcional)
-            </span>
-          </label>
+        <CollapsibleFormSection
+          title="Descripción"
+          hint="Opcional. Agregá una explicación corta si hace falta."
+          open={descriptionOpen}
+          onToggle={() => setDescriptionOpen((value) => !value)}
+        >
           <RichTextEditor
             name="descripcionHtml"
             defaultValue={apunte?.descripcionHtml ?? ''}
             placeholder="Descripción del contenido"
           />
-        </div>
+        </CollapsibleFormSection>
 
         {/* Categorías */}
         <div className="space-y-2">
