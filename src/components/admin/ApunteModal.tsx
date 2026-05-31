@@ -131,11 +131,11 @@ export function ApunteModal({
       : [],
   )
   const fallbackCategoriaId = categoriasDisponibles.find((categoria) => categoria.nombre === 'Otro')?.id ?? categoriasDisponibles[0]?.id ?? ''
-  const [selectedCategoriaIds, setSelectedCategoriaIds] = useState<string[]>(() => {
-    const existing = apunte?.categorias?.map((categoria) => categoria.id).filter(Boolean) ?? []
-    return existing.length > 0 ? existing : (fallbackCategoriaId ? [fallbackCategoriaId] : [])
-  })
+  const [selectedCategoriaIds, setSelectedCategoriaIds] = useState<string[]>(() =>
+    apunte?.categorias?.map((categoria) => categoria.id).filter(Boolean) ?? [],
+  )
   const [dismissedAutoCategoriaIds, setDismissedAutoCategoriaIds] = useState<Set<string>>(() => new Set())
+  const autoSelectedCategoriaIdsRef = useRef<Set<string>>(new Set())
   const [highlightCategoriaIds, setHighlightCategoriaIds] = useState<Set<string>>(() => new Set())
   const [validationError, setValidationError] = useState('')
 
@@ -171,16 +171,28 @@ export function ApunteModal({
 
       setSelectedCategoriaIds((prev) => {
         const next = new Set(prev)
-        const added: string[] = []
+        const addedAutomatically: string[] = []
+        const removedAutomatically: string[] = []
+
+        for (const id of autoSelectedCategoriaIdsRef.current) {
+          if (!inferredCategoriaIds.has(id)) {
+            next.delete(id)
+            removedAutomatically.push(id)
+          }
+        }
+
         for (const id of inferredCategoriaIds) {
           if (!dismissedAutoCategoriaIds.has(id) && !next.has(id)) {
             next.add(id)
-            added.push(id)
+            addedAutomatically.push(id)
           }
         }
-        if (next.size === 0 && fallbackCategoriaId) next.add(fallbackCategoriaId)
-        if (added.length > 0) {
-          setHighlightCategoriaIds(new Set(added))
+
+        removedAutomatically.forEach((id) => autoSelectedCategoriaIdsRef.current.delete(id))
+        addedAutomatically.forEach((id) => autoSelectedCategoriaIdsRef.current.add(id))
+
+        if (addedAutomatically.length > 0) {
+          setHighlightCategoriaIds(new Set(addedAutomatically))
           window.setTimeout(() => setHighlightCategoriaIds(new Set()), 900)
         }
         const asArray = [...next]
@@ -189,12 +201,23 @@ export function ApunteModal({
     }, 0)
 
     return () => window.clearTimeout(handle)
-  }, [dismissedAutoCategoriaIds, fallbackCategoriaId, inferredCategoriaIds])
+  }, [dismissedAutoCategoriaIds, inferredCategoriaIds])
+
+  const submitCategoriaIds = useMemo(() => {
+    if (selectedCategoriaIds.length > 0) return selectedCategoriaIds
+
+    const inferredNotDismissed = [...inferredCategoriaIds].filter((id) => !dismissedAutoCategoriaIds.has(id))
+    if (inferredNotDismissed.length > 0) return inferredNotDismissed
+    if (inferredCategoriaIds.size > 0) return []
+
+    return fallbackCategoriaId ? [fallbackCategoriaId] : []
+  }, [dismissedAutoCategoriaIds, fallbackCategoriaId, inferredCategoriaIds, selectedCategoriaIds])
 
   const toggleCategoria = useCallback((categoriaId: string) => {
     setSelectedCategoriaIds((prev) => {
       if (prev.includes(categoriaId)) {
         if (prev.length === 1) return prev
+        autoSelectedCategoriaIdsRef.current.delete(categoriaId)
         if (inferredCategoriaIds.has(categoriaId)) {
           setDismissedAutoCategoriaIds((dismissed) => new Set(dismissed).add(categoriaId))
         }
@@ -205,6 +228,7 @@ export function ApunteModal({
         next.delete(categoriaId)
         return next
       })
+      autoSelectedCategoriaIdsRef.current.delete(categoriaId)
       return [...prev, categoriaId]
     })
   }, [inferredCategoriaIds])
@@ -377,7 +401,7 @@ export function ApunteModal({
         return
       }
 
-      if (selectedCategoriaIds.length === 0) {
+      if (submitCategoriaIds.length === 0) {
         e.preventDefault()
         setValidationError('Elegí al menos una categoría.')
         return
@@ -393,7 +417,7 @@ export function ApunteModal({
 
       // Nothing to prevent — let the form action run
     },
-    [recursos, selectedCategoriaIds.length, slugError],
+    [recursos, slugError, submitCategoriaIds.length],
   )
 
   // Serialize recursos for the hidden input
@@ -442,7 +466,7 @@ export function ApunteModal({
           <input type="hidden" name="subjectId" value={subjectId} />
         )}
         <input type="hidden" name="recursosJson" value={recursosJson} />
-        <input type="hidden" name="categoriaIdsJson" value={JSON.stringify(selectedCategoriaIds)} />
+        <input type="hidden" name="categoriaIdsJson" value={JSON.stringify(submitCategoriaIds)} />
 
         {/* Título */}
         <div className="space-y-1">

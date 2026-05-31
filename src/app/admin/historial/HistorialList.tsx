@@ -158,36 +158,57 @@ export function HistorialList({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border border-white/8 bg-surface-1/70 p-4">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-          <div className="space-y-2">
-            <label htmlFor="historial-user-search" className="text-xs font-bold uppercase tracking-[0.18em] text-white/42">
+      <section className="rounded-2xl border border-white/8 bg-surface-1/70 p-4 shadow-[0_18px_70px_rgba(0,0,0,0.22)]">
+        <div className="mb-4 flex flex-col gap-1 border-b border-white/6 pb-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/38">
+              Filtros
+            </p>
+            <p className="mt-1 text-sm text-white/55">
+              Acotá el historial por personas y movimientos.
+            </p>
+          </div>
+          <p className="text-xs font-semibold text-white/38">
+            {selectedUsers.length + selectedActions.length === 0
+              ? 'Mostrando todo'
+              : `${selectedUsers.length + selectedActions.length} filtro${selectedUsers.length + selectedActions.length === 1 ? '' : 's'} activo${selectedUsers.length + selectedActions.length === 1 ? '' : 's'}`}
+          </p>
+        </div>
+
+        <div className="grid items-stretch gap-4 xl:grid-cols-[minmax(280px,0.9fr)_minmax(0,1.35fr)]">
+          <div className="flex min-h-[238px] flex-col rounded-xl border border-white/8 bg-black/15 p-4">
+            <label
+              htmlFor="historial-user-search"
+              className="text-xs font-bold uppercase tracking-[0.18em] text-white/42"
+            >
               Personas
             </label>
-            <div className="relative">
+            <div className="relative mt-3">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
               <input
                 id="historial-user-search"
                 value={userQuery}
                 onChange={(event) => setUserQuery(event.target.value)}
                 placeholder="Buscar por correo"
-                className="w-full rounded-lg border border-white/10 bg-black/20 py-2 pl-9 pr-3 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/20"
+                className="h-10 w-full rounded-lg border border-white/10 bg-surface-0 py-2 pl-9 pr-3 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/25"
               />
             </div>
-            <div className="flex min-h-9 flex-wrap gap-2">
+
+            <div className="mt-3 flex min-h-8 flex-wrap gap-2">
               {selectedUsers.map((user) => (
                 <button
                   key={user.id}
                   type="button"
                   onClick={() => removeUser(user.id)}
-                  className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-cyan-300/30 bg-cyan-300/12 px-3 py-1 text-xs font-semibold text-cyan-100"
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-cyan-300/30 bg-cyan-300/12 px-3 py-1 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/18"
                 >
                   {user.email}
                   <X className="h-3 w-3" />
                 </button>
               ))}
             </div>
-            <div className="max-h-36 overflow-y-auto rounded-lg border border-white/8 bg-black/15 p-1">
+
+            <div className="mt-3 min-h-[104px] flex-1 overflow-y-auto rounded-lg border border-white/8 bg-surface-0/80 p-1">
               {searchingUsers ? <p className="px-2 py-2 text-xs text-white/40">Buscando…</p> : null}
               {!searchingUsers && userOptions.length === 0 ? (
                 <p className="px-2 py-2 text-xs text-white/35">No hay correos para mostrar.</p>
@@ -205,27 +226,31 @@ export function HistorialList({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/42">Acciones</p>
-            <div className="flex max-h-48 flex-wrap gap-2 overflow-y-auto rounded-lg border border-white/8 bg-black/15 p-2">
-              {actionOptions.map((option) => {
-                const active = selectedActions.includes(option.value)
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => toggleAction(option.value)}
-                    className={[
-                      'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
-                      active
-                        ? 'border-violet-300/45 bg-violet-300/15 text-violet-100'
-                        : 'border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.07] hover:text-white',
-                    ].join(' ')}
-                  >
-                    {option.label}
-                  </button>
-                )
-              })}
+          <div className="flex min-h-[238px] flex-col rounded-xl border border-white/8 bg-black/15 p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/42">
+              Acciones
+            </p>
+            <div className="mt-3 flex flex-1 content-start items-start gap-2 overflow-y-auto rounded-lg border border-white/8 bg-surface-0/80 p-3">
+              <div className="flex flex-wrap gap-2">
+                {actionOptions.map((option) => {
+                  const active = selectedActions.includes(option.value)
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => toggleAction(option.value)}
+                      className={[
+                        'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
+                        active
+                          ? 'border-violet-300/45 bg-violet-300/15 text-violet-100'
+                          : 'border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.07] hover:text-white',
+                      ].join(' ')}
+                    >
+                      {option.label}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>
