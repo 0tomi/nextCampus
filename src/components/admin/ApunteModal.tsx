@@ -108,22 +108,22 @@ function CollapsibleFormSection({
   children: React.ReactNode
 }) {
   return (
-    <section className="rounded-xl border border-white/8 bg-white/[0.018]">
+    <section className="space-y-1">
       <button
         type="button"
         onClick={onToggle}
-        className="group flex w-full cursor-pointer items-center justify-between gap-4 px-3 py-3 text-left transition-colors hover:bg-white/[0.025]"
+        className="group flex w-full cursor-pointer items-center justify-between gap-4 py-1 text-left transition-colors"
         aria-expanded={open}
       >
         <span>
-          <span className="block text-xs font-semibold uppercase tracking-widest text-white/45">
+          <span className="block text-xs font-semibold uppercase tracking-widest text-white/40 transition-colors group-hover:text-white/60">
             {title}
           </span>
-          <span className="mt-1 block text-[11px] leading-4 text-white/35">
+          <span className="mt-1 block text-[11px] leading-4 text-white/30">
             {hint}
           </span>
         </span>
-        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/55 transition-colors group-hover:text-white">
+        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/35 transition-colors group-hover:border-white/20 group-hover:text-white">
           <ChevronDown
             className={`h-4 w-4 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
           />
@@ -135,7 +135,7 @@ function CollapsibleFormSection({
         }`}
       >
         <div className="overflow-hidden">
-          <div className="px-3 pb-3 pt-1">
+          <div className="pt-2">
             {children}
           </div>
         </div>
