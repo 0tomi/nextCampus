@@ -20,7 +20,7 @@ import {
   Sparkles,
   type LucideIcon,
 } from 'lucide-react'
-import { AUDIT_ACTIONS, type AuditAction, type AuditDetail } from '@/lib/audit'
+import { AUDIT_ACTIONS, type AuditAction, type AuditDetail } from '@/lib/audit-types'
 
 export interface RenderedAuditEntry {
   icon: LucideIcon

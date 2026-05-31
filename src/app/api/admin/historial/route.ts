@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireGeneralAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import type { AuditDetail } from '@/lib/audit'
+import type { AuditDetail } from '@/lib/audit-types'
 
 const PAGE_SIZE = 20
 

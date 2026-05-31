@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Search, X } from 'lucide-react'
 import { renderAuditEntry, timeAgo } from '@/lib/audit-renderer'
-import type { AuditDetail } from '@/lib/audit'
+import type { AuditDetail } from '@/lib/audit-types'
 
 export interface HistorialEntry {
   id: string

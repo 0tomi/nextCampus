@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { requireGeneralAdmin } from '@/lib/auth'
-import { AUDIT_ACTION_LABELS, type AuditAction, type AuditDetail } from '@/lib/audit'
+import { AUDIT_ACTION_LABELS, type AuditAction, type AuditDetail } from '@/lib/audit-types'
 import { HistorialList, type HistorialEntry, type HistorialUserOption } from './HistorialList'
 
 export const dynamic = 'force-dynamic'
