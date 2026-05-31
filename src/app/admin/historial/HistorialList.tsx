@@ -73,6 +73,18 @@ export function HistorialList({
   const [error, setError] = useState('')
   const sentinelRef = useRef<HTMLDivElement | null>(null)
   const firstRunRef = useRef(true)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [showDropdown, setShowDropdown] = useState(false)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const selectedUserIds = useMemo(() => selectedUsers.map((user) => user.id), [selectedUsers])
 
@@ -158,99 +170,113 @@ export function HistorialList({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-white/8 bg-surface-1/70 p-4 shadow-[0_18px_70px_rgba(0,0,0,0.22)]">
-        <div className="mb-4 flex flex-col gap-1 border-b border-white/6 pb-4 sm:flex-row sm:items-end sm:justify-between">
+      <section className="rounded-xl border border-white/5 bg-surface-1 p-6 shadow-xl">
+        <div className="mb-6 flex flex-col gap-1 border-b border-white/5 pb-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/38">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
               Filtros
             </p>
             <p className="mt-1 text-sm text-white/55">
               Acotá el historial por personas y movimientos.
             </p>
           </div>
-          <p className="text-xs font-semibold text-white/38">
+          <p className="text-xs font-semibold text-white/30">
             {selectedUsers.length + selectedActions.length === 0
               ? 'Mostrando todo'
               : `${selectedUsers.length + selectedActions.length} filtro${selectedUsers.length + selectedActions.length === 1 ? '' : 's'} activo${selectedUsers.length + selectedActions.length === 1 ? '' : 's'}`}
           </p>
         </div>
 
-        <div className="grid items-stretch gap-4 xl:grid-cols-[minmax(280px,0.9fr)_minmax(0,1.35fr)]">
-          <div className="flex min-h-[238px] flex-col rounded-xl border border-white/8 bg-black/15 p-4">
-            <label
-              htmlFor="historial-user-search"
-              className="text-xs font-bold uppercase tracking-[0.18em] text-white/42"
-            >
+        <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-8 items-start">
+          {/* Personas search column */}
+          <div className="flex flex-col">
+            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/40">
               Personas
-            </label>
-            <div className="relative mt-3">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
-              <input
-                id="historial-user-search"
-                value={userQuery}
-                onChange={(event) => setUserQuery(event.target.value)}
-                placeholder="Buscar por correo"
-                className="h-10 w-full rounded-lg border border-white/10 bg-surface-0 py-2 pl-9 pr-3 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/25"
-              />
+            </span>
+            <div className="relative mt-3 w-full" ref={containerRef}>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
+                <input
+                  id="historial-user-search"
+                  value={userQuery}
+                  onFocus={() => setShowDropdown(true)}
+                  onChange={(event) => {
+                    setUserQuery(event.target.value)
+                    setShowDropdown(true)
+                  }}
+                  placeholder="Buscar por correo"
+                  className="h-10 w-full rounded-lg border border-white/10 bg-surface-3 py-2 pl-10 pr-3 text-sm text-white outline-none transition-all placeholder:text-white/30 focus:border-primary/45 focus:ring-1 focus:ring-primary/20"
+                />
+              </div>
+
+              {/* Floating suggestions dropdown */}
+              {showDropdown && (
+                <div className="absolute left-0 right-0 z-20 mt-1.5 max-h-60 overflow-y-auto rounded-lg border border-white/8 bg-surface-2 p-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-md animate-in">
+                  {searchingUsers && (
+                    <p className="px-3 py-2 text-xs text-white/40">Buscando…</p>
+                  )}
+                  {!searchingUsers && userOptions.length === 0 && (
+                    <p className="px-3 py-2 text-xs text-white/30">No hay correos para mostrar.</p>
+                  )}
+                  {!searchingUsers && userOptions.map((user) => (
+                    <button
+                      key={user.id}
+                      type="button"
+                      onClick={() => {
+                        addUser(user)
+                        setShowDropdown(false)
+                      }}
+                      className="block w-full cursor-pointer rounded-md px-3 py-2 text-left text-xs font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+                    >
+                      {user.email}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="mt-3 flex min-h-8 flex-wrap gap-2">
-              {selectedUsers.map((user) => (
-                <button
-                  key={user.id}
-                  type="button"
-                  onClick={() => removeUser(user.id)}
-                  className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-cyan-300/30 bg-cyan-300/12 px-3 py-1 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/18"
-                >
-                  {user.email}
-                  <X className="h-3 w-3" />
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-3 min-h-[104px] flex-1 overflow-y-auto rounded-lg border border-white/8 bg-surface-0/80 p-1">
-              {searchingUsers ? <p className="px-2 py-2 text-xs text-white/40">Buscando…</p> : null}
-              {!searchingUsers && userOptions.length === 0 ? (
-                <p className="px-2 py-2 text-xs text-white/35">No hay correos para mostrar.</p>
-              ) : null}
-              {userOptions.map((user) => (
-                <button
-                  key={user.id}
-                  type="button"
-                  onClick={() => addUser(user)}
-                  className="block w-full cursor-pointer rounded px-2 py-2 text-left text-xs font-semibold text-white/65 transition-colors hover:bg-white/5 hover:text-white"
-                >
-                  {user.email}
-                </button>
-              ))}
-            </div>
+            {/* Selected User Pills */}
+            {selectedUsers.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5 animate-in">
+                {selectedUsers.map((user) => (
+                  <button
+                    key={user.id}
+                    type="button"
+                    onClick={() => removeUser(user.id)}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold text-red-200 transition-colors hover:bg-primary/20"
+                  >
+                    <span>{user.email}</span>
+                    <X className="h-3 w-3 text-red-200/60" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="flex min-h-[238px] flex-col rounded-xl border border-white/8 bg-black/15 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/42">
+          {/* Acciones chips column */}
+          <div className="flex flex-col">
+            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/40">
               Acciones
-            </p>
-            <div className="mt-3 flex flex-1 content-start items-start gap-2 overflow-y-auto rounded-lg border border-white/8 bg-surface-0/80 p-3">
-              <div className="flex flex-wrap gap-2">
-                {actionOptions.map((option) => {
-                  const active = selectedActions.includes(option.value)
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => toggleAction(option.value)}
-                      className={[
-                        'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
-                        active
-                          ? 'border-violet-300/45 bg-violet-300/15 text-violet-100'
-                          : 'border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.07] hover:text-white',
-                      ].join(' ')}
-                    >
-                      {option.label}
-                    </button>
-                  )
-                })}
-              </div>
+            </span>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {actionOptions.map((option) => {
+                const active = selectedActions.includes(option.value)
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => toggleAction(option.value)}
+                    className={[
+                      'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold transition-all',
+                      active
+                        ? 'border-primary/45 bg-primary/15 text-red-100 hover:bg-primary/20'
+                        : 'border-white/5 bg-white/[0.02] text-white/50 hover:bg-white/[0.05] hover:text-white',
+                    ].join(' ')}
+                  >
+                    {option.label}
+                  </button>
+                )
+              })}
             </div>
           </div>
         </div>
