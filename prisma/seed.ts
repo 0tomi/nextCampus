@@ -42,6 +42,17 @@ const SUBJECTS_BY_YEAR: string[][] = [
   ['Seguridad y Auditoría', 'Administración de Recursos', 'Teoría de Computabilidad', 'Tesina de Grado', 'Interfaz Hombre Máquina', 'Optativa V'],
 ]
 
+const CATEGORIAS_APUNTE = [
+  'Otro',
+  'Documento',
+  'Herramienta',
+  'Cuestionario',
+  'Video',
+  'Imágenes',
+  'Pizarra',
+  'Interactivo',
+]
+
 const TIPOS_EVENTO = [
   { slug: 'examen', nombre: 'Examen' },
   { slug: 'trabajo-practico', nombre: 'Trabajo Práctico' },
@@ -54,6 +65,14 @@ const DEFAULT_COMMISSION = {
 }
 
 async function main(): Promise<void> {
+  for (const nombre of CATEGORIAS_APUNTE) {
+    await prisma.categoria.upsert({
+      where: { nombre },
+      update: { nombre },
+      create: { nombre },
+    })
+  }
+
   for (const tipo of TIPOS_EVENTO) {
     await prisma.tipoEvento.upsert({
       where: { slug: tipo.slug },
@@ -132,7 +151,7 @@ async function main(): Promise<void> {
     }
   }
 
-  console.log('Seed completo: carrera, años, materias, comisiones, agendas y tipos de evento.')
+  console.log('Seed completo: carrera, años, materias, comisiones, agendas, tipos de evento y categorías de apuntes.')
 }
 
 main()

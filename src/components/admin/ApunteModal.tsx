@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useActionState, useState, useCallback, useRef } from 'react'
+import { useEffect, useActionState, useState, useCallback, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import { Modal } from '@/components/ui/Modal'
 import { Plus, Trash2, AlertCircle, CirclePlay, ChevronUp, ChevronDown, FileCode2, Info } from 'lucide-react'
@@ -10,6 +10,7 @@ import {
   type ApunteActionState,
 } from '@/app/admin/actions'
 import { detectarRecurso, type RecursoTipo } from '@/lib/recursos'
+import { inferirCategoriasDeApunte } from '@/lib/apunte-categorias'
 import { slugify } from '@/lib/slug'
 import { RichTextEditor } from './RichTextEditor'
 
@@ -23,6 +24,7 @@ export type ApunteFull = {
   descripcionHtml: string
   /** Link compartible del apunte. Opcional para no romper callsites que aún no lo proveen. */
   slug?: string | null
+  categorias?: Array<{ id: string; nombre: string }>
   recursos: Array<{
     id: string
     tipo: 'YOUTUBE' | 'DRIVE' | 'HTML'
@@ -58,6 +60,7 @@ interface ApunteModalProps {
   subjectId: string
   subjectSlug: string
   apunte?: ApunteFull
+  categoriasDisponibles: Array<{ id: string; nombre: string }>
   onSuccess?: () => void
 }
 
@@ -101,6 +104,7 @@ export function ApunteModal({
   subjectId,
   subjectSlug,
   apunte,
+  categoriasDisponibles,
   onSuccess,
 }: ApunteModalProps) {
   const isEditMode = Boolean(apunte)
@@ -126,6 +130,13 @@ export function ApunteModal({
         )
       : [],
   )
+  const fallbackCategoriaId = categoriasDisponibles.find((categoria) => categoria.nombre === 'Otro')?.id ?? categoriasDisponibles[0]?.id ?? ''
+  const [selectedCategoriaIds, setSelectedCategoriaIds] = useState<string[]>(() => {
+    const existing = apunte?.categorias?.map((categoria) => categoria.id).filter(Boolean) ?? []
+    return existing.length > 0 ? existing : (fallbackCategoriaId ? [fallbackCategoriaId] : [])
+  })
+  const [dismissedAutoCategoriaIds, setDismissedAutoCategoriaIds] = useState<Set<string>>(() => new Set())
+  const [highlightCategoriaIds, setHighlightCategoriaIds] = useState<Set<string>>(() => new Set())
   const [validationError, setValidationError] = useState('')
 
   // Close modal on success
@@ -135,6 +146,68 @@ export function ApunteModal({
       onClose()
     }
   }, [state.ok, onClose, onSuccess])
+
+  const inferredCategoriaIds = useMemo(() => {
+    const inferredNames = inferirCategoriasDeApunte(
+      recursos.map((recurso) => ({
+        tipo: recurso.tipo,
+        url: recurso.url,
+        nombre: recurso.nombre,
+        fileName: recurso.fileName,
+      })),
+    )
+    const ids = inferredNames
+      .map((nombre) => categoriasDisponibles.find((categoria) => categoria.nombre === nombre)?.id)
+      .filter((id): id is string => Boolean(id))
+    return new Set(ids)
+  }, [categoriasDisponibles, recursos])
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      setDismissedAutoCategoriaIds((prev) => {
+        const next = new Set([...prev].filter((id) => inferredCategoriaIds.has(id)))
+        return next.size === prev.size ? prev : next
+      })
+
+      setSelectedCategoriaIds((prev) => {
+        const next = new Set(prev)
+        const added: string[] = []
+        for (const id of inferredCategoriaIds) {
+          if (!dismissedAutoCategoriaIds.has(id) && !next.has(id)) {
+            next.add(id)
+            added.push(id)
+          }
+        }
+        if (next.size === 0 && fallbackCategoriaId) next.add(fallbackCategoriaId)
+        if (added.length > 0) {
+          setHighlightCategoriaIds(new Set(added))
+          window.setTimeout(() => setHighlightCategoriaIds(new Set()), 900)
+        }
+        const asArray = [...next]
+        return asArray.length === prev.length && asArray.every((id, idx) => id === prev[idx]) ? prev : asArray
+      })
+    }, 0)
+
+    return () => window.clearTimeout(handle)
+  }, [dismissedAutoCategoriaIds, fallbackCategoriaId, inferredCategoriaIds])
+
+  const toggleCategoria = useCallback((categoriaId: string) => {
+    setSelectedCategoriaIds((prev) => {
+      if (prev.includes(categoriaId)) {
+        if (prev.length === 1) return prev
+        if (inferredCategoriaIds.has(categoriaId)) {
+          setDismissedAutoCategoriaIds((dismissed) => new Set(dismissed).add(categoriaId))
+        }
+        return prev.filter((id) => id !== categoriaId)
+      }
+      setDismissedAutoCategoriaIds((dismissed) => {
+        const next = new Set(dismissed)
+        next.delete(categoriaId)
+        return next
+      })
+      return [...prev, categoriaId]
+    })
+  }, [inferredCategoriaIds])
 
   // -------------------------------------------------------------------------
   // Recurso handlers
@@ -304,6 +377,12 @@ export function ApunteModal({
         return
       }
 
+      if (selectedCategoriaIds.length === 0) {
+        e.preventDefault()
+        setValidationError('Elegí al menos una categoría.')
+        return
+      }
+
       if (slugError) {
         e.preventDefault()
         setValidationError(
@@ -314,7 +393,7 @@ export function ApunteModal({
 
       // Nothing to prevent — let the form action run
     },
-    [recursos, slugError],
+    [recursos, selectedCategoriaIds.length, slugError],
   )
 
   // Serialize recursos for the hidden input
@@ -363,6 +442,7 @@ export function ApunteModal({
           <input type="hidden" name="subjectId" value={subjectId} />
         )}
         <input type="hidden" name="recursosJson" value={recursosJson} />
+        <input type="hidden" name="categoriaIdsJson" value={JSON.stringify(selectedCategoriaIds)} />
 
         {/* Título */}
         <div className="space-y-1">
@@ -433,6 +513,40 @@ export function ApunteModal({
             defaultValue={apunte?.descripcionHtml ?? ''}
             placeholder="Descripción del contenido"
           />
+        </div>
+
+        {/* Categorías */}
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
+            Categorías
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {categoriasDisponibles.map((categoria) => {
+              const active = selectedCategoriaIds.includes(categoria.id)
+              const automatic = inferredCategoriaIds.has(categoria.id)
+              const highlighted = highlightCategoriaIds.has(categoria.id)
+              return (
+                <button
+                  key={categoria.id}
+                  type="button"
+                  onClick={() => toggleCategoria(categoria.id)}
+                  className={[
+                    'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-bold transition-all duration-300',
+                    active
+                      ? 'border-cyan-300/50 bg-cyan-300/15 text-cyan-100'
+                      : 'border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.07] hover:text-white',
+                    highlighted ? 'scale-105 shadow-[0_0_22px_rgba(103,232,249,0.25)]' : '',
+                  ].join(' ')}
+                >
+                  {categoria.nombre}
+                  {automatic ? <span className="ml-1 text-[10px] text-cyan-100/60">auto</span> : null}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-[11px] leading-5 text-white/40">
+            Las sugerencias aparecen según los recursos agregados, pero podés ajustar las categorías a mano.
+          </p>
         </div>
 
         {/* Recursos */}

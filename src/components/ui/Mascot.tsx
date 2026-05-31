@@ -44,7 +44,7 @@ export function Mascot({
   useEffect(() => {
     // Set initial random color on client mount to avoid hydration mismatch
     const initialColor = GLOW_COLORS[Math.floor(Math.random() * GLOW_COLORS.length)]
-    setGlowColor(initialColor)
+    const colorTimer = window.setTimeout(() => setGlowColor(initialColor), 0)
 
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
 
@@ -57,6 +57,7 @@ export function Mascot({
 
     return () => {
       mediaQuery.removeEventListener('change', syncPreference)
+      window.clearTimeout(colorTimer)
 
       if (resetTimerRef.current) {
         clearTimeout(resetTimerRef.current)
@@ -72,7 +73,7 @@ export function Mascot({
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       try {
         navigator.vibrate(15)
-      } catch (e) {
+      } catch {
         // Ignorar errores de vibración
       }
     }

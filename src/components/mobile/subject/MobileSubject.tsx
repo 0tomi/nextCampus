@@ -27,7 +27,19 @@ interface SubjectForMobile {
   playlistEnabled: boolean
   year: { id: string; slug: string; nombre: string; career: { nombre: string } }
   agenda: { id: string; eventos: Array<{ id: string; titulo: string; descripcionHtml: string | null; fecha: string; hora: string | null; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId?: string | null; commissionSlug?: string | null; commissionNombre?: string | null }> } | null
-  apuntes: Array<{ id: string; titulo: string; slug: string; descripcionHtml: string | null; recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE' | 'HTML'; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }> }>
+  apuntes: Array<{
+    id: string
+    titulo: string
+    slug: string
+    descripcionHtml: string | null
+    createdAt: string
+    categorias: Array<{ id: string; nombre: string }>
+    recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE' | 'HTML'; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }>
+  }>
+  categoriasDisponibles: Array<{ id: string; nombre: string }>
+  apuntesHasMore: boolean
+  apuntesNextCursor: string | null
+  apuntesTotal: number
 }
 
 interface AllYear {
@@ -227,7 +239,7 @@ export function MobileSubject({
               </div>
               <div className="flex flex-col items-center justify-center gap-0.5">
                 <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">Apuntes</span>
-                <span className="text-lg font-black text-white">{subject.apuntes.length}</span>
+                <span className="text-lg font-black text-white">{subject.apuntesTotal}</span>
               </div>
              </div>
             {!activeCommissionName ? (
@@ -250,6 +262,7 @@ export function MobileSubject({
 
         {/* TABS */}
         <SubjectTabs
+          subjectId={subject.id}
           subjectSlug={subject.slug}
           subjectName={subject.nombre}
           yearSlug={subject.year.slug}
@@ -274,6 +287,9 @@ export function MobileSubject({
             commissionNombre: e.commissionNombre ?? null,
           }))}
           apuntes={subject.apuntes}
+          categorias={subject.categoriasDisponibles}
+          apuntesHasMore={subject.apuntesHasMore}
+          apuntesNextCursor={subject.apuntesNextCursor}
           focusApunteSlug={focusApunteSlug}
           tiposEvento={tiposEvento}
           subjects={[{

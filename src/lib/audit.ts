@@ -31,6 +31,30 @@ export const AUDIT_ACTIONS = {
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
 
+
+export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
+  [AUDIT_ACTIONS.SUBJECT_CREATED]: 'Materia creada',
+  [AUDIT_ACTIONS.SUBJECT_UPDATED]: 'Materia actualizada',
+  [AUDIT_ACTIONS.SUBJECT_DELETED]: 'Materia eliminada',
+  [AUDIT_ACTIONS.SUBJECT_DRIVE_UPDATED]: 'Drive de materia actualizado',
+  [AUDIT_ACTIONS.SUBJECT_PLAYLIST_UPDATED]: 'Playlist actualizada',
+  [AUDIT_ACTIONS.COMMISSION_CREATED]: 'Comisión creada',
+  [AUDIT_ACTIONS.APUNTE_CREATED]: 'Apunte creado',
+  [AUDIT_ACTIONS.APUNTE_UPDATED]: 'Apunte actualizado',
+  [AUDIT_ACTIONS.APUNTE_DELETED]: 'Apunte eliminado',
+  [AUDIT_ACTIONS.EVENTO_CREATED]: 'Evento creado',
+  [AUDIT_ACTIONS.EVENTO_UPDATED]: 'Evento actualizado',
+  [AUDIT_ACTIONS.EVENTO_DATE_UPDATED]: 'Fecha de evento modificada',
+  [AUDIT_ACTIONS.EVENTO_DELETED]: 'Evento eliminado',
+  [AUDIT_ACTIONS.YEAR_CREATED]: 'Año creado',
+  [AUDIT_ACTIONS.YEAR_UPDATED]: 'Año actualizado',
+  [AUDIT_ACTIONS.YEAR_DELETED]: 'Año eliminado',
+  [AUDIT_ACTIONS.USER_CREATED]: 'Usuario creado',
+  [AUDIT_ACTIONS.USER_UPDATED]: 'Usuario actualizado',
+  [AUDIT_ACTIONS.QUIZ_BANK_UPLOADED]: 'Banco de preguntas subido',
+  [AUDIT_ACTIONS.QUIZ_BANK_DELETED]: 'Banco de preguntas eliminado',
+}
+
 export type AuditEntityType =
   | 'subject'
   | 'commission'

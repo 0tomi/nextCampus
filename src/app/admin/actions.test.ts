@@ -30,6 +30,9 @@ const prismaMock = {
   apunteRecurso: {
     createMany: vi.fn(),
   },
+  categoria: {
+    findMany: vi.fn(),
+  },
   $transaction: vi.fn(),
 }
 
@@ -111,6 +114,9 @@ vi.mock('@/lib/domain/quiz-bank', () => ({
 
 function makeFormData(entries: Record<string, string>) {
   const formData = new FormData()
+  if (!('categoriaIdsJson' in entries)) {
+    formData.set('categoriaIdsJson', JSON.stringify(['cat-otro']))
+  }
 
   for (const [key, value] of Object.entries(entries)) {
     formData.set(key, value)
@@ -136,11 +142,17 @@ beforeEach(() => {
   prismaMock.apunte.findMany.mockResolvedValue([])
   prismaMock.apunte.findFirst.mockResolvedValue(null)
   prismaMock.apunteRecurso.createMany.mockResolvedValue(undefined)
+  prismaMock.categoria.findMany.mockResolvedValue([{ id: 'cat-otro' }])
   prismaMock.$transaction.mockImplementation(async (callback) => callback({
     apunte: {
+      create: prismaMock.apunte.create,
       update: vi.fn().mockResolvedValue(undefined),
     },
     apunteRecurso: {
+      deleteMany: vi.fn().mockResolvedValue(undefined),
+      createMany: vi.fn().mockResolvedValue(undefined),
+    },
+    apunteCategoria: {
       deleteMany: vi.fn().mockResolvedValue(undefined),
       createMany: vi.fn().mockResolvedValue(undefined),
     },

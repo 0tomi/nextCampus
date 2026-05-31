@@ -17,16 +17,10 @@ import { DarkCard } from '@/components/ui/DarkCard'
 import { getYearColorClasses } from '@/lib/yearColors'
 import {
   SubjectPageAdminOverlay,
-  DeleteApunteButton,
   AdminTriggerButton,
 } from '@/components/admin/SubjectPageAdminOverlay'
 import { AdminControls } from '@/components/admin/AdminControls'
-import { ApunteRecursoView } from '@/components/apuntes/ApunteRecursoView'
-import { ApunteFocusScroll } from '@/components/apuntes/ApunteFocusScroll'
-import { CopyApunteLinkButton } from '@/components/apuntes/CopyApunteLinkButton'
-import { EditApunteButton } from '@/components/admin/EditApunteButton'
 import { formatDescription } from '@/lib/text'
-import { sanitizeRichHtml } from '@/lib/sanitize'
 import {
   buildSubjectHref,
   buildSubjectQuizHref,
@@ -34,6 +28,7 @@ import {
 import type { SubjectRouteContext } from './subject-route-context'
 import { SubjectEventsSection } from '@/components/subject/SubjectEventsSection'
 import { SubjectEventSummaryCard } from '@/components/subject/SubjectEventSummaryCard'
+import { ApuntesFeed } from '@/components/apuntes/ApuntesFeed'
 
 function GoogleDriveIcon({ className }: { className?: string }) {
   return (
@@ -94,7 +89,7 @@ export function SubjectRoutePage({
       href: '#apuntes',
       label: 'Apuntes',
       badge: <NotebookTabs className="h-4 w-4" />,
-      meta: `${subject.apuntes.length} recursos`,
+      meta: `${subject.apuntesTotal} recursos`,
       badgeClassName: 'from-cyan-400 to-blue-500 text-white',
     },
   ]
@@ -212,7 +207,7 @@ export function SubjectRoutePage({
 
               <SubjectEventSummaryCard
                 subjectSlug={subject.slug}
-                apuntesCount={subject.apuntes.length}
+                apuntesCount={subject.apuntesTotal}
                 commissions={subject.commissions}
                 activeCommission={activeCommission}
                 events={visibleEvents.map((evento) => ({
@@ -322,95 +317,17 @@ export function SubjectRoutePage({
               </div>
             </div>
 
-            {subject.apuntes.length === 0 ? (
-              <p className="text-sm text-white/58">Sin apuntes.</p>
-            ) : (
-              <div className="stagger-children grid gap-4 xl:grid-cols-2">
-                {subject.apuntes.map((apunte) => {
-                  const apunteHref = `/${subject.year.slug}/${subject.slug}/apuntes/${apunte.slug}`
-                  return (
-                    <ApunteFocusScroll
-                      key={apunte.id}
-                      slug={apunte.slug}
-                      focusedSlug={focusApunteSlug}
-                      className="scroll-mt-24"
-                      focusedClassName="rounded-lg ring-1 ring-white/20"
-                    >
-                    <DarkCard className="flex h-full flex-col p-5">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38">
-                            Apunte
-                          </p>
-                          <h3 className="mt-2 text-xl font-black tracking-tight text-white hover:underline transition-all">
-                            <Link href={apunteHref}>
-                              {apunte.titulo}
-                            </Link>
-                          </h3>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <AdminControls yearId={subject.year.id}>
-                            <EditApunteButton
-                              apunte={{
-                                id: apunte.id,
-                                titulo: apunte.titulo,
-                                slug: apunte.slug,
-                                descripcionHtml: apunte.descripcionHtml ?? '',
-                                recursos: apunte.recursos,
-                              }}
-                            />
-                          </AdminControls>
-                          <DeleteApunteButton
-                            apunteId={apunte.id}
-                            subjectSlug={subject.slug}
-                            yearId={subject.year.id}
-                          />
-                        </div>
-                      </div>
-
-                      {apunte.descripcionHtml ? (
-                        <div
-                          className="mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
-                          dangerouslySetInnerHTML={{
-                            __html: sanitizeRichHtml(apunte.descripcionHtml),
-                          }}
-                        />
-                      ) : null}
-
-                      {apunte.recursos.length > 0 && (
-                        <div className="mt-4 flex flex-col gap-3">
-                          {apunte.recursos.slice(0, 3).map((recurso) => (
-                            <ApunteRecursoView
-                              key={recurso.id}
-                              recurso={recurso}
-                              apunteHref={apunteHref}
-                            />
-                          ))}
-                          {apunte.recursos.length > 3 && (
-                            <Link
-                              href={apunteHref}
-                              className="mt-1 text-center text-xs font-semibold text-cyan-400 hover:text-cyan-300 hover:underline cursor-pointer transition-colors block py-1"
-                            >
-                              Y otros {apunte.recursos.length - 3} recursos. Abrí el apunte para verlos todos.
-                            </Link>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <CopyApunteLinkButton
-                          yearSlug={subject.year.slug}
-                          subjectSlug={subject.slug}
-                          apunteSlug={apunte.slug}
-                        />
-                      </div>
-                    </DarkCard>
-                  </ApunteFocusScroll>
-                  )
-                })}
-              </div>
-            )}
+            <ApuntesFeed
+              subjectId={subject.id}
+              subjectSlug={subject.slug}
+              yearId={subject.year.id}
+              yearSlug={subject.year.slug}
+              categorias={subject.categoriasDisponibles}
+              initialItems={subject.apuntes}
+              initialHasMore={subject.apuntesHasMore}
+              initialNextCursor={subject.apuntesNextCursor}
+              focusApunteSlug={focusApunteSlug}
+            />
           </section>
         </DashboardShell>
       </div>
@@ -448,6 +365,7 @@ export function SubjectRoutePage({
           playlistUrl: subject.playlistUrl,
           playlistEnabled: subject.playlistEnabled,
           commissions: subject.commissions,
+          categoriasDisponibles: subject.categoriasDisponibles,
         }}
         agendaId={agendaId}
         yearId={subject.year.id}

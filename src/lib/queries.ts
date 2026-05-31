@@ -171,6 +171,51 @@ const TAGS = {
 
 export const queryTags = TAGS
 
+export const APUNTES_PAGE_SIZE = 15
+
+const categoriaSelect = {
+  id: true,
+  nombre: true,
+} as const
+
+const apunteCardSelect = {
+  id: true,
+  titulo: true,
+  slug: true,
+  descripcionHtml: true,
+  createdAt: true,
+  recursos: {
+    orderBy: { orden: 'asc' },
+    select: {
+      id: true,
+      tipo: true,
+      url: true,
+      orden: true,
+      nombre: true,
+      storageKey: true,
+      mimeType: true,
+      sizeBytes: true,
+    },
+  },
+  categorias: {
+    select: {
+      categoria: { select: categoriaSelect },
+    },
+    orderBy: { categoria: { nombre: 'asc' } },
+  },
+} as const
+
+export type ApunteListItem = Awaited<ReturnType<typeof getApuntesPage>>['items'][number]
+export type CategoriaListItem = { id: string; nombre: string }
+
+function serializeApunteCard(apunte: Prisma.ApunteGetPayload<{ select: typeof apunteCardSelect }>) {
+  return {
+    ...apunte,
+    createdAt: apunte.createdAt.toISOString(),
+    categorias: apunte.categorias.map(({ categoria }) => categoria),
+  }
+}
+
 export function getCareer() {
   return prisma.career.findFirst({
     select: {
@@ -282,34 +327,35 @@ export function getSubjectPageBySlug(slug: string) {
               nombre: true,
             },
           },
+          _count: { select: { apuntes: true } },
           apuntes: {
-            orderBy: { createdAt: 'desc' },
-            select: {
-              id: true,
-              titulo: true,
-              slug: true,
-              descripcionHtml: true,
-              recursos: {
-                orderBy: { orden: 'asc' },
-                select: {
-                  id: true,
-                  tipo: true,
-                  url: true,
-                  orden: true,
-                  nombre: true,
-                  storageKey: true,
-                  mimeType: true,
-                  sizeBytes: true,
-                },
-              },
-            },
+            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+            take: APUNTES_PAGE_SIZE + 1,
+            select: apunteCardSelect,
           },
         },
       })
 
       if (!subject) return null
 
-      return attachCommissionMetadataToSubject(subject)
+      const [categorias, base] = await Promise.all([
+        prisma.categoria.findMany({ orderBy: { nombre: 'asc' }, select: categoriaSelect }),
+        Promise.resolve(attachCommissionMetadataToSubject({
+          ...subject,
+          apuntes: subject.apuntes.slice(0, APUNTES_PAGE_SIZE).map(serializeApunteCard),
+        })),
+      ])
+
+      return {
+        ...base,
+        categoriasDisponibles: categorias,
+        apuntesHasMore: subject.apuntes.length > APUNTES_PAGE_SIZE,
+        apuntesNextCursor:
+          subject.apuntes.length > APUNTES_PAGE_SIZE
+            ? subject.apuntes[APUNTES_PAGE_SIZE - 1]?.id ?? null
+            : null,
+        apuntesTotal: subject._count.apuntes,
+      }
     },
     ['subject', slug],
     { tags: [TAGS.subject(slug)], revalidate: 3600 },
@@ -341,6 +387,11 @@ export function getApuntePageBySlug(subjectSlug: string, apunteSlug: string) {
               titulo: true,
               slug: true,
               descripcionHtml: true,
+              createdAt: true,
+              categorias: {
+                select: { categoria: { select: categoriaSelect } },
+                orderBy: { categoria: { nombre: 'asc' } },
+              },
               recursos: {
                 orderBy: { orden: 'asc' },
                 select: {
@@ -369,12 +420,52 @@ export function getApuntePageBySlug(subjectSlug: string, apunteSlug: string) {
           nombre: subject.nombre,
           year: subject.year,
         },
-        apunte,
+        apunte: {
+          ...apunte,
+          createdAt: apunte.createdAt.toISOString(),
+          categorias: apunte.categorias.map(({ categoria }) => categoria),
+        },
       }
     },
     ['apunte-page', subjectSlug, apunteSlug],
     { tags: [TAGS.subject(subjectSlug)], revalidate: 3600 },
   )()
+}
+
+export async function getCategoriasApunte(): Promise<CategoriaListItem[]> {
+  return prisma.categoria.findMany({ orderBy: { nombre: 'asc' }, select: categoriaSelect })
+}
+
+export async function getApuntesPage(input: {
+  subjectId: string
+  categoriaIds?: string[]
+  cursor?: string | null
+  pageSize?: number
+}) {
+  const pageSize = input.pageSize ?? APUNTES_PAGE_SIZE
+  const where: Prisma.ApunteWhereInput = {
+    subjectId: input.subjectId,
+    ...(input.categoriaIds && input.categoriaIds.length > 0
+      ? { categorias: { some: { categoriaId: { in: input.categoriaIds } } } }
+      : {}),
+  }
+
+  const rows = await prisma.apunte.findMany({
+    where,
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: pageSize + 1,
+    ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
+    select: apunteCardSelect,
+  })
+
+  const hasMore = rows.length > pageSize
+  const items = rows.slice(0, pageSize).map(serializeApunteCard)
+
+  return {
+    items,
+    hasMore,
+    nextCursor: hasMore ? items.at(-1)?.id ?? null : null,
+  }
 }
 
 // Metadata mínima para resolver la key de Storage del banco de preguntas
@@ -428,9 +519,13 @@ export function getAdminSubjectBySlug(slug: string) {
         },
       },
       apuntes: {
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         include: {
           recursos: { orderBy: { orden: 'asc' } },
+          categorias: {
+            include: { categoria: true },
+            orderBy: { categoria: { nombre: 'asc' } },
+          },
         },
       },
     },

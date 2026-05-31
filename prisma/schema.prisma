@@ -109,6 +109,7 @@ model Commission {
   updatedAt DateTime @updatedAt
 
   @@unique([subjectId, slug])
+  @@index([subjectId, createdAt, id])
   @@index([subjectId])
 }
 
@@ -178,11 +179,32 @@ model Apunte {
   /// HTML enriquecido y SANITIZADO (links a Drive/Docs, formato).
   descripcionHtml String          @default("")
   recursos        ApunteRecurso[]
+  categorias      ApunteCategoria[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
   @@unique([subjectId, slug])
+  @@index([subjectId, createdAt, id])
   @@index([subjectId])
+}
+
+model Categoria {
+  id        String            @id @default(cuid())
+  nombre    String            @unique
+  apuntes   ApunteCategoria[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model ApunteCategoria {
+  apunte      Apunte    @relation(fields: [apunteId], references: [id], onDelete: Cascade)
+  apunteId    String
+  categoria   Categoria @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  categoriaId String
+  createdAt   DateTime  @default(now())
+
+  @@id([apunteId, categoriaId])
+  @@index([categoriaId, apunteId])
 }
 
 model ApunteRecurso {
@@ -225,5 +247,8 @@ model AuditLog {
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+  @@index([createdAt, id])
+  @@index([userId, createdAt, id])
+  @@index([action, createdAt, id])
   @@map("audit_logs")
 }

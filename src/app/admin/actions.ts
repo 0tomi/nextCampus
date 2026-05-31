@@ -598,6 +598,7 @@ const apunteContentSchema = z.object({
       },
       { message: 'Órdenes duplicados' },
     ),
+  categoriaIds: z.array(z.string().trim().min(1)).min(1, 'Elegí al menos una categoría.'),
 })
 
 function parseRecursosJson(raw: unknown): ParsedRecurso[] | null {
@@ -607,6 +608,30 @@ function parseRecursosJson(raw: unknown): ParsedRecurso[] | null {
   } catch {
     return null
   }
+}
+
+function parseCategoriaIdsJson(raw: unknown): string[] | null {
+  if (typeof raw !== 'string' || raw.trim() === '') return null
+  try {
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return null
+    return parsed.filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+  } catch {
+    return null
+  }
+}
+
+async function validateCategoriaIds(categoriaIds: string[]): Promise<string[] | null> {
+  const unique = [...new Set(categoriaIds)]
+  if (unique.length === 0) return null
+
+  const found = await prisma.categoria.findMany({
+    where: { id: { in: unique } },
+    select: { id: true },
+  })
+
+  if (found.length !== unique.length) return null
+  return unique
 }
 
 export async function createApunteAction(
@@ -626,17 +651,23 @@ export async function createApunteAction(
     return { ok: false, message: 'El formato de los recursos no es válido.' }
   }
 
+  const categoriaIdsRaw = parseCategoriaIdsJson(formData.get('categoriaIdsJson'))
+  if (categoriaIdsRaw === null) {
+    return { ok: false, message: 'Elegí al menos una categoría.' }
+  }
+
   const parsed = apunteContentSchema.safeParse({
     titulo: formData.get('titulo'),
     descripcionHtml: formData.get('descripcionHtml') ?? '',
     slug: formData.get('slug') ?? undefined,
     recursos: recursosRaw,
+    categoriaIds: categoriaIdsRaw,
   })
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0].message }
   }
 
-  const { titulo, descripcionHtml, slug: slugInput, recursos } = parsed.data
+  const { titulo, descripcionHtml, slug: slugInput, recursos, categoriaIds } = parsed.data
 
   // Resolver slug final.
   let finalSlug: string
@@ -658,16 +689,27 @@ export async function createApunteAction(
     finalSlug = ensureUniqueSlug(slugify(titulo), taken)
   }
 
+  const validCategoriaIds = await validateCategoriaIds(categoriaIds)
+  if (!validCategoriaIds) {
+    return { ok: false, message: 'Elegí categorías válidas.' }
+  }
+
   let apunteId: string
   try {
-    const apunte = await prisma.apunte.create({
-      data: {
-        subjectId: subjectId.data,
-        titulo,
-        slug: finalSlug,
-        descripcionHtml: sanitizeRichHtml(descripcionHtml),
-      },
-      select: { id: true },
+    const apunte = await prisma.$transaction(async (tx) => {
+      const created = await tx.apunte.create({
+        data: {
+          subjectId: subjectId.data,
+          titulo,
+          slug: finalSlug,
+          descripcionHtml: sanitizeRichHtml(descripcionHtml),
+          categorias: {
+            create: validCategoriaIds.map((categoriaId) => ({ categoriaId })),
+          },
+        },
+        select: { id: true },
+      })
+      return created
     })
     apunteId = apunte.id
   } catch {
@@ -712,6 +754,7 @@ export async function createApunteAction(
       subjectSlug: scope.subjectSlug,
       yearSlug: scope.yearSlug,
       recursosCount: built.data.length,
+      categoriasCount: validCategoriaIds.length,
     },
   })
   return { ok: true, message: 'Apunte creado correctamente.' }
@@ -734,17 +777,23 @@ export async function updateApunteAction(
     return { ok: false, message: 'El formato de los recursos no es válido.' }
   }
 
+  const categoriaIdsRaw = parseCategoriaIdsJson(formData.get('categoriaIdsJson'))
+  if (categoriaIdsRaw === null) {
+    return { ok: false, message: 'Elegí al menos una categoría.' }
+  }
+
   const parsed = apunteContentSchema.safeParse({
     titulo: formData.get('titulo'),
     descripcionHtml: formData.get('descripcionHtml') ?? '',
     slug: formData.get('slug') ?? undefined,
     recursos: recursosRaw,
+    categoriaIds: categoriaIdsRaw,
   })
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0].message }
   }
 
-  const { titulo, descripcionHtml, slug: slugInput, recursos } = parsed.data
+  const { titulo, descripcionHtml, slug: slugInput, recursos, categoriaIds } = parsed.data
 
   // Resolver slug final: si llega y cambia, validar unicidad excluyendo el propio id.
   const apunteActual = await prisma.apunte.findUnique({
@@ -776,6 +825,11 @@ export async function updateApunteAction(
       return { ok: false, message: 'Ese link ya está usado en esta materia.' }
     }
     finalSlug = slugInput
+  }
+
+  const validCategoriaIds = await validateCategoriaIds(categoriaIds)
+  if (!validCategoriaIds) {
+    return { ok: false, message: 'Elegí categorías válidas.' }
   }
 
   const built = await buildApunteRecursos({
@@ -815,6 +869,13 @@ export async function updateApunteAction(
         },
       })
       await tx.apunteRecurso.deleteMany({ where: { apunteId: apunteId.data } })
+      await tx.apunteCategoria.deleteMany({ where: { apunteId: apunteId.data } })
+      await tx.apunteCategoria.createMany({
+        data: validCategoriaIds.map((categoriaId) => ({
+          apunteId: apunteId.data,
+          categoriaId,
+        })),
+      })
       if (built.data.length > 0) {
         await tx.apunteRecurso.createMany({ data: built.data })
       }
@@ -837,6 +898,7 @@ export async function updateApunteAction(
       slug: finalSlug,
       subjectSlug: scope.subjectSlug,
       recursosCount: built.data.length,
+      categoriasCount: validCategoriaIds.length,
     },
   })
   return { ok: true, message: 'Apunte actualizado correctamente.' }

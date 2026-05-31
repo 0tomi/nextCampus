@@ -95,6 +95,18 @@ export default async function ApuntePage({
               <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-white sm:text-5xl">
                 {apunte.titulo}
               </h1>
+              {apunte.categorias.length > 0 ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {apunte.categorias.map((categoria) => (
+                    <span
+                      key={categoria.id}
+                      className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white/50"
+                    >
+                      {categoria.nombre}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
 
               {apunte.descripcionHtml ? (
                 <div

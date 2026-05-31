@@ -45,17 +45,25 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
   useEffect(() => {
     if (open) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
-      setMounted(true)
+      const mountTimer = setTimeout(() => {
+        setMounted(true)
+      }, 0)
       // Use a brief timeout to ensure the browser repaints the initial scale-95 opacity-0 state
       const timer = setTimeout(() => {
         setVisible(true)
       }, 20)
-      return () => clearTimeout(timer)
+      return () => {
+        clearTimeout(mountTimer)
+        clearTimeout(timer)
+      }
     } else {
-      setVisible(false)
+      const hideTimer = setTimeout(() => {
+        setVisible(false)
+      }, 0)
       timeoutRef.current = setTimeout(() => {
         setMounted(false)
       }, 300) // Match transition duration (300ms)
+      return () => clearTimeout(hideTimer)
     }
   }, [open])
 

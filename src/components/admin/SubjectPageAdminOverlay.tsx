@@ -27,6 +27,7 @@ interface SubjectPageAdminOverlayProps {
     playlistUrl?: string | null
     playlistEnabled?: boolean
     commissions: readonly CommissionOption[]
+    categoriasDisponibles: Array<{ id: string; nombre: string }>
   }
   agendaId: string
   yearId?: string
@@ -191,6 +192,7 @@ export function SubjectPageAdminOverlay({
         onClose={() => setNewApunteOpen(false)}
         subjectId={subject.id}
         subjectSlug={subject.slug}
+        categoriasDisponibles={subject.categoriasDisponibles}
       />
 
       {/* Modal de edición de apunte — se monta solo cuando hay un apunte seleccionado */}
@@ -202,6 +204,7 @@ export function SubjectPageAdminOverlay({
           subjectId={subject.id}
           subjectSlug={subject.slug}
           apunte={editingApunte}
+          categoriasDisponibles={subject.categoriasDisponibles}
         />
       )}
 

@@ -25,13 +25,25 @@ interface EventModalSubject {
 }
 
 interface SubjectTabsProps {
+  subjectId: string
   subjectSlug: string
   subjectName: string
   yearSlug: string
   yearId: string
   agendaId: string
   events: MobileCalendarEvent[]
-  apuntes: Array<{ id: string; titulo: string; slug: string; descripcionHtml: string | null; recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE' | 'HTML'; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }> }>
+  apuntes: Array<{
+    id: string
+    titulo: string
+    slug: string
+    descripcionHtml: string | null
+    createdAt: string
+    categorias: Array<{ id: string; nombre: string }>
+    recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE' | 'HTML'; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }>
+  }>
+  categorias: Array<{ id: string; nombre: string }>
+  apuntesHasMore: boolean
+  apuntesNextCursor: string | null
   tiposEvento: readonly TipoEvento[]
   subjects?: readonly EventModalSubject[]
   commissions: readonly CommissionOption[]
@@ -50,7 +62,7 @@ const HASH_MAP: Record<string, TabKey> = {
   '#apuntes': 'apuntes',
 }
 
-export function SubjectTabs({ subjectSlug, subjectName, yearSlug, yearId, agendaId, events, apuntes, tiposEvento, subjects, commissions, focusApunteSlug }: SubjectTabsProps) {
+export function SubjectTabs({ subjectId, subjectSlug, subjectName, yearSlug, yearId, agendaId, events, apuntes, categorias, apuntesHasMore, apuntesNextCursor, tiposEvento, subjects, commissions, focusApunteSlug }: SubjectTabsProps) {
   const [active, setActive] = useState<TabKey>(() => {
     if (focusApunteSlug) return 'apuntes'
     if (typeof window === 'undefined') return 'agenda'
@@ -113,9 +125,13 @@ export function SubjectTabs({ subjectSlug, subjectName, yearSlug, yearId, agenda
         {active === 'apuntes' && (
           <ApuntesTab
             apuntes={apuntes}
+            categorias={categorias}
             yearId={yearId}
             yearSlug={yearSlug}
+            subjectId={subjectId}
             subjectSlug={subjectSlug}
+            initialHasMore={apuntesHasMore}
+            initialNextCursor={apuntesNextCursor}
             focusApunteSlug={focusApunteSlug}
           />
         )}
