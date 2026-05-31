@@ -10,7 +10,8 @@ export const initialProfileActionState: ProfileActionState = {
   message: '',
 }
 
-export const updateAdminEmailSchema = z.object({
+export const updateAdminProfileSchema = z.object({
+  nombreUsuario: z.string().trim().min(1, 'El nombre es obligatorio.'),
   nextEmail: z.string().trim().email('Ingresá un correo válido.').transform((value) => value.toLowerCase()),
 })
 

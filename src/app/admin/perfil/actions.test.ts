@@ -55,22 +55,25 @@ beforeEach(() => {
   vi.resetModules()
 })
 
-describe('admin perfil email action', () => {
-  it('normaliza el correo antes de validarlo', async () => {
-    const { updateAdminEmailSchema } = await import('./schemas')
+describe('admin perfil profile action', () => {
+  it('normaliza el correo antes de validarlo y valida el nombre', async () => {
+    const { updateAdminProfileSchema } = await import('./schemas')
 
-    const result = updateAdminEmailSchema.safeParse({
+    const result = updateAdminProfileSchema.safeParse({
+      nombreUsuario: ' Tomi ',
       nextEmail: ' NUEVO@Campus.Test ',
     })
 
     expect(result.success).toBe(true)
+    expect(result.data?.nombreUsuario).toBe('Tomi')
     expect(result.data?.nextEmail).toBe('nuevo@campus.test')
   })
 
   it('rechaza correos inválidos', async () => {
-    const { updateAdminEmailSchema } = await import('./schemas')
+    const { updateAdminProfileSchema } = await import('./schemas')
 
-    const result = updateAdminEmailSchema.safeParse({
+    const result = updateAdminProfileSchema.safeParse({
+      nombreUsuario: 'Tomi',
       nextEmail: 'correo-invalido',
     })
 
@@ -84,6 +87,7 @@ describe('admin perfil email action', () => {
     requireAnyAdminMock.mockResolvedValue({
       id: 'self-account',
       authUserId: 'auth-self',
+      nombreUsuario: 'Tomi Viejo',
       email: 'actual@campus.test',
       role: 'AYUDANTE',
       status: 'ACTIVE',
@@ -93,7 +97,12 @@ describe('admin perfil email action', () => {
       canCreateUsers: false,
     })
 
-    prismaMock.userAccount.findUnique.mockResolvedValue(null)
+    prismaMock.userAccount.findUnique.mockResolvedValue({
+      id: 'self-account',
+      authUserId: 'auth-self',
+      nombreUsuario: 'Tomi Viejo',
+      email: 'actual@campus.test',
+    })
     prismaMock.userAccount.update.mockResolvedValue({ id: 'self-account' })
     createSupabaseAdminClientMock.mockReturnValue({
       auth: {
@@ -103,29 +112,35 @@ describe('admin perfil email action', () => {
       },
     })
 
-    const { updateAdminEmailAction } = await import('./actions')
-    const result = await updateAdminEmailAction(
+    const { updateAdminProfileAction } = await import('./actions')
+    const result = await updateAdminProfileAction(
       { ok: false, message: '' },
       makeFormData({
         userId: 'otro-admin',
+        nombreUsuario: 'Tomi Nuevo',
         nextEmail: ' Nuevo@Campus.Test ',
       }),
     )
 
-    expect(result).toEqual({ ok: true, message: 'Correo actualizado correctamente.' })
+    expect(result).toEqual({ ok: true, message: 'Perfil actualizado correctamente.' })
     expect(updateUserByIdMock).toHaveBeenCalledWith('auth-self', {
       email: 'nuevo@campus.test',
       email_confirm: true,
     })
     expect(prismaMock.userAccount.update).toHaveBeenCalledWith({
       where: { id: 'self-account' },
-      data: { email: 'nuevo@campus.test' },
+      data: {
+        nombreUsuario: 'Tomi Nuevo',
+        email: 'nuevo@campus.test',
+      },
     })
     expect(recordAuditMock).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: 'self-account',
         entityId: 'self-account',
         detail: expect.objectContaining({
+          nombreUsuario: 'Tomi Nuevo',
+          nameChanged: true,
           previousEmail: 'actual@campus.test',
           email: 'nuevo@campus.test',
           emailChanged: true,
@@ -145,6 +160,7 @@ describe('admin perfil email action', () => {
     requireAnyAdminMock.mockResolvedValue({
       id: 'self-account',
       authUserId: 'auth-self',
+      nombreUsuario: 'Tomi Viejo',
       email: 'actual@campus.test',
       role: 'AYUDANTE',
       status: 'ACTIVE',
@@ -154,7 +170,12 @@ describe('admin perfil email action', () => {
       canCreateUsers: false,
     })
 
-    prismaMock.userAccount.findUnique.mockResolvedValue(null)
+    prismaMock.userAccount.findUnique.mockResolvedValue({
+      id: 'self-account',
+      authUserId: 'auth-self',
+      nombreUsuario: 'Tomi Viejo',
+      email: 'actual@campus.test',
+    })
     prismaMock.userAccount.update.mockRejectedValue(new Error('db exploded'))
     createSupabaseAdminClientMock.mockReturnValue({
       auth: {
@@ -164,15 +185,18 @@ describe('admin perfil email action', () => {
       },
     })
 
-    const { updateAdminEmailAction } = await import('./actions')
-    const result = await updateAdminEmailAction(
+    const { updateAdminProfileAction } = await import('./actions')
+    const result = await updateAdminProfileAction(
       { ok: false, message: '' },
-      makeFormData({ nextEmail: 'nuevo@campus.test' }),
+      makeFormData({
+        nombreUsuario: 'Tomi Nuevo',
+        nextEmail: 'nuevo@campus.test',
+      }),
     )
 
     expect(result).toEqual({
       ok: false,
-      message: 'No pudimos actualizar el correo. Intentá de nuevo.',
+      message: 'No pudimos actualizar el perfil. Intentá de nuevo.',
     })
     expect(updateUserByIdMock).toHaveBeenNthCalledWith(2, 'auth-self', {
       email: 'actual@campus.test',

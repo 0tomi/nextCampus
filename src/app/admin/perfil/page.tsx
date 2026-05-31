@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { requireAnyAdmin } from '@/lib/auth'
 import { ProfileForm } from './ProfileForm'
-import { updateAdminEmailAction, updateAdminPasswordAction } from './actions'
+import { updateAdminProfileAction, updateAdminPasswordAction } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -89,7 +89,8 @@ export default async function AdminProfilePage() {
 
       <ProfileForm
         currentEmail={admin.email}
-        updateEmailAction={updateAdminEmailAction}
+        currentNombreUsuario={admin.nombreUsuario}
+        updateProfileAction={updateAdminProfileAction}
         updatePasswordAction={updateAdminPasswordAction}
       />
     </div>

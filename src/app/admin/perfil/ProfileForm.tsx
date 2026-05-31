@@ -6,7 +6,8 @@ import { initialProfileActionState, type ProfileActionState } from './schemas'
 
 interface ProfileFormProps {
   currentEmail: string
-  updateEmailAction: (
+  currentNombreUsuario: string
+  updateProfileAction: (
     prev: ProfileActionState,
     formData: FormData,
   ) => Promise<ProfileActionState>
@@ -40,8 +41,13 @@ function FeedbackMessage({ state }: { state: ProfileActionState }) {
   )
 }
 
-export function ProfileForm({ currentEmail, updateEmailAction, updatePasswordAction }: ProfileFormProps) {
-  const [emailState, emailFormAction] = useActionState(updateEmailAction, initialProfileActionState)
+export function ProfileForm({
+  currentEmail,
+  currentNombreUsuario,
+  updateProfileAction,
+  updatePasswordAction,
+}: ProfileFormProps) {
+  const [profileState, profileFormAction] = useActionState(updateProfileAction, initialProfileActionState)
   const [passwordState, passwordFormAction] = useActionState(
     updatePasswordAction,
     initialProfileActionState,
@@ -49,43 +55,48 @@ export function ProfileForm({ currentEmail, updateEmailAction, updatePasswordAct
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <form action={emailFormAction} className="space-y-6 rounded-lg border border-white/10 bg-white/[0.03] p-6">
+      <form action={profileFormAction} className="space-y-6 rounded-lg border border-white/10 bg-white/[0.03] p-6">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-200/70">Correo</p>
-          <h2 className="mt-3 font-display text-2xl font-black tracking-tight text-white">Actualizá tu dirección</h2>
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-200/70">Perfil</p>
+          <h2 className="mt-3 font-display text-2xl font-black tracking-tight text-white">Actualizá tus datos</h2>
           <p className="mt-2 text-sm leading-6 text-white/55">
-            Mantené este dato al día para seguir recibiendo avisos en la cuenta correcta.
+            Mantené tu nombre y dirección al día para que se muestren correctamente.
           </p>
         </div>
 
         <div className="grid gap-4">
           <label className="space-y-2">
-            <span className="text-sm font-semibold text-white/75">Correo actual</span>
+            <span className="text-sm font-semibold text-white/75">Nombre</span>
             <input
-              type="email"
-              value={currentEmail}
-              readOnly
-              className="block w-full rounded-md border border-white/10 bg-black/20 px-3 py-3 text-sm text-white/70 outline-none"
+              key={currentNombreUsuario}
+              name="nombreUsuario"
+              type="text"
+              required
+              defaultValue={currentNombreUsuario}
+              placeholder="Nombre completo"
+              className="block w-full rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-violet-300/60"
             />
           </label>
 
           <label className="space-y-2">
             <span className="text-sm font-semibold text-white/75">Nuevo correo</span>
             <input
+              key={currentEmail}
               name="nextEmail"
               type="email"
               required
               autoComplete="email"
+              defaultValue={currentEmail}
               placeholder="nuevo@campus.com"
               className="block w-full rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-violet-300/60"
             />
           </label>
         </div>
 
-        <FeedbackMessage state={emailState} />
+        <FeedbackMessage state={profileState} />
 
         <div className="flex flex-wrap items-center gap-3">
-          <SubmitButton label="Guardar correo" pendingLabel="Guardando…" />
+          <SubmitButton label="Guardar datos" pendingLabel="Guardando…" />
         </div>
       </form>
 

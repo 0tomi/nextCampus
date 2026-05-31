@@ -8,7 +8,7 @@ import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import {
-  updateAdminEmailSchema,
+  updateAdminProfileSchema,
   updateAdminPasswordSchema,
   type ProfileActionState,
 } from './schemas'
@@ -22,12 +22,12 @@ function errorMessage(error: unknown): string {
   return ''
 }
 
-function emailActionError(error: unknown): ProfileActionState {
+function profileActionError(error: unknown): ProfileActionState {
   const message = errorMessage(error)
 
   return {
     ok: false,
-    message: message || 'No pudimos actualizar el correo. Intentá de nuevo.',
+    message: message || 'No pudimos actualizar el perfil. Intentá de nuevo.',
   }
 }
 
@@ -81,49 +81,78 @@ function mapPasswordUpdateError(error: unknown): never {
   throw error
 }
 
-export async function updateAdminEmailAction(
+export async function updateAdminProfileAction(
   _prev: ProfileActionState,
   formData: FormData,
 ): Promise<ProfileActionState> {
   const admin = await requireAnyAdmin()
 
   try {
-    const data = updateAdminEmailSchema.parse({
+    const data = updateAdminProfileSchema.parse({
+      nombreUsuario: formData.get('nombreUsuario'),
       nextEmail: formData.get('nextEmail'),
     })
 
-    if (data.nextEmail === admin.email) {
-      throw new ProfileActionError('Ingresá un correo distinto al actual.')
-    }
+    const db = prisma
 
-    await ensureEmailAvailable(data.nextEmail, admin.id)
-
-    const supabase = createSupabaseAdminClient()
-    const { error: authError } = await supabase.auth.admin.updateUserById(admin.authUserId, {
-      email: data.nextEmail,
-      email_confirm: true,
+    // Get current DB user to read current nombreUsuario and email
+    const currentAccount = await db.userAccount.findUnique({
+      where: { id: admin.id },
+      select: { nombreUsuario: true, email: true },
     })
 
-    if (authError) {
-      throw authError
+    if (!currentAccount) {
+      throw new ProfileActionError('Usuario no encontrado.')
     }
 
-    try {
-      await prisma.userAccount.update({
-        where: { id: admin.id },
-        data: { email: data.nextEmail },
+    const emailChanged = data.nextEmail !== currentAccount.email
+    const nameChanged = data.nombreUsuario !== currentAccount.nombreUsuario
+
+    if (!emailChanged && !nameChanged) {
+      return { ok: true, message: 'No hubo cambios para actualizar.' }
+    }
+
+    if (emailChanged) {
+      await ensureEmailAvailable(data.nextEmail, admin.id)
+
+      const supabase = createSupabaseAdminClient()
+      const { error: authError } = await supabase.auth.admin.updateUserById(admin.authUserId, {
+        email: data.nextEmail,
+        email_confirm: true,
       })
-    } catch (error) {
-      try {
-        await supabase.auth.admin.updateUserById(admin.authUserId, {
-          email: admin.email,
-          email_confirm: true,
-        })
-      } catch {
-        // Rollback best-effort.
+
+      if (authError) {
+        throw authError
       }
 
-      throw error
+      try {
+        await db.userAccount.update({
+          where: { id: admin.id },
+          data: {
+            email: data.nextEmail,
+            nombreUsuario: data.nombreUsuario,
+          },
+        })
+      } catch (error) {
+        // Rollback email in Supabase Auth on error
+        try {
+          await supabase.auth.admin.updateUserById(admin.authUserId, {
+            email: currentAccount.email,
+            email_confirm: true,
+          })
+        } catch {
+          // Rollback best-effort.
+        }
+        throw error
+      }
+    } else {
+      // Solo cambió el nombre
+      await db.userAccount.update({
+        where: { id: admin.id },
+        data: {
+          nombreUsuario: data.nombreUsuario,
+        },
+      })
     }
 
     await recordAudit({
@@ -132,18 +161,20 @@ export async function updateAdminEmailAction(
       entityType: 'user',
       entityId: admin.id,
       detail: {
-        previousEmail: admin.email,
+        previousEmail: currentAccount.email,
         email: data.nextEmail,
-        emailChanged: true,
+        emailChanged,
+        nombreUsuario: data.nombreUsuario,
+        nameChanged,
         passwordChanged: false,
       },
     })
 
     revalidateAdminProfileViews()
 
-    return { ok: true, message: 'Correo actualizado correctamente.' }
+    return { ok: true, message: 'Perfil actualizado correctamente.' }
   } catch (error) {
-    return emailActionError(error)
+    return profileActionError(error)
   }
 }
 

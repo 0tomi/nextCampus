@@ -34,6 +34,7 @@ export interface AdminUser extends AdminCapabilities {
   email: string
   role: UserRole
   status: UserStatus
+  nombreUsuario: string
   yearIds: string[]
   yearSlugs: string[]
 }
@@ -49,6 +50,7 @@ type DbUserAccount = {
   email: string
   role: UserRole
   status: UserStatus
+  nombreUsuario?: string
   yearPermissions?: Array<{
     year: {
       id: string
@@ -125,6 +127,7 @@ export function buildAdminUser(account: DbUserAccount): AdminUser | null {
     email: account.email.toLowerCase(),
     role: account.role,
     status: account.status,
+    nombreUsuario: account.nombreUsuario ?? account.email,
     yearIds,
     yearSlugs,
     ...capabilities,
@@ -186,6 +189,7 @@ async function upsertBootstrapGeneralAdmin(user: SupabaseAuthUser, email: string
     email,
     role: USER_ROLES.ADMIN,
     status: USER_STATUSES.ACTIVE,
+    nombreUsuario: account.nombreUsuario ?? email,
     yearIds: [],
     yearSlugs: [],
     ...buildAdminCapabilities(USER_ROLES.ADMIN),
