@@ -19,6 +19,7 @@ interface AdminUserFormProps {
   user?: {
     id: string
     email: string
+    nombreUsuario: string
     role: 'AYUDANTE' | 'SUPERVISOR'
     status: 'ACTIVE' | 'DISABLED'
     yearIds: string[]
@@ -51,6 +52,18 @@ export function AdminUserForm({ mode, years, action, user }: AdminUserFormProps)
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-2">
+          <span className="text-sm font-semibold text-white/75">Nombre</span>
+          <input
+            name="nombreUsuario"
+            type="text"
+            required
+            defaultValue={user?.nombreUsuario ?? ''}
+            placeholder="Nombre completo"
+            className="block w-full rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-violet-300/60"
+          />
+        </label>
+
+        <label className="space-y-2">
           <span className="text-sm font-semibold text-white/75">Email</span>
           <input
             name="email"
@@ -61,7 +74,9 @@ export function AdminUserForm({ mode, years, action, user }: AdminUserFormProps)
             className="block w-full rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-violet-300/60"
           />
         </label>
+      </div>
 
+      <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-2">
           <span className="text-sm font-semibold text-white/75">
             {isEdit ? 'Nueva contraseña' : 'Contraseña'}

@@ -17,6 +17,7 @@ export interface AdminUserActionState {
 const selectedYearsSchema = z.array(z.string().min(1)).min(1, 'Elegí al menos un año.')
 
 const createAdminCampusSchema = z.object({
+  nombreUsuario: z.string().min(1, 'El nombre es obligatorio.').transform((v) => v.trim()),
   email: z.email('Ingresá un email válido.').transform((value) => value.trim().toLowerCase()),
   password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres.'),
   yearIds: selectedYearsSchema,
@@ -24,6 +25,7 @@ const createAdminCampusSchema = z.object({
 
 const editAdminCampusSchema = z.object({
   id: z.string().min(1),
+  nombreUsuario: z.string().min(1, 'El nombre es obligatorio.').transform((v) => v.trim()),
   email: z.email('Ingresá un email válido.').transform((value) => value.trim().toLowerCase()),
   password: z.string().trim().optional(),
   status: z.enum([UserStatus.ACTIVE, UserStatus.DISABLED], 'Elegí un estado válido.'),
@@ -83,6 +85,7 @@ export async function createAdminCampusAction(
   try {
     const admin = await requireGeneralAdmin()
     const data = createAdminCampusSchema.parse({
+      nombreUsuario: formData.get('nombreUsuario'),
       email: formData.get('email'),
       password: formData.get('password'),
       yearIds: formYearIds(formData),
@@ -108,7 +111,7 @@ export async function createAdminCampusAction(
           data: {
             authUserId: created.user.id,
             email: data.email,
-            nombreUsuario: data.email,
+            nombreUsuario: data.nombreUsuario,
             role: UserRole.AYUDANTE,
             status: UserStatus.ACTIVE,
           },
@@ -137,6 +140,7 @@ export async function createAdminCampusAction(
       entityType: 'user',
       entityId: createdUserId,
       detail: {
+        nombreUsuario: data.nombreUsuario,
         email: data.email,
         role: UserRole.AYUDANTE,
         yearsCount: yearIds.length,
@@ -156,6 +160,7 @@ export async function updateAdminCampusAction(
     const admin = await requireGeneralAdmin()
     const data = editAdminCampusSchema.parse({
       id: formData.get('id'),
+      nombreUsuario: formData.get('nombreUsuario'),
       email: formData.get('email'),
       password: String(formData.get('password') ?? '').trim() || undefined,
       status: formData.get('status'),
@@ -198,6 +203,7 @@ export async function updateAdminCampusAction(
         await tx.userAccount.update({
           where: { id: current.id },
           data: {
+            nombreUsuario: data.nombreUsuario,
             email: data.email,
             status: data.status,
             role: data.role,
@@ -231,6 +237,7 @@ export async function updateAdminCampusAction(
       entityType: 'user',
       entityId: current.id,
       detail: {
+        nombreUsuario: data.nombreUsuario,
         email: data.email,
         emailChanged,
         status: data.status,

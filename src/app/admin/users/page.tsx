@@ -51,7 +51,7 @@ export default async function AdminUsersPage() {
 
       <section className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.03]">
         <div className="grid grid-cols-12 gap-3 border-b border-white/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-white/38">
-          <span className="col-span-12 md:col-span-4">Email</span>
+          <span className="col-span-12 md:col-span-4">Usuario</span>
           <span className="hidden md:col-span-2 md:block">Rol</span>
           <span className="hidden md:col-span-2 md:block">Estado</span>
           <span className="hidden md:col-span-3 md:block">Años</span>
@@ -65,7 +65,8 @@ export default async function AdminUsersPage() {
               return (
                 <li key={user.id} className="grid grid-cols-12 gap-3 px-4 py-4 text-sm text-white/70">
                   <div className="col-span-12 md:col-span-4">
-                    <p className="font-semibold text-white">{user.email}</p>
+                    <p className="font-semibold text-white">{user.nombreUsuario}</p>
+                    <p className="text-xs text-white/55">{user.email}</p>
                     <p className="mt-1 md:hidden">{roleLabel(user.role)} · {statusLabel(user.status)}</p>
                   </div>
                   <div className="hidden md:col-span-2 md:block">{roleLabel(user.role)}</div>

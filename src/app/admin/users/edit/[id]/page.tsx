@@ -26,6 +26,7 @@ export default async function EditAdminUserPage({ params }: EditAdminUserPagePro
       select: {
         id: true,
         email: true,
+        nombreUsuario: true,
         role: true,
         status: true,
         yearPermissions: { select: { yearId: true } },
@@ -57,6 +58,7 @@ export default async function EditAdminUserPage({ params }: EditAdminUserPagePro
         user={{
           id: user.id,
           email: user.email,
+          nombreUsuario: user.nombreUsuario,
           role: user.role,
           status: user.status,
           yearIds: user.yearPermissions.map((permission) => permission.yearId),
