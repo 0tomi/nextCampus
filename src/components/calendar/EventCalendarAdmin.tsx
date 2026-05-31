@@ -166,7 +166,7 @@ export function EventCalendarAdmin({
       />
 
       <Sheet
-        open={activeSheetOpen}
+        open={!!activeSheetOpen}
         onClose={() => {
           setActiveSheetOpen(false)
           setActiveSelectedEvent(null)
