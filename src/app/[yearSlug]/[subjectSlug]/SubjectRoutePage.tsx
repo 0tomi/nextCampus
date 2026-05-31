@@ -287,7 +287,7 @@ export function SubjectRoutePage({
                 </div>
                 <Link
                   href={quizHref}
-                  className="inline-flex shrink-0 cursor-pointer items-center gap-2 self-start bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-uader-red-light"
+                  className="inline-flex shrink-0 cursor-pointer items-center gap-2 self-start bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-primary-light"
                 >
                   Empezar quiz
                   <ArrowRight className="h-4 w-4" />

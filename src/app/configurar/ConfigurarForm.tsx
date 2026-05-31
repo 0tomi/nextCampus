@@ -50,7 +50,7 @@ function CheckBox({ checked, size = 'md' }: { checked: boolean; size?: 'sm' | 'm
       className={cn(
         'flex shrink-0 items-center justify-center rounded-sm border transition-colors',
         size === 'sm' ? 'h-4 w-4' : 'h-5 w-5',
-        checked ? 'border-uader-red bg-uader-red' : 'border-white/20 bg-transparent',
+        checked ? 'border-primary bg-primary' : 'border-white/20 bg-transparent',
       )}
     >
       {checked && (
@@ -277,7 +277,7 @@ function ConfigurarFormInner({
                             checked={subjectChecked}
                             onChange={() => toggleSubject(subject.slug)}
                           />
-                          <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-uader-red peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
+                          <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
                             <CheckBox checked={subjectChecked} />
                           </span>
                           <span className="min-w-0 flex-1 text-[13px] font-medium text-white/70">
@@ -310,7 +310,7 @@ function ConfigurarFormInner({
                                       onChange={() => toggleCommission(subject.slug, commission.slug)}
                                       disabled={!subjectChecked}
                                     />
-                                    <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-uader-red peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
+                                    <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
                                       <CheckBox checked={commissionChecked} size="sm" />
                                     </span>
                                     <span className="min-w-0 flex-1 text-[12px] text-white/55">
@@ -356,7 +356,7 @@ function ConfigurarFormInner({
             <button
               type="button"
               onClick={onSave}
-              className="cursor-pointer rounded-md bg-uader-red px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-uader-red-light"
+              className="cursor-pointer rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-light"
             >
               Guardar
             </button>
@@ -457,7 +457,7 @@ function ConfigurarFormSkeleton({ careerName, years }: ConfigurarFormProps) {
                           disabled
                           readOnly
                         />
-                        <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-uader-red peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
+                        <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
                           <CheckBox checked={false} />
                         </span>
                         <span className="min-w-0 flex-1 text-[13px] font-medium text-white/70">
@@ -477,7 +477,7 @@ function ConfigurarFormSkeleton({ careerName, years }: ConfigurarFormProps) {
                                   disabled
                                   readOnly
                                 />
-                                <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-uader-red peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
+                                <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
                                   <CheckBox checked={false} size="sm" />
                                 </span>
                                 <span className="min-w-0 flex-1 text-[12px] text-white/55">
@@ -520,7 +520,7 @@ function ConfigurarFormSkeleton({ careerName, years }: ConfigurarFormProps) {
             <button
               type="button"
               disabled
-              className="cursor-not-allowed rounded-md bg-uader-red px-5 py-2.5 text-sm font-semibold text-white opacity-40"
+              className="cursor-not-allowed rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white opacity-40"
             >
               Guardar
             </button>

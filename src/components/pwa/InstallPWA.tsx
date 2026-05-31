@@ -118,7 +118,7 @@ export function InstallPWATopbarButton() {
         type="button"
         aria-label="Instalar app"
         onClick={action.onClick}
-        className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-uader-red/35 bg-uader-red/12 text-white transition-colors hover:border-uader-red/55 hover:bg-uader-red/20"
+        className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-primary/35 bg-primary/12 text-white transition-colors hover:border-primary/55 hover:bg-primary/20"
       >
         <Download size={17} strokeWidth={2.3} />
       </button>
@@ -146,7 +146,7 @@ export function InstallPWASettingsCard({ className }: InstallPWASettingsCardProp
       >
         <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-uader-red to-uader-red-dark text-white shadow-[0_0_18px_rgba(204,0,0,0.28)]">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary-dark text-white shadow-[0_0_18px_rgba(204,0,0,0.28)]">
               <Smartphone size={20} strokeWidth={2.2} />
             </span>
             <div className="flex flex-col gap-1">
@@ -173,7 +173,7 @@ export function InstallPWASettingsCard({ className }: InstallPWASettingsCardProp
             <button
               type="button"
               onClick={action.onClick}
-              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md bg-uader-red px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-uader-red-light"
+              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-light"
             >
               <Download size={15} strokeWidth={2.5} />
               Instalar app

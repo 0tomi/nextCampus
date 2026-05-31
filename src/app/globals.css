@@ -16,6 +16,8 @@ button:disabled,
   --color-paper: #faf8f5;
   --color-ink: #1a1a1a;
   --color-primary: #cc0000;
+  --color-primary-light: #e80000;
+  --color-primary-dark: #990000;
   --color-accent: #003366;
   --color-surface-0: #0f0f0f;
   --color-surface-1: #1a1a1a;

@@ -697,7 +697,7 @@ export function QuizRunner({
             type="button"
             onClick={start}
             disabled={loading || selectedBancos.length === 0 || maxPreguntas === 0}
-            className="inline-flex w-full items-center justify-center gap-2 bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+            className="inline-flex w-full items-center justify-center gap-2 bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
           >
             {loading ? 'Cargando…' : 'Comenzar quiz'}
             <ChevronRight className="h-4 w-4" />
@@ -941,7 +941,7 @@ export function QuizRunner({
                   type="button"
                   onClick={verificar}
                   disabled={loading || !respondida}
-                  className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                  className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
                 >
                   {loading ? 'Verificando…' : 'Verificar'}
                 </button>
@@ -961,7 +961,7 @@ export function QuizRunner({
                   type="button"
                   onClick={next}
                   disabled={loading || !canAdvance}
-                  className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                  className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
                 >
                   {loading
                     ? 'Corrigiendo…'

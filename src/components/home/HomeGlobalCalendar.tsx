@@ -293,7 +293,7 @@ function HomeGlobalCalendarSetupNotice() {
         </div>
         <Link
           href="/configurar"
-          className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-uader-red px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-uader-red-light"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-light"
         >
           <SlidersHorizontal className="h-4 w-4" />
           Configurar materias

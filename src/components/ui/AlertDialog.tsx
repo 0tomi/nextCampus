@@ -127,7 +127,7 @@ export function AlertDialog({
               'inline-flex justify-center px-4 py-2 text-sm font-bold text-white transition-colors cursor-pointer',
               variant === 'destructive'
                 ? 'bg-rose-600 hover:bg-rose-500'
-                : 'bg-primary hover:bg-uader-red-light',
+                : 'bg-primary hover:bg-primary-light',
             )}
           >
             {confirmText}

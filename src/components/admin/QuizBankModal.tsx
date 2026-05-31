@@ -292,7 +292,7 @@ export function QuizBankModal({
             <button
               type="submit"
               disabled={pending || !preview}
-              className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-uader-red-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+              className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
             >
               {pending ? 'Subiendo…' : 'Subir banco'}
             </button>
