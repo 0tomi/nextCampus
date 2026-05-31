@@ -3,10 +3,12 @@
 import {
   useEffect,
   useRef,
+  useState,
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -28,6 +30,11 @@ export function Sheet({
   className,
 }: SheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Lock scroll while open
   useEffect(() => {
@@ -85,7 +92,7 @@ export function Sheet({
     return () => document.removeEventListener('keydown', trapFocus)
   }, [open])
 
-  if (!open) return null
+  if (!open || !mounted) return null
 
   function handleOverlayClick(e: MouseEvent<HTMLDivElement>) {
     if (e.target === e.currentTarget) onClose()
@@ -97,7 +104,7 @@ export function Sheet({
     }
   }
 
-  return (
+  return createPortal(
     /* Overlay */
     <div
       className="fixed inset-0 z-50 flex flex-col justify-end sm:flex-row sm:justify-end bg-black/70 backdrop-blur-sm transition-opacity duration-300"
@@ -139,6 +146,8 @@ export function Sheet({
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
+}
 }

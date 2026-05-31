@@ -3,6 +3,7 @@
 import { useEffect, useActionState, useMemo, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useRouter } from 'next/navigation'
+import { ChevronDown } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import {
   createEventoAction,
@@ -104,6 +105,9 @@ function EventModalContent({
   const [apunteResults, setApunteResults] = useState<RelatedApunteLink[]>([])
   const [searchingApuntes, setSearchingApuntes] = useState(false)
   const [newApunteOpen, setNewApunteOpen] = useState(false)
+  const [apuntesOpen, setApuntesOpen] = useState(
+    () => (eventToEdit?.apuntes && eventToEdit.apuntes.length > 0) ?? false
+  )
 
   // Determine current active agendaId and subjectSlug
   const isYearMode = subjects && subjects.length > 0
@@ -308,83 +312,84 @@ function EventModalContent({
           />
         </div>
 
-        <div className="space-y-3 rounded-lg border border-white/8 bg-white/[0.025] p-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
-              Apuntes relacionados
-            </p>
-            <p className="mt-1 text-[11px] leading-4 text-white/35">
-              Sumá material de estudio para que la fecha quede acompañada.
-            </p>
-          </div>
+        <CollapsibleFormSection
+          title="Apuntes relacionados"
+          hint="Sumá material de estudio para que la fecha quede acompañada."
+          open={apuntesOpen}
+          onToggle={() => setApuntesOpen(!apuntesOpen)}
+        >
           <input type="hidden" name="apunteIdsJson" value={JSON.stringify(selectedApuntes.map((apunte) => apunte.id))} />
 
-          {activeSubjectId ? (
-            <>
-              <input
-                type="search"
-                value={apunteQuery}
-                onChange={(event) => setApunteQuery(event.target.value)}
-                placeholder="Buscar apunte por título"
-                className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
-              />
+          <div className="space-y-3 pt-1">
+            {activeSubjectId ? (
+              <>
+                <input
+                  type="search"
+                  value={apunteQuery}
+                  onChange={(event) => setApunteQuery(event.target.value)}
+                  placeholder="Buscar apunte por título"
+                  className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
+                />
 
-              {selectedApuntes.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {selectedApuntes.map((apunte) => (
-                    <button
-                      key={apunte.id}
-                      type="button"
-                      onClick={() => setSelectedApuntes((prev) => prev.filter((item) => item.id !== apunte.id))}
-                      className="cursor-pointer rounded-full border border-cyan-300/30 bg-cyan-300/12 px-3 py-1.5 text-xs font-bold text-cyan-100 transition-colors hover:bg-cyan-300/18"
-                    >
-                      {apunte.titulo}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-
-              <div className="max-h-36 space-y-1 overflow-y-auto pr-1">
-                {searchingApuntes ? (
-                  <p className="rounded border border-white/8 bg-white/[0.03] px-3 py-2 text-xs text-white/45">
-                    Buscando apuntes…
-                  </p>
-                ) : apunteResults.length > 0 ? (
-                  apunteResults
-                    .filter((apunte) => !selectedApuntes.some((selected) => selected.id === apunte.id))
-                    .map((apunte) => (
+                {selectedApuntes.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedApuntes.map((apunte) => (
                       <button
                         key={apunte.id}
                         type="button"
-                        onClick={() => setSelectedApuntes((prev) => [...prev, apunte])}
-                        className="flex w-full cursor-pointer items-center justify-between gap-3 rounded border border-white/8 bg-surface-0 px-3 py-2 text-left text-xs font-semibold text-white/70 transition-colors hover:border-white/14 hover:bg-white/[0.04] hover:text-white"
+                        onClick={() => setSelectedApuntes((prev) => prev.filter((item) => item.id !== apunte.id))}
+                        className="cursor-pointer rounded-full border border-cyan-300/30 bg-cyan-300/12 px-3 py-1.5 text-xs font-bold text-cyan-100 transition-colors hover:bg-cyan-300/18"
                       >
-                        <span className="truncate">{apunte.titulo}</span>
-                        <span className="shrink-0 text-[10px] uppercase tracking-wider text-white/35">Asociar</span>
+                        {apunte.titulo}
                       </button>
-                    ))
-                ) : (
-                  <p className="rounded border border-dashed border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-white/42">
-                    No encontramos apuntes con esa búsqueda.
-                  </p>
-                )}
-              </div>
+                    ))}
+                  </div>
+                ) : null}
 
-              <button
-                type="button"
-                disabled={activeCategorias.length === 0}
-                onClick={() => setNewApunteOpen(true)}
-                className="inline-flex cursor-pointer items-center justify-center rounded border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-white/70 transition-colors hover:bg-white/8 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Crear y asociar apunte
-              </button>
-            </>
-          ) : (
-            <p className="rounded border border-dashed border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-white/42">
-              Elegí una materia para buscar o crear apuntes.
-            </p>
-          )}
-        </div>
+                <div className="max-h-36 space-y-1 overflow-y-auto pr-1">
+                  {searchingApuntes ? (
+                    <p className="rounded border border-white/8 bg-white/[0.03] px-3 py-2 text-xs text-white/45">
+                      Buscando apuntes…
+                    </p>
+                  ) : apunteResults.length > 0 ? (
+                    apunteResults
+                      .filter((apunte) => !selectedApuntes.some((selected) => selected.id === apunte.id))
+                      .map((apunte) => (
+                        <button
+                          key={apunte.id}
+                          type="button"
+                          onClick={() => setSelectedApuntes((prev) => [...prev, apunte])}
+                          className="flex w-full cursor-pointer items-center justify-between gap-3 rounded border border-white/8 bg-surface-0 px-3 py-2 text-left text-xs font-semibold text-white/70 transition-colors hover:border-white/14 hover:bg-white/[0.04] hover:text-white"
+                        >
+                          <span className="truncate">{apunte.titulo}</span>
+                          <span className="shrink-0 text-[10px] uppercase tracking-wider text-white/35">Asociar</span>
+                        </button>
+                      ))
+                  ) : (
+                    apunteQuery.trim() ? (
+                      <p className="rounded border border-dashed border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-white/42">
+                        No encontramos apuntes con esa búsqueda.
+                      </p>
+                    ) : null
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={activeCategorias.length === 0}
+                  onClick={() => setNewApunteOpen(true)}
+                  className="inline-flex cursor-pointer items-center justify-center rounded border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-white/70 transition-colors hover:bg-white/8 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Crear y asociar apunte
+                </button>
+              </>
+            ) : (
+              <p className="rounded border border-dashed border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-white/42">
+                Elegí una materia para buscar o crear apuntes.
+              </p>
+            )}
+          </div>
+        </CollapsibleFormSection>
 
         <div className="space-y-1">
           <label
@@ -512,5 +517,55 @@ function EventModalContent({
         />
       ) : null}
     </Modal>
+  )
+}
+
+function CollapsibleFormSection({
+  title,
+  hint,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string
+  hint: string
+  open: boolean
+  onToggle: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <section className="space-y-1">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="group flex w-full cursor-pointer items-center justify-between gap-4 py-1 text-left transition-colors"
+        aria-expanded={open}
+      >
+        <span>
+          <span className="block text-xs font-semibold uppercase tracking-widest text-white/40 transition-colors group-hover:text-white/60">
+            {title}
+          </span>
+          <span className="mt-1 block text-[11px] leading-4 text-white/30">
+            {hint}
+          </span>
+        </span>
+        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/35 transition-colors group-hover:border-white/20 group-hover:text-white">
+          <ChevronDown
+            className={`h-4 w-4 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+          />
+        </span>
+      </button>
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${
+          open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="pt-2">
+            {children}
+          </div>
+        </div>
+      </div>
+    </section>
   )
 }

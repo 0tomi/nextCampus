@@ -51,6 +51,10 @@ interface EventCalendarAdminProps {
     categoriasDisponibles?: Array<{ id: string; nombre: string }>
   }[]
   commissions?: readonly CommissionOption[]
+  selectedEvent?: EventCalendarEvent | null
+  setSelectedEvent?: (event: EventCalendarEvent | null) => void
+  sheetOpen?: boolean
+  setSheetOpen?: (open: boolean) => void
 }
 
 /**
@@ -74,6 +78,10 @@ export function EventCalendarAdmin({
   categoriasDisponibles,
   subjects,
   commissions,
+  selectedEvent,
+  setSelectedEvent,
+  sheetOpen,
+  setSheetOpen,
 }: EventCalendarAdminProps) {
   const canEdit = useAdminAccess({ yearId, yearSlug }) ?? false
   const router = useRouter()
@@ -81,8 +89,15 @@ export function EventCalendarAdmin({
   const [eventModalOpen, setEventModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [initialDate, setInitialDate] = useState<string | undefined>()
-  const [selectedEvent, setSelectedEvent] = useState<EventCalendarEvent | null>(null)
-  const [sheetOpen, setSheetOpen] = useState(false)
+
+  const [localSelectedEvent, setLocalSelectedEvent] = useState<EventCalendarEvent | null>(null)
+  const [localSheetOpen, setLocalSheetOpen] = useState(false)
+
+  const activeSelectedEvent = setSelectedEvent !== undefined ? selectedEvent : localSelectedEvent
+  const activeSheetOpen = setSheetOpen !== undefined ? sheetOpen : localSheetOpen
+
+  const setActiveSelectedEvent = setSelectedEvent ?? setLocalSelectedEvent
+  const setActiveSheetOpen = setSheetOpen ?? setLocalSheetOpen
 
   const handleEventDrop = useCallback(
     async (id: string, nuevaFechaKey: string): Promise<boolean> => {
@@ -107,33 +122,33 @@ export function EventCalendarAdmin({
   }, [])
 
   const handleEventClick = useCallback((event: EventCalendarEvent) => {
-    setSelectedEvent(event)
-    setSheetOpen(true)
-  }, [])
+    setActiveSelectedEvent(event)
+    setActiveSheetOpen(true)
+  }, [setActiveSelectedEvent, setActiveSheetOpen])
 
   const handleDelete = useCallback(() => {
-    if (!selectedEvent?.id) return
+    if (!activeSelectedEvent?.id) return
     if (window.confirm('¿Estás seguro de que querés eliminar este evento?')) {
       startTransition(async () => {
         try {
           const formData = new FormData()
-          formData.append('id', selectedEvent.id!)
+          formData.append('id', activeSelectedEvent.id!)
           await deleteEvento(formData)
-          setSheetOpen(false)
-          setSelectedEvent(null)
+          setActiveSheetOpen(false)
+          setActiveSelectedEvent(null)
           router.refresh()
         } catch (err) {
           console.error(err)
         }
       })
     }
-  }, [selectedEvent, router])
+  }, [activeSelectedEvent, router, setActiveSheetOpen, setActiveSelectedEvent])
 
-  const subjectHref = selectedEvent?.subjectSlug && yearSlug
+  const subjectHref = activeSelectedEvent?.subjectSlug && yearSlug
     ? buildSubjectHref({
         yearSlug,
-        subjectSlug: selectedEvent.subjectSlug,
-        commissionSlug: selectedEvent.commissionSlug ?? commissionSlug,
+        subjectSlug: activeSelectedEvent.subjectSlug,
+        commissionSlug: activeSelectedEvent.commissionSlug ?? commissionSlug,
       })
     : null
 
@@ -151,49 +166,49 @@ export function EventCalendarAdmin({
       />
 
       <Sheet
-        open={sheetOpen}
+        open={activeSheetOpen}
         onClose={() => {
-          setSheetOpen(false)
-          setSelectedEvent(null)
+          setActiveSheetOpen(false)
+          setActiveSelectedEvent(null)
         }}
         title="Detalles del evento"
       >
-        {selectedEvent && (
+        {activeSelectedEvent && (
           <div className="space-y-6">
             {/* Header info */}
             <div>
               <span
                 className={cn(
                   'inline-flex border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] rounded-none mb-3',
-                  selectedEvent.tipo?.toLowerCase() === 'examen' ||
-                    selectedEvent.tipo?.toLowerCase() === 'parcial' ||
-                    selectedEvent.tipo?.toLowerCase() === 'final' ||
-                    selectedEvent.tipo?.toLowerCase() === 'recuperatorio'
+                  activeSelectedEvent.tipo?.toLowerCase() === 'examen' ||
+                    activeSelectedEvent.tipo?.toLowerCase() === 'parcial' ||
+                    activeSelectedEvent.tipo?.toLowerCase() === 'final' ||
+                    activeSelectedEvent.tipo?.toLowerCase() === 'recuperatorio'
                     ? 'border-red-500/20 bg-red-500/10 text-red-400'
-                    : selectedEvent.tipo?.toLowerCase() === 'trabajo-practico' ||
-                      selectedEvent.tipo?.toLowerCase() === 'tp'
+                    : activeSelectedEvent.tipo?.toLowerCase() === 'trabajo-practico' ||
+                      activeSelectedEvent.tipo?.toLowerCase() === 'tp'
                     ? 'border-yellow-500/20 bg-yellow-500/10 text-yellow-400'
-                    : selectedEvent.tipo?.toLowerCase() === 'entrega'
+                    : activeSelectedEvent.tipo?.toLowerCase() === 'entrega'
                     ? 'border-cyan-500/20 bg-cyan-500/10 text-cyan-400'
-                    : selectedEvent.tipo?.toLowerCase() === 'exposicion'
+                    : activeSelectedEvent.tipo?.toLowerCase() === 'exposicion'
                     ? 'border-orange-500/20 bg-orange-500/10 text-orange-400'
-                    : selectedEvent.tipo?.toLowerCase() === 'clase'
+                    : activeSelectedEvent.tipo?.toLowerCase() === 'clase'
                     ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
                     : 'border-violet-500/20 bg-violet-500/10 text-violet-400',
                 )}
               >
-                {selectedEvent.tipo}
+                {activeSelectedEvent.tipo}
               </span>
               <h3 className="text-2xl font-black tracking-tight text-white font-display leading-tight">
-                {selectedEvent.tituloOriginal ??
-                  selectedEvent.title ??
-                  selectedEvent.titulo}
+                {activeSelectedEvent.tituloOriginal ??
+                  activeSelectedEvent.title ??
+                  activeSelectedEvent.titulo}
               </h3>
             </div>
 
             {/* Detalles */}
             <div className="space-y-4 border-t border-white/6 pt-5">
-              {selectedEvent.materiaNombre && (
+              {activeSelectedEvent.materiaNombre && (
                 <div className="flex flex-col gap-1">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-white/30">
                     Materia
@@ -203,11 +218,11 @@ export function EventCalendarAdmin({
                       href={subjectHref}
                       className="text-sm font-bold text-white transition-colors hover:text-red-400 hover:underline cursor-pointer"
                     >
-                      {selectedEvent.materiaNombre}
+                      {activeSelectedEvent.materiaNombre}
                     </Link>
                   ) : (
                     <span className="text-sm font-bold text-white">
-                      {selectedEvent.materiaNombre}
+                      {activeSelectedEvent.materiaNombre}
                     </span>
                   )}
                 </div>
@@ -218,33 +233,33 @@ export function EventCalendarAdmin({
                   Fecha y Horario
                 </span>
                 <span className="text-sm font-medium text-white/80">
-                  {formatSelectedEventDate(selectedEvent)}
+                  {formatSelectedEventDate(activeSelectedEvent)}
                 </span>
               </div>
 
-              {selectedEvent.commissionNombre ? (
+              {activeSelectedEvent.commissionNombre ? (
                 <div className="flex flex-col gap-1">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-white/30">
                     Comisión
                   </span>
                   <span className="text-sm font-medium text-white/80">
-                    {selectedEvent.commissionNombre}
+                    {activeSelectedEvent.commissionNombre}
                   </span>
                 </div>
               ) : null}
 
-              {selectedEvent.apuntes && selectedEvent.apuntes.length > 0 ? (
+              {activeSelectedEvent.apuntes && activeSelectedEvent.apuntes.length > 0 ? (
                 <div className="flex flex-col gap-2">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-white/30">
                     Apuntes relacionados
                   </span>
-                  <RelatedApunteLinks apuntes={selectedEvent.apuntes} limit={selectedEvent.apuntes.length} />
+                  <RelatedApunteLinks apuntes={activeSelectedEvent.apuntes} limit={activeSelectedEvent.apuntes.length} />
                 </div>
               ) : null}
             </div>
 
             {/* Descripcion */}
-            {selectedEvent.descripcionHtml ? (
+            {activeSelectedEvent.descripcionHtml ? (
               <div className="space-y-2 border-t border-white/6 pt-5">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-white/30 block mb-2">
                   Descripción
@@ -252,7 +267,7 @@ export function EventCalendarAdmin({
                 <div
                   className="text-sm leading-7 text-white/70 [&_a]:text-red-400 [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
                   dangerouslySetInnerHTML={{
-                    __html: selectedEvent.descripcionHtml,
+                    __html: activeSelectedEvent.descripcionHtml,
                   }}
                 />
               </div>
@@ -309,22 +324,22 @@ export function EventCalendarAdmin({
         />
       )}
 
-      {canEdit && selectedEvent && (
+      {canEdit && activeSelectedEvent && (
         <EventModal
-          key={`edit-${selectedEvent.id}`}
+          key={`edit-${activeSelectedEvent.id}`}
           open={isEditModalOpen}
           onClose={() => {
             setIsEditModalOpen(false)
-            setSheetOpen(false)
-            setSelectedEvent(null)
+            setActiveSheetOpen(false)
+            setActiveSelectedEvent(null)
           }}
           agendaId={agendaId}
-          subjectId={selectedEvent.subjectId ?? subjectId}
+          subjectId={activeSelectedEvent.subjectId ?? subjectId}
           subjectSlug={subjectSlug}
           tiposEvento={tiposEvento}
           subjects={subjects}
           commissions={commissions}
-          eventToEdit={selectedEvent}
+          eventToEdit={activeSelectedEvent}
           categoriasDisponibles={categoriasDisponibles}
         />
       )}
