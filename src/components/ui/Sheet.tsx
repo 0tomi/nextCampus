@@ -150,4 +150,3 @@ export function Sheet({
     document.body,
   )
 }
-}
