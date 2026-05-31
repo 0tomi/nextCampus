@@ -314,7 +314,7 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
           </div>
 
           {/* Sidebar de ranking en Desktop */}
-          <aside className="hidden lg:block">
+          <aside className="hidden lg:block lg:border-l lg:border-white/8 lg:pl-6">
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/30">
               Comunidad
             </p>
