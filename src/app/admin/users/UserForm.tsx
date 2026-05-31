@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useActionState } from 'react'
+import { useActionState, useMemo } from 'react'
 import { useFormStatus } from 'react-dom'
 import type { AdminUserActionState } from './actions'
 
@@ -43,17 +43,21 @@ function SubmitButton({ label }: { label: string }) {
 
 export function AdminUserForm({ mode, years, action, user }: AdminUserFormProps) {
   const [state, formAction] = useActionState(action, initialState)
-  const selectedYears = new Set(user?.yearIds ?? [])
+  const selectedYears = useMemo(() => new Set(user?.yearIds ?? []), [user?.yearIds])
   const isEdit = mode === 'edit'
 
   return (
-    <form action={formAction} className="space-y-6 rounded-lg border border-white/10 bg-white/[0.03] p-6">
+    <form
+      action={formAction}
+      className="space-y-6 rounded-lg border border-white/10 bg-white/[0.03] p-6"
+    >
       {user ? <input type="hidden" name="id" value={user.id} /> : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-2">
           <span className="text-sm font-semibold text-white/75">Nombre</span>
           <input
+            key={user?.nombreUsuario}
             name="nombreUsuario"
             type="text"
             required
@@ -66,6 +70,7 @@ export function AdminUserForm({ mode, years, action, user }: AdminUserFormProps)
         <label className="space-y-2">
           <span className="text-sm font-semibold text-white/75">Email</span>
           <input
+            key={user?.email}
             name="email"
             type="email"
             required
@@ -97,6 +102,7 @@ export function AdminUserForm({ mode, years, action, user }: AdminUserFormProps)
           <label className="block space-y-2">
             <span className="text-sm font-semibold text-white/75">Rol</span>
             <select
+              key={user?.role}
               name="role"
               defaultValue={user?.role ?? 'AYUDANTE'}
               className="block w-full cursor-pointer rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition focus:border-violet-300/60"
@@ -108,6 +114,7 @@ export function AdminUserForm({ mode, years, action, user }: AdminUserFormProps)
           <label className="block space-y-2">
             <span className="text-sm font-semibold text-white/75">Estado</span>
             <select
+              key={user?.status}
               name="status"
               defaultValue={user?.status ?? 'ACTIVE'}
               className="block w-full cursor-pointer rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition focus:border-violet-300/60"
@@ -122,7 +129,10 @@ export function AdminUserForm({ mode, years, action, user }: AdminUserFormProps)
       <fieldset className="space-y-3">
         <legend className="text-sm font-semibold text-white/75">Años asignados</legend>
         {years.length > 0 ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div
+            key={user?.yearIds.join(',')}
+            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          >
             {years.map((year) => (
               <label
                 key={year.id}
