@@ -121,13 +121,14 @@ export function Mascot({
     >
       <div
         className={cn(
-          'absolute pointer-events-none rounded-full transition-[transform,opacity] duration-700 ease-out z-0',
-          showGlow ? 'opacity-70 scale-110' : 'opacity-0 scale-90'
+          'absolute pointer-events-none rounded-full z-0 transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]'
         )}
         style={{
           background: `radial-gradient(circle, ${baseColor} 0%, ${baseColor}00 70%)`,
-          width: `${size * 1.125}px`,
-          height: `${size * 1.125}px`,
+          width: `${size * 0.9}px`,
+          height: `${size * 0.9}px`,
+          opacity: showGlow ? 0.595 : 0,
+          transform: showGlow ? 'scale(1.1)' : 'scale(0)',
           willChange: 'transform, opacity',
         }}
       />
