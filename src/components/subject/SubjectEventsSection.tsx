@@ -11,6 +11,7 @@ import {
 import { AdminControls } from '@/components/admin/AdminControls'
 import { sanitizeRichHtml } from '@/lib/sanitize'
 import { formatEventDateTime } from '@/lib/utils'
+import { RelatedApunteLinks, type RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import {
   ALL_COMMISSIONS_VALUE,
   filterEventsByPreferredCommission,
@@ -39,6 +40,7 @@ interface SubjectEventItem extends CommissionAwareEvent {
   tipoEventoId: string
   commissionSlug?: string | null
   commissionNombre?: string | null
+  apuntes?: RelatedApunteLink[]
 }
 
 interface SubjectEventsSectionProps {
@@ -53,6 +55,7 @@ interface SubjectEventsSectionProps {
   }
   agendaId: string
   tiposEvento: TipoEvento[]
+  categoriasDisponibles: Array<{ id: string; nombre: string }>
   commissions: readonly CommissionOption[]
   activeCommission?: CommissionOption | null
   events: readonly SubjectEventItem[]
@@ -63,6 +66,7 @@ export function SubjectEventsSection({
   subject,
   agendaId,
   tiposEvento,
+  categoriasDisponibles,
   commissions,
   activeCommission,
   events,
@@ -161,6 +165,7 @@ export function SubjectEventsSection({
             commissionId: evento.commissionId,
             commissionSlug: evento.commissionSlug,
             commissionNombre: evento.commissionNombre,
+            apuntes: evento.apuntes,
           }))}
           emptyMessage={
             activeCommission || selectedCommission
@@ -168,12 +173,14 @@ export function SubjectEventsSection({
               : 'Sin eventos cargados para esta materia.'
           }
           agendaId={agendaId}
+          subjectId={subject.id}
           subjectSlug={subject.slug}
           yearId={subject.year.id}
           yearSlug={subject.year.slug}
           commissionSlug={activeCommission?.slug}
           tiposEvento={tiposEvento}
           commissions={commissions}
+          categoriasDisponibles={categoriasDisponibles}
         />
 
         <div className="space-y-3">
@@ -203,6 +210,7 @@ export function SubjectEventsSection({
                     <h3 className="mt-2 text-lg font-black tracking-tight text-white">
                       {evento.titulo}
                     </h3>
+                    <RelatedApunteLinks apuntes={evento.apuntes} className="mt-2" />
                   </div>
                   <div className="flex items-center gap-2">
                     <span

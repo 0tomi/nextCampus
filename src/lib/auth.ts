@@ -7,8 +7,9 @@ import { env } from '@/lib/env'
 import { prisma } from '@/lib/prisma'
 
 export const USER_ROLES = {
-  ADMIN_GENERAL: 'ADMIN_GENERAL',
-  ADMIN_CAMPUS: 'ADMIN_CAMPUS',
+  ADMIN: 'ADMIN',
+  SUPERVISOR: 'SUPERVISOR',
+  AYUDANTE: 'AYUDANTE',
 } as const
 
 export const USER_STATUSES = {
@@ -22,6 +23,9 @@ export type UserStatus = (typeof USER_STATUSES)[keyof typeof USER_STATUSES]
 export interface AdminCapabilities {
   canManageAllYears: boolean
   canCreateUsers: boolean
+  canManageAcademicStructure: boolean
+  canManageAnyContribution: boolean
+  canCreateContributions: boolean
 }
 
 export interface AdminUser extends AdminCapabilities {
@@ -65,6 +69,7 @@ type UserAccountDelegate = {
       email: string
       role: UserRole
       status: UserStatus
+      nombreUsuario: string
     }
     update: {
       email: string
@@ -90,9 +95,14 @@ export function isBootstrapGeneralAdminEmail(email: string): boolean {
 }
 
 export function buildAdminCapabilities(role: UserRole): AdminCapabilities {
+  const isAdmin = role === USER_ROLES.ADMIN
+  const isSupervisor = role === USER_ROLES.SUPERVISOR
   return {
-    canManageAllYears: role === USER_ROLES.ADMIN_GENERAL,
-    canCreateUsers: role === USER_ROLES.ADMIN_GENERAL,
+    canManageAllYears: isAdmin,
+    canCreateUsers: isAdmin,
+    canManageAcademicStructure: isAdmin || isSupervisor,
+    canManageAnyContribution: isAdmin || isSupervisor,
+    canCreateContributions: true,
   }
 }
 
@@ -159,12 +169,13 @@ async function upsertBootstrapGeneralAdmin(user: SupabaseAuthUser, email: string
     create: {
       authUserId: user.id,
       email,
-      role: USER_ROLES.ADMIN_GENERAL,
+      role: USER_ROLES.ADMIN,
       status: USER_STATUSES.ACTIVE,
+      nombreUsuario: email,
     },
     update: {
       email,
-      role: USER_ROLES.ADMIN_GENERAL,
+      role: USER_ROLES.ADMIN,
       status: USER_STATUSES.ACTIVE,
     },
   })
@@ -173,12 +184,11 @@ async function upsertBootstrapGeneralAdmin(user: SupabaseAuthUser, email: string
     id: account.id,
     authUserId: account.authUserId,
     email,
-    role: USER_ROLES.ADMIN_GENERAL,
+    role: USER_ROLES.ADMIN,
     status: USER_STATUSES.ACTIVE,
     yearIds: [],
     yearSlugs: [],
-    canManageAllYears: true,
-    canCreateUsers: true,
+    ...buildAdminCapabilities(USER_ROLES.ADMIN),
   }
 }
 
@@ -211,8 +221,9 @@ export const getAdminUser = cache(async (): Promise<AdminUser | null> => {
   if (!account) return null
 
   if (
-    account.role !== USER_ROLES.ADMIN_CAMPUS &&
-    account.role !== USER_ROLES.ADMIN_GENERAL
+    account.role !== USER_ROLES.AYUDANTE &&
+    account.role !== USER_ROLES.SUPERVISOR &&
+    account.role !== USER_ROLES.ADMIN
   ) {
     return null
   }
@@ -236,7 +247,15 @@ export const requireAdmin = requireAnyAdmin
 
 export async function requireGeneralAdmin(): Promise<AdminUser> {
   const admin = await requireAnyAdmin()
-  if (admin.role !== USER_ROLES.ADMIN_GENERAL) {
+  if (admin.role !== USER_ROLES.ADMIN) {
+    redirect('/admin/login')
+  }
+  return admin
+}
+
+export async function requireAcademicManager(): Promise<AdminUser> {
+  const admin = await requireAnyAdmin()
+  if (!admin.canManageAcademicStructure) {
     redirect('/admin/login')
   }
   return admin
@@ -253,6 +272,9 @@ export interface AdminClientUser {
   yearSlugs: string[]
   canManageAllYears: boolean
   canCreateUsers: boolean
+  canManageAcademicStructure: boolean
+  canManageAnyContribution: boolean
+  canCreateContributions: boolean
 }
 
 export interface AdminClientSession {
@@ -273,6 +295,9 @@ export async function getAdminClientSession(): Promise<AdminClientSession> {
       yearSlugs: admin.yearSlugs,
       canManageAllYears: admin.canManageAllYears,
       canCreateUsers: admin.canCreateUsers,
+      canManageAcademicStructure: admin.canManageAcademicStructure,
+      canManageAnyContribution: admin.canManageAnyContribution,
+      canCreateContributions: admin.canCreateContributions,
     },
   }
 }
@@ -282,6 +307,27 @@ export function adminCanManageYear(admin: AdminUser, yearId: string): boolean {
 }
 
 export const canAdminManageYear = adminCanManageYear
+
+export function adminCanManageAcademicStructure(admin: AdminUser): boolean {
+  return admin.canManageAcademicStructure
+}
+
+export function adminCanManageContribution(
+  admin: AdminUser,
+  ownerUserId: string | null | undefined,
+): boolean {
+  if (admin.canManageAnyContribution) return true
+  return Boolean(ownerUserId && ownerUserId === admin.id)
+}
+
+export function ensureCanManageContribution(
+  admin: AdminUser,
+  ownerUserId: string | null | undefined,
+): void {
+  if (!adminCanManageContribution(admin, ownerUserId)) {
+    redirect('/admin/login')
+  }
+}
 
 export async function requireYearAdminForYearId(yearId: string): Promise<AdminUser> {
   const admin = await requireAnyAdmin()

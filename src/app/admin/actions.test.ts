@@ -15,6 +15,7 @@ const detectarRecursoMock = vi.fn()
 const recordAuditMock = vi.fn()
 const uploadApunteHtmlMock = vi.fn()
 const deleteApunteHtmlMock = vi.fn()
+const awardApunteCreatedMock = vi.fn()
 
 const prismaMock = {
   subject: {
@@ -50,6 +51,7 @@ vi.mock('@/lib/auth', () => ({
   requireYearAdminForSubjectId: requireYearAdminForSubjectIdMock,
   requireYearAdminForSubjectSlug: requireYearAdminForSubjectSlugMock,
   requireYearAdminForYearId: requireYearAdminForYearIdMock,
+  ensureCanManageContribution: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -108,6 +110,12 @@ vi.mock('@/lib/audit', () => ({
   recordAudit: recordAuditMock,
 }))
 
+vi.mock('@/lib/contributions', () => ({
+  awardApunteCreated: awardApunteCreatedMock,
+  awardEventoCreated: vi.fn(),
+  awardQuizBankCreated: vi.fn(),
+}))
+
 vi.mock('@/lib/domain/quiz-bank', () => ({
   parseQuizBank: vi.fn(),
 }))
@@ -160,6 +168,7 @@ beforeEach(() => {
   recordAuditMock.mockResolvedValue(undefined)
   uploadApunteHtmlMock.mockResolvedValue('apuntes/primer-anio/calculo/apunte-1/html-1.html')
   deleteApunteHtmlMock.mockResolvedValue(undefined)
+  awardApunteCreatedMock.mockResolvedValue(undefined)
 })
 
 describe('admin apunte actions', () => {
@@ -182,7 +191,7 @@ describe('admin apunte actions', () => {
       }),
     )
 
-    expect(result).toEqual({ ok: true, message: 'Apunte creado correctamente.' })
+    expect(result).toMatchObject({ ok: true, message: 'Apunte creado correctamente.' })
     expect(revalidateTagRawMock).toHaveBeenCalledWith('latest-apuntes', 'max')
   })
 
@@ -278,7 +287,7 @@ describe('admin apunte actions', () => {
     const { createApunteAction } = await import('./actions')
     const result = await createApunteAction({ ok: false, message: '' }, formData)
 
-    expect(result).toEqual({ ok: true, message: 'Apunte creado correctamente.' })
+    expect(result).toMatchObject({ ok: true, message: 'Apunte creado correctamente.' })
     expect(uploadApunteHtmlMock).toHaveBeenCalledWith({
       yearSlug: 'primer-anio',
       subjectSlug: 'calculo',
@@ -325,7 +334,7 @@ describe('admin apunte actions', () => {
     const { createApunteAction } = await import('./actions')
     const result = await createApunteAction({ ok: false, message: '' }, formData)
 
-    expect(result).toEqual({ ok: true, message: 'Apunte creado correctamente.' })
+    expect(result).toMatchObject({ ok: true, message: 'Apunte creado correctamente.' })
     expect(uploadApunteHtmlMock).toHaveBeenCalledWith(expect.objectContaining({
       yearSlug: 'primer-anio',
       subjectSlug: 'calculo',

@@ -6,7 +6,9 @@ import { updateAdminEmailAction, updateAdminPasswordAction } from './actions'
 export const dynamic = 'force-dynamic'
 
 export function roleLabel(role: string) {
-  return role === 'ADMIN_CAMPUS' ? 'Administrador de campus' : 'Administrador general'
+  if (role === 'ADMIN') return 'Admin'
+  if (role === 'SUPERVISOR') return 'Supervisor'
+  return 'Ayudante'
 }
 
 export function buildAssignedYearsSummary(yearNames: string[], canManageAllYears: boolean) {

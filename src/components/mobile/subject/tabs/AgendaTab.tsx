@@ -15,6 +15,7 @@ interface EventModalSubject {
   nombre: string
   agendaId: string
   commissions: readonly CommissionOption[]
+  categoriasDisponibles?: Array<{ id: string; nombre: string }>
 }
 
 export function AgendaTab({
@@ -37,6 +38,7 @@ export function AgendaTab({
   tiposEvento: readonly TipoEvento[]
   subjects?: readonly EventModalSubject[]
   commissions: readonly CommissionOption[]
+  categoriasDisponibles?: Array<{ id: string; nombre: string }>
 }) {
   return (
     <MobileCalendarLazy

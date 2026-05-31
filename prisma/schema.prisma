@@ -40,8 +40,9 @@ model AcademicYear {
 }
 
 enum UserRole {
-  ADMIN_GENERAL
-  ADMIN_CAMPUS
+  ADMIN
+  SUPERVISOR
+  AYUDANTE
 }
 
 enum UserStatus {
@@ -56,12 +57,20 @@ model UserAccount {
   role            UserRole
   status          UserStatus           @default(ACTIVE)
   yearPermissions UserYearPermission[]
+  nombreUsuario   String
+  puntaje         Int                  @default(0)
+  eventosCreados  Int                  @default(0)
+  apuntesCreados  Int                  @default(0)
+  bancosPreguntasCreados Int           @default(0)
   auditLogs       AuditLog[]
+  eventos         Evento[]             @relation("EventoCreatedBy")
+  apuntes         Apunte[]             @relation("ApunteCreatedBy")
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
 
   @@index([role])
   @@index([status])
+  @@index([puntaje])
 }
 
 model UserYearPermission {
@@ -147,10 +156,14 @@ model Evento {
   /// Hora opcional en formato "HH:mm" (24h). null = evento sin hora definida.
   hora            String?
   createdAt       DateTime   @default(now())
+  createdBy       UserAccount? @relation("EventoCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdByUserId String?
+  apuntes         ApunteEvento[]
   updatedAt       DateTime   @updatedAt
 
   @@index([agendaId])
   @@index([tipoEventoId])
+  @@index([createdByUserId])
 }
 
 // ---------------------------------------------------------------------------
@@ -180,12 +193,16 @@ model Apunte {
   descripcionHtml String          @default("")
   recursos        ApunteRecurso[]
   categorias      ApunteCategoria[]
+  eventos         ApunteEvento[]
+  createdBy       UserAccount?    @relation("ApunteCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdByUserId String?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
   @@unique([subjectId, slug])
   @@index([subjectId, createdAt, id])
   @@index([subjectId])
+  @@index([createdByUserId])
 }
 
 model Categoria {
@@ -207,6 +224,19 @@ model ApunteCategoria {
   @@index([categoriaId, apunteId])
 }
 
+
+model ApunteEvento {
+  apunte   Apunte   @relation(fields: [apunteId], references: [id], onDelete: Cascade)
+  apunteId String
+  evento   Evento   @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  eventoId String
+  createdAt DateTime @default(now())
+
+  @@id([apunteId, eventoId])
+  @@index([eventoId])
+  @@index([apunteId])
+}
+
 model ApunteRecurso {
   id        String      @id @default(cuid())
   apunte    Apunte      @relation(fields: [apunteId], references: [id], onDelete: Cascade)
@@ -224,8 +254,8 @@ model ApunteRecurso {
   @@index([apunteId])
 }
 
-// Admins: ADMIN_EMAILS sigue siendo el bootstrap de AdminGeneral.
-// AdminCampus vive en UserAccount con permisos explícitos por año.
+// Admins: ADMIN_EMAILS sigue siendo el bootstrap de Admin.
+// Supervisor/Ayudante viven en UserAccount con permisos explícitos por año.
 // Sin signup público.
 
 // ---------------------------------------------------------------------------

@@ -191,7 +191,7 @@ export function SubjectRoutePage({
                     </a>
                   )}
 
-                  <AdminControls yearId={subject.year.id}>
+                  <AdminControls yearId={subject.year.id} requireAcademicStructure>
                     <AdminTriggerButton
                       action="edit-subject"
                       className="group relative inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded border border-white/10 bg-surface-1 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
@@ -229,6 +229,7 @@ export function SubjectRoutePage({
             }}
             agendaId={agendaId}
             tiposEvento={tiposEvento}
+            categoriasDisponibles={subject.categoriasDisponibles}
             commissions={subject.commissions}
             activeCommission={activeCommission}
             events={visibleEvents.map((evento) => ({
@@ -242,6 +243,7 @@ export function SubjectRoutePage({
               commissionId: evento.commissionId,
               commissionSlug: evento.commission?.slug ?? null,
               commissionNombre: evento.commission?.nombre ?? null,
+              apuntes: evento.apuntes,
             }))}
             chipClassName={colors.chipClassName}
           />

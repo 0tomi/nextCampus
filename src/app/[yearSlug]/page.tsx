@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowRight } from 'lucide-react'
-import { getYearBySlug, getTiposEvento, getCareer } from '@/lib/queries'
+import { getYearBySlug, getTiposEvento, getCareer, getCategoriasApunte } from '@/lib/queries'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
@@ -20,10 +20,11 @@ export default async function YearPage({
   params: Promise<{ yearSlug: string }>
 }) {
   const { yearSlug } = await params
-  const [year, tiposEvento, career] = await Promise.all([
+  const [year, tiposEvento, career, categoriasDisponibles] = await Promise.all([
     getYearBySlug(yearSlug),
     getTiposEvento(),
     getCareer(),
+    getCategoriasApunte(),
   ])
   if (!year) notFound()
 
@@ -62,6 +63,7 @@ export default async function YearPage({
       commissionId: e.commissionId,
       commissionSlug: e.commission?.slug ?? null,
       commissionNombre: e.commission?.nombre ?? null,
+      apuntes: e.apuntes,
     })))
     .filter(e => e.fecha >= todayKey)
     .sort((a, b) => a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? ''))
@@ -94,6 +96,7 @@ export default async function YearPage({
         commissionId: evento.commissionId,
         commissionSlug: evento.commission?.slug ?? null,
         commissionNombre: evento.commission?.nombre ?? null,
+        apuntes: evento.apuntes,
       }))
     })
     .sort((a, b) => a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? ''))
@@ -129,6 +132,7 @@ export default async function YearPage({
       nombre: s.nombre,
       agendaId: s.agenda!.id,
       commissions: s.commissions,
+      categoriasDisponibles,
     }))
 
   return (

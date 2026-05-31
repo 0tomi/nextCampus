@@ -10,6 +10,9 @@ export interface AdminSessionUser {
   yearSlugs: string[]
   canManageAllYears: boolean
   canCreateUsers: boolean
+  canManageAcademicStructure: boolean
+  canManageAnyContribution: boolean
+  canCreateContributions: boolean
 }
 
 export interface AdminSessionState {
@@ -22,6 +25,7 @@ export interface AdminAccessRequirements {
   yearSlug?: string
   requireGlobal?: boolean
   requireUserManagement?: boolean
+  requireAcademicStructure?: boolean
 }
 
 export function hasAdminAccess(
@@ -35,10 +39,12 @@ export function hasAdminAccess(
     yearSlug,
     requireGlobal = false,
     requireUserManagement = false,
+    requireAcademicStructure = false,
   } = requirements
 
   if (requireUserManagement) return session.admin.canCreateUsers
   if (requireGlobal) return session.admin.canManageAllYears
+  if (requireAcademicStructure) return session.admin.canManageAcademicStructure
 
   if (yearId) {
     return (

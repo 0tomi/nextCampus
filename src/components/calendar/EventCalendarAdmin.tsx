@@ -11,6 +11,7 @@ import { Sheet } from '@/components/ui/Sheet'
 import { updateEventoFechaAction, deleteEvento } from '@/app/admin/actions'
 import { cn, formatEventDateTime } from '@/lib/utils'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
+import { RelatedApunteLinks } from '@/components/events/RelatedApunteLinks'
 import type { CommissionOption } from '@/lib/commission-preferences'
 
 // "Fecha · hora" del evento seleccionado. La fecha llega como "YYYY-MM-DD"; si
@@ -34,17 +35,20 @@ interface EventCalendarAdminProps {
   className?: string
   dayMaxEvents?: number
   agendaId?: string
+  subjectId?: string
   subjectSlug?: string
   yearId?: string
   yearSlug?: string
   commissionSlug?: string
   tiposEvento: TipoEvento[]
+  categoriasDisponibles?: Array<{ id: string; nombre: string }>
   subjects?: readonly {
     id: string
     slug: string
     nombre: string
     agendaId: string
     commissions: readonly CommissionOption[]
+    categoriasDisponibles?: Array<{ id: string; nombre: string }>
   }[]
   commissions?: readonly CommissionOption[]
 }
@@ -61,11 +65,13 @@ export function EventCalendarAdmin({
   className,
   dayMaxEvents,
   agendaId = '',
+  subjectId = '',
   subjectSlug = '',
   yearId,
   yearSlug,
   commissionSlug,
   tiposEvento,
+  categoriasDisponibles,
   subjects,
   commissions,
 }: EventCalendarAdminProps) {
@@ -226,6 +232,15 @@ export function EventCalendarAdmin({
                   </span>
                 </div>
               ) : null}
+
+              {selectedEvent.apuntes && selectedEvent.apuntes.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-white/30">
+                    Apuntes relacionados
+                  </span>
+                  <RelatedApunteLinks apuntes={selectedEvent.apuntes} limit={selectedEvent.apuntes.length} />
+                </div>
+              ) : null}
             </div>
 
             {/* Descripcion */}
@@ -284,11 +299,13 @@ export function EventCalendarAdmin({
             setInitialDate(undefined)
           }}
           agendaId={agendaId}
+          subjectId={subjectId}
           subjectSlug={subjectSlug}
           tiposEvento={tiposEvento}
           initialDate={initialDate}
           subjects={subjects}
           commissions={commissions}
+          categoriasDisponibles={categoriasDisponibles}
         />
       )}
 
@@ -302,11 +319,13 @@ export function EventCalendarAdmin({
             setSelectedEvent(null)
           }}
           agendaId={agendaId}
+          subjectId={selectedEvent.subjectId ?? subjectId}
           subjectSlug={subjectSlug}
           tiposEvento={tiposEvento}
           subjects={subjects}
           commissions={commissions}
           eventToEdit={selectedEvent}
+          categoriasDisponibles={categoriasDisponibles}
         />
       )}
     </>

@@ -10,6 +10,7 @@ import { usePreferences } from '@/hooks/usePreferences'
 import { cn, formatEventDateTime, todayKeyAR } from '@/lib/utils'
 import { sanitizeRichHtml } from '@/lib/sanitize'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
+import { RelatedApunteLinks, type RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import {
   isCommissionVisible,
   isSubjectVisible,
@@ -31,6 +32,7 @@ export interface HomeGlobalCalendarEvent {
   descripcionHtml: string | null
   commissionSlug: string | null
   commissionNombre: string | null
+  apuntes?: RelatedApunteLink[]
 }
 
 export function buildHomeCalendarEventHref(
@@ -115,6 +117,7 @@ export function HomeGlobalCalendar({
     descripcionHtml: event.descripcionHtml,
     commissionSlug: event.commissionSlug,
     commissionNombre: event.commissionNombre,
+    apuntes: event.apuntes,
   }))
 
   return (
@@ -205,6 +208,7 @@ export function HomeGlobalCalendar({
                       }}
                     />
                   ) : null}
+                  <RelatedApunteLinks apuntes={evento.apuntes} />
                 </div>
 
                 <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-2.5">

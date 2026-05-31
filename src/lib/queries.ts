@@ -34,8 +34,27 @@ const eventoSelect = {
   descripcionHtml: true,
   fecha: true,
   hora: true,
+  createdByUserId: true,
   tipoEventoId: true,
   tipoEvento: { select: { nombre: true } },
+  apuntes: {
+    orderBy: { createdAt: 'asc' },
+    select: {
+      apunte: {
+        select: {
+          id: true,
+          titulo: true,
+          slug: true,
+          subject: {
+            select: {
+              slug: true,
+              year: { select: { slug: true } },
+            },
+          },
+        },
+      },
+    },
+  },
 } as const
 
 const agendaWithEventosSelect = {
@@ -67,14 +86,32 @@ type QueryEvent = {
   descripcionHtml: string
   fecha: string
   hora: string | null
+  createdByUserId: string | null
   tipoEventoId: string
   tipoEvento: {
     nombre: string
   }
+  apuntes: RelatedApunte[]
 }
 
-// Shape cruda (lo que devuelve Prisma): fecha como Date a medianoche UTC.
-type RawQueryEvent = Omit<QueryEvent, 'fecha'> & { fecha: Date }
+type RelatedApunte = {
+  id: string
+  titulo: string
+  slug: string
+  subject: {
+    slug: string
+    year: {
+      slug: string
+    }
+  }
+}
+
+// Shape cruda (lo que devuelve Prisma): fecha como Date a medianoche UTC y pivot
+// ApunteEvento envolviendo el apunte.
+type RawQueryEvent = Omit<QueryEvent, 'fecha' | 'apuntes'> & {
+  fecha: Date
+  apuntes: Array<{ apunte: RelatedApunte }>
+}
 
 type QueryEventWithCommissionMetadata = QueryEvent & {
   commissionId: string | null
@@ -121,6 +158,7 @@ function attachCommissionMetadataToAgenda(
     eventos: agenda.eventos.map((evento) => ({
       ...evento,
       fecha: toDateKey(evento.fecha),
+      apuntes: evento.apuntes.map(({ apunte }) => apunte),
       commissionId: agenda.commissionId,
       commission,
     })),
@@ -184,6 +222,7 @@ const apunteCardSelect = {
   slug: true,
   descripcionHtml: true,
   createdAt: true,
+  createdByUserId: true,
   recursos: {
     orderBy: { orden: 'asc' },
     select: {
@@ -500,7 +539,24 @@ export function getAdminSubjectBySlug(slug: string) {
           commission: true,
           eventos: {
             orderBy: eventoOrderBy,
-            include: { tipoEvento: true },
+            include: {
+              tipoEvento: true,
+              apuntes: {
+                orderBy: { createdAt: 'asc' },
+                select: {
+                  apunte: {
+                    select: {
+                      id: true,
+                      titulo: true,
+                      slug: true,
+                      subject: {
+                        select: { slug: true, year: { select: { slug: true } } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -512,7 +568,24 @@ export function getAdminSubjectBySlug(slug: string) {
               commission: true,
               eventos: {
                 orderBy: eventoOrderBy,
-                include: { tipoEvento: true },
+                include: {
+                  tipoEvento: true,
+                  apuntes: {
+                    orderBy: { createdAt: 'asc' },
+                    select: {
+                      apunte: {
+                        select: {
+                          id: true,
+                          titulo: true,
+                          slug: true,
+                          subject: {
+                            select: { slug: true, year: { select: { slug: true } } },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
               },
             },
           },
@@ -578,6 +651,21 @@ export function getUpcomingEventsCrossYear(limit = 6) {
           fecha: true,
           hora: true,
           tipoEvento: { select: { nombre: true } },
+          apuntes: {
+            orderBy: { createdAt: 'asc' },
+            select: {
+              apunte: {
+                select: {
+                  id: true,
+                  titulo: true,
+                  slug: true,
+                  subject: {
+                    select: { slug: true, year: { select: { slug: true } } },
+                  },
+                },
+              },
+            },
+          },
           agenda: {
             select: {
               commissionId: true,
@@ -595,7 +683,11 @@ export function getUpcomingEventsCrossYear(limit = 6) {
           },
         },
       })
-      return rows.map((row) => ({ ...row, fecha: toDateKey(row.fecha) }))
+      return rows.map((row) => ({
+        ...row,
+        fecha: toDateKey(row.fecha),
+        apuntes: row.apuntes.map(({ apunte }) => apunte),
+      }))
     },
     ['upcoming-events', String(limit)],
     { tags: [TAGS.upcomingEvents], revalidate: 60 },
@@ -615,6 +707,22 @@ export function getHomeCalendarEvents() {
           hora: true,
           tipoEventoId: true,
           tipoEvento: { select: { nombre: true } },
+          createdByUserId: true,
+          apuntes: {
+            orderBy: { createdAt: 'asc' },
+            select: {
+              apunte: {
+                select: {
+                  id: true,
+                  titulo: true,
+                  slug: true,
+                  subject: {
+                    select: { slug: true, year: { select: { slug: true } } },
+                  },
+                },
+              },
+            },
+          },
           agenda: {
             select: {
               id: true,
@@ -649,7 +757,11 @@ export function getHomeCalendarEvents() {
           },
         },
       })
-      return rows.map((row) => ({ ...row, fecha: toDateKey(row.fecha) }))
+      return rows.map((row) => ({
+        ...row,
+        fecha: toDateKey(row.fecha),
+        apuntes: row.apuntes.map(({ apunte }) => apunte),
+      }))
     },
     ['home-calendar-events'],
     { tags: [TAGS.upcomingEvents, TAGS.career], revalidate: 300 },

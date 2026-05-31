@@ -19,6 +19,7 @@ interface Subject {
   nombre: string
   agendaId: string
   commissions: readonly CommissionOption[]
+  categoriasDisponibles?: Array<{ id: string; nombre: string }>
 }
 
 interface YearData {

@@ -13,6 +13,7 @@ import {
   type CommissionOption,
 } from '@/lib/commission-preferences'
 import { usePreferredCommissionMap } from '@/components/commissions/usePreferredCommission'
+import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 
 interface TipoEvento {
   id: string
@@ -25,6 +26,7 @@ interface YearSubjectOption {
   nombre: string
   agendaId: string
   commissions: CommissionOption[]
+  categoriasDisponibles?: Array<{ id: string; nombre: string }>
 }
 
 interface YearCalendarEvent {
@@ -42,6 +44,7 @@ interface YearCalendarEvent {
   commissionId?: string | null
   commissionSlug?: string | null
   commissionNombre?: string | null
+  apuntes?: RelatedApunteLink[]
 }
 
 interface YearCalendarViewProps {
@@ -178,6 +181,7 @@ export function YearCalendarView({
                 commissionId: event.commissionId ?? null,
                 commissionSlug: event.commissionSlug ?? null,
                 commissionNombre: event.commissionNombre ?? null,
+                apuntes: event.apuntes,
               }))}
               accent={tone}
               initialDate={filteredEvents[0]?.fecha}

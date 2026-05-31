@@ -10,6 +10,7 @@ import { Sheet } from '@/components/ui/Sheet'
 import { deleteEvento } from '@/app/admin/actions'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { getEventTone } from '@/components/mobile/shared/tokens'
+import { RelatedApunteLinks } from '@/components/events/RelatedApunteLinks'
 import { cn, formatEventDate } from '@/lib/utils'
 import type { CommissionOption } from '@/lib/commission-preferences'
 import type { MobileCalendarEvent } from './MobileCalendar'
@@ -25,6 +26,7 @@ interface EventModalSubject {
   nombre: string
   agendaId: string
   commissions: readonly CommissionOption[]
+  categoriasDisponibles?: Array<{ id: string; nombre: string }>
 }
 
 interface MobileEventDetailSheetProps {
@@ -133,6 +135,15 @@ export function MobileEventDetailSheet({
               ) : null}
             </div>
 
+            {event.apuntes && event.apuntes.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/36">
+                  Apuntes relacionados
+                </p>
+                <RelatedApunteLinks apuntes={event.apuntes} limit={event.apuntes.length} />
+              </div>
+            ) : null}
+
             {event.descripcionHtml ? (
               <div className="space-y-2">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/36">
@@ -205,6 +216,7 @@ export function MobileEventDetailSheet({
             commissionId: event.commissionId,
             commissionSlug: event.commissionSlug,
             commissionNombre: event.commissionNombre,
+            apuntes: event.apuntes,
           }}
         />
       ) : null}

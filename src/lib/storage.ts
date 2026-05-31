@@ -169,6 +169,24 @@ export function listQuizBanks(
   )()
 }
 
+export async function getQuizBankMeta(
+  yearSlug: string,
+  subjectSlug: string,
+  bankId: string,
+): Promise<QuizBankMeta | null> {
+  const supabase = createSupabaseAdminClient()
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .download(metaKey(yearSlug, subjectSlug, bankId))
+  if (error || !data) return null
+  try {
+    const parsed = quizBankMetaSchema.safeParse(JSON.parse(await data.text()))
+    return parsed.success ? parsed.data : null
+  } catch {
+    return null
+  }
+}
+
 // Sube un banco ya validado. Escribe el banco primero y el .meta.json al
 // final (el meta = commit). Si el meta falla, se borra el banco recién subido
 // (Storage no participa en transacciones SQL). No toca ningún recurso

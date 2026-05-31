@@ -6,6 +6,7 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin, { type DateClickArg } from '@fullcalendar/interaction'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { cn, slugify } from '@/lib/utils'
+import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 
 type EventCalendarDateInput = string | Date
 
@@ -33,6 +34,7 @@ export interface EventCalendarEvent {
   commissionId?: string | null
   commissionSlug?: string | null
   commissionNombre?: string | null
+  apuntes?: RelatedApunteLink[]
 }
 
 interface EventCalendarProps {

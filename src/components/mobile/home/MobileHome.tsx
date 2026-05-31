@@ -11,6 +11,7 @@ import { AdminControls } from '@/components/admin/AdminControls'
 import { AddYearButton } from '@/components/admin/HomeAdminOverlay'
 import { MobileEventDetailSheet } from '@/components/mobile/calendar/MobileEventDetailSheet'
 import type { MobileCalendarEvent } from '@/components/mobile/calendar/MobileCalendar'
+import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import { Mascot } from '@/components/ui/Mascot'
 import { usePreferences } from '@/hooks/usePreferences'
 import { NosotrosModal } from '@/components/ui/NosotrosModal'
@@ -62,6 +63,7 @@ interface UpcomingEvent {
   commissionId: string | null
   commissionSlug: string | null
   commissionNombre: string | null
+  apuntes?: RelatedApunteLink[]
 }
 
 interface HomeCalendarEventForMobile {
@@ -72,6 +74,7 @@ interface HomeCalendarEventForMobile {
   materiaNombre: string
   yearId: string
   yearSlug: string
+  apuntes?: RelatedApunteLink[]
 }
 
 export function MobileHome({
@@ -183,6 +186,7 @@ export function MobileHome({
       commissionId: event.commissionId,
       commissionSlug: event.commissionSlug,
       commissionNombre: event.commissionNombre,
+      apuntes: event.apuntes,
     })
   }
 
@@ -252,6 +256,7 @@ export function MobileHome({
                       tipo={e.tipo}
                       titulo={e.titulo}
                       materia={e.subjectNombre}
+                      apuntes={e.apuntes}
                       onClick={() => openEventDetail(e)}
                     />
                   ))

@@ -4,6 +4,14 @@ import { useEffect, useState, useRef } from 'react'
 import { X, GraduationCap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+interface RankingItem {
+  position: number
+  nombreUsuario: string
+  eventosCreados: number
+  apuntesCreados: number
+  bancosPreguntasCreados: number
+}
+
 function GithubIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -38,6 +46,8 @@ interface NosotrosModalProps {
 export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
   const [mounted, setMounted] = useState(false)
   const [visible, setVisible] = useState(false)
+  const [ranking, setRanking] = useState<RankingItem[]>([])
+  const [rankingLoading, setRankingLoading] = useState(false)
   const dialogRef = useRef<HTMLDivElement>(null)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -64,6 +74,26 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
         setMounted(false)
       }, 300) // Match transition duration (300ms)
       return () => clearTimeout(hideTimer)
+    }
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const controller = new AbortController()
+    const handle = window.setTimeout(() => {
+      setRankingLoading(true)
+      fetch('/api/ranking', { signal: controller.signal })
+        .then((response) => (response.ok ? response.json() : { items: [] }))
+        .then((data: { items?: RankingItem[] }) => setRanking(data.items ?? []))
+        .catch((error) => {
+          if ((error as Error).name !== 'AbortError') setRanking([])
+        })
+        .finally(() => setRankingLoading(false))
+    }, 0)
+
+    return () => {
+      window.clearTimeout(handle)
+      controller.abort()
     }
   }, [open])
 
@@ -146,7 +176,7 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
         aria-modal="true"
         aria-labelledby="about-modal-title"
         className={cn(
-          'relative w-full max-w-md overflow-hidden border border-white/8 bg-surface-1 shadow-[0_24px_64px_rgba(0,0,0,0.85)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] rounded-2xl',
+          'relative w-full max-w-4xl overflow-hidden border border-white/8 bg-surface-1 shadow-[0_24px_64px_rgba(0,0,0,0.85)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] rounded-2xl',
           visible ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-4 opacity-0'
         )}
         onClick={(e) => e.stopPropagation()}
@@ -176,58 +206,93 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
         </div>
 
         {/* Content */}
-        <div className="px-6 py-6 space-y-5 relative z-10">
-          <p className="text-sm leading-relaxed text-white/70">
-            Somos estudiantes de la carrera de Licenciatura en Sistemas. Vimos que el campus no suple algunas
-            necesidades que tenemos, por lo que decidimos actuar implementando nuestra propia visión de un campus
-            universitario inteligente. En este campus podés encontrar diversas herramientas como un{' '}
-            <strong className="font-bold text-white">Calendario</strong> con eventos por materia,{' '}
-            <strong className="font-bold text-white">Quiz</strong> para autoevaluarse, y{' '}
-            <strong className="font-bold text-white">Apuntes interactivos</strong>.
-          </p>
-
-          <p className="text-sm leading-relaxed text-white/70">
-            Todo el código es libre y abierto. Podés encontrarlo y aportar en nuestro repositorio de GitHub.
-          </p>
-
-          <div className="pt-2">
-            <a
-              href="https://github.com/0tomi/nextCampus"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-black transition-all hover:bg-white/90 active:scale-[0.98] cursor-pointer"
-            >
-              <GithubIcon className="h-4 w-4" />
-              Ver repositorio en GitHub
-            </a>
-          </div>
-
-          {/* Developer contacts */}
-          <div className="space-y-2.5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/30">
-              Redes de los desarrolladores
+        <div className="grid gap-6 px-6 py-6 relative z-10 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.82fr)]">
+          <div className="space-y-5">
+            <p className="text-sm leading-relaxed text-white/70">
+              Somos estudiantes de la carrera de Licenciatura en Sistemas. Vimos que el campus no suple algunas
+              necesidades que tenemos, por lo que decidimos actuar implementando nuestra propia visión de un campus
+              universitario inteligente. En este campus podés encontrar diversas herramientas como un{' '}
+              <strong className="font-bold text-white">Calendario</strong> con eventos por materia,{' '}
+              <strong className="font-bold text-white">Quiz</strong> para autoevaluarse, y{' '}
+              <strong className="font-bold text-white">Apuntes interactivos</strong>.
             </p>
-            <div className="flex flex-wrap gap-2">
+
+            <p className="text-sm leading-relaxed text-white/70">
+              Todo el código es libre y abierto. Podés encontrarlo y aportar en nuestro repositorio de GitHub.
+            </p>
+
+            <div className="pt-2">
               <a
-                href="https://instagram.com/tomischl"
+                href="https://github.com/0tomi/nextCampus"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-black transition-all hover:bg-white/90 active:scale-[0.98] cursor-pointer"
               >
-                <InstagramIcon className="h-3.5 w-3.5" />
-                @tomischl
-              </a>
-              <a
-                href="https://instagram.com/tomygiorgi"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-              >
-                <InstagramIcon className="h-3.5 w-3.5" />
-                @tomygiorgi
+                <GithubIcon className="h-4 w-4" />
+                Ver repositorio en GitHub
               </a>
             </div>
+
+            {/* Developer contacts */}
+            <div className="space-y-2.5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/30">
+                Redes de los desarrolladores
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href="https://instagram.com/tomischl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  <InstagramIcon className="h-3.5 w-3.5" />
+                  @tomischl
+                </a>
+                <a
+                  href="https://instagram.com/tomygiorgi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  <InstagramIcon className="h-3.5 w-3.5" />
+                  @tomygiorgi
+                </a>
+              </div>
+            </div>
           </div>
+
+          <aside className="rounded-xl border border-white/8 bg-white/[0.025] p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/30">
+              Comunidad
+            </p>
+            <h3 className="mt-2 font-display text-xl font-black tracking-tight text-white">
+              Ranking de aportes
+            </h3>
+            <div className="mt-4 space-y-2">
+              {rankingLoading ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                  <div key={index} className="h-14 animate-pulse rounded-lg bg-white/[0.05]" />
+                ))
+              ) : ranking.length > 0 ? (
+                ranking.map((item) => (
+                  <div key={item.position} className="rounded-lg border border-white/6 bg-surface-0/70 px-3 py-2.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="min-w-0 truncate text-sm font-black text-white">
+                        {item.position}. {item.nombreUsuario}
+                      </p>
+                    </div>
+                    <p className="mt-1 text-[11px] font-semibold text-white/45">
+                      {item.eventosCreados} eventos · {item.apuntesCreados} apuntes · {item.bancosPreguntasCreados} quiz
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="rounded-lg border border-dashed border-white/10 bg-white/[0.02] px-3 py-5 text-center text-sm leading-6 text-white/45">
+                  Todavía no hay aportes suficientes para armar el ranking.
+                </p>
+              )}
+            </div>
+          </aside>
         </div>
       </div>
     </div>

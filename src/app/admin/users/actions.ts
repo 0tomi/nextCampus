@@ -27,6 +27,7 @@ const editAdminCampusSchema = z.object({
   email: z.email('Ingresá un email válido.').transform((value) => value.trim().toLowerCase()),
   password: z.string().trim().optional(),
   status: z.enum([UserStatus.ACTIVE, UserStatus.DISABLED], 'Elegí un estado válido.'),
+  role: z.enum([UserRole.AYUDANTE, UserRole.SUPERVISOR], 'Elegí un rol válido.'),
   yearIds: selectedYearsSchema,
 }).superRefine((data, ctx) => {
   if (data.password && data.password.length < 8) {
@@ -107,7 +108,8 @@ export async function createAdminCampusAction(
           data: {
             authUserId: created.user.id,
             email: data.email,
-            role: UserRole.ADMIN_CAMPUS,
+            nombreUsuario: data.email,
+            role: UserRole.AYUDANTE,
             status: UserStatus.ACTIVE,
           },
           select: { id: true },
@@ -136,11 +138,11 @@ export async function createAdminCampusAction(
       entityId: createdUserId,
       detail: {
         email: data.email,
-        role: UserRole.ADMIN_CAMPUS,
+        role: UserRole.AYUDANTE,
         yearsCount: yearIds.length,
       },
     })
-    return { ok: true, message: 'Administrador creado correctamente.' }
+    return { ok: true, message: 'Ayudante creado correctamente.' }
   } catch (error) {
     return friendlyError(error)
   }
@@ -157,6 +159,7 @@ export async function updateAdminCampusAction(
       email: formData.get('email'),
       password: String(formData.get('password') ?? '').trim() || undefined,
       status: formData.get('status'),
+      role: formData.get('role'),
       yearIds: formYearIds(formData),
     })
     const yearIds = await validateYearIds(data.yearIds)
@@ -167,7 +170,7 @@ export async function updateAdminCampusAction(
     })
 
     if (!current) throw new Error('No encontramos esa cuenta.')
-    if (current.role !== UserRole.ADMIN_CAMPUS) {
+    if (current.role === UserRole.ADMIN) {
       throw new Error('Esta cuenta no se puede editar desde esta pantalla.')
     }
 
@@ -197,6 +200,7 @@ export async function updateAdminCampusAction(
           data: {
             email: data.email,
             status: data.status,
+            role: data.role,
           },
         })
         await tx.userYearPermission.deleteMany({ where: { userId: current.id } })
@@ -230,6 +234,7 @@ export async function updateAdminCampusAction(
         email: data.email,
         emailChanged,
         status: data.status,
+        role: data.role,
         passwordChanged: Boolean(data.password),
         yearsCount: yearIds.length,
       },

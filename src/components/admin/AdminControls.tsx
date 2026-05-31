@@ -10,6 +10,7 @@ interface AdminControlsProps {
   yearSlug?: string
   requireGlobal?: boolean
   requireUserManagement?: boolean
+  requireAcademicStructure?: boolean
   noWrapper?: boolean
 }
 
@@ -27,6 +28,7 @@ export function AdminControls({
   yearSlug,
   requireGlobal = false,
   requireUserManagement = false,
+  requireAcademicStructure = false,
   noWrapper = false,
 }: AdminControlsProps) {
   const hasAccess = useAdminAccess({
@@ -34,6 +36,7 @@ export function AdminControls({
     yearSlug,
     requireGlobal,
     requireUserManagement,
+    requireAcademicStructure,
   })
 
   if (!hasAccess) return null

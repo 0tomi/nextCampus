@@ -155,6 +155,7 @@ export default async function HomePage() {
         commissionId: event.agenda?.commissionId ?? null,
         commissionSlug: event.agenda?.commission?.slug ?? null,
         commissionNombre: event.agenda?.commission?.nombre ?? null,
+        apuntes: event.apuntes,
       }
     })
     .filter((event) => event.subjectSlug && event.yearSlug)
@@ -181,6 +182,12 @@ export default async function HomePage() {
       commissionNombre: string | null
       agendaId: string
       yearId: string
+      apuntes: Array<{
+        id: string
+        titulo: string
+        slug: string
+        subject: { slug: string; year: { slug: string } }
+      }>
     }>
   >((acc, event) => {
     const subject = event.agenda?.subject
@@ -207,6 +214,7 @@ export default async function HomePage() {
       commissionNombre: event.agenda?.commission?.nombre ?? null,
       agendaId: event.agenda.id,
       yearId: year.id,
+      apuntes: event.apuntes,
     })
 
     return acc

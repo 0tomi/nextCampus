@@ -8,6 +8,7 @@ import { AdminControls } from '@/components/admin/AdminControls'
 import { MobileEventDetailSheet } from './MobileEventDetailSheet'
 import { eventDateToLocal } from '@/lib/utils'
 import type { CommissionOption } from '@/lib/commission-preferences'
+import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 
 /** "YYYY-MM-DD" (o ISO) → Date local. Evita el off-by-one de `new Date(string)`. */
 function toLocalDate(value: Date | string): Date {
@@ -45,6 +46,7 @@ export interface MobileCalendarEvent {
   commissionId?: string | null
   commissionSlug?: string | null
   commissionNombre?: string | null
+  apuntes?: RelatedApunteLink[]
 }
 
 interface TipoEvento {
@@ -58,6 +60,7 @@ interface EventModalSubject {
   nombre: string
   agendaId: string
   commissions: readonly CommissionOption[]
+  categoriasDisponibles?: Array<{ id: string; nombre: string }>
 }
 
 export interface MobileCalendarProps {
@@ -359,6 +362,7 @@ export function MobileCalendar({
                   tipo={e.tipo}
                   titulo={e.titulo}
                   materia={e.materiaNombre}
+                  apuntes={e.apuntes}
                   onClick={() => setDetailEvent(e)}
                 />
               ))
@@ -379,6 +383,7 @@ export function MobileCalendar({
                 tipo={e.tipo}
                 titulo={e.titulo}
                 materia={e.materiaNombre}
+                apuntes={e.apuntes}
                 onClick={() => setDetailEvent(e)}
               />
             ))

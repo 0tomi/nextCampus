@@ -23,21 +23,21 @@ beforeEach(() => {
 })
 
 describe('auth helpers puros', () => {
-  it('marca AdminGeneral con capacidades globales', async () => {
+  it('marca Admin con capacidades globales', async () => {
     const { buildAdminUser, USER_ROLES, USER_STATUSES } = await import('./auth')
 
     const admin = buildAdminUser({
       id: 'account-general',
       authUserId: 'auth-general',
       email: 'GENERAL@CAMPUS.TEST',
-      role: USER_ROLES.ADMIN_GENERAL,
+      role: USER_ROLES.ADMIN,
       status: USER_STATUSES.ACTIVE,
       yearPermissions: [],
     })
 
     expect(admin).toMatchObject({
       email: 'general@campus.test',
-      role: USER_ROLES.ADMIN_GENERAL,
+      role: USER_ROLES.ADMIN,
       canManageAllYears: true,
       canCreateUsers: true,
       yearIds: [],
@@ -45,14 +45,14 @@ describe('auth helpers puros', () => {
     })
   })
 
-  it('carga años para AdminCampus activo', async () => {
+  it('carga años para Ayudante activo', async () => {
     const { buildAdminUser, USER_ROLES, USER_STATUSES } = await import('./auth')
 
     const admin = buildAdminUser({
       id: 'account-campus',
       authUserId: 'auth-campus',
       email: 'campus@campus.test',
-      role: USER_ROLES.ADMIN_CAMPUS,
+      role: USER_ROLES.AYUDANTE,
       status: USER_STATUSES.ACTIVE,
       yearPermissions: [
         { year: { id: 'year-1', slug: 'primer-anio' } },
@@ -61,7 +61,7 @@ describe('auth helpers puros', () => {
     })
 
     expect(admin).toMatchObject({
-      role: USER_ROLES.ADMIN_CAMPUS,
+      role: USER_ROLES.AYUDANTE,
       canManageAllYears: false,
       canCreateUsers: false,
       yearIds: ['year-1', 'year-2'],
@@ -76,7 +76,7 @@ describe('auth helpers puros', () => {
       id: 'account-disabled',
       authUserId: 'auth-disabled',
       email: 'campus@campus.test',
-      role: USER_ROLES.ADMIN_CAMPUS,
+      role: USER_ROLES.AYUDANTE,
       status: USER_STATUSES.DISABLED,
       yearPermissions: [{ year: { id: 'year-1', slug: 'primer-anio' } }],
     })
@@ -84,14 +84,14 @@ describe('auth helpers puros', () => {
     expect(admin).toBeNull()
   })
 
-  it('mantiene activo a un AdminCampus sin años asignados, pero sin alcance', async () => {
+  it('mantiene activo a un Ayudante sin años asignados, pero sin alcance', async () => {
     const { adminCanManageYear, buildAdminUser, USER_ROLES, USER_STATUSES } = await import('./auth')
 
     const admin = buildAdminUser({
       id: 'account-campus-empty',
       authUserId: 'auth-campus-empty',
       email: 'campus-empty@campus.test',
-      role: USER_ROLES.ADMIN_CAMPUS,
+      role: USER_ROLES.AYUDANTE,
       status: USER_STATUSES.ACTIVE,
       yearPermissions: [],
     })
@@ -112,7 +112,7 @@ describe('auth helpers puros', () => {
       id: 'account-campus',
       authUserId: 'auth-campus',
       email: 'campus@campus.test',
-      role: USER_ROLES.ADMIN_CAMPUS,
+      role: USER_ROLES.AYUDANTE,
       status: USER_STATUSES.ACTIVE,
       yearPermissions: [{ year: { id: 'year-1', slug: 'primer-anio' } }],
     })
@@ -121,7 +121,7 @@ describe('auth helpers puros', () => {
       id: 'account-general',
       authUserId: 'auth-general',
       email: 'general@campus.test',
-      role: USER_ROLES.ADMIN_GENERAL,
+      role: USER_ROLES.ADMIN,
       status: USER_STATUSES.ACTIVE,
       yearPermissions: [],
     })
@@ -146,7 +146,7 @@ describe('auth helpers puros', () => {
     expect(getAdminHomeDestination({ canCreateUsers: true })).toBe('/admin/users')
   })
 
-  it('envía a los admins de campus a su perfil', async () => {
+  it('envía a los ayudantes a su perfil', async () => {
     const { getAdminHomeDestination } = await import('./auth')
 
     expect(getAdminHomeDestination({ canCreateUsers: false })).toBe('/admin/perfil')
@@ -166,7 +166,7 @@ describe('auth helpers puros', () => {
       id: 'account-general',
       authUserId: 'auth-general',
       email: 'general-db@campus.test',
-      role: 'ADMIN_GENERAL',
+      role: 'ADMIN',
       status: 'ACTIVE',
       yearPermissions: [],
     })
@@ -176,13 +176,13 @@ describe('auth helpers puros', () => {
 
     expect(admin).toMatchObject({
       id: 'account-general',
-      role: USER_ROLES.ADMIN_GENERAL,
+      role: USER_ROLES.ADMIN,
       canManageAllYears: true,
       canCreateUsers: true,
     })
   })
 
-  it('mantiene el alcance acotado para admins de campus cargados desde la base', async () => {
+  it('mantiene el alcance acotado para ayudantes cargados desde la base', async () => {
     const getUser = vi.fn().mockResolvedValue({
       data: { user: { id: 'auth-campus', email: 'campus-db@campus.test' } },
       error: null,
@@ -196,7 +196,7 @@ describe('auth helpers puros', () => {
       id: 'account-campus',
       authUserId: 'auth-campus',
       email: 'campus-db@campus.test',
-      role: 'ADMIN_CAMPUS',
+      role: 'AYUDANTE',
       status: 'ACTIVE',
       yearPermissions: [{ year: { id: 'year-1', slug: 'primer-anio' } }],
     })
@@ -206,7 +206,7 @@ describe('auth helpers puros', () => {
 
     expect(admin).toMatchObject({
       id: 'account-campus',
-      role: USER_ROLES.ADMIN_CAMPUS,
+      role: USER_ROLES.AYUDANTE,
       canManageAllYears: false,
       canCreateUsers: false,
       yearIds: ['year-1'],

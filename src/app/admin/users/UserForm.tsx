@@ -19,6 +19,7 @@ interface AdminUserFormProps {
   user?: {
     id: string
     email: string
+    role: 'AYUDANTE' | 'SUPERVISOR'
     status: 'ACTIVE' | 'DISABLED'
     yearIds: string[]
   }
@@ -77,17 +78,30 @@ export function AdminUserForm({ mode, years, action, user }: AdminUserFormProps)
       </div>
 
       {isEdit ? (
-        <label className="block max-w-xs space-y-2">
-          <span className="text-sm font-semibold text-white/75">Estado</span>
-          <select
-            name="status"
-            defaultValue={user?.status ?? 'ACTIVE'}
-            className="block w-full cursor-pointer rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition focus:border-violet-300/60"
-          >
-            <option value="ACTIVE">Activo</option>
-            <option value="DISABLED">Desactivado</option>
-          </select>
-        </label>
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="block space-y-2">
+            <span className="text-sm font-semibold text-white/75">Rol</span>
+            <select
+              name="role"
+              defaultValue={user?.role ?? 'AYUDANTE'}
+              className="block w-full cursor-pointer rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition focus:border-violet-300/60"
+            >
+              <option value="AYUDANTE">Ayudante</option>
+              <option value="SUPERVISOR">Supervisor</option>
+            </select>
+          </label>
+          <label className="block space-y-2">
+            <span className="text-sm font-semibold text-white/75">Estado</span>
+            <select
+              name="status"
+              defaultValue={user?.status ?? 'ACTIVE'}
+              className="block w-full cursor-pointer rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition focus:border-violet-300/60"
+            >
+              <option value="ACTIVE">Activo</option>
+              <option value="DISABLED">Desactivado</option>
+            </select>
+          </label>
+        </div>
       ) : null}
 
       <fieldset className="space-y-3">
@@ -124,7 +138,7 @@ export function AdminUserForm({ mode, years, action, user }: AdminUserFormProps)
       ) : null}
 
       <div className="flex flex-wrap items-center gap-3">
-        <SubmitButton label={isEdit ? 'Guardar cambios' : 'Crear administrador'} />
+        <SubmitButton label={isEdit ? 'Guardar cambios' : 'Crear ayudante'} />
         <Link
           href="/admin/users"
           className="inline-flex cursor-pointer items-center justify-center rounded-md border border-white/10 px-5 py-3 text-sm font-semibold text-white/70 transition hover:bg-white/5 hover:text-white"

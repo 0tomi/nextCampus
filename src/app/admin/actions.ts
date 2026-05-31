@@ -4,6 +4,8 @@ import { revalidatePath, revalidateTag as revalidateTagRaw } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import {
+  ensureCanManageContribution,
+  requireAcademicManager,
   requireGeneralAdmin,
   requireYearAdminForAgendaId,
   requireYearAdminForApunteId,
@@ -22,6 +24,7 @@ import {
   MAX_APUNTE_HTML_BYTES,
   APUNTE_HTML_MIME,
   deleteQuizBank,
+  getQuizBankMeta,
   deleteSubjectStorage,
   deleteYearStorage,
   quizBanksCacheTag,
@@ -42,6 +45,11 @@ import {
 } from '@/lib/domain/apunte-artifact'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
+import {
+  awardApunteCreated,
+  awardEventoCreated,
+  awardQuizBankCreated,
+} from '@/lib/contributions'
 
 // Next 16 exige un perfil de cacheLife como segundo argumento de
 // revalidateTag. Usamos "max" (stale-while-revalidate) en todas las
@@ -125,6 +133,34 @@ const eventoSchema = z.object({
   hora: horaSchema,
 })
 
+const relatedApunteIdsSchema = z.array(z.string().trim().min(1)).max(12)
+
+function parseRelatedApunteIds(raw: unknown): string[] | null {
+  if (typeof raw !== 'string' || raw.trim() === '') return []
+  try {
+    const parsed = JSON.parse(raw)
+    const result = relatedApunteIdsSchema.safeParse(parsed)
+    if (!result.success) return null
+    return [...new Set(result.data)]
+  } catch {
+    return null
+  }
+}
+
+async function validateRelatedApunteIds(
+  apunteIds: string[],
+  subjectId: string,
+): Promise<boolean> {
+  if (apunteIds.length === 0) return true
+  const count = await prisma.apunte.count({
+    where: {
+      id: { in: apunteIds },
+      subjectId,
+    },
+  })
+  return count === apunteIds.length
+}
+
 // "YYYY-MM-DD" → Date a medianoche UTC para guardar en la columna `@db.Date`.
 const fechaToDbDate = (fecha: string): Date => new Date(`${fecha}T00:00:00.000Z`)
 
@@ -192,6 +228,13 @@ export async function createEvento(formData: FormData): Promise<void> {
     agendaId: data.agendaId,
     commissionId: data.commissionId,
   })
+  const apunteIds = parseRelatedApunteIds(formData.get('apunteIdsJson'))
+  if (apunteIds === null) {
+    throw new ActionInputError('Revisá los apuntes relacionados.')
+  }
+  if (!(await validateRelatedApunteIds(apunteIds, scope.subjectId))) {
+    throw new ActionInputError('Los apuntes relacionados tienen que ser de la misma materia.')
+  }
 
   const evento = await prisma.evento.create({
     data: {
@@ -201,8 +244,13 @@ export async function createEvento(formData: FormData): Promise<void> {
       descripcionHtml: sanitizeRichHtml(data.descripcionHtml),
       fecha: fechaToDbDate(data.fecha),
       hora: data.hora,
+      createdByUserId: scope.admin.id,
+      apuntes: {
+        create: apunteIds.map((apunteId) => ({ apunteId })),
+      },
     },
   })
+  await awardEventoCreated(scope.admin.id)
   await revalidateSubjectContent(scope.subjectSlug)
   await recordAudit({
     userId: scope.admin.id,
@@ -215,6 +263,7 @@ export async function createEvento(formData: FormData): Promise<void> {
       hora: data.hora,
       subjectSlug: scope.subjectSlug,
       yearSlug: scope.yearSlug,
+      apuntesCount: apunteIds.length,
       ...(scope.commissionSlug ? { commissionSlug: scope.commissionSlug } : {}),
     },
   })
@@ -259,6 +308,11 @@ export async function updateEventoFechaAction(
     .parse(nuevaFecha)
   const scope = await requireYearAdminForEventoId(validId)
   if (!scope) return { ok: false }
+  const current = await prisma.evento.findUnique({
+    where: { id: validId },
+    select: { createdByUserId: true },
+  })
+  ensureCanManageContribution(scope.admin, current?.createdByUserId)
 
   const updated = await prisma.evento.update({
     where: { id: validId },
@@ -297,6 +351,11 @@ export async function updateEventoAction(
     })
     const currentScope = await requireYearAdminForEventoId(id)
     if (!currentScope) return { ok: false, message: 'No encontramos el evento que querés editar.' }
+    const currentOwner = await prisma.evento.findUnique({
+      where: { id },
+      select: { createdByUserId: true },
+    })
+    ensureCanManageContribution(currentScope.admin, currentOwner?.createdByUserId)
 
     const targetScope = await resolveAgendaTarget({
       agendaId: data.agendaId,
@@ -306,17 +365,33 @@ export async function updateEventoAction(
     if (targetScope.subjectId !== currentScope.subjectId) {
       return { ok: false, message: 'No podés mover un evento a otra materia.' }
     }
+    const apunteIds = parseRelatedApunteIds(formData.get('apunteIdsJson'))
+    if (apunteIds === null) {
+      return { ok: false, message: 'Revisá los apuntes relacionados.' }
+    }
+    if (!(await validateRelatedApunteIds(apunteIds, currentScope.subjectId))) {
+      return { ok: false, message: 'Los apuntes relacionados tienen que ser de la misma materia.' }
+    }
 
-    await prisma.evento.update({
-      where: { id },
-      data: {
-        agendaId: targetScope.agendaId,
-        tipoEventoId: data.tipoEventoId,
-        titulo: data.titulo,
-        descripcionHtml: sanitizeRichHtml(data.descripcionHtml),
-        fecha: fechaToDbDate(data.fecha),
-        hora: data.hora,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.evento.update({
+        where: { id },
+        data: {
+          agendaId: targetScope.agendaId,
+          tipoEventoId: data.tipoEventoId,
+          titulo: data.titulo,
+          descripcionHtml: sanitizeRichHtml(data.descripcionHtml),
+          fecha: fechaToDbDate(data.fecha),
+          hora: data.hora,
+        },
+      })
+      await tx.apunteEvento.deleteMany({ where: { eventoId: id } })
+      if (apunteIds.length > 0) {
+        await tx.apunteEvento.createMany({
+          data: apunteIds.map((apunteId) => ({ eventoId: id, apunteId })),
+          skipDuplicates: true,
+        })
+      }
     })
     await revalidateSubjectContent(currentScope.subjectSlug)
     await recordAudit({
@@ -329,6 +404,7 @@ export async function updateEventoAction(
         fecha: data.fecha,
         hora: data.hora,
         subjectSlug: currentScope.subjectSlug,
+        apuntesCount: apunteIds.length,
         ...(targetScope.commissionSlug ? { commissionSlug: targetScope.commissionSlug } : {}),
       },
     })
@@ -351,8 +427,9 @@ export async function deleteEvento(formData: FormData): Promise<void> {
 
   const evento = await prisma.evento.findUnique({
     where: { id },
-    select: { titulo: true, fecha: true, hora: true },
+    select: { titulo: true, fecha: true, hora: true, createdByUserId: true },
   })
+  ensureCanManageContribution(scope.admin, evento?.createdByUserId)
 
   await prisma.evento.delete({ where: { id } })
   await revalidateSubjectContent(scope.subjectSlug)
@@ -376,6 +453,17 @@ export async function deleteEvento(formData: FormData): Promise<void> {
 export interface ApunteActionState {
   ok: boolean
   message: string
+  apunte?: {
+    id: string
+    titulo: string
+    slug: string
+    subject: {
+      slug: string
+      year: {
+        slug: string
+      }
+    }
+  }
 }
 
 const baseRecursoSchema = z.object({
@@ -703,6 +791,7 @@ export async function createApunteAction(
           titulo,
           slug: finalSlug,
           descripcionHtml: sanitizeRichHtml(descripcionHtml),
+          createdByUserId: scope.admin.id,
           categorias: {
             create: validCategoriaIds.map((categoriaId) => ({ categoriaId })),
           },
@@ -737,6 +826,7 @@ export async function createApunteAction(
     if (built.data.length > 0) {
       await prisma.apunteRecurso.createMany({ data: built.data })
     }
+    await awardApunteCreated(scope.admin.id, built.data.length)
   } catch (err) {
     console.error('createApunteAction: failed to create note resources', err)
     await deleteApunteHtml(built.uploadedStorageKeys)
@@ -759,7 +849,19 @@ export async function createApunteAction(
       categoriasCount: validCategoriaIds.length,
     },
   })
-  return { ok: true, message: 'Apunte creado correctamente.' }
+  return {
+    ok: true,
+    message: 'Apunte creado correctamente.',
+    apunte: {
+      id: apunteId,
+      titulo,
+      slug: finalSlug,
+      subject: {
+        slug: scope.subjectSlug,
+        year: { slug: scope.yearSlug },
+      },
+    },
+  }
 }
 
 export async function updateApunteAction(
@@ -803,6 +905,7 @@ export async function updateApunteAction(
     select: {
       slug: true,
       subjectId: true,
+      createdByUserId: true,
       recursos: {
         where: { tipo: 'HTML', storageKey: { not: null } },
         select: { storageKey: true, mimeType: true, sizeBytes: true },
@@ -812,6 +915,7 @@ export async function updateApunteAction(
   if (!apunteActual) {
     return { ok: false, message: 'Apunte no encontrado.' }
   }
+  ensureCanManageContribution(scope.admin, apunteActual.createdByUserId)
 
   let finalSlug = apunteActual.slug
   if (slugInput && slugInput !== apunteActual.slug) {
@@ -916,12 +1020,14 @@ export async function deleteApunteAction(formData: FormData): Promise<void> {
     where: { id },
     select: {
       titulo: true,
+      createdByUserId: true,
       recursos: {
         where: { tipo: 'HTML', storageKey: { not: null } },
         select: { storageKey: true },
       },
     },
   })
+  ensureCanManageContribution(scope.admin, apunte?.createdByUserId)
 
   // La FK con onDelete: Cascade borra los ApunteRecurso automáticamente.
   await prisma.apunte.delete({ where: { id } })
@@ -1003,6 +1109,7 @@ export async function uploadQuizBankAction(
       message: 'No se pudo guardar el banco. Probá de nuevo.',
     }
   }
+  await awardQuizBankCreated(scope.admin.id, bank.bank.units.length)
 
   revalidateTag(quizBanksCacheTag(scope.yearSlug, scope.subjectSlug))
   await revalidateSubjectContent(scope.subjectSlug)
@@ -1028,6 +1135,10 @@ export async function deleteQuizBankAction(formData: FormData): Promise<void> {
   const bankId = z.uuid().parse(formData.get('bankId'))
   const scope = await requireYearAdminForSubjectSlug(subjectSlug)
   if (!scope) return
+  const meta = await getQuizBankMeta(scope.yearSlug, scope.subjectSlug, bankId)
+  if (!scope.admin.canManageAnyContribution && meta?.subidoPor !== scope.admin.email) {
+    return
+  }
 
   await deleteQuizBank(scope.yearSlug, scope.subjectSlug, bankId)
   revalidateTag(quizBanksCacheTag(scope.yearSlug, scope.subjectSlug))
@@ -1279,7 +1390,8 @@ export async function createSubjectAction(
   formData: FormData,
 ): Promise<SubjectActionState> {
   const yearId = z.string().min(1).parse(formData.get('yearId'))
-  const admin = await requireYearAdminForYearId(yearId)
+  const admin = await requireAcademicManager()
+  await requireYearAdminForYearId(yearId)
 
   const parsed = subjectSchema.safeParse({
     nombre: formData.get('nombre'),
@@ -1360,6 +1472,7 @@ export async function createCommissionAction(
   }
 
   const { subjectId, nombre } = parsed.data
+  await requireAcademicManager()
   const scope = await requireYearAdminForSubjectId(subjectId)
   if (!scope) return { ok: false, message: 'Materia no encontrada.' }
 
@@ -1422,6 +1535,7 @@ export async function updateSubjectAction(
   formData: FormData,
 ): Promise<SubjectActionState> {
   const id = z.string().min(1).parse(formData.get('id'))
+  await requireAcademicManager()
   const scope = await requireYearAdminForSubjectId(id)
   if (!scope) return { ok: false, message: 'Materia no encontrada.' }
 
@@ -1495,6 +1609,7 @@ export async function updateSubjectAction(
 export async function deleteSubjectAction(formData: FormData): Promise<void> {
   const id = z.string().min(1).parse(formData.get('id'))
 
+  await requireAcademicManager()
   const scope = await requireYearAdminForSubjectId(id)
   if (!scope) return
 
@@ -1565,6 +1680,7 @@ export async function updateSubjectDriveUrlAction(
 
   const normalizedDriveUrl = parsed.data || null
   const validSubjectId = z.string().min(1).parse(subjectId)
+  await requireAcademicManager()
   const scope = await requireYearAdminForSubjectId(validSubjectId)
   if (!scope) return { ok: false, message: 'Materia no encontrada.' }
 
@@ -1626,6 +1742,7 @@ export async function updateSubjectPlaylistAction(
   }
 
   const validSubjectId = z.string().min(1).parse(subjectId)
+  await requireAcademicManager()
   const scope = await requireYearAdminForSubjectId(validSubjectId)
   if (!scope) return { ok: false, message: 'Materia no encontrada.' }
 

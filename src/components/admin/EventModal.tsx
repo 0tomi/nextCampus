@@ -15,6 +15,8 @@ import {
   type CommissionOption,
 } from '@/lib/commission-preferences'
 import { CommissionSelectField } from '@/components/commissions/CommissionSelectField'
+import { ApunteModal } from '@/components/admin/ApunteModal'
+import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 
 interface TipoEvento {
   id: string
@@ -27,12 +29,14 @@ interface EventModalSubject {
   nombre: string
   agendaId: string
   commissions: readonly CommissionOption[]
+  categoriasDisponibles?: Array<{ id: string; nombre: string }>
 }
 
 interface EventModalProps {
   open: boolean
   onClose: () => void
   agendaId?: string
+  subjectId?: string
   subjectSlug?: string
   tiposEvento: TipoEvento[]
   /** Fecha precargada al abrir desde un clic en el calendario (ISO o string YYYY-MM-DDTHH:mm) */
@@ -42,6 +46,7 @@ interface EventModalProps {
   commissions?: readonly CommissionOption[]
   /** Evento a editar si estamos en modo edición */
   eventToEdit?: EventCalendarEvent
+  categoriasDisponibles?: Array<{ id: string; nombre: string }>
 }
 
 const emptyState: EventoActionState = { ok: false, message: '' }
@@ -67,6 +72,7 @@ function EventModalContent({
   open,
   onClose,
   agendaId = '',
+  subjectId = '',
   subjectSlug = '',
   tiposEvento,
   initialDate,
@@ -74,6 +80,7 @@ function EventModalContent({
   subjects,
   commissions,
   eventToEdit,
+  categoriasDisponibles = [],
 }: EventModalProps) {
   const router = useRouter()
   const actionToUse = eventToEdit ? updateEventoAction : createEventoAction
@@ -90,6 +97,13 @@ function EventModalContent({
   const [selectedCommissionId, setSelectedCommissionId] = useState(
     eventToEdit?.commissionId ?? ''
   )
+  const [selectedApuntes, setSelectedApuntes] = useState<RelatedApunteLink[]>(
+    () => eventToEdit?.apuntes ?? [],
+  )
+  const [apunteQuery, setApunteQuery] = useState('')
+  const [apunteResults, setApunteResults] = useState<RelatedApunteLink[]>([])
+  const [searchingApuntes, setSearchingApuntes] = useState(false)
+  const [newApunteOpen, setNewApunteOpen] = useState(false)
 
   // Determine current active agendaId and subjectSlug
   const isYearMode = subjects && subjects.length > 0
@@ -99,6 +113,10 @@ function EventModalContent({
 
   const activeAgendaId = isYearMode ? (currentSubject?.agendaId ?? '') : agendaId
   const activeSubjectSlug = isYearMode ? (currentSubject?.slug ?? '') : subjectSlug
+  const activeSubjectId = isYearMode ? (currentSubject?.id ?? '') : (eventToEdit?.subjectId ?? subjectId)
+  const activeCategorias = isYearMode
+    ? (currentSubject?.categoriasDisponibles ?? [])
+    : categoriasDisponibles
   const availableCommissions = useMemo(
     () => (isYearMode ? (currentSubject?.commissions ?? []) : (commissions ?? [])),
     [commissions, currentSubject?.commissions, isYearMode],
@@ -116,6 +134,50 @@ function EventModalContent({
       onClose()
     }
   }, [state.ok, onClose, onSuccess, router])
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      setSelectedApuntes((prev) => {
+        if (!activeSubjectSlug) return prev
+        return prev.filter((apunte) => apunte.subject.slug === activeSubjectSlug)
+      })
+    }, 0)
+    return () => window.clearTimeout(handle)
+  }, [activeSubjectSlug])
+
+  useEffect(() => {
+    if (!activeSubjectId) {
+      const handle = window.setTimeout(() => setApunteResults([]), 0)
+      return () => window.clearTimeout(handle)
+    }
+
+    const controller = new AbortController()
+    const handle = window.setTimeout(async () => {
+      setSearchingApuntes(true)
+      try {
+        const params = new URLSearchParams({ subjectId: activeSubjectId })
+        if (apunteQuery.trim()) params.set('q', apunteQuery.trim())
+        const response = await fetch(`/api/admin/apuntes/search?${params.toString()}`, {
+          signal: controller.signal,
+        })
+        if (!response.ok) {
+          setApunteResults([])
+          return
+        }
+        const data = await response.json() as { items?: RelatedApunteLink[] }
+        setApunteResults(data.items ?? [])
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') setApunteResults([])
+      } finally {
+        setSearchingApuntes(false)
+      }
+    }, 180)
+
+    return () => {
+      controller.abort()
+      window.clearTimeout(handle)
+    }
+  }, [activeSubjectId, apunteQuery])
 
 
   const detectEventType = (text: string): string | null => {
@@ -195,6 +257,7 @@ function EventModalContent({
               onChange={(e) => {
                 setSelectedSubjectId(e.target.value)
                 setSelectedCommissionId('')
+                setApunteQuery('')
               }}
               className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none cursor-pointer"
             >
@@ -243,6 +306,84 @@ function EventModalContent({
             placeholder="Ej: Parcial de Estructuras"
             className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
           />
+        </div>
+
+        <div className="space-y-3 rounded-lg border border-white/8 bg-white/[0.025] p-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
+              Apuntes relacionados
+            </p>
+            <p className="mt-1 text-[11px] leading-4 text-white/35">
+              Sumá material de estudio para que la fecha quede acompañada.
+            </p>
+          </div>
+          <input type="hidden" name="apunteIdsJson" value={JSON.stringify(selectedApuntes.map((apunte) => apunte.id))} />
+
+          {activeSubjectId ? (
+            <>
+              <input
+                type="search"
+                value={apunteQuery}
+                onChange={(event) => setApunteQuery(event.target.value)}
+                placeholder="Buscar apunte por título"
+                className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
+              />
+
+              {selectedApuntes.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {selectedApuntes.map((apunte) => (
+                    <button
+                      key={apunte.id}
+                      type="button"
+                      onClick={() => setSelectedApuntes((prev) => prev.filter((item) => item.id !== apunte.id))}
+                      className="cursor-pointer rounded-full border border-cyan-300/30 bg-cyan-300/12 px-3 py-1.5 text-xs font-bold text-cyan-100 transition-colors hover:bg-cyan-300/18"
+                    >
+                      {apunte.titulo}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              <div className="max-h-36 space-y-1 overflow-y-auto pr-1">
+                {searchingApuntes ? (
+                  <p className="rounded border border-white/8 bg-white/[0.03] px-3 py-2 text-xs text-white/45">
+                    Buscando apuntes…
+                  </p>
+                ) : apunteResults.length > 0 ? (
+                  apunteResults
+                    .filter((apunte) => !selectedApuntes.some((selected) => selected.id === apunte.id))
+                    .map((apunte) => (
+                      <button
+                        key={apunte.id}
+                        type="button"
+                        onClick={() => setSelectedApuntes((prev) => [...prev, apunte])}
+                        className="flex w-full cursor-pointer items-center justify-between gap-3 rounded border border-white/8 bg-surface-0 px-3 py-2 text-left text-xs font-semibold text-white/70 transition-colors hover:border-white/14 hover:bg-white/[0.04] hover:text-white"
+                      >
+                        <span className="truncate">{apunte.titulo}</span>
+                        <span className="shrink-0 text-[10px] uppercase tracking-wider text-white/35">Asociar</span>
+                      </button>
+                    ))
+                ) : (
+                  <p className="rounded border border-dashed border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-white/42">
+                    No encontramos apuntes con esa búsqueda.
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="button"
+                disabled={activeCategorias.length === 0}
+                onClick={() => setNewApunteOpen(true)}
+                className="inline-flex cursor-pointer items-center justify-center rounded border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-white/70 transition-colors hover:bg-white/8 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Crear y asociar apunte
+              </button>
+            </>
+          ) : (
+            <p className="rounded border border-dashed border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-white/42">
+              Elegí una materia para buscar o crear apuntes.
+            </p>
+          )}
         </div>
 
         <div className="space-y-1">
@@ -356,6 +497,20 @@ function EventModalContent({
           </button>
         </div>
       </form>
+      {activeSubjectId ? (
+        <ApunteModal
+          open={newApunteOpen}
+          onClose={() => setNewApunteOpen(false)}
+          subjectId={activeSubjectId}
+          subjectSlug={activeSubjectSlug}
+          categoriasDisponibles={activeCategorias}
+          onCreated={(apunte) => {
+            setSelectedApuntes((prev) =>
+              prev.some((item) => item.id === apunte.id) ? prev : [...prev, apunte],
+            )
+          }}
+        />
+      ) : null}
     </Modal>
   )
 }

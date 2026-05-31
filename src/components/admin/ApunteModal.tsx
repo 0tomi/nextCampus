@@ -62,6 +62,7 @@ interface ApunteModalProps {
   apunte?: ApunteFull
   categoriasDisponibles: Array<{ id: string; nombre: string }>
   onSuccess?: () => void
+  onCreated?: (apunte: NonNullable<ApunteActionState['apunte']>) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -156,6 +157,7 @@ export function ApunteModal({
   apunte,
   categoriasDisponibles,
   onSuccess,
+  onCreated,
 }: ApunteModalProps) {
   const isEditMode = Boolean(apunte)
 
@@ -194,10 +196,11 @@ export function ApunteModal({
   // Close modal on success
   useEffect(() => {
     if (state.ok) {
+      if (state.apunte) onCreated?.(state.apunte)
       onSuccess?.()
       onClose()
     }
-  }, [state.ok, onClose, onSuccess])
+  }, [state.apunte, state.ok, onClose, onCreated, onSuccess])
 
   const inferredCategoriaIds = useMemo(() => {
     const inferredNames = inferirCategoriasDeApunte(

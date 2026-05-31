@@ -21,7 +21,7 @@ export default async function CreateAdminUserPage() {
           ← Volver a usuarios
         </Link>
         <p className="mt-6 text-xs font-bold uppercase tracking-[0.22em] text-violet-200/70">Nuevo usuario</p>
-        <h1 className="mt-3 font-display text-3xl font-black tracking-tight text-white">Crear administrador del campus</h1>
+        <h1 className="mt-3 font-display text-3xl font-black tracking-tight text-white">Crear ayudante</h1>
         <p className="mt-2 text-sm leading-6 text-white/55">
           Cargá el email, una contraseña inicial y los años que va a poder gestionar.
         </p>

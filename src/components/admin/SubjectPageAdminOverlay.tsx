@@ -125,14 +125,16 @@ export function SubjectPageAdminOverlay({
           <Plus className="h-3.5 w-3.5" />
           Nuevo apunte
         </button>
-        <button
-          type="button"
-          onClick={() => setNewCommissionOpen(true)}
-          className="inline-flex items-center gap-2 rounded border border-white/10 bg-surface-1 px-3 py-2 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Nueva comisión
-        </button>
+        <AdminControls yearId={yearId} yearSlug={yearSlug} requireAcademicStructure noWrapper>
+          <button
+            type="button"
+            onClick={() => setNewCommissionOpen(true)}
+            className="inline-flex items-center gap-2 rounded border border-white/10 bg-surface-1 px-3 py-2 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Nueva comisión
+          </button>
+        </AdminControls>
         <button
           type="button"
           onClick={() => setNewEventOpen(true)}
@@ -141,50 +143,58 @@ export function SubjectPageAdminOverlay({
           <Plus className="h-3.5 w-3.5" />
           Nuevo evento
         </button>
-        <button
-          type="button"
-          onClick={() => setEditSubjectOpen(true)}
-          className="inline-flex items-center gap-2 rounded border border-white/12 bg-surface-1 px-3 py-2 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-          Editar materia
-        </button>
+        <AdminControls yearId={yearId} yearSlug={yearSlug} requireAcademicStructure noWrapper>
+          <button
+            type="button"
+            onClick={() => setEditSubjectOpen(true)}
+            className="inline-flex items-center gap-2 rounded border border-white/12 bg-surface-1 px-3 py-2 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Editar materia
+          </button>
+        </AdminControls>
       </div>
 
       {/* Modales */}
-      <SubjectModal
-        open={editSubjectOpen}
-        onClose={() => setEditSubjectOpen(false)}
-        subject={{
-          id: subject.id,
-          nombre: subject.nombre,
-          descripcion: subject.descripcion,
-          driveUrl: subject.driveUrl,
-          playlistUrl: subject.playlistUrl,
-          playlistEnabled: subject.playlistEnabled,
-        }}
-        yearId={yearId}
-      />
+      <AdminControls yearId={yearId} yearSlug={yearSlug} requireAcademicStructure noWrapper>
+        <SubjectModal
+          open={editSubjectOpen}
+          onClose={() => setEditSubjectOpen(false)}
+          subject={{
+            id: subject.id,
+            nombre: subject.nombre,
+            descripcion: subject.descripcion,
+            driveUrl: subject.driveUrl,
+            playlistUrl: subject.playlistUrl,
+            playlistEnabled: subject.playlistEnabled,
+          }}
+          yearId={yearId}
+        />
+      </AdminControls>
 
       <EventModal
         key={`${agendaId}-${subject.slug}-${newEventOpen}`}
         open={newEventOpen}
         onClose={() => setNewEventOpen(false)}
         agendaId={agendaId}
+        subjectId={subject.id}
         subjectSlug={subject.slug}
         tiposEvento={tiposEvento}
         commissions={subject.commissions}
+        categoriasDisponibles={subject.categoriasDisponibles}
       />
 
-      <CommissionModal
-        open={newCommissionOpen}
-        onClose={() => setNewCommissionOpen(false)}
-        subject={{
-          id: subject.id,
-          nombre: subject.nombre,
-        }}
-        commissions={subject.commissions}
-      />
+      <AdminControls yearId={yearId} yearSlug={yearSlug} requireAcademicStructure noWrapper>
+        <CommissionModal
+          open={newCommissionOpen}
+          onClose={() => setNewCommissionOpen(false)}
+          subject={{
+            id: subject.id,
+            nombre: subject.nombre,
+          }}
+          commissions={subject.commissions}
+        />
+      </AdminControls>
 
       {/* Modal de creación de apunte */}
       <ApunteModal

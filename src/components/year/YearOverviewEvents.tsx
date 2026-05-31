@@ -13,6 +13,7 @@ import {
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { formatEventDateTime } from '@/lib/utils'
 import { sanitizeRichHtml } from '@/lib/sanitize'
+import { RelatedApunteLinks, type RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import {
   filterEventsByPreferredCommission,
   type CommissionOption,
@@ -30,6 +31,7 @@ interface YearSubjectOption {
   nombre: string
   agendaId: string
   commissions: CommissionOption[]
+  categoriasDisponibles?: Array<{ id: string; nombre: string }>
 }
 
 interface YearOverviewEvent {
@@ -47,6 +49,7 @@ interface YearOverviewEvent {
   commissionId?: string | null
   commissionSlug?: string | null
   commissionNombre?: string | null
+  apuntes?: RelatedApunteLink[]
 }
 
 interface YearOverviewEventsProps {
@@ -180,6 +183,7 @@ export function YearOverviewEvents({
                       <h3 className="mt-2 text-base font-black tracking-tight text-white leading-snug 2xl:text-lg">
                         {evento.titulo}
                       </h3>
+                      <RelatedApunteLinks apuntes={evento.apuntes} className="mt-2" />
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <span className="inline-flex max-w-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] border-white/10 bg-surface-1 text-white/72">

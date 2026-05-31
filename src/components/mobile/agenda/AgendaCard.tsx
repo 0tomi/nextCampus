@@ -1,4 +1,5 @@
 import { getEventTone } from '@/components/mobile/shared/tokens'
+import { RelatedApunteLinks, type RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import { cn, eventDateToLocal } from '@/lib/utils'
 
 const WEEKDAYS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
@@ -10,11 +11,12 @@ interface AgendaCardProps {
   tipo: string
   titulo: string
   materia?: string
+  apuntes?: RelatedApunteLink[]
   onClick?: () => void
   className?: string
 }
 
-export function AgendaCard({ fecha, hora, tipo, titulo, materia, onClick, className }: AgendaCardProps) {
+export function AgendaCard({ fecha, hora, tipo, titulo, materia, apuntes, onClick, className }: AgendaCardProps) {
   const d = eventDateToLocal(fecha)
   const tone = getEventTone(tipo)
   const weekday = WEEKDAYS[d.getDay()]
@@ -38,6 +40,7 @@ export function AgendaCard({ fecha, hora, tipo, titulo, materia, onClick, classN
           {tipo}
         </span>
         <span className="text-sm font-bold leading-snug text-white">{titulo}</span>
+        <RelatedApunteLinks apuntes={apuntes} limit={1} />
         <span className="text-[11px] font-semibold text-white/45">
           {meta}
         </span>
@@ -53,9 +56,20 @@ export function AgendaCard({ fecha, hora, tipo, titulo, materia, onClick, classN
 
   if (onClick) {
     return (
-      <button type="button" onClick={onClick} className={baseClassName}>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onClick}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            onClick()
+          }
+        }}
+        className={baseClassName}
+      >
         {content}
-      </button>
+      </div>
     )
   }
 

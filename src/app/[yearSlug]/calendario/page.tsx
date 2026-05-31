@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { getCareer, getYearBySlug, getTiposEvento } from '@/lib/queries'
+import { getCareer, getYearBySlug, getTiposEvento, getCategoriasApunte } from '@/lib/queries'
 import { getYearColorClasses, getYearTone } from '@/lib/yearColors'
 import { type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
@@ -13,10 +13,11 @@ export default async function YearCalendarPage({
   params: Promise<{ yearSlug: string }>
 }) {
   const { yearSlug } = await params
-  const [year, tiposEvento, career] = await Promise.all([
+  const [year, tiposEvento, career, categoriasDisponibles] = await Promise.all([
     getYearBySlug(yearSlug),
     getTiposEvento(),
     getCareer(),
+    getCategoriasApunte(),
   ])
   if (!year) notFound()
 
@@ -42,6 +43,7 @@ export default async function YearCalendarPage({
         commissionId: e.commissionId,
         commissionSlug: e.commission?.slug ?? null,
         commissionNombre: e.commission?.nombre ?? null,
+        apuntes: e.apuntes,
       })),
     )
     .sort((a, b) => a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? ''))
@@ -77,6 +79,7 @@ export default async function YearCalendarPage({
       nombre: s.nombre,
       agendaId: s.agenda!.id,
       commissions: s.commissions,
+      categoriasDisponibles,
     }))
 
   return (

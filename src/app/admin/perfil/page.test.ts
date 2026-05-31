@@ -25,8 +25,8 @@ describe('admin perfil page helpers', () => {
   it('describe el rol del admin con copy claro', async () => {
     const { roleLabel } = await import('./page')
 
-    expect(roleLabel('ADMIN_CAMPUS')).toBe('Administrador de campus')
-    expect(roleLabel('ADMIN_GENERAL')).toBe('Administrador general')
+    expect(roleLabel('AYUDANTE')).toBe('Ayudante')
+    expect(roleLabel('ADMIN')).toBe('Admin')
   })
 
   it('resume los años asignados según el alcance', async () => {

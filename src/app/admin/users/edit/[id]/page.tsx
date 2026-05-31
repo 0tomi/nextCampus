@@ -33,7 +33,7 @@ export default async function EditAdminUserPage({ params }: EditAdminUserPagePro
     }),
   ])
 
-  if (!user || user.role !== UserRole.ADMIN_CAMPUS) {
+  if (!user || user.role === UserRole.ADMIN) {
     notFound()
   }
 
@@ -44,7 +44,7 @@ export default async function EditAdminUserPage({ params }: EditAdminUserPagePro
           ← Volver a usuarios
         </Link>
         <p className="mt-6 text-xs font-bold uppercase tracking-[0.22em] text-violet-200/70">Editar usuario</p>
-        <h1 className="mt-3 font-display text-3xl font-black tracking-tight text-white">Actualizar administrador</h1>
+        <h1 className="mt-3 font-display text-3xl font-black tracking-tight text-white">Actualizar colaborador</h1>
         <p className="mt-2 text-sm leading-6 text-white/55">
           Modificá sus datos, años asignados o estado de acceso.
         </p>
@@ -57,6 +57,7 @@ export default async function EditAdminUserPage({ params }: EditAdminUserPagePro
         user={{
           id: user.id,
           email: user.email,
+          role: user.role,
           status: user.status,
           yearIds: user.yearPermissions.map((permission) => permission.yearId),
         }}

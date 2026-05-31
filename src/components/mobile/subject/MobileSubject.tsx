@@ -16,6 +16,7 @@ import {
   writePreferredCommissionId,
 } from '@/lib/commission-preferences'
 import { usePreferredCommissionId } from '@/components/commissions/usePreferredCommission'
+import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 
 interface SubjectForMobile {
   id: string
@@ -26,7 +27,7 @@ interface SubjectForMobile {
   playlistUrl: string | null
   playlistEnabled: boolean
   year: { id: string; slug: string; nombre: string; career: { nombre: string } }
-  agenda: { id: string; eventos: Array<{ id: string; titulo: string; descripcionHtml: string | null; fecha: string; hora: string | null; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId?: string | null; commissionSlug?: string | null; commissionNombre?: string | null }> } | null
+  agenda: { id: string; eventos: Array<{ id: string; titulo: string; descripcionHtml: string | null; fecha: string; hora: string | null; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId?: string | null; commissionSlug?: string | null; commissionNombre?: string | null; apuntes?: RelatedApunteLink[] }> } | null
   apuntes: Array<{
     id: string
     titulo: string
@@ -66,6 +67,7 @@ interface SubjectMobileEvent {
   commissionId?: string | null
   commissionSlug?: string | null
   commissionNombre?: string | null
+  apuntes?: RelatedApunteLink[]
 }
 
 function GoogleDriveIcon({ className }: { className?: string }) {
@@ -150,7 +152,7 @@ export function MobileSubject({
                   </span>
                 ) : null}
               </div>
-              <AdminControls yearId={subject.year.id} noWrapper>
+              <AdminControls yearId={subject.year.id} requireAcademicStructure noWrapper>
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
@@ -195,7 +197,7 @@ export function MobileSubject({
                     <GoogleDriveIcon className="size-5" />
                     Drive con contenido
                   </a>
-                  <AdminControls yearId={subject.year.id} noWrapper>
+                  <AdminControls yearId={subject.year.id} requireAcademicStructure noWrapper>
                     <button
                       type="button"
                       onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-subject'))}
@@ -207,7 +209,7 @@ export function MobileSubject({
                   </AdminControls>
                 </div>
               ) : (
-                <AdminControls yearId={subject.year.id} noWrapper>
+                <AdminControls yearId={subject.year.id} requireAcademicStructure noWrapper>
                   <button
                     type="button"
                     onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-subject'))}
@@ -285,6 +287,7 @@ export function MobileSubject({
             commissionId: e.commissionId ?? null,
             commissionSlug: e.commissionSlug ?? null,
             commissionNombre: e.commissionNombre ?? null,
+            apuntes: e.apuntes,
           }))}
           apuntes={subject.apuntes}
           categorias={subject.categoriasDisponibles}
@@ -298,6 +301,7 @@ export function MobileSubject({
             nombre: subject.nombre,
             agendaId: subject.agenda?.id ?? '',
             commissions,
+            categoriasDisponibles: subject.categoriasDisponibles,
           }]}
           commissions={commissions}
         />

@@ -7,7 +7,9 @@ import { requireGeneralAdmin } from '@/lib/auth'
 export const dynamic = 'force-dynamic'
 
 function roleLabel(role: string) {
-  return role === UserRole.ADMIN_CAMPUS ? 'Administrador de campus' : 'Administrador general'
+  if (role === UserRole.SUPERVISOR) return 'Supervisor'
+  if (role === UserRole.AYUDANTE) return 'Ayudante'
+  return 'Admin'
 }
 
 function statusLabel(status: string) {
@@ -18,7 +20,7 @@ export default async function AdminUsersPage() {
   await requireGeneralAdmin()
 
   const users = await prisma.userAccount.findMany({
-    where: { role: UserRole.ADMIN_CAMPUS },
+    where: { role: { in: [UserRole.AYUDANTE, UserRole.SUPERVISOR] } },
     orderBy: { email: 'asc' },
     include: {
       yearPermissions: {
@@ -90,7 +92,7 @@ export default async function AdminUsersPage() {
           </ul>
         ) : (
           <div className="px-4 py-10 text-center text-sm text-white/55">
-            Todavía no hay administradores del campus creados.
+            Todavía no hay colaboradores creados.
           </div>
         )}
       </section>
