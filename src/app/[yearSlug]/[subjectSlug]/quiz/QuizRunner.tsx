@@ -139,8 +139,10 @@ export function QuizRunner({
         banks: selectedBancos.join(','),
         mode,
         count: String(count),
-        units: activeUnits.join(','),
       })
+      // Cada unidad va como un parámetro propio: sus nombres pueden contener
+      // comas, así que no se pueden unir en una sola cadena separada por coma.
+      activeUnits.forEach((name) => qs.append('units', name))
       const res = await fetch(`/api/quiz/set?${qs.toString()}`)
       if (!res.ok) throw new Error('No se pudo cargar el quiz.')
       const data: { preguntas: PublicQuestion[] } = await res.json()
