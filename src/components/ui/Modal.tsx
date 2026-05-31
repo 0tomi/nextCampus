@@ -3,10 +3,12 @@
 import {
   useEffect,
   useRef,
+  useState,
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -31,6 +33,11 @@ export function Modal({
   contentClassName,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Lock scroll while open
   useEffect(() => {
@@ -88,7 +95,7 @@ export function Modal({
     return () => document.removeEventListener('keydown', trapFocus)
   }, [open])
 
-  if (!open) return null
+  if (!open || !mounted) return null
 
   function handleOverlayClick(e: MouseEvent<HTMLDivElement>) {
     if (e.target === e.currentTarget) onClose()
@@ -100,7 +107,7 @@ export function Modal({
     }
   }
 
-  return (
+  return createPortal(
     /* Overlay */
     <div
       className="fixed inset-0 z-50 flex justify-center overflow-y-auto bg-black/70 backdrop-blur-sm p-4 md:p-10"
@@ -142,6 +149,7 @@ export function Modal({
           <div className={cn('px-6 py-5', contentClassName)}>{children}</div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
