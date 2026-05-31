@@ -80,6 +80,9 @@ export interface QuizBankMeta {
   totalPreguntas: number
   subidoEl: string
   subidoPor: string
+  // Id de la cuenta que subió el banco. Opcional para compatibilidad con metas
+  // viejas (anteriores a este campo), que solo guardaban el email en subidoPor.
+  subidoPorId?: string
 }
 
 export const quizBankMetaSchema = z.object({
@@ -88,6 +91,7 @@ export const quizBankMetaSchema = z.object({
   totalPreguntas: z.number().int().min(0),
   subidoEl: z.string().min(1),
   subidoPor: z.string().min(1),
+  subidoPorId: z.string().min(1).optional(),
 })
 
 

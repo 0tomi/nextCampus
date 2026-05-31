@@ -1102,6 +1102,7 @@ export async function uploadQuizBankAction(
       rawJson: JSON.stringify(bank.bank),
       totalPreguntas: bank.totalPreguntas,
       subidoPor: scope.admin.email,
+      subidoPorId: scope.admin.id,
     })
   } catch {
     return {
@@ -1136,7 +1137,12 @@ export async function deleteQuizBankAction(formData: FormData): Promise<void> {
   const scope = await requireYearAdminForSubjectSlug(subjectSlug)
   if (!scope) return
   const meta = await getQuizBankMeta(scope.yearSlug, scope.subjectSlug, bankId)
-  if (!scope.admin.canManageAnyContribution && meta?.subidoPor !== scope.admin.email) {
+  // Ownership por id (criterio del resto del sistema). Para metas viejas sin
+  // subidoPorId se cae al email como fallback de compatibilidad.
+  const ownsBank = meta?.subidoPorId
+    ? meta.subidoPorId === scope.admin.id
+    : meta?.subidoPor === scope.admin.email
+  if (!scope.admin.canManageAnyContribution && !ownsBank) {
     return
   }
 
@@ -1653,6 +1659,7 @@ export async function getSubjectDeleteImpactAction(
   formData: FormData,
 ): Promise<SubjectDeleteImpact | null> {
   const id = z.string().min(1).parse(formData.get('id'))
+  await requireAcademicManager()
   const scope = await requireYearAdminForSubjectId(id)
   if (!scope) return null
 

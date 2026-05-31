@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const revalidatePathMock = vi.fn()
 const revalidateTagRawMock = vi.fn()
 const requireGeneralAdminMock = vi.fn()
+const requireAcademicManagerMock = vi.fn()
+const getSubjectDeleteImpactMock = vi.fn()
 const requireYearAdminForAgendaIdMock = vi.fn()
 const requireYearAdminForApunteIdMock = vi.fn()
 const requireYearAdminForCommissionIdMock = vi.fn()
@@ -44,6 +46,7 @@ vi.mock('next/cache', () => ({
 
 vi.mock('@/lib/auth', () => ({
   requireGeneralAdmin: requireGeneralAdminMock,
+  requireAcademicManager: requireAcademicManagerMock,
   requireYearAdminForAgendaId: requireYearAdminForAgendaIdMock,
   requireYearAdminForApunteId: requireYearAdminForApunteIdMock,
   requireYearAdminForCommissionId: requireYearAdminForCommissionIdMock,
@@ -89,7 +92,7 @@ vi.mock('@/lib/queries', () => ({
     year: (slug: string) => `year:${slug}`,
     subject: (slug: string) => `subject:${slug}`,
   },
-  getSubjectDeleteImpact: vi.fn(),
+  getSubjectDeleteImpact: getSubjectDeleteImpactMock,
   getYearDeleteImpact: vi.fn(),
 }))
 
@@ -348,5 +351,40 @@ describe('admin apunte actions', () => {
         mimeType: 'text/html; charset=utf-8',
       })],
     })
+  })
+})
+
+describe('getSubjectDeleteImpactAction', () => {
+  it('exige permiso de gestión académica antes de leer el impacto', async () => {
+    // Un ayudante: requireAcademicManager redirige (modelado como throw).
+    const redirectError = new Error('NEXT_REDIRECT')
+    requireAcademicManagerMock.mockRejectedValue(redirectError)
+
+    const { getSubjectDeleteImpactAction } = await import('./actions')
+
+    await expect(
+      getSubjectDeleteImpactAction(makeFormData({ id: 'subject-1' })),
+    ).rejects.toThrow('NEXT_REDIRECT')
+
+    // La compuerta corre ANTES de resolver el scope o leer el impacto.
+    expect(requireYearAdminForSubjectIdMock).not.toHaveBeenCalled()
+    expect(getSubjectDeleteImpactMock).not.toHaveBeenCalled()
+  })
+
+  it('devuelve el impacto cuando el usuario es gestor académico del año', async () => {
+    requireAcademicManagerMock.mockResolvedValue({ id: 'admin-1' })
+    requireYearAdminForSubjectIdMock.mockResolvedValue({
+      subjectSlug: 'calculo',
+      yearSlug: 'primer-anio',
+      admin: { id: 'admin-1' },
+    })
+    const impact = { apuntes: 3, eventos: 1, comisiones: 2, bancos: 0 }
+    getSubjectDeleteImpactMock.mockResolvedValue(impact)
+
+    const { getSubjectDeleteImpactAction } = await import('./actions')
+    const result = await getSubjectDeleteImpactAction(makeFormData({ id: 'subject-1' }))
+
+    expect(requireAcademicManagerMock).toHaveBeenCalledTimes(1)
+    expect(result).toEqual(impact)
   })
 })

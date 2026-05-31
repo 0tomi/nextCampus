@@ -198,8 +198,9 @@ export async function uploadQuizBank(params: {
   rawJson: string
   totalPreguntas: number
   subidoPor: string
+  subidoPorId: string
 }): Promise<QuizBankMeta> {
-  const { yearSlug, subjectSlug, nombre, rawJson, totalPreguntas, subidoPor } =
+  const { yearSlug, subjectSlug, nombre, rawJson, totalPreguntas, subidoPor, subidoPorId } =
     params
 
   if (Buffer.byteLength(rawJson, 'utf8') > MAX_BANK_BYTES) {
@@ -226,6 +227,7 @@ export async function uploadQuizBank(params: {
     totalPreguntas,
     subidoEl: new Date().toISOString(),
     subidoPor,
+    subidoPorId,
   }
 
   const { error: metaErr } = await supabase.storage
