@@ -48,6 +48,7 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
   const [visible, setVisible] = useState(false)
   const [ranking, setRanking] = useState<RankingItem[]>([])
   const [rankingLoading, setRankingLoading] = useState(false)
+  const [showRankingMobile, setShowRankingMobile] = useState(false)
   const dialogRef = useRef<HTMLDivElement>(null)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -69,6 +70,7 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
     } else {
       const hideTimer = setTimeout(() => {
         setVisible(false)
+        setShowRankingMobile(false)
       }, 0)
       timeoutRef.current = setTimeout(() => {
         setMounted(false)
@@ -208,30 +210,69 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
         {/* Content */}
         <div className="grid gap-6 px-6 py-6 relative z-10 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.82fr)]">
           <div className="space-y-5">
-            <p className="text-sm leading-relaxed text-white/70">
-              Somos estudiantes de la carrera de Licenciatura en Sistemas. Vimos que el campus no suple algunas
-              necesidades que tenemos, por lo que decidimos actuar implementando nuestra propia visión de un campus
-              universitario inteligente. En este campus podés encontrar diversas herramientas como un{' '}
-              <strong className="font-bold text-white">Calendario</strong> con eventos por materia,{' '}
-              <strong className="font-bold text-white">Quiz</strong> para autoevaluarse, y{' '}
-              <strong className="font-bold text-white">Apuntes interactivos</strong>.
-            </p>
+            {/* Texto de arriba (info del campus) */}
+            <div className={cn(showRankingMobile ? "hidden" : "block", "lg:block space-y-5")}>
+              <p className="text-sm leading-relaxed text-white/70">
+                Somos estudiantes de la carrera de Licenciatura en Sistemas. Vimos que el campus no suple algunas
+                necesidades que tenemos, por lo que decidimos actuar implementando nuestra propia visión de un campus
+                universitario inteligente. En este campus podés encontrar diversas herramientas como un{' '}
+                <strong className="font-bold text-white">Calendario</strong> con eventos por materia,{' '}
+                <strong className="font-bold text-white">Quiz</strong> para autoevaluarse, y{' '}
+                <strong className="font-bold text-white">Apuntes interactivos</strong>.
+              </p>
 
-            <p className="text-sm leading-relaxed text-white/70">
-              Todo el código es libre y abierto. Podés encontrarlo y aportar en nuestro repositorio de GitHub.
-            </p>
+              <p className="text-sm leading-relaxed text-white/70">
+                Todo el código es libre y abierto. Podés encontrarlo y aportar en nuestro repositorio de GitHub.
+              </p>
 
-            <div className="pt-2">
-              <a
-                href="https://github.com/0tomi/nextCampus"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-black transition-all hover:bg-white/90 active:scale-[0.98] cursor-pointer"
-              >
-                <GithubIcon className="h-4 w-4" />
-                Ver repositorio en GitHub
-              </a>
+              <div className="pt-2">
+                <a
+                  href="https://github.com/0tomi/nextCampus"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-black transition-all hover:bg-white/90 active:scale-[0.98] cursor-pointer"
+                >
+                  <GithubIcon className="h-4 w-4" />
+                  Ver repositorio en GitHub
+                </a>
+              </div>
             </div>
+
+            {/* Ranking de aportes en mobile (se muestra reemplazando al texto de arriba) */}
+            {showRankingMobile && (
+              <div className="lg:hidden animate-in space-y-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/30">
+                  Comunidad
+                </p>
+                <h3 className="font-display text-xl font-black tracking-tight text-white">
+                  Ranking de aportes
+                </h3>
+                <div className="divide-y divide-white/5">
+                  {rankingLoading ? (
+                    Array.from({ length: 5 }).map((_, index) => (
+                      <div key={index} className="h-12 animate-pulse bg-white/[0.05] py-3 first:pt-0" />
+                    ))
+                  ) : ranking.length > 0 ? (
+                    ranking.map((item) => (
+                      <div key={item.position} className="py-3 first:pt-0">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="min-w-0 truncate text-sm font-bold text-white">
+                            {item.position}. {item.nombreUsuario}
+                          </p>
+                        </div>
+                        <p className="mt-1 text-[11px] font-semibold text-white/45">
+                          {item.eventosCreados} eventos · {item.apuntesCreados} apuntes · {item.bancosPreguntasCreados} quiz
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="py-5 text-center text-sm leading-6 text-white/45">
+                      Todavía no hay aportes suficientes para armar el ranking.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Developer contacts */}
             <div className="space-y-2.5">
@@ -259,25 +300,37 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
                 </a>
               </div>
             </div>
+
+            {/* Botón de alternancia en mobile */}
+            <div className="lg:hidden pt-2">
+              <button
+                type="button"
+                onClick={() => setShowRankingMobile(!showRankingMobile)}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-white/10 active:scale-[0.98] cursor-pointer"
+              >
+                {showRankingMobile ? 'Sobre nosotros' : 'Contribuidores'}
+              </button>
+            </div>
           </div>
 
-          <aside className="rounded-xl border border-white/8 bg-white/[0.025] p-4">
+          {/* Sidebar de ranking en Desktop */}
+          <aside className="hidden lg:block">
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/30">
               Comunidad
             </p>
             <h3 className="mt-2 font-display text-xl font-black tracking-tight text-white">
               Ranking de aportes
             </h3>
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 divide-y divide-white/5">
               {rankingLoading ? (
                 Array.from({ length: 5 }).map((_, index) => (
-                  <div key={index} className="h-14 animate-pulse rounded-lg bg-white/[0.05]" />
+                  <div key={index} className="h-12 animate-pulse bg-white/[0.05] py-3 first:pt-0" />
                 ))
               ) : ranking.length > 0 ? (
                 ranking.map((item) => (
-                  <div key={item.position} className="rounded-lg border border-white/6 bg-surface-0/70 px-3 py-2.5">
+                  <div key={item.position} className="py-3 first:pt-0">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="min-w-0 truncate text-sm font-black text-white">
+                      <p className="min-w-0 truncate text-sm font-bold text-white">
                         {item.position}. {item.nombreUsuario}
                       </p>
                     </div>
@@ -287,7 +340,7 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
                   </div>
                 ))
               ) : (
-                <p className="rounded-lg border border-dashed border-white/10 bg-white/[0.02] px-3 py-5 text-center text-sm leading-6 text-white/45">
+                <p className="py-5 text-center text-sm leading-6 text-white/45">
                   Todavía no hay aportes suficientes para armar el ranking.
                 </p>
               )}
