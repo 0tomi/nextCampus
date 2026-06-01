@@ -121,7 +121,9 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
   };
 
   const handleAutocompleteYear = (year: number) => {
-    const yearSlugs = subjectsData.filter((subject) => subject.year === year).map((subject) => subject.slug);
+    const yearSlugs = subjectsData.flatMap((subject) =>
+      subject.year === year ? [subject.slug] : [],
+    );
     saveProgress(Array.from(new Set([...completed, ...yearSlugs])));
   };
 
@@ -172,8 +174,8 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
     return (
       <div className="flex h-96 items-center justify-center">
         <div className="space-y-4 text-center">
-          <RefreshCw className="mx-auto h-8 w-8 animate-spin text-amber-500" />
-          <p className="text-sm font-semibold tracking-wider text-white/40">Cargando mapa curricular...</p>
+          <RefreshCw className="mx-auto size-8 animate-spin text-amber-500" />
+          <p className="text-sm font-semibold tracking-wider text-white/40">Cargando mapa curricular…</p>
         </div>
       </div>
     );
@@ -187,7 +189,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
             <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
               <div className="max-w-3xl space-y-3">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-amber-300">
-                  <GraduationCap className="h-4 w-4" />
+                  <GraduationCap className="size-4" />
                   Plan 2010 · FCYT UADER
                 </div>
                 <div>
@@ -206,8 +208,8 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                   className="group flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-md border border-cyan-300/20 bg-cyan-300/8 px-3 py-2.5 text-left shadow-[0_0_22px_rgba(103,232,249,0.04)] transition hover:border-cyan-200/45 hover:bg-cyan-300/12"
                 >
                   <span className="flex items-center gap-3">
-                    <span className="inline-flex h-9 w-9 items-center justify-center rounded bg-cyan-200 text-black shadow-[0_0_18px_rgba(103,232,249,0.18)]">
-                      <Map className="h-4.5 w-4.5" />
+                    <span className="inline-flex size-9 items-center justify-center rounded bg-cyan-200 text-black shadow-[0_0_18px_rgba(103,232,249,0.18)]">
+                      <Map className="size-4.5" />
                     </span>
                     <span>
                       <span className="block text-xs font-black uppercase tracking-wider text-cyan-100">
@@ -218,7 +220,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                       </span>
                     </span>
                   </span>
-                  <ArrowRight className="h-4 w-4 text-cyan-100/45 transition group-hover:translate-x-0.5 group-hover:text-cyan-100" />
+                  <ArrowRight className="size-4 text-cyan-100/45 transition group-hover:translate-x-0.5 group-hover:text-cyan-100" />
                 </Link>
 
                 <div className="grid min-w-0 grid-cols-3 gap-2">
@@ -247,9 +249,10 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
 
             <div className="mt-6 flex flex-col gap-3 border-t border-white/6 pt-5 xl:flex-row xl:items-center xl:justify-between">
               <div className="relative w-full xl:max-w-md">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/30" />
                 <input
                   type="search"
+                  aria-label="Buscar por materia o código"
                   placeholder="Buscar por materia o código"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
@@ -270,7 +273,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                         : 'border-white/10 bg-white/5 text-white/60 hover:bg-white/8 hover:text-white',
                     )}
                   >
-                    <Filter className="h-3.5 w-3.5" />
+                    <Filter className="size-3.5" />
                     {filter === 'ALL' ? 'Todas' : STATUS_LABELS[filter]}
                   </button>
                 ))}
@@ -290,7 +293,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                 </div>
 
                 {suggestedSubjects.length === 0 ? (
-                  <p className="rounded-md bg-white/5 px-3 py-3 text-xs leading-5 text-white/45">
+                  <p className="rounded-md bg-white/5 p-3 text-xs leading-5 text-white/45">
                     No hay materias disponibles con el progreso actual.
                   </p>
                 ) : (
@@ -405,7 +408,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                         'border-white/10 bg-white/5 text-white/45',
                     )}
                   >
-                    {selectedStatus === 'COMPLETED' ? <RefreshCw className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+                    {selectedStatus === 'COMPLETED' ? <RefreshCw className="size-3.5" /> : <Check className="size-3.5" />}
                     {selectedStatus === 'COMPLETED' && 'Quitar marca'}
                     {selectedStatus === 'UNLOCKED' && 'Marcar avance'}
                     {selectedStatus === 'LOCKED' && 'En espera'}
@@ -417,7 +420,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                     onClick={() => handleAutocompleteYear(suggestedYearToComplete)}
                     className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-emerald-300/20 bg-emerald-400/8 px-3 py-2 text-xs font-bold text-emerald-100 transition hover:bg-emerald-400/14"
                   >
-                    <Sparkles className="h-3.5 w-3.5" />
+                    <Sparkles className="size-3.5" />
                     Marcar {YEAR_ACTION_LABELS[suggestedYearToComplete]}
                   </button>
                 ) : null}
@@ -427,7 +430,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                   disabled={completed.length === 0}
                   className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-red-300/20 bg-red-400/8 px-3 py-2 text-xs font-bold text-red-100 transition hover:bg-red-400/14 disabled:cursor-not-allowed disabled:opacity-35"
                 >
-                  <RefreshCw className="h-3.5 w-3.5" />
+                  <RefreshCw className="size-3.5" />
                   Reiniciar
                 </button>
               </div>
@@ -508,8 +511,8 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                     return (
                       <div
                         key={subject.slug}
+                        role="button"
                         tabIndex={0}
-                        onMouseDown={(event) => event.preventDefault()}
                         onClick={() => setSelectedSubjectSlug(subject.slug)}
                         onKeyDown={(event) => {
                           if (event.key === 'Enter' || event.key === ' ') {
@@ -517,7 +520,6 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                             setSelectedSubjectSlug(subject.slug);
                           }
                         }}
-                        onFocus={() => setSelectedSubjectSlug(subject.slug)}
                         aria-label={`Ver detalles de ${subject.nombre}`}
                         className={cn(
                           'group relative flex min-h-[132px] w-full cursor-pointer flex-col justify-between rounded-md border p-3 text-left transition duration-200',
@@ -531,9 +533,9 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                       >
                         <div className="space-y-2 pr-5">
                           <div className="absolute right-3 top-3">
-                            {status === 'COMPLETED' ? <CheckCircle2 className="h-4 w-4 text-emerald-200" /> : null}
-                            {status === 'UNLOCKED' ? <Unlock className="h-4 w-4 text-amber-200/70" /> : null}
-                            {status === 'LOCKED' ? <Lock className="h-4 w-4 text-white/30" /> : null}
+                            {status === 'COMPLETED' ? <CheckCircle2 className="size-4 text-emerald-200" /> : null}
+                            {status === 'UNLOCKED' ? <Unlock className="size-4 text-amber-200/70" /> : null}
+                            {status === 'LOCKED' ? <Lock className="size-4 text-white/30" /> : null}
                           </div>
                           <p className="text-[10px] font-black uppercase tracking-widest text-white/35">
                             {subject.codigo} · {subject.periodo}
@@ -575,9 +577,9 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                                   onClick={(event) => event.stopPropagation()}
                                   className="inline-flex w-fit items-center gap-1 text-[10px] font-bold text-white/40 transition hover:text-white"
                                 >
-                                  <BookOpen className="h-3 w-3" />
+                                  <BookOpen className="size-3" />
                                   Abrir materia
-                                  <ArrowRight className="h-3 w-3" />
+                                  <ArrowRight className="size-3" />
                                 </Link>
                               ) : (
                                 <span className="text-[10px] font-bold text-white/28">Ver detalle</span>
@@ -596,7 +598,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                                     : 'border-amber-300/25 bg-amber-400/10 text-amber-100 hover:bg-amber-400/16',
                                 )}
                               >
-                                {isCompleted ? <RefreshCw className="h-3 w-3" /> : <Check className="h-3 w-3" />}
+                                {isCompleted ? <RefreshCw className="size-3" /> : <Check className="size-3" />}
                                 {isCompleted ? 'Quitar' : 'Marcar'}
                               </button>
                             </div>
@@ -608,7 +610,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                               disabled
                               className="inline-flex cursor-not-allowed items-center gap-1 rounded-md border border-white/8 bg-white/5 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-white/28"
                             >
-                              <Lock className="h-3 w-3" />
+                              <Lock className="size-3" />
                               En espera
                             </button>
                           ) : null}

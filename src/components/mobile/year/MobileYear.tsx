@@ -323,7 +323,7 @@ export function MobileYear({
             >
               <div className="flex items-center gap-3">
                 <span
-                  className={['flex items-center justify-center w-9 h-9 rounded-md bg-gradient-to-br', colors.badgeClassName].join(' ')}
+                  className={['flex items-center justify-center size-9 rounded-md bg-gradient-to-br', colors.badgeClassName].join(' ')}
                 >
                   <Calendar size={16} strokeWidth={2.5} />
                 </span>
@@ -359,7 +359,7 @@ export function MobileYear({
                   className="flex items-center gap-3 p-3 rounded-xl bg-[#1a1a1a] border border-white/5 cursor-pointer hover:bg-[#1f1f1f] transition-colors"
                 >
                   <span
-                    className={['flex items-center justify-center w-10 h-10 shrink-0 rounded-md bg-gradient-to-br text-[13px] font-black', colors.badgeClassName].join(' ')}
+                    className={['flex items-center justify-center size-10 shrink-0 rounded-md bg-gradient-to-br text-[13px] font-black', colors.badgeClassName].join(' ')}
                   >
                     {String(idx + 1).padStart(2, '0')}
                   </span>

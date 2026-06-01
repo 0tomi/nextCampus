@@ -1,5 +1,11 @@
+import type { Metadata } from 'next'
 import { SubjectRoutePage } from '../SubjectRoutePage'
 import { getSubjectRouteContext } from '../subject-route-context'
+
+export const metadata: Metadata = {
+  title: 'Comisión | NextCampus',
+  description: 'Consultá el calendario, apuntes y quiz de la comisión.',
+}
 
 export const revalidate = 300
 

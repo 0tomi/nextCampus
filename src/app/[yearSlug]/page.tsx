@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
@@ -24,6 +25,11 @@ function GoogleDriveIcon({ className }: { className?: string }) {
       className={className}
     />
   )
+}
+
+export const metadata: Metadata = {
+  title: 'Año académico | NextCampus',
+  description: 'Accedé a materias, calendario y apuntes del año académico.',
 }
 
 export const revalidate = 300
@@ -196,7 +202,7 @@ export default async function YearPage({
                     rel="noopener noreferrer"
                     className="inline-flex cursor-pointer items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                   >
-                    <GoogleDriveIcon className="h-5 w-5" />
+                    <GoogleDriveIcon className="size-5" />
                     Drive del año
                   </a>
                 )}
@@ -208,7 +214,7 @@ export default async function YearPage({
                     rel="noopener noreferrer"
                     className="inline-flex cursor-pointer items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                   >
-                    <CirclePlay className="h-5 w-5 text-red-400" />
+                    <CirclePlay className="size-5 text-red-400" />
                     Playlist del año
                   </a>
                 )}
@@ -271,7 +277,7 @@ export default async function YearPage({
 
                     <div className="mt-6 flex items-center justify-between text-sm font-semibold text-white/58">
                       <span>Abrir materia</span>
-                      <ArrowRight className="h-4 w-4" />
+                      <ArrowRight className="size-4" />
                     </div>
                   </DarkCard>
                 </Link>

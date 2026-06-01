@@ -331,6 +331,7 @@ function EventModalContent({
                   type="search"
                   value={apunteQuery}
                   onChange={(event) => setApunteQuery(event.target.value)}
+                  aria-label="Buscar apunte por título"
                   placeholder="Buscar apunte por título"
                   className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
                 />
@@ -356,9 +357,8 @@ function EventModalContent({
                       Buscando apuntes…
                     </p>
                   ) : apunteResults.length > 0 ? (
-                    apunteResults
-                      .filter((apunte) => !selectedApuntes.some((selected) => selected.id === apunte.id))
-                      .map((apunte) => (
+                    apunteResults.flatMap((apunte) =>
+                      selectedApuntes.some((selected) => selected.id === apunte.id) ? [] : [
                         <button
                           key={apunte.id}
                           type="button"
@@ -367,8 +367,8 @@ function EventModalContent({
                         >
                           <span className="truncate">{apunte.titulo}</span>
                           <span className="shrink-0 text-[10px] uppercase tracking-wider text-white/35">Asociar</span>
-                        </button>
-                      ))
+                        </button>,
+                      ])
                   ) : (
                     apunteQuery.trim() ? (
                       <p className="rounded border border-dashed border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-white/42">
@@ -552,9 +552,9 @@ function CollapsibleFormSection({
             {hint}
           </span>
         </span>
-        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/35 transition-colors group-hover:border-white/20 group-hover:text-white">
+        <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/35 transition-colors group-hover:border-white/20 group-hover:text-white">
           <ChevronDown
-            className={`h-4 w-4 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+            className={`size-4 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
           />
         </span>
       </button>

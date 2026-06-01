@@ -120,7 +120,7 @@ export function HomeYearsGrid({ initialPrefs, years }: HomeYearsGridProps) {
         onClick={() => setShowHiddenYears((current) => !current)}
         className="inline-flex cursor-pointer items-center gap-2 rounded border border-white/10 bg-surface-1 px-3 py-1.5 text-xs font-semibold text-white/60 transition-colors hover:bg-white/5 hover:text-white"
       >
-        <EyeOff className="h-3.5 w-3.5" />
+        <EyeOff className="size-3.5" />
         {showHiddenYears ? 'Ocultar años ocultos' : 'Mostrar años ocultos'}
       </button>
     </div>
@@ -144,7 +144,7 @@ export function HomeYearsGrid({ initialPrefs, years }: HomeYearsGridProps) {
             href="/configurar"
             className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-light"
           >
-            <SlidersHorizontal className="h-4 w-4" />
+            <SlidersHorizontal className="size-4" />
             Configurar
           </Link>
         </div>
@@ -230,7 +230,7 @@ export function HomeYearsGrid({ initialPrefs, years }: HomeYearsGridProps) {
                       })}
                       className="group flex items-center gap-3 px-5 py-4 transition-colors hover:bg-white/5"
                     >
-                      <Layers className="h-[14px] w-[14px] shrink-0 text-white/20 transition-colors group-hover:text-white/40" />
+                      <Layers className="size-[14px] shrink-0 text-white/20 transition-colors group-hover:text-white/40" />
                       <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-white/60 transition-colors group-hover:text-white">
                         {subject.nombre}
                       </span>
@@ -313,9 +313,9 @@ function AddSubjectCard({ yearId }: { yearId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-full w-full min-h-[140px] cursor-pointer flex-col items-center justify-center gap-2 rounded border border-dashed border-white/10 bg-surface-1/40 hover:bg-surface-1/70 hover:border-white/20 text-white/40 hover:text-white/60 transition-all p-5"
+        className="flex size-full min-h-[140px] cursor-pointer flex-col items-center justify-center gap-2 rounded border border-dashed border-white/10 bg-surface-1/40 hover:bg-surface-1/70 hover:border-white/20 text-white/40 hover:text-white/60 transition-all p-5"
       >
-        <Plus className="h-5 w-5" />
+        <Plus className="size-5" />
         <span className="text-xs font-bold uppercase tracking-wider">Agregar Materia</span>
       </button>
 
@@ -361,7 +361,7 @@ function HomeYearCardSection({
             )}
           >
             {year.nombre}
-            <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+            <ArrowRight className="size-4 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
           </h3>
         </Link>
 
@@ -466,7 +466,7 @@ function HomeYearCardSection({
 
                 <div className="mt-6 flex items-center justify-between text-sm font-semibold text-white/58 transition-colors group-hover:text-white/80">
                   <span>Abrir materia</span>
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
                 </div>
               </DarkCard>
             </Link>

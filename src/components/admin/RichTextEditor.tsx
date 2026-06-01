@@ -85,7 +85,7 @@ export function RichTextEditor({
           title="Negrita"
           disabled={!editor}
         >
-          <Bold className="h-3.5 w-3.5" />
+          <Bold className="size-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor?.chain().focus().toggleItalic().run()}
@@ -93,7 +93,7 @@ export function RichTextEditor({
           title="Cursiva"
           disabled={!editor}
         >
-          <Italic className="h-3.5 w-3.5" />
+          <Italic className="size-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor?.chain().focus().toggleStrike().run()}
@@ -101,7 +101,7 @@ export function RichTextEditor({
           title="Tachado"
           disabled={!editor}
         >
-          <Strikethrough className="h-3.5 w-3.5" />
+          <Strikethrough className="size-3.5" />
         </ToolbarButton>
 
         <div className="mx-1 h-4 w-px bg-white/10" />
@@ -112,7 +112,7 @@ export function RichTextEditor({
           title="Título 2"
           disabled={!editor}
         >
-          <Heading2 className="h-3.5 w-3.5" />
+          <Heading2 className="size-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
@@ -120,7 +120,7 @@ export function RichTextEditor({
           title="Título 3"
           disabled={!editor}
         >
-          <Heading3 className="h-3.5 w-3.5" />
+          <Heading3 className="size-3.5" />
         </ToolbarButton>
 
         <div className="mx-1 h-4 w-px bg-white/10" />
@@ -131,7 +131,7 @@ export function RichTextEditor({
           title="Lista"
           disabled={!editor}
         >
-          <List className="h-3.5 w-3.5" />
+          <List className="size-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor?.chain().focus().toggleOrderedList().run()}
@@ -139,7 +139,7 @@ export function RichTextEditor({
           title="Lista numerada"
           disabled={!editor}
         >
-          <ListOrdered className="h-3.5 w-3.5" />
+          <ListOrdered className="size-3.5" />
         </ToolbarButton>
 
         <div className="mx-1 h-4 w-px bg-white/10" />
@@ -150,7 +150,7 @@ export function RichTextEditor({
           title="Agregar enlace"
           disabled={!editor}
         >
-          <Link2 className="h-3.5 w-3.5" />
+          <Link2 className="size-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor?.chain().focus().unsetLink().run()}
@@ -158,7 +158,7 @@ export function RichTextEditor({
           title="Quitar enlace"
           disabled={!editor || !editor.isActive('link')}
         >
-          <Link2Off className="h-3.5 w-3.5" />
+          <Link2Off className="size-3.5" />
         </ToolbarButton>
 
         <div className="mx-1 h-4 w-px bg-white/10" />
@@ -169,7 +169,7 @@ export function RichTextEditor({
           title="Quitar formato"
           disabled={!editor}
         >
-          <RemoveFormatting className="h-3.5 w-3.5" />
+          <RemoveFormatting className="size-3.5" />
         </ToolbarButton>
       </div>
 
@@ -200,7 +200,7 @@ function ToolbarButton({ onClick, active, title, disabled, children }: ToolbarBu
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`inline-flex h-7 w-7 items-center justify-center rounded text-xs transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${
+      className={`inline-flex size-7 items-center justify-center rounded text-xs transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${
         active
           ? 'bg-white/15 text-white'
           : 'text-white/50 hover:bg-white/8 hover:text-white'

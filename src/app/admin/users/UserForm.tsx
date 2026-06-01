@@ -63,7 +63,7 @@ export function AdminUserForm({ mode, years, action, user }: AdminUserFormProps)
             required
             defaultValue={user?.nombreUsuario ?? ''}
             placeholder="Nombre completo"
-            className="block w-full rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-violet-300/60"
+            className="block w-full rounded-md border border-white/10 bg-gray-950/30 p-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-violet-300/60"
           />
         </label>
 
@@ -76,7 +76,7 @@ export function AdminUserForm({ mode, years, action, user }: AdminUserFormProps)
             required
             defaultValue={user?.email ?? ''}
             placeholder="persona@ejemplo.com"
-            className="block w-full rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-violet-300/60"
+            className="block w-full rounded-md border border-white/10 bg-gray-950/30 p-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-violet-300/60"
           />
         </label>
       </div>
@@ -92,7 +92,7 @@ export function AdminUserForm({ mode, years, action, user }: AdminUserFormProps)
             required={!isEdit}
             minLength={8}
             placeholder={isEdit ? 'Dejar vacío para mantenerla' : 'Mínimo 8 caracteres'}
-            className="block w-full rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-violet-300/60"
+            className="block w-full rounded-md border border-white/10 bg-gray-950/30 p-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-violet-300/60"
           />
         </label>
       </div>
@@ -105,7 +105,7 @@ export function AdminUserForm({ mode, years, action, user }: AdminUserFormProps)
               key={user?.role}
               name="role"
               defaultValue={user?.role ?? 'AYUDANTE'}
-              className="block w-full cursor-pointer rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition focus:border-violet-300/60"
+              className="block w-full cursor-pointer rounded-md border border-white/10 bg-gray-950/30 p-3 text-sm text-white outline-none transition focus:border-violet-300/60"
             >
               <option value="AYUDANTE">Ayudante</option>
               <option value="SUPERVISOR">Supervisor</option>
@@ -117,7 +117,7 @@ export function AdminUserForm({ mode, years, action, user }: AdminUserFormProps)
               key={user?.status}
               name="status"
               defaultValue={user?.status ?? 'ACTIVE'}
-              className="block w-full cursor-pointer rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition focus:border-violet-300/60"
+              className="block w-full cursor-pointer rounded-md border border-white/10 bg-gray-950/30 p-3 text-sm text-white outline-none transition focus:border-violet-300/60"
             >
               <option value="ACTIVE">Activo</option>
               <option value="DISABLED">Desactivado</option>
@@ -136,14 +136,14 @@ export function AdminUserForm({ mode, years, action, user }: AdminUserFormProps)
             {years.map((year) => (
               <label
                 key={year.id}
-                className="flex cursor-pointer items-center gap-3 rounded-md border border-white/10 bg-black/20 px-3 py-3 text-sm text-white/75 transition hover:border-violet-300/50 hover:bg-violet-400/10"
+                className="flex cursor-pointer items-center gap-3 rounded-md border border-white/10 bg-gray-950/20 p-3 text-sm text-white/75 transition hover:border-violet-300/50 hover:bg-violet-400/10"
               >
                 <input
                   type="checkbox"
                   name="yearIds"
                   value={year.id}
                   defaultChecked={selectedYears.has(year.id)}
-                  className="h-4 w-4 cursor-pointer rounded border-white/20 bg-black text-violet-500 focus:ring-violet-400"
+                  className="size-4 cursor-pointer rounded border-white/20 bg-gray-950 text-violet-500 focus:ring-violet-400"
                 />
                 <span>{year.nombre}</span>
               </label>

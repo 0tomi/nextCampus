@@ -3,18 +3,15 @@ import {
   type RecursoTipo,
 } from './recursos'
 
-export const APUNTE_CATEGORIAS = [
-  'Otro',
-  'Documento',
-  'Herramienta',
-  'Cuestionario',
-  'Video',
-  'Imágenes',
-  'Pizarra',
-  'Interactivo',
-] as const
-
-export type ApunteCategoriaNombre = (typeof APUNTE_CATEGORIAS)[number]
+export type ApunteCategoriaNombre =
+  | 'Otro'
+  | 'Documento'
+  | 'Herramienta'
+  | 'Cuestionario'
+  | 'Video'
+  | 'Imágenes'
+  | 'Pizarra'
+  | 'Interactivo'
 
 export interface CategoriaOption {
   id: string
@@ -86,24 +83,4 @@ export function inferirCategoriasDeApunte(
   }
 
   return inferred.size > 0 ? [...inferred] : ['Otro']
-}
-
-export function categoriaIdsFromNames(
-  categorias: readonly CategoriaOption[],
-  nombres: readonly string[],
-): string[] {
-  const wanted = new Set(nombres)
-  return categorias
-    .filter((categoria) => wanted.has(categoria.nombre))
-    .map((categoria) => categoria.id)
-}
-
-export function categoriaNamesFromIds(
-  categorias: readonly CategoriaOption[],
-  ids: readonly string[],
-): string[] {
-  const selected = new Set(ids)
-  return categorias
-    .filter((categoria) => selected.has(categoria.id))
-    .map((categoria) => categoria.nombre)
 }

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
@@ -9,6 +10,11 @@ import {
   buildSubjectQuizHref,
 } from '@/components/mobile/shared/subjectRoutes'
 import { QuizRunner } from './QuizRunner'
+
+export const metadata: Metadata = {
+  title: 'Quiz | NextCampus',
+  description: 'Practicá preguntas por unidad para preparar la materia.',
+}
 
 export const revalidate = 3600
 
@@ -65,7 +71,7 @@ export default async function QuizPage({
             })}
             className="inline-flex items-center gap-2 text-sm font-semibold text-white/56 transition-colors hover:text-white"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="size-4" />
             {subject.nombre}
           </Link>
         </div>

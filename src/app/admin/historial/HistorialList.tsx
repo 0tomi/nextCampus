@@ -195,7 +195,8 @@ export function HistorialList({
             </span>
             <div className="relative mt-3 w-full" ref={containerRef}>
               <div className="relative">
-                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
+                <label className="sr-only" htmlFor="historial-user-search">Buscar persona</label>
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-white/35" />
                 <input
                   id="historial-user-search"
                   value={userQuery}
@@ -246,7 +247,7 @@ export function HistorialList({
                     className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold text-red-200 transition-colors hover:bg-primary/20"
                   >
                     <span>{user.email}</span>
-                    <X className="h-3 w-3 text-red-200/60" />
+                    <X className="size-3 text-red-200/60" />
                   </button>
                 ))}
               </div>
@@ -313,9 +314,9 @@ function HistorialRow({ entry }: { entry: HistorialEntry }) {
   const relative = timeAgo(date)
 
   return (
-    <li className="flex gap-4 rounded-lg border border-white/5 bg-surface-1 px-4 py-4 transition-colors hover:border-white/10">
-      <span className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-gradient-to-br ${rendered.iconClassName}`}>
-        <Icon className="h-5 w-5" />
+    <li className="flex gap-4 rounded-lg border border-white/5 bg-surface-1 p-4 transition-colors hover:border-white/10">
+      <span className={`inline-flex size-10 shrink-0 items-center justify-center rounded-md bg-gradient-to-br ${rendered.iconClassName}`}>
+        <Icon className="size-5" />
       </span>
 
       <div className="min-w-0 flex-1">

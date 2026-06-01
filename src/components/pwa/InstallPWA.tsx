@@ -32,7 +32,7 @@ function IosInstructionsSheet({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-white/50 transition-colors hover:bg-white/5 hover:text-white"
+            className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-white/50 transition-colors hover:bg-white/5 hover:text-white"
           >
             <X size={16} strokeWidth={2} />
           </button>
@@ -40,7 +40,7 @@ function IosInstructionsSheet({ onClose }: { onClose: () => void }) {
 
         <ol className="mt-4 flex flex-col gap-3">
           <li className="flex items-start gap-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
               <Share size={15} strokeWidth={2} />
             </span>
             <div className="flex flex-col gap-0.5 pt-1">
@@ -53,7 +53,7 @@ function IosInstructionsSheet({ onClose }: { onClose: () => void }) {
             </div>
           </li>
           <li className="flex items-start gap-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
               <Plus size={15} strokeWidth={2} />
             </span>
             <div className="flex flex-col gap-0.5 pt-1">
@@ -109,7 +109,7 @@ export function InstallPWATopbarButton() {
   const action = useInstallAction()
 
   if (!action.visible) {
-    return <div className="h-10 w-10" aria-hidden />
+    return <div className="size-10" aria-hidden />
   }
 
   return (
@@ -118,7 +118,7 @@ export function InstallPWATopbarButton() {
         type="button"
         aria-label="Instalar app"
         onClick={action.onClick}
-        className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-primary/35 bg-primary/12 text-white transition-colors hover:border-primary/55 hover:bg-primary/20"
+        className="flex size-10 cursor-pointer items-center justify-center rounded-lg border border-primary/35 bg-primary/12 text-white transition-colors hover:border-primary/55 hover:bg-primary/20"
       >
         <Download size={17} strokeWidth={2.3} />
       </button>
@@ -144,9 +144,9 @@ export function InstallPWASettingsCard({ className }: InstallPWASettingsCardProp
           className,
         )}
       >
-        <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary-dark text-white shadow-[0_0_18px_rgba(204,0,0,0.28)]">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary-dark text-white shadow-[0_0_18px_rgba(204,0,0,0.28)]">
               <Smartphone size={20} strokeWidth={2.2} />
             </span>
             <div className="flex flex-col gap-1">

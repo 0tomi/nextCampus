@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, use, type ReactNode } from 'react'
 import type { AdminSessionState } from './adminAccess'
 
 // Provider que recibe la sesión ya resuelta en el server (root layout).
@@ -22,5 +22,5 @@ export function AdminSessionProvider({ session, children }: AdminSessionProvider
 }
 
 export function useAdminSessionContext(): AdminSessionState | null {
-  return useContext(AdminSessionContext)
+  return use(AdminSessionContext)
 }

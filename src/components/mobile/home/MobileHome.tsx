@@ -114,12 +114,17 @@ export function MobileHome({
     )
   }
 
-  const visibleYears = career.years
-        .filter((y) => isYearVisible(y.slug, effectivePrefs))
-        .map((y) => ({
-          ...y,
-          subjects: y.subjects.filter((s) => isSubjectVisible(y.slug, s.slug, effectivePrefs)),
-        }))
+  const visibleYears = career.years.flatMap((year) => {
+    if (!isYearVisible(year.slug, effectivePrefs)) return []
+    return [
+      {
+        ...year,
+        subjects: year.subjects.filter((subject) =>
+          isSubjectVisible(year.slug, subject.slug, effectivePrefs),
+        ),
+      },
+    ]
+  })
 
   const filteredUpcomingEvents = hasConfiguredSubjects
     ? upcomingEvents.filter((e) => {
@@ -202,8 +207,8 @@ export function MobileHome({
         {/* HERO */}
         <section className="px-[18px] pt-4">
           <div className="relative overflow-hidden rounded-[24px] border border-white/6 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] px-5 py-4">
-            <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-orange-400/12 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-10 left-0 h-24 w-24 rounded-full bg-amber-200/8 blur-2xl" />
+            <div className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full bg-orange-400/12 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-10 left-0 size-24 rounded-full bg-amber-200/8 blur-2xl" />
             <div className="relative min-h-[136px] pr-1 pb-12">
               <div className="min-w-0">
                 <div className="flex items-baseline gap-2">
@@ -279,8 +284,8 @@ export function MobileHome({
               href="/configurar"
               className="relative block group overflow-hidden rounded-[24px] border border-white/6 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.01))] hover:bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-6 text-center cursor-pointer transition-all duration-300"
             >
-              <div className="pointer-events-none absolute -right-6 -bottom-6 h-20 w-20 rounded-full bg-primary/10 blur-2xl group-hover:bg-primary/15 transition-colors duration-300" />
-              <div className="pointer-events-none absolute -left-10 -top-10 h-24 w-24 rounded-full bg-white/5 blur-2xl" />
+              <div className="pointer-events-none absolute -right-6 -bottom-6 size-20 rounded-full bg-primary/10 blur-2xl group-hover:bg-primary/15 transition-colors duration-300" />
+              <div className="pointer-events-none absolute -left-10 -top-10 size-24 rounded-full bg-white/5 blur-2xl" />
               
               <div className="relative flex flex-col items-center gap-4">
                 <h3 className="text-base font-bold text-white/90 leading-snug max-w-[280px] mx-auto transition-colors group-hover:text-white">
@@ -289,7 +294,7 @@ export function MobileHome({
                 
                 <div className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/5 px-4 py-2 text-xs font-semibold text-white/70 group-hover:bg-white/10 group-hover:text-white transition-all">
                   <span>Configurar inicio</span>
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+                  <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
                 </div>
               </div>
             </Link>
@@ -358,8 +363,8 @@ function EmptyAgenda() {
 function ConfigureAgendaNotice() {
   return (
     <div className="flex flex-col items-start gap-3 rounded-lg border border-dashed border-white/10 bg-[#1a1a1a] p-4">
-      <span className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/10 bg-white/[0.03] text-white/70">
-        <CalendarDays className="h-4 w-4" />
+      <span className="inline-flex size-9 items-center justify-center rounded-md border border-white/10 bg-white/[0.03] text-white/70">
+        <CalendarDays className="size-4" />
       </span>
       <div className="space-y-1">
         <h3 className="text-base font-black text-white">
@@ -373,7 +378,7 @@ function ConfigureAgendaNotice() {
         href="/configurar"
         className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-light"
       >
-        <SlidersHorizontal className="h-4 w-4" />
+        <SlidersHorizontal className="size-4" />
         Configurar
       </Link>
     </div>

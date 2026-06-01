@@ -188,15 +188,15 @@ export function MobileCalendar({
           <button
             onClick={goPrev}
             aria-label="Mes anterior"
-            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/[0.06] bg-[#1a1a1a] text-white/80 transition-colors hover:bg-[#222]"
-          >
+            className="inline-flex size-10 cursor-pointer items-center justify-center rounded-full border border-white/[0.06] bg-[#1a1a1a] text-white/80 transition-colors hover:bg-[#222]"
+           type="button">
             <ChevronLeft size={16} />
           </button>
           <button
             onClick={goNext}
             aria-label="Mes siguiente"
-            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/[0.06] bg-[#1a1a1a] text-white/80 transition-colors hover:bg-[#222]"
-          >
+            className="inline-flex size-10 cursor-pointer items-center justify-center rounded-full border border-white/[0.06] bg-[#1a1a1a] text-white/80 transition-colors hover:bg-[#222]"
+           type="button">
             <ChevronRight size={16} />
           </button>
         </div>
@@ -240,6 +240,7 @@ export function MobileCalendar({
             return (
               <button
                 key={i}
+                type="button"
                 onClick={() => {
                   if (cell.muted) return
                   if (isSelected) setSelected(null)
@@ -269,7 +270,7 @@ export function MobileCalendar({
                       return (
                         <span
                           key={j}
-                          className="h-1 w-1 rounded-full"
+                          className="size-1 rounded-full"
                           style={{
                             background: isSelected
                               ? 'rgba(0,0,0,0.55)'
@@ -299,7 +300,7 @@ export function MobileCalendar({
           ).map(([label, tone]) => (
             <span key={label} className="inline-flex items-center gap-1.5">
               <span
-                className="h-1.5 w-1.5 rounded-full"
+                className="size-1.5 rounded-full"
                 style={{ background: tone.text }}
               />
               {label}
@@ -334,6 +335,7 @@ export function MobileCalendar({
             )}
             {selected && (
               <button
+                type="button"
                 onClick={() => setSelected(null)}
                 className="relative cursor-pointer rounded-full border border-white/10 bg-transparent text-[9px] font-extrabold uppercase tracking-[0.14em] text-white/70 before:absolute before:-inset-2 before:content-['']"
                 style={{ height: 24, padding: '0 10px' }}

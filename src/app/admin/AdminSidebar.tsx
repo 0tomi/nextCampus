@@ -26,7 +26,7 @@ export function buildAdminSidebarItems({
       href: '/admin/perfil',
       label: 'Mi perfil',
       meta: 'Tu cuenta y acceso',
-      badge: <CircleUserRound className="h-4 w-4" />,
+      badge: <CircleUserRound className="size-4" />,
       badgeClassName: BADGE_PROFILE,
       active: pathname.startsWith('/admin/perfil'),
     },
@@ -38,7 +38,7 @@ export function buildAdminSidebarItems({
       href: '/admin/users',
       label: 'Usuarios',
       meta: 'Administradores del campus',
-      badge: <Users className="h-4 w-4" />,
+      badge: <Users className="size-4" />,
       badgeClassName: BADGE_USERS,
       active: pathname.startsWith('/admin/users'),
     })
@@ -50,7 +50,7 @@ export function buildAdminSidebarItems({
       href: '/admin/historial',
       label: 'Historial',
       meta: 'Movimientos recientes',
-      badge: <History className="h-4 w-4" />,
+      badge: <History className="size-4" />,
       badgeClassName: BADGE_HISTORY,
       active: pathname.startsWith('/admin/historial'),
     })

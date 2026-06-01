@@ -114,7 +114,7 @@ export function SubjectPageAdminOverlay({
           onClick={() => { setUploadBankOpen(true); setUploadBankKey((k) => k + 1) }}
           className="inline-flex items-center gap-2 rounded border border-white/10 bg-surface-1 px-3 py-2 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus className="size-3.5" />
           Subir banco de preguntas
         </button>
         <button
@@ -122,7 +122,7 @@ export function SubjectPageAdminOverlay({
           onClick={() => setNewApunteOpen(true)}
           className="inline-flex items-center gap-2 rounded border border-white/10 bg-surface-1 px-3 py-2 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus className="size-3.5" />
           Nuevo apunte
         </button>
         <AdminControls yearId={yearId} yearSlug={yearSlug} requireAcademicStructure noWrapper>
@@ -131,7 +131,7 @@ export function SubjectPageAdminOverlay({
             onClick={() => setNewCommissionOpen(true)}
             className="inline-flex items-center gap-2 rounded border border-white/10 bg-surface-1 px-3 py-2 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="size-3.5" />
             Nueva comisión
           </button>
         </AdminControls>
@@ -140,7 +140,7 @@ export function SubjectPageAdminOverlay({
           onClick={() => setNewEventOpen(true)}
           className="inline-flex items-center gap-2 rounded border border-white/10 bg-surface-1 px-3 py-2 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus className="size-3.5" />
           Nuevo evento
         </button>
         <AdminControls yearId={yearId} yearSlug={yearSlug} requireAcademicStructure noWrapper>
@@ -149,7 +149,7 @@ export function SubjectPageAdminOverlay({
             onClick={() => setEditSubjectOpen(true)}
             className="inline-flex items-center gap-2 rounded border border-white/12 bg-surface-1 px-3 py-2 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className="size-3.5" />
             Editar materia
           </button>
         </AdminControls>
@@ -250,9 +250,9 @@ export function DeleteEventoButton({
         <button
           type="submit"
           title="Eliminar evento"
-          className="inline-flex h-7 w-7 items-center justify-center rounded text-rose-400/60 transition-colors hover:bg-rose-500/10 hover:text-rose-300 cursor-pointer"
+          className="inline-flex size-7 items-center justify-center rounded text-rose-400/60 transition-colors hover:bg-rose-500/10 hover:text-rose-300 cursor-pointer"
         >
-          <Trash2 className="h-3.5 w-3.5" />
+          <Trash2 className="size-3.5" />
         </button>
       </form>
     </AdminControls>
@@ -293,9 +293,9 @@ export function DeleteApunteButton({
             window.dispatchEvent(new CustomEvent('apuntes-changed'))
           })
         }}
-        className="inline-flex h-7 w-7 items-center justify-center rounded text-rose-400/60 transition-colors hover:bg-rose-500/10 hover:text-rose-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex size-7 items-center justify-center rounded text-rose-400/60 transition-colors hover:bg-rose-500/10 hover:text-rose-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <Trash2 className="h-3.5 w-3.5" />
+        <Trash2 className="size-3.5" />
       </button>
     </AdminControls>
   )

@@ -44,7 +44,7 @@ export default async function AdminUsersPage() {
           href="/admin/users/create"
           className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md bg-violet-500 px-5 py-3 text-sm font-bold text-white transition hover:bg-violet-400"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="size-4" />
           Crear usuario
         </Link>
       </div>
@@ -63,7 +63,7 @@ export default async function AdminUsersPage() {
             {users.map((user) => {
               const years = user.yearPermissions.map((permission) => permission.year.nombre)
               return (
-                <li key={user.id} className="grid grid-cols-12 gap-3 px-4 py-4 text-sm text-white/70">
+                <li key={user.id} className="grid grid-cols-12 gap-3 p-4 text-sm text-white/70">
                   <div className="col-span-12 md:col-span-4">
                     <p className="font-semibold text-white">{user.nombreUsuario}</p>
                     <p className="text-xs text-white/55">{user.email}</p>
@@ -83,7 +83,7 @@ export default async function AdminUsersPage() {
                       href={`/admin/users/edit/${user.id}`}
                       className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 px-3 py-2 text-xs font-semibold text-white/70 transition hover:bg-white/5 hover:text-white"
                     >
-                      <Pencil className="h-3.5 w-3.5" />
+                      <Pencil className="size-3.5" />
                       Editar
                     </Link>
                   </div>

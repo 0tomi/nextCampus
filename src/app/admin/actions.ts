@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import {
   ensureCanManageContribution,
   requireAcademicManager,
+  requireAnyAdmin,
   requireGeneralAdmin,
   requireYearAdminForAgendaId,
   requireYearAdminForApunteId,
@@ -50,6 +51,7 @@ import {
   awardEventoCreated,
   awardQuizBankCreated,
 } from '@/lib/contributions'
+import { isReservedYearSlug, reservedYearSlugSet } from '@/lib/year-slugs'
 
 // Next 16 exige un perfil de cacheLife como segundo argumento de
 // revalidateTag. Usamos "max" (stale-while-revalidate) en todas las
@@ -61,16 +63,13 @@ function revalidateTag(tag: string): void {
 
 // Toda escritura: auth específico (general o por año) -> Zod -> sanitize.
 
-// Nombres de sección reservados en la raíz del sitio. Los años no pueden tener
-// un slug que colisione con estas rutas (admin, api, configurar, mapa, etc.).
-const RESERVED_YEAR_SLUGS = new Set([
-  'admin',
-  'api',
-  'configurar',
-  'mapa',
-  'materia',
-  'year',
-])
+type AdminAuthScope = 'any' | 'academic' | 'general'
+
+async function requireAuth(scope: AdminAuthScope = 'any') {
+  if (scope === 'general') return requireGeneralAdmin()
+  if (scope === 'academic') return requireAcademicManager()
+  return requireAnyAdmin()
+}
 
 async function revalidateSubjectContent(subjectSlug: string): Promise<void> {
   // Invalida los caches granulares (unstable_cache) por tag. Los revalidatePath
@@ -215,6 +214,7 @@ async function resolveAgendaTarget(input: {
 }
 
 export async function createEvento(formData: FormData): Promise<void> {
+  await requireAuth()
   const data = eventoSchema.parse({
     agendaId: formData.get('agendaId'),
     commissionId: formData.get('commissionId'),
@@ -281,6 +281,7 @@ export async function createEventoAction(
   _prev: EventoActionState,
   formData: FormData,
 ): Promise<EventoActionState> {
+  await requireAuth()
   try {
     await createEvento(formData)
     return { ok: true, message: 'Evento creado correctamente.' }
@@ -300,6 +301,7 @@ export async function updateEventoFechaAction(
   nuevaFecha: string,
   _subjectSlug: string,
 ): Promise<{ ok: boolean }> {
+  await requireAuth()
   void _subjectSlug
   const validId = z.string().min(1).parse(id)
   // El drag de calendario manda el día como "YYYY-MM-DD" (sin hora). La hora del
@@ -343,6 +345,7 @@ export async function updateEventoAction(
   _prev: EventoActionState,
   formData: FormData,
 ): Promise<EventoActionState> {
+  await requireAuth()
   try {
     const id = z.string().min(1).parse(formData.get('id'))
     const data = eventoSchema.parse({
@@ -429,6 +432,7 @@ export async function updateEventoAction(
 }
 
 export async function deleteEvento(formData: FormData): Promise<void> {
+  await requireAuth()
   const id = z.string().min(1).parse(formData.get('id'))
   const scope = await requireYearAdminForEventoId(id)
   if (!scope) return
@@ -489,7 +493,7 @@ const baseRecursoSchema = z.object({
 
 const linkRecursoSchema = baseRecursoSchema
   .extend({
-    url: z.string().url(),
+    url: z.url(),
     tipo: z.enum(['YOUTUBE', 'DRIVE']),
   })
   .refine(
@@ -737,6 +741,7 @@ export async function createApunteAction(
   _prev: ApunteActionState,
   formData: FormData,
 ): Promise<ApunteActionState> {
+  await requireAuth()
   const subjectId = z.string().min(1).safeParse(formData.get('subjectId'))
   if (!subjectId.success) {
     return { ok: false, message: 'Materia no especificada.' }
@@ -881,6 +886,7 @@ export async function updateApunteAction(
   _prev: ApunteActionState,
   formData: FormData,
 ): Promise<ApunteActionState> {
+  await requireAuth()
   const apunteId = z.string().min(1).safeParse(formData.get('apunteId'))
   if (!apunteId.success) {
     return { ok: false, message: 'Apunte no especificado.' }
@@ -1028,6 +1034,7 @@ export async function updateApunteAction(
 }
 
 export async function deleteApunteAction(formData: FormData): Promise<void> {
+  await requireAuth()
   const id = z.string().min(1).parse(formData.get('id'))
   const scope = await requireYearAdminForApunteId(id)
   if (!scope) return
@@ -1090,6 +1097,7 @@ export async function uploadQuizBankAction(
   _prev: QuizBankActionState,
   formData: FormData,
 ): Promise<QuizBankActionState> {
+  await requireAuth()
   const parsedForm = uploadBankSchema.safeParse({
     subjectSlug: formData.get('subjectSlug'),
     json: formData.get('json'),
@@ -1153,6 +1161,7 @@ export async function uploadQuizBankAction(
 }
 
 export async function deleteQuizBankAction(formData: FormData): Promise<void> {
+  await requireAuth()
   const subjectSlug = z.string().min(1).parse(formData.get('subjectSlug'))
   const bankId = z.uuid().parse(formData.get('bankId'))
   const scope = await requireYearAdminForSubjectSlug(subjectSlug)
@@ -1214,7 +1223,7 @@ export async function createYearAction(
   _prev: YearActionState,
   formData: FormData,
 ): Promise<YearActionState> {
-  const admin = await requireGeneralAdmin()
+  const admin = await requireAuth('general')
 
   const parsed = yearSchema.safeParse({
     nombre: formData.get('nombre'),
@@ -1243,7 +1252,7 @@ export async function createYearAction(
   }
 
   const base = slugify(nombre)
-  if (RESERVED_YEAR_SLUGS.has(base)) {
+  if (isReservedYearSlug(base)) {
     return {
       ok: false,
       message: 'Ese nombre coincide con una sección del sitio. Probá con otro.',
@@ -1255,7 +1264,7 @@ export async function createYearAction(
   })
   const takenSlugs = new Set([
     ...existingSlugs.map((y) => y.slug),
-    ...RESERVED_YEAR_SLUGS,
+    ...reservedYearSlugSet(),
   ])
   const slug = uniqueSlug(base, takenSlugs)
 
@@ -1291,7 +1300,7 @@ export async function updateYearAction(
   _prev: YearActionState,
   formData: FormData,
 ): Promise<YearActionState> {
-  const admin = await requireGeneralAdmin()
+  const admin = await requireAuth('general')
 
   const id = z.string().min(1).parse(formData.get('id'))
 
@@ -1325,7 +1334,7 @@ export async function updateYearAction(
   const oldSlug = year.slug
 
   const base = slugify(nombre)
-  if (RESERVED_YEAR_SLUGS.has(base)) {
+  if (isReservedYearSlug(base)) {
     return {
       ok: false,
       message: 'Ese nombre coincide con una sección del sitio. Probá con otro.',
@@ -1338,7 +1347,7 @@ export async function updateYearAction(
   })
   const takenSlugs = new Set([
     ...existingSlugs.map((y) => y.slug),
-    ...RESERVED_YEAR_SLUGS,
+    ...reservedYearSlugSet(),
   ])
   const newSlug = uniqueSlug(base, takenSlugs)
 
@@ -1378,7 +1387,7 @@ export async function updateYearAction(
 }
 
 export async function deleteYearAction(formData: FormData): Promise<void> {
-  const admin = await requireGeneralAdmin()
+  const admin = await requireAuth('general')
   const id = z.string().min(1).parse(formData.get('id'))
 
   // Capturar toda la info ANTES de borrar (la cascada elimina los registros)
@@ -1432,7 +1441,7 @@ export async function deleteYearAction(formData: FormData): Promise<void> {
 export async function getYearDeleteImpactAction(
   formData: FormData,
 ): Promise<YearDeleteImpact | null> {
-  await requireGeneralAdmin()
+  await requireAuth('general')
   const id = z.string().min(1).parse(formData.get('id'))
   return getYearDeleteImpact(id)
 }
@@ -1475,8 +1484,8 @@ export async function createSubjectAction(
   _prev: SubjectActionState,
   formData: FormData,
 ): Promise<SubjectActionState> {
+  const admin = await requireAuth('academic')
   const yearId = z.string().min(1).parse(formData.get('yearId'))
-  const admin = await requireAcademicManager()
   await requireYearAdminForYearId(yearId)
 
   const parsed = subjectSchema.safeParse({
@@ -1551,6 +1560,7 @@ export async function createCommissionAction(
   _prev: CommissionActionState,
   formData: FormData,
 ): Promise<CommissionActionState> {
+  await requireAuth('academic')
   const parsed = commissionSchema.safeParse({
     subjectId: formData.get('subjectId'),
     nombre: formData.get('nombre'),
@@ -1560,7 +1570,6 @@ export async function createCommissionAction(
   }
 
   const { subjectId, nombre } = parsed.data
-  await requireAcademicManager()
   const scope = await requireYearAdminForSubjectId(subjectId)
   if (!scope) return { ok: false, message: 'Materia no encontrada.' }
 
@@ -1624,8 +1633,8 @@ export async function updateSubjectAction(
   _prev: SubjectActionState,
   formData: FormData,
 ): Promise<SubjectActionState> {
+  await requireAuth('academic')
   const id = z.string().min(1).parse(formData.get('id'))
-  await requireAcademicManager()
   const scope = await requireYearAdminForSubjectId(id)
   if (!scope) return { ok: false, message: 'Materia no encontrada.' }
 
@@ -1699,9 +1708,8 @@ export async function updateSubjectAction(
 }
 
 export async function deleteSubjectAction(formData: FormData): Promise<void> {
+  await requireAuth('academic')
   const id = z.string().min(1).parse(formData.get('id'))
-
-  await requireAcademicManager()
   const scope = await requireYearAdminForSubjectId(id)
   if (!scope) return
 
@@ -1746,8 +1754,8 @@ export async function deleteSubjectAction(formData: FormData): Promise<void> {
 export async function getSubjectDeleteImpactAction(
   formData: FormData,
 ): Promise<SubjectDeleteImpact | null> {
+  await requireAuth('academic')
   const id = z.string().min(1).parse(formData.get('id'))
-  await requireAcademicManager()
   const scope = await requireYearAdminForSubjectId(id)
   if (!scope) return null
 
@@ -1759,6 +1767,7 @@ export async function updateSubjectDriveUrlAction(
   driveUrl: string | null,
   _subjectSlug: string,
 ): Promise<SubjectActionState> {
+  await requireAuth('academic')
   void _subjectSlug
   const urlSchema = z
     .string()
@@ -1775,7 +1784,6 @@ export async function updateSubjectDriveUrlAction(
 
   const normalizedDriveUrl = parsed.data || null
   const validSubjectId = z.string().min(1).parse(subjectId)
-  await requireAcademicManager()
   const scope = await requireYearAdminForSubjectId(validSubjectId)
   if (!scope) return { ok: false, message: 'Materia no encontrada.' }
 
@@ -1817,6 +1825,7 @@ export async function updateSubjectPlaylistAction(
   playlistEnabled: boolean,
   _subjectSlug: string,
 ): Promise<SubjectActionState> {
+  await requireAuth('academic')
   void _subjectSlug
 
   const urlParsed = z
@@ -1840,7 +1849,6 @@ export async function updateSubjectPlaylistAction(
   }
 
   const validSubjectId = z.string().min(1).parse(subjectId)
-  await requireAcademicManager()
   const scope = await requireYearAdminForSubjectId(validSubjectId)
   if (!scope) return { ok: false, message: 'Materia no encontrada.' }
 
@@ -1877,6 +1885,7 @@ export async function updateSubjectPlaylistAction(
 // --- Sesión ----------------------------------------------------------------
 
 export async function signOutAction(): Promise<void> {
+  await requireAuth()
   const supabase = await createSupabaseServerClient()
   await supabase.auth.signOut()
   revalidatePath('/', 'layout')

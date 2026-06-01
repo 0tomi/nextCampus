@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { requireAnyAdmin } from '@/lib/auth'
+import { requireAnyAdmin as requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
@@ -85,7 +85,7 @@ export async function updateAdminProfileAction(
   _prev: ProfileActionState,
   formData: FormData,
 ): Promise<ProfileActionState> {
-  const admin = await requireAnyAdmin()
+  const admin = await requireAuth()
 
   try {
     const data = updateAdminProfileSchema.parse({
@@ -182,7 +182,7 @@ export async function updateAdminPasswordAction(
   _prev: ProfileActionState,
   formData: FormData,
 ): Promise<ProfileActionState> {
-  const admin = await requireAnyAdmin()
+  const admin = await requireAuth()
 
   try {
     const data = updateAdminPasswordSchema.parse({

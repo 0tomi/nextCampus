@@ -82,7 +82,7 @@ function hashString(value: string): number {
   return Math.abs(hash)
 }
 
-export function getYearColorIndex(input: YearColorInput): number {
+function getYearColorIndex(input: YearColorInput): number {
   if (typeof input === 'number' && Number.isFinite(input)) {
     return normalizeIndex(Math.trunc(input) - 1)
   }
@@ -106,22 +106,6 @@ export function getYearColorIndex(input: YearColorInput): number {
 
 export function getYearColorClasses(input: YearColorInput): YearColorClasses {
   return YEAR_COLOR_PALETTE[getYearColorIndex(input)]
-}
-
-export function getYearGradientClassName(input: YearColorInput): string {
-  return getYearColorClasses(input).badgeClassName
-}
-
-export function getYearChipClassName(input: YearColorInput): string {
-  return getYearColorClasses(input).chipClassName
-}
-
-export function getYearProgressClassName(input: YearColorInput): string {
-  return getYearColorClasses(input).progressClassName
-}
-
-export function getYearTextClassName(input: YearColorInput): string {
-  return getYearColorClasses(input).textClassName
 }
 
 export function getYearTone(input: YearColorInput): string {

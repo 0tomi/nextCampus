@@ -1,5 +1,11 @@
+import type { Metadata } from 'next'
 import { getCareer } from '@/lib/queries'
 import { ConfigurarForm } from './ConfigurarForm'
+
+export const metadata: Metadata = {
+  title: 'Configurar inicio | NextCampus',
+  description: 'Elegí qué años, materias y comisiones querés ver en tu campus.',
+}
 
 export const revalidate = 300
 

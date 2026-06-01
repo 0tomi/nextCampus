@@ -239,7 +239,7 @@ export function MapaCorrelativasMobile({
       >
         <div className="flex min-h-[70vh] items-center justify-center px-[18px]">
           <div className="space-y-3 text-center">
-            <RefreshCw className="mx-auto h-8 w-8 animate-spin text-amber-300" />
+            <RefreshCw className="mx-auto size-8 animate-spin text-amber-300" />
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/42">
               Preparando tu recorrido
             </p>
@@ -263,10 +263,10 @@ export function MapaCorrelativasMobile({
 
         <div className="relative flex flex-col gap-6">
           <section className="px-[18px] pt-4">
-            <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#131313] px-5 py-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)]">
+            <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#131313] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)]">
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),transparent_35%,rgba(34,211,238,0.12)_78%,transparent)]" />
-              <div className="pointer-events-none absolute -right-10 top-[-26px] h-36 w-36 rounded-full bg-cyan-300/16 blur-3xl" />
-              <div className="pointer-events-none absolute left-[-24px] bottom-[-42px] h-32 w-32 rounded-full bg-amber-300/12 blur-3xl" />
+              <div className="pointer-events-none absolute -right-10 top-[-26px] size-36 rounded-full bg-cyan-300/16 blur-3xl" />
+              <div className="pointer-events-none absolute left-[-24px] bottom-[-42px] size-32 rounded-full bg-amber-300/12 blur-3xl" />
 
               <div className="relative flex items-start justify-between gap-4">
                 <div className="min-w-0">
@@ -283,12 +283,12 @@ export function MapaCorrelativasMobile({
 
                 <div className="relative shrink-0">
                   <div
-                    className="grid h-[84px] w-[84px] place-items-center rounded-full"
+                    className="grid size-[84px] place-items-center rounded-full"
                     style={{
                       background: `conic-gradient(#fde68a 0 ${progressPercentage}%, rgba(255,255,255,0.1) ${progressPercentage}% 100%)`,
                     }}
                   >
-                    <div className="grid h-[64px] w-[64px] place-items-center rounded-full bg-[#111111] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
+                    <div className="grid size-[64px] place-items-center rounded-full bg-[#111111] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
                       <div className="text-center">
                         <span className="block text-xl font-black leading-none text-white">
                           {progressPercentage}%
@@ -332,7 +332,7 @@ export function MapaCorrelativasMobile({
                           : 'bg-transparent text-white/58 hover:bg-white/5 hover:text-white',
                       )}
                     >
-                      <Icon className="h-4 w-4" />
+                      <Icon className="size-4" />
                       {view.label}
                     </button>
                   );
@@ -343,12 +343,13 @@ export function MapaCorrelativasMobile({
 
           <section className="flex flex-col gap-3 px-[18px]">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/28" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/28" />
               <input
                 type="search"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Buscar materia o código"
+                aria-label="Buscar materia o código"
+                  placeholder="Buscar materia o código"
                 className="h-12 w-full rounded-2xl border border-white/10 bg-[#151515] pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-white/28 focus:border-cyan-300/40 focus:bg-white/[0.06]"
               />
             </div>
@@ -399,7 +400,7 @@ export function MapaCorrelativasMobile({
 
             <div className="mt-3 flex gap-3 overflow-x-auto pb-1 scrollbar-none">
               {recommendedSubjects.length === 0 ? (
-                <div className="w-full rounded-2xl border border-dashed border-white/10 bg-[#171717] px-4 py-4 text-sm text-white/42">
+                <div className="w-full rounded-2xl border border-dashed border-white/10 bg-[#171717] p-4 text-sm text-white/42">
                   Cuando marques materias, acá vas a ver qué opciones ya tenés listas para seguir.
                 </div>
               ) : (
@@ -409,7 +410,7 @@ export function MapaCorrelativasMobile({
                     type="button"
                       onClick={() => openSubjectDetail(subject)}
                     className={cn(
-                      'min-w-[260px] shrink-0 rounded-[22px] border px-4 py-4 text-left transition',
+                      'min-w-[260px] shrink-0 rounded-[22px] border p-4 text-left transition',
                       selectedSubjectSlug === subject.slug
                         ? 'border-cyan-300/38 bg-cyan-300/10 shadow-[0_18px_40px_rgba(34,211,238,0.08)]'
                         : 'border-white/10 bg-[#151515] hover:border-white/18 hover:bg-white/[0.05]',
@@ -424,8 +425,8 @@ export function MapaCorrelativasMobile({
                           {subject.nombre}
                         </h3>
                       </div>
-                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/6 text-cyan-100">
-                        <Target className="h-4.5 w-4.5" />
+                      <span className="inline-flex size-10 items-center justify-center rounded-2xl bg-white/6 text-cyan-100">
+                        <Target className="size-4.5" />
                       </span>
                     </div>
                     <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/8 pt-3">
@@ -434,7 +435,7 @@ export function MapaCorrelativasMobile({
                       </span>
                       <span className="inline-flex items-center gap-1 text-[11px] font-black text-white">
                         Ver foco
-                        <ChevronRight className="h-3.5 w-3.5" />
+                        <ChevronRight className="size-3.5" />
                       </span>
                     </div>
                   </button>
@@ -462,7 +463,7 @@ export function MapaCorrelativasMobile({
                       : 'border-white/10 bg-transparent text-white/48 hover:text-white/74',
                   )}
                 >
-                  <Filter className="h-3.5 w-3.5" />
+                  <Filter className="size-3.5" />
                   {filter.label}
                 </button>
               ))}
@@ -511,7 +512,7 @@ export function MapaCorrelativasMobile({
                 <h2 className="mt-1 text-lg font-black text-white">Leé tu carrera como un recorrido</h2>
               </div>
 
-              <div className="rounded-[24px] border border-cyan-300/14 bg-[#121417] px-4 py-4 shadow-[0_22px_60px_rgba(0,0,0,0.24)]">
+              <div className="rounded-[24px] border border-cyan-300/14 bg-[#121417] p-4 shadow-[0_22px_60px_rgba(0,0,0,0.24)]">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-100/58">
                   Materia enfocada
                 </p>
@@ -526,8 +527,8 @@ export function MapaCorrelativasMobile({
                       done: completed.includes(slug),
                     }))}
                   />
-                  <div className="relative rounded-[22px] border border-white/10 bg-white/[0.04] px-4 py-4">
-                    <div className="absolute -left-1.5 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-cyan-200 shadow-[0_0_18px_rgba(103,232,249,0.45)]" />
+                  <div className="relative rounded-[22px] border border-white/10 bg-white/[0.04] p-4">
+                    <div className="absolute -left-1.5 top-1/2 size-3 -translate-y-1/2 rounded-full bg-cyan-200 shadow-[0_0_18px_rgba(103,232,249,0.45)]" />
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">
@@ -559,7 +560,7 @@ export function MapaCorrelativasMobile({
                 {yearSummaries.map((summary) => (
                   <div
                     key={summary.year}
-                    className="rounded-[24px] border border-white/10 bg-[#151515] px-4 py-4"
+                    className="rounded-[24px] border border-white/10 bg-[#151515] p-4"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -606,7 +607,7 @@ export function MapaCorrelativasMobile({
           )}
 
           <section className="px-[18px]">
-            <div className="rounded-[24px] border border-white/10 bg-[#141414] px-4 py-4">
+            <div className="rounded-[24px] border border-white/10 bg-[#141414] p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/38">
@@ -614,8 +615,8 @@ export function MapaCorrelativasMobile({
                   </p>
                   <h2 className="mt-1 text-lg font-black text-white">Acciones rápidas</h2>
                 </div>
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 text-white/52">
-                  <Layers3 className="h-4.5 w-4.5" />
+                <span className="inline-flex size-10 items-center justify-center rounded-2xl bg-white/5 text-white/52">
+                  <Layers3 className="size-4.5" />
                 </span>
               </div>
 
@@ -634,7 +635,7 @@ export function MapaCorrelativasMobile({
                         Completar {YEAR_SHORT_LABELS[suggestedYearToComplete]} de una vez
                       </span>
                     </span>
-                    <Sparkles className="h-4.5 w-4.5 text-emerald-100" />
+                    <Sparkles className="size-4.5 text-emerald-100" />
                   </button>
                 ) : null}
 
@@ -652,7 +653,7 @@ export function MapaCorrelativasMobile({
                       Reiniciar las materias marcadas
                     </span>
                   </span>
-                  <RefreshCw className="h-4.5 w-4.5 text-white/58" />
+                  <RefreshCw className="size-4.5 text-white/58" />
                 </button>
               </div>
             </div>
@@ -735,7 +736,7 @@ function SubjectDetailModal({
           <MiniFact label="Cursado" value={subject.periodo === 'Anual' ? 'Anual' : 'Cuatri'} />
         </div>
 
-        <div className="rounded-[22px] border border-white/10 bg-white/[0.04] px-4 py-4">
+        <div className="rounded-[22px] border border-white/10 bg-white/[0.04] p-4">
           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/38">
             Qué te conviene hacer
           </p>
@@ -759,7 +760,7 @@ function SubjectDetailModal({
               status === 'LOCKED' && 'border-white/10 bg-white/5 text-white/38',
             )}
           >
-            {status === 'COMPLETED' ? <RefreshCw className="h-4 w-4" /> : status === 'LOCKED' ? <Lock className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+            {status === 'COMPLETED' ? <RefreshCw className="size-4" /> : status === 'LOCKED' ? <Lock className="size-4" /> : <Check className="size-4" />}
             {status === 'COMPLETED' ? 'Quitar marca' : status === 'LOCKED' ? 'Todavía no disponible' : 'Marcar avance'}
           </button>
 
@@ -769,7 +770,7 @@ function SubjectDetailModal({
               onClick={onClose}
               className="flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 text-sm font-black text-white/74 transition hover:bg-white/8 hover:text-white"
             >
-              <BookOpen className="h-4 w-4" />
+              <BookOpen className="size-4" />
               Abrir
             </Link>
           ) : null}
@@ -813,11 +814,18 @@ function SubjectListCard({
   onToggle: () => void;
 }) {
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
       className={cn(
-        'w-full cursor-pointer rounded-[24px] border px-4 py-4 text-left transition',
+        'w-full cursor-pointer rounded-[24px] border p-4 text-left transition',
         STATUS_CARD[status],
         selected ? 'border-cyan-300/34 ring-1 ring-cyan-300/26' : 'hover:border-white/18',
       )}
@@ -855,7 +863,7 @@ function SubjectListCard({
             className="inline-flex cursor-pointer items-center gap-1 text-[11px] font-black text-white/44 transition hover:text-white"
           >
             Ver materia
-            <ArrowRight className="h-3.5 w-3.5" />
+            <ArrowRight className="size-3.5" />
           </Link>
         ) : (
           <span className="text-[11px] font-black text-white/28">Sin detalle público</span>
@@ -878,7 +886,7 @@ function SubjectListCard({
           {status === 'COMPLETED' ? 'Quitar' : status === 'LOCKED' ? 'Bloqueada' : 'Marcar'}
         </button>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -901,10 +909,10 @@ function RutaLane({
   return (
     <div className="relative pl-5">
       <div className="absolute left-[6px] top-0 bottom-0 w-px bg-gradient-to-b from-white/26 via-white/10 to-transparent" />
-      <div className="absolute left-0 top-2 h-3 w-3 rounded-full bg-white/80 shadow-[0_0_16px_rgba(255,255,255,0.18)]" />
+      <div className="absolute left-0 top-2 size-3 rounded-full bg-white/80 shadow-[0_0_16px_rgba(255,255,255,0.18)]" />
       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{title}</p>
       {items.length === 0 ? (
-        <p className="mt-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-3 text-sm text-white/42">
+        <p className="mt-2 rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-sm text-white/42">
           {empty}
         </p>
       ) : (
@@ -943,7 +951,7 @@ function RelationGroup({
     <div>
       <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/38">{title}</p>
       {items.length === 0 ? (
-        <p className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-3 text-sm text-white/42">
+        <p className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-sm text-white/42">
           {empty}
         </p>
       ) : (
@@ -977,7 +985,7 @@ function MetricCard({
   }[tone];
 
   return (
-    <div className={cn('rounded-[20px] border px-3 py-3', toneClassName, compact && 'rounded-[18px] px-2.5 py-2.5')}>
+    <div className={cn('rounded-[20px] border p-3', toneClassName, compact && 'rounded-[18px] p-2.5')}>
       <p className="text-[10px] font-black uppercase tracking-[0.18em] opacity-68">{label}</p>
       <p className={cn('mt-2 font-black', compact ? 'text-xl' : 'text-2xl')}>{value}</p>
     </div>
@@ -986,7 +994,7 @@ function MetricCard({
 
 function MiniFact({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-2xl border border-white/8 bg-white/[0.04] px-3 py-3">
+    <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-3">
       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/36">{label}</p>
       <p className="mt-2 text-sm font-black text-white">{value}</p>
     </div>

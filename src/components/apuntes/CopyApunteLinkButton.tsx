@@ -52,12 +52,12 @@ export function CopyApunteLinkButton({
     >
       {copiado ? (
         <>
-          <Check className="h-3.5 w-3.5" />
+          <Check className="size-3.5" />
           Link copiado
         </>
       ) : (
         <>
-          <Link2 className="h-3.5 w-3.5" />
+          <Link2 className="size-3.5" />
           Copiar link
         </>
       )}

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   ArrowLeft,
   ArrowRight,
@@ -32,10 +33,11 @@ import { ApuntesFeed } from '@/components/apuntes/ApuntesFeed'
 
 function GoogleDriveIcon({ className }: { className?: string }) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
+    <Image
       src="/resources/google_drive_logo_icon_159334.png"
       alt="Google Drive"
+      width={20}
+      height={20}
       className={className}
     />
   )
@@ -64,7 +66,7 @@ export function SubjectRoutePage({
       id: 'year',
       href: `/${subject.year.slug}`,
       label: subject.year.nombre,
-      badge: <ArrowLeft className="h-4 w-4" />,
+      badge: <ArrowLeft className="size-4" />,
       meta: 'Volver al año',
       badgeClassName: colors.badgeClassName,
     },
@@ -72,7 +74,7 @@ export function SubjectRoutePage({
       id: 'calendar',
       href: '#calendario',
       label: 'Calendario',
-      badge: <CalendarDays className="h-4 w-4" />,
+      badge: <CalendarDays className="size-4" />,
       meta: `${visibleEvents.length} eventos`,
       badgeClassName: 'from-white/15 to-white/5 text-white',
     },
@@ -80,7 +82,7 @@ export function SubjectRoutePage({
       id: 'quiz',
       href: '#quiz',
       label: 'Quiz',
-      badge: <Sparkles className="h-4 w-4" />,
+      badge: <Sparkles className="size-4" />,
       meta: 'Practicá',
       badgeClassName: 'from-violet-400 to-purple-500 text-white',
     },
@@ -88,7 +90,7 @@ export function SubjectRoutePage({
       id: 'notes',
       href: '#apuntes',
       label: 'Apuntes',
-      badge: <NotebookTabs className="h-4 w-4" />,
+      badge: <NotebookTabs className="size-4" />,
       meta: `${subject.apuntesTotal} recursos`,
       badgeClassName: 'from-cyan-400 to-blue-500 text-white',
     },
@@ -103,7 +105,7 @@ export function SubjectRoutePage({
               href={`/${subject.year.slug}`}
               className="inline-flex items-center gap-2 text-sm font-semibold text-white/56 transition-colors hover:text-white/80"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="size-4" />
               {subject.year.nombre}
             </Link>
           }
@@ -174,7 +176,7 @@ export function SubjectRoutePage({
                       rel="noopener noreferrer"
                       className="inline-flex cursor-pointer items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                     >
-                      <GoogleDriveIcon className="h-5 w-5" />
+                      <GoogleDriveIcon className="size-5" />
                       Drive con contenido de la materia
                     </a>
                   )}
@@ -186,7 +188,7 @@ export function SubjectRoutePage({
                       rel="noopener noreferrer"
                       className="inline-flex cursor-pointer items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                     >
-                      <CirclePlay className="h-5 w-5 text-red-400" />
+                      <CirclePlay className="size-5 text-red-400" />
                       Playlist de clases
                     </a>
                   )}
@@ -194,9 +196,9 @@ export function SubjectRoutePage({
                   <AdminControls yearId={subject.year.id} requireAcademicStructure>
                     <AdminTriggerButton
                       action="edit-subject"
-                      className="group relative inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded border border-white/10 bg-surface-1 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+                      className="group relative inline-flex size-9 cursor-pointer items-center justify-center rounded border border-white/10 bg-surface-1 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Pencil className="size-4" />
                       <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 scale-0 whitespace-nowrap rounded border border-white/5 bg-black/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-white opacity-0 shadow-md transition-all group-hover:scale-100 group-hover:opacity-100">
                         Editar materia
                       </span>
@@ -262,7 +264,7 @@ export function SubjectRoutePage({
                     action="upload-bank"
                     className="inline-flex cursor-pointer items-center gap-1.5 rounded border border-white/10 bg-surface-1 px-3 py-1.5 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white"
                   >
-                    <Plus className="h-3 w-3" />
+                    <Plus className="size-3" />
                     Agregar nuevo banco de preguntas
                   </AdminTriggerButton>
                 </AdminControls>
@@ -273,9 +275,9 @@ export function SubjectRoutePage({
               <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-4">
                   <span
-                    className={`inline-flex h-12 w-12 shrink-0 items-center justify-center bg-gradient-to-r ${colors.progressClassName}`}
+                    className={`inline-flex size-12 shrink-0 items-center justify-center bg-gradient-to-r ${colors.progressClassName}`}
                   >
-                    <Sparkles className="h-5 w-5" />
+                    <Sparkles className="size-5" />
                   </span>
                   <div>
                     <h3 className="text-xl font-black tracking-tight text-white">
@@ -292,7 +294,7 @@ export function SubjectRoutePage({
                   className="inline-flex shrink-0 cursor-pointer items-center gap-2 self-start bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-primary-light"
                 >
                   Empezar quiz
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="size-4" />
                 </Link>
               </div>
             </DarkCard>
@@ -312,7 +314,7 @@ export function SubjectRoutePage({
                     action="new-apunte"
                     className="inline-flex cursor-pointer items-center gap-1.5 rounded border border-white/10 bg-surface-1 px-3 py-1.5 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white"
                   >
-                    <Plus className="h-3 w-3" />
+                    <Plus className="size-3" />
                     Agregar nuevos apuntes
                   </AdminTriggerButton>
                 </AdminControls>

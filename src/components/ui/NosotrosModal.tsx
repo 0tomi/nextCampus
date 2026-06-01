@@ -184,13 +184,13 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Glow Effects */}
-        <div className="pointer-events-none absolute -left-16 -top-16 h-36 w-36 rounded-full bg-amber-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute -right-16 -bottom-16 h-36 w-36 rounded-full bg-orange-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -left-16 -top-16 size-36 rounded-full bg-amber-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-16 -bottom-16 size-36 rounded-full bg-orange-500/10 blur-3xl" />
 
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/6 px-6 py-4 relative z-10">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 text-black">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 text-black">
               <GraduationCap size={16} strokeWidth={2.5} />
             </div>
             <h2 id="about-modal-title" className="text-base font-black tracking-tight text-white font-display">
@@ -201,14 +201,14 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-white/45 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg text-white/45 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
           >
-            <X className="h-4 w-4" />
+            <X className="size-4" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="grid gap-6 px-6 py-6 relative z-10 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.82fr)]">
+        <div className="grid gap-6 p-6 relative z-10 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.82fr)]">
           <div className="space-y-5">
             {/* Texto de arriba (info del campus) */}
             <div className={cn(showRankingMobile ? "hidden" : "block", "lg:block space-y-5")}>
@@ -232,7 +232,7 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
                   rel="noopener noreferrer"
                   className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-black transition-all hover:bg-white/90 active:scale-[0.98] cursor-pointer"
                 >
-                  <GithubIcon className="h-4 w-4" />
+                  <GithubIcon className="size-4" />
                   Ver repositorio en GitHub
                 </a>
               </div>
@@ -286,7 +286,7 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
                   rel="noopener noreferrer"
                   className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white"
                 >
-                  <InstagramIcon className="h-3.5 w-3.5" />
+                  <InstagramIcon className="size-3.5" />
                   @tomischl
                 </a>
                 <a
@@ -295,7 +295,7 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
                   rel="noopener noreferrer"
                   className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white"
                 >
-                  <InstagramIcon className="h-3.5 w-3.5" />
+                  <InstagramIcon className="size-3.5" />
                   @tomygiorgi
                 </a>
               </div>

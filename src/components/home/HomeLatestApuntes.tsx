@@ -158,7 +158,7 @@ function HomeLatestApuntesDesktop({
 function HomeLatestApuntesDesktopEmpty({ hasAnyNotes }: { hasAnyNotes: boolean }) {
   return (
     <DarkCard className="col-span-full flex flex-col items-center justify-center gap-2 border-dashed p-6 py-16 text-center text-sm leading-6 text-white/50">
-      <FileText className="h-6 w-6 opacity-40" />
+      <FileText className="size-6 opacity-40" />
       <span>{getEmptyStateMessage(hasAnyNotes)}</span>
     </DarkCard>
   )
@@ -179,8 +179,8 @@ function HomeLatestApuntesDesktopSetupNotice() {
       </div>
 
       <DarkCard className="flex flex-col items-start gap-4 border-dashed p-6 sm:p-8">
-        <span className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-white/10 bg-white/[0.03] text-white/70">
-          <FileText className="h-5 w-5" />
+        <span className="inline-flex size-11 items-center justify-center rounded-md border border-white/10 bg-white/[0.03] text-white/70">
+          <FileText className="size-5" />
         </span>
         <div className="space-y-2">
           <h3 className="text-2xl font-black tracking-tight text-white">
@@ -194,7 +194,7 @@ function HomeLatestApuntesDesktopSetupNotice() {
           href="/configurar"
           className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white no-underline transition-colors hover:bg-primary-light"
         >
-          <SlidersHorizontal className="h-4 w-4" />
+          <SlidersHorizontal className="size-4" />
           Configurar materias
         </Link>
       </DarkCard>
@@ -282,8 +282,8 @@ function HomeLatestApuntesMobileSetupNotice() {
 
       <div className="px-[18px]">
         <div className="flex flex-col items-start gap-3 rounded-lg border border-dashed border-white/10 bg-[#1a1a1a] p-4">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/10 bg-white/[0.03] text-white/70">
-            <FileText className="h-4 w-4" />
+          <span className="inline-flex size-9 items-center justify-center rounded-md border border-white/10 bg-white/[0.03] text-white/70">
+            <FileText className="size-4" />
           </span>
           <div className="space-y-1">
             <h3 className="text-base font-black text-white">
@@ -297,7 +297,7 @@ function HomeLatestApuntesMobileSetupNotice() {
             href="/configurar"
             className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white no-underline transition-colors hover:bg-primary-light"
           >
-            <SlidersHorizontal className="h-4 w-4" />
+            <SlidersHorizontal className="size-4" />
             Configurar
           </Link>
         </div>

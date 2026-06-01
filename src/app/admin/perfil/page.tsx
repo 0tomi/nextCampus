@@ -46,17 +46,17 @@ export default async function AdminProfilePage() {
 
       <section className="rounded-lg border border-white/10 bg-white/[0.03] p-6">
         <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-md border border-white/10 bg-black/20 px-4 py-4">
+          <div className="rounded-md border border-white/10 bg-black/20 p-4">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/45">Correo actual</p>
             <p className="mt-2 text-sm font-semibold text-white">{admin.email}</p>
           </div>
 
-          <div className="rounded-md border border-white/10 bg-black/20 px-4 py-4">
+          <div className="rounded-md border border-white/10 bg-black/20 p-4">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/45">Rol</p>
             <p className="mt-2 text-sm font-semibold text-white">{roleLabel(admin.role)}</p>
           </div>
 
-          <div className="rounded-md border border-white/10 bg-black/20 px-4 py-4">
+          <div className="rounded-md border border-white/10 bg-black/20 p-4">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/45">Años asignados</p>
             <p className="mt-2 text-sm font-semibold text-white">{assignedYearsSummary}</p>
           </div>

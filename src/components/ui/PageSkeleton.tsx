@@ -8,7 +8,7 @@ export function DashboardSkeleton() {
       <header className="sticky top-0 z-40 h-16 border-b border-white/5 bg-surface-1">
         <div className="flex h-full items-center justify-between gap-4 px-6">
           <div className="flex items-center gap-3">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded bg-white/5" />
+            <span className="inline-flex size-9 items-center justify-center rounded bg-white/5" />
             <span className="h-3 w-40 animate-pulse rounded bg-white/10" />
           </div>
           <div className="flex items-center gap-3">

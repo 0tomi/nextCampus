@@ -14,11 +14,11 @@ export function ConfigButton({ iconOnly = false, className }: ConfigButtonProps)
         href="/configurar"
         aria-label="Configurar"
         className={cn(
-          'inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-white/10 bg-transparent text-white/70 transition-colors hover:bg-white/5 hover:text-white',
+          'inline-flex size-9 cursor-pointer items-center justify-center rounded-md border border-white/10 bg-transparent text-white/70 transition-colors hover:bg-white/5 hover:text-white',
           className,
         )}
       >
-        <SlidersHorizontal className="h-4 w-4" />
+        <SlidersHorizontal className="size-4" />
       </Link>
     )
   }
@@ -31,7 +31,7 @@ export function ConfigButton({ iconOnly = false, className }: ConfigButtonProps)
         className,
       )}
     >
-      <SlidersHorizontal className="h-4 w-4" />
+      <SlidersHorizontal className="size-4" />
       Configurar
     </Link>
   )

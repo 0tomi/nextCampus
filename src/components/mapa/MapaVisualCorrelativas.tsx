@@ -309,7 +309,7 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
     return (
       <div className="grid min-h-[calc(100vh-4rem)] place-items-center bg-surface-1">
         <div className="text-center">
-          <Radar className="mx-auto h-9 w-9 animate-spin text-cyan-200" />
+          <Radar className="mx-auto size-9 animate-spin text-cyan-200" />
           <p className="mt-4 text-xs font-black uppercase tracking-[0.2em] text-white/42">Abriendo recorrido</p>
         </div>
       </div>
@@ -344,7 +344,7 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
         >
           <svg
             aria-hidden="true"
-            className="absolute inset-0 h-full w-full"
+            className="absolute inset-0 size-full"
             viewBox={`0 0 ${WORLD_WIDTH} ${worldHeight}`}
             preserveAspectRatio="none"
           >
@@ -476,8 +476,8 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
                 } as CSSProperties}
                 aria-label={`Ver ${subject.nombre}`}
               >
-                <span className="pointer-events-none absolute left-[-7px] top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full border border-[var(--node-accent)] bg-[#060808] shadow-[0_0_14px_var(--node-accent)]" />
-                <span className="pointer-events-none absolute right-[-7px] top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full border border-[var(--node-accent)] bg-[#060808] shadow-[0_0_14px_var(--node-accent)]" />
+                <span className="pointer-events-none absolute left-[-7px] top-1/2 size-3.5 -translate-y-1/2 rounded-full border border-[var(--node-accent)] bg-[#060808] shadow-[0_0_14px_var(--node-accent)]" />
+                <span className="pointer-events-none absolute right-[-7px] top-1/2 size-3.5 -translate-y-1/2 rounded-full border border-[var(--node-accent)] bg-[#060808] shadow-[0_0_14px_var(--node-accent)]" />
                 <span className="relative z-10 flex items-start justify-between gap-4">
                   <span className="min-w-0 flex-1">
                     <span className="inline-flex min-h-6 items-center border border-white/10 bg-black/22 px-2 text-[10px] font-black uppercase tracking-widest text-white/46">
@@ -487,10 +487,10 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
                       {subject.nombre}
                     </span>
                   </span>
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-white/10 bg-black/24 text-white">
-                    {status === 'COMPLETED' ? <CheckCircle2 className="h-4.5 w-4.5 text-emerald-100" /> : null}
-                    {status === 'UNLOCKED' ? <Unlock className="h-4.5 w-4.5 text-amber-100" /> : null}
-                    {status === 'LOCKED' ? <Lock className="h-4.5 w-4.5 text-white/28" /> : null}
+                  <span className="flex size-9 shrink-0 items-center justify-center border border-white/10 bg-black/24 text-white">
+                    {status === 'COMPLETED' ? <CheckCircle2 className="size-4.5 text-emerald-100" /> : null}
+                    {status === 'UNLOCKED' ? <Unlock className="size-4.5 text-amber-100" /> : null}
+                    {status === 'LOCKED' ? <Lock className="size-4.5 text-white/28" /> : null}
                   </span>
                 </span>
                 <span className="relative z-10 flex items-center justify-between gap-3 border-t border-white/10 pt-3">
@@ -514,7 +514,7 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
           href="/mapa"
           className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-black/58 px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-white/45 shadow-2xl backdrop-blur-xl transition hover:bg-white/10 hover:text-white"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="size-4" />
           Volver
         </Link>
       </div>
@@ -524,29 +524,29 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
           type="button"
           title="Alejar"
           onClick={() => zoomAt(camera.scale - 0.12)}
-          className="inline-flex h-11 w-11 cursor-pointer items-center justify-center border-r border-white/10 text-white/68 transition hover:bg-white/10 hover:text-white"
+          className="inline-flex size-11 cursor-pointer items-center justify-center border-r border-white/10 text-white/68 transition hover:bg-white/10 hover:text-white"
         >
-          <Minus className="h-4 w-4" />
+          <Minus className="size-4" />
         </button>
         <div className="flex h-11 min-w-20 items-center justify-center gap-2 border-r border-white/10 px-3 text-xs font-black text-white/62">
-          <Move className="h-4 w-4" />
+          <Move className="size-4" />
           {Math.round(camera.scale * 100)}%
         </div>
         <button
           type="button"
           title="Acercar"
           onClick={() => zoomAt(camera.scale + 0.12)}
-          className="inline-flex h-11 w-11 cursor-pointer items-center justify-center border-r border-white/10 text-white/68 transition hover:bg-white/10 hover:text-white"
+          className="inline-flex size-11 cursor-pointer items-center justify-center border-r border-white/10 text-white/68 transition hover:bg-white/10 hover:text-white"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="size-4" />
         </button>
         <button
           type="button"
           title="Centrar mapa"
           onClick={() => setCamera(INITIAL_CAMERA)}
-          className="inline-flex h-11 w-11 cursor-pointer items-center justify-center text-white/68 transition hover:bg-white/10 hover:text-white"
+          className="inline-flex size-11 cursor-pointer items-center justify-center text-white/68 transition hover:bg-white/10 hover:text-white"
         >
-          <LocateFixed className="h-4 w-4" />
+          <LocateFixed className="size-4" />
         </button>
       </div>
 
@@ -572,9 +572,9 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
               <button
                 type="button"
                 onClick={() => setIsPanelOpen(false)}
-                className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-white/40 transition hover:bg-white/10 hover:text-white"
+                className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-white/40 transition hover:bg-white/10 hover:text-white"
               >
-                <X className="h-4 w-4" />
+                <X className="size-4" />
               </button>
             </div>
 
@@ -596,7 +596,7 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
                 selectedStatus === 'LOCKED' && 'cursor-not-allowed border-white/10 bg-white/5 text-white/28',
               )}
             >
-              {selectedStatus === 'COMPLETED' ? <RefreshCw className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+              {selectedStatus === 'COMPLETED' ? <RefreshCw className="size-4" /> : <Check className="size-4" />}
               {selectedStatus === 'COMPLETED' ? 'Quitar marca' : 'Marcar avance'}
             </button>
 
@@ -605,7 +605,7 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
               onClick={() => moveCameraToSubject(selectedSubject)}
               className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-cyan-200/18 bg-cyan-300/8 px-4 text-sm font-black uppercase tracking-wider text-cyan-50 transition hover:bg-cyan-300/13"
             >
-              <LocateFixed className="h-4 w-4" />
+              <LocateFixed className="size-4" />
               Centrar
             </button>
 
@@ -615,7 +615,7 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
                 className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 text-sm font-black uppercase tracking-wider text-white/68 transition hover:bg-white/8 hover:text-white"
               >
                 Abrir materia
-                <ArrowUpRight className="h-4 w-4" />
+                <ArrowUpRight className="size-4" />
               </Link>
             ) : null}
 

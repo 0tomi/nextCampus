@@ -14,7 +14,12 @@ interface PageProps {
 
 function readParamList(value: string | string[] | undefined): string[] {
   const values = Array.isArray(value) ? value : value ? [value] : []
-  return [...new Set(values.flatMap((item) => item.split(',')).map((item) => item.trim()).filter(Boolean))]
+  return [...new Set(values.flatMap((value) =>
+    value.split(',').flatMap((item) => {
+      const trimmed = item.trim()
+      return trimmed ? [trimmed] : []
+    }),
+  ))]
 }
 
 export default async function HistorialPage({ searchParams }: PageProps) {

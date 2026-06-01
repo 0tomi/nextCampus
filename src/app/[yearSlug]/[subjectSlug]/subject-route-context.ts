@@ -10,7 +10,7 @@ type SubjectRouteContextInput = {
 
 function sortEvents<T extends { fecha: string; hora: string | null }>(events: T[]) {
   // Por día y, dentro del día, por hora (los sin hora primero).
-  return [...events].sort(
+  return events.toSorted(
     (a, b) =>
       a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? ''),
   )

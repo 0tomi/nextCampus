@@ -9,6 +9,7 @@ import { EventModal } from '@/components/admin/EventModal'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { Sheet } from '@/components/ui/Sheet'
 import { AlertDialog } from '@/components/ui/AlertDialog'
+import { SafeHtml } from '@/components/ui/SafeHtml'
 import { deleteEvento } from '@/app/admin/actions'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { getEventTone } from '@/components/mobile/shared/tokens'
@@ -119,13 +120,13 @@ export function MobileEventDetailSheet({
 
             <div className="grid gap-3 border-y border-white/6 py-4">
               <DetailRow
-                icon={<CalendarDays className="h-4 w-4" />}
+                icon={<CalendarDays className="size-4" />}
                 label="Fecha"
                 value={formatEventDate(event.fecha)}
               />
               {event.hora ? (
                 <DetailRow
-                  icon={<Clock className="h-4 w-4" />}
+                  icon={<Clock className="size-4" />}
                   label="Horario"
                   value={event.hora}
                 />
@@ -156,9 +157,9 @@ export function MobileEventDetailSheet({
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/36">
                   Descripción
                 </p>
-                <div
+                <SafeHtml
                   className="rounded-xl border border-white/6 bg-white/[0.025] px-4 py-3 text-sm leading-7 text-white/68 [&_a]:cursor-pointer [&_a]:text-red-300 [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
-                  dangerouslySetInnerHTML={{ __html: event.descripcionHtml }}
+                  html={event.descripcionHtml}
                 />
               </div>
             ) : (
@@ -175,7 +176,7 @@ export function MobileEventDetailSheet({
                     onClick={() => setIsEditOpen(true)}
                     className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-white/10 bg-surface-1 text-sm font-bold text-white/72 transition-colors hover:bg-white/10 hover:text-white"
                   >
-                    <Pencil className="h-4 w-4" />
+                    <Pencil className="size-4" />
                     Editar
                   </button>
                   <button
@@ -184,7 +185,7 @@ export function MobileEventDetailSheet({
                     onClick={() => setConfirmDeleteOpen(true)}
                     className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/10 text-sm font-bold text-rose-300 transition-colors hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="size-4" />
                     {isDeleting ? 'Borrando...' : 'Eliminar'}
                   </button>
                 </div>
@@ -260,7 +261,7 @@ function DetailRow({
       )}
     >
       <span className="truncate">{value}</span>
-      {href ? <ExternalLink className="h-3.5 w-3.5 shrink-0 text-white/35" /> : null}
+      {href ? <ExternalLink className="size-3.5 shrink-0 text-white/35" /> : null}
     </span>
   )
 

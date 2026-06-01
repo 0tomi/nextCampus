@@ -8,7 +8,7 @@ import { EventCalendar, type EventCalendarEvent } from '@/components/calendar/Ev
 import { DarkCard } from '@/components/ui/DarkCard'
 import { usePreferences } from '@/hooks/usePreferences'
 import { cn, formatEventDateTime, todayKeyAR } from '@/lib/utils'
-import { sanitizeRichHtml } from '@/lib/sanitize'
+import { SafeHtml } from '@/components/ui/SafeHtml'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { RelatedApunteLinks, type RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import {
@@ -141,7 +141,7 @@ export function HomeGlobalCalendar({
         <div className="w-full grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {closestEvents.length === 0 ? (
             <DarkCard className="col-span-full p-6 py-16 text-sm leading-6 text-white/50 text-center border-dashed flex flex-col items-center justify-center gap-2">
-              <CalendarDays className="h-6 w-6 opacity-40" />
+              <CalendarDays className="size-6 opacity-40" />
               <span>No hay eventos próximos en tu agenda.</span>
             </DarkCard>
           ) : (
@@ -201,11 +201,9 @@ export function HomeGlobalCalendar({
                   </h3>
 
                   {evento.descripcionHtml ? (
-                    <div
+                    <SafeHtml
                       className="text-xs leading-relaxed text-white/55 line-clamp-2 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
-                      dangerouslySetInnerHTML={{
-                        __html: sanitizeRichHtml(evento.descripcionHtml),
-                      }}
+                      html={evento.descripcionHtml}
                     />
                   ) : null}
                   <RelatedApunteLinks apuntes={evento.apuntes} />
@@ -249,17 +247,18 @@ export function HomeGlobalCalendar({
 
       <div className="flex justify-center pt-2">
         <button
+          type="button"
           onClick={() => setIsExpanded(!isExpanded)}
           className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs font-bold text-white/80 transition-all hover:bg-white/10 hover:text-white"
         >
           {isExpanded ? (
             <>
-              <ChevronUp className="h-4 w-4 text-white/60" />
+              <ChevronUp className="size-4 text-white/60" />
               Ocultar calendario completo
             </>
           ) : (
             <>
-              <ChevronDown className="h-4 w-4 text-white/60" />
+              <ChevronDown className="size-4 text-white/60" />
               Ver calendario completo
             </>
           )}
@@ -284,8 +283,8 @@ function HomeGlobalCalendarSetupNotice() {
       </div>
 
       <DarkCard className="flex flex-col items-start gap-4 border-dashed p-6 sm:p-8">
-        <span className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-white/10 bg-white/[0.03] text-white/70">
-          <CalendarDays className="h-5 w-5" />
+        <span className="inline-flex size-11 items-center justify-center rounded-md border border-white/10 bg-white/[0.03] text-white/70">
+          <CalendarDays className="size-5" />
         </span>
         <div className="space-y-2">
           <h3 className="text-2xl font-black tracking-tight text-white">
@@ -299,7 +298,7 @@ function HomeGlobalCalendarSetupNotice() {
           href="/configurar"
           className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-light"
         >
-          <SlidersHorizontal className="h-4 w-4" />
+          <SlidersHorizontal className="size-4" />
           Configurar materias
         </Link>
       </DarkCard>

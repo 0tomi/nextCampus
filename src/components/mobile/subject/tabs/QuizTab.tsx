@@ -22,7 +22,7 @@ export function QuizTab({
     <div className="px-[18px] flex flex-col gap-3">
       <div className="bg-[#1a1a1a] border border-white/5 rounded-xl p-5 flex flex-col gap-4">
         <div className="flex items-start gap-3">
-          <span className={['flex items-center justify-center w-11 h-11 shrink-0 rounded-md bg-gradient-to-br', colors.badgeClassName].join(' ')}>
+          <span className={['flex items-center justify-center size-11 shrink-0 rounded-md bg-gradient-to-br', colors.badgeClassName].join(' ')}>
             <Sparkles size={18} strokeWidth={2.4} />
           </span>
           <div>

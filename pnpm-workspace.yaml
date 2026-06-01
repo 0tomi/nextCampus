@@ -7,6 +7,12 @@ allowBuilds:
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+minimumReleaseAge: 10080
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  - undici-types@6.21.0
+  - eslint-import-resolver-typescript@3.10.1
+  - semver@6.3.1
 minimumReleaseAgeExclude:
   - '@hono/node-server@1.19.13'
   - 'postcss@8.5.10'

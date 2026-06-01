@@ -9,9 +9,9 @@ export interface CommissionAwareEvent {
 }
 
 export const ALL_COMMISSIONS_VALUE = '__all_commissions__'
-export const PREFERRED_COMMISSION_EVENT = 'nextcampus:preferred-commission-updated'
+const PREFERRED_COMMISSION_EVENT = 'nextcampus:preferred-commission-updated'
 
-export function getPreferredCommissionStorageKey(subjectSlug: string) {
+function getPreferredCommissionStorageKey(subjectSlug: string) {
   return `nextcampus:preferred-commission:subject:${subjectSlug}`
 }
 
@@ -23,7 +23,7 @@ export function normalizePreferredCommissionId(value: string | null | undefined)
   return value
 }
 
-export function isValidCommissionId(
+function isValidCommissionId(
   commissionId: string | null,
   commissions: readonly CommissionOption[],
 ) {
@@ -84,7 +84,7 @@ export function subscribeToPreferredCommissionChanges(callback: () => void) {
   }
 }
 
-export function shouldIncludeEventForCommissionPreference(
+function shouldIncludeEventForCommissionPreference(
   event: CommissionAwareEvent,
   preferredCommissionId: string | null,
 ) {

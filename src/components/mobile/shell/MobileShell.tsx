@@ -202,7 +202,7 @@ export function MobileShell({
                   : () => back()
                 : openDrawer
             }
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+            className="flex size-10 cursor-pointer items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white"
           >
             {onBack ? (
               <ChevronLeft size={22} strokeWidth={2.5} />
@@ -221,7 +221,7 @@ export function MobileShell({
               aria-hidden
               width={30}
               height={30}
-              className="h-[30px] w-[30px] shrink-0"
+              className="size-[30px] shrink-0"
             />
             <div className="flex min-w-0 flex-col">
               {title && (
@@ -242,11 +242,13 @@ export function MobileShell({
       </header>
 
       {/* DRAWER */}
-      <div
-        aria-hidden={!open}
+      <button
+        type="button"
+        aria-label="Cerrar menú"
+        tabIndex={open ? 0 : -1}
         onClick={closeDrawer}
         className={cn(
-          'fixed inset-0 z-[60] bg-black/60 transition-opacity duration-[240ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
+          'fixed inset-0 z-[60] cursor-pointer bg-black/60 transition-opacity duration-[240ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
           open ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
       />
@@ -274,7 +276,7 @@ export function MobileShell({
             type="button"
             aria-label="Cerrar menú"
             onClick={closeDrawer}
-            className="mt-0.5 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/5 hover:text-white"
+            className="mt-0.5 flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/5 hover:text-white"
           >
             <X size={18} strokeWidth={2} />
           </button>
@@ -312,7 +314,7 @@ export function MobileShell({
                       >
                         <div
                           className={cn(
-                            'flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-md bg-gradient-to-br text-white',
+                            'flex size-[34px] shrink-0 items-center justify-center rounded-md bg-gradient-to-br text-white',
                             colors.badgeClassName,
                           )}
                         >
@@ -354,7 +356,7 @@ export function MobileShell({
                     >
                       <div
                         className={cn(
-                          'flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-md bg-gradient-to-br',
+                          'flex size-[34px] shrink-0 items-center justify-center rounded-md bg-gradient-to-br',
                           colorClasses.badgeClassName,
                         )}
                       >
@@ -416,7 +418,7 @@ export function MobileShell({
                 pathname.startsWith('/configurar') ? 'bg-white/5' : 'hover:bg-white/5',
               )}
             >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
                 <SlidersHorizontal size={16} strokeWidth={2} />
               </span>
               <span className="flex min-w-0 flex-1 flex-col">
@@ -435,14 +437,14 @@ export function MobileShell({
             href="/mapa"
             onClick={closeDrawer}
             className={cn(
-              'group flex items-center justify-between rounded-lg border px-3 py-3 transition-all',
+              'group flex items-center justify-between rounded-lg border p-3 transition-all',
               pathname.startsWith('/mapa')
                 ? 'border-amber-400/35 bg-amber-400/10'
                 : 'border-amber-400/15 bg-gradient-to-r from-amber-500/10 to-orange-500/5 hover:border-amber-400/30 hover:bg-amber-500/12',
             )}
           >
             <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-md bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-[0_0_12px_rgba(245,158,11,0.18)]">
+              <span className="flex size-9 items-center justify-center rounded-md bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-[0_0_12px_rgba(245,158,11,0.18)]">
                 <Map size={16} strokeWidth={2.2} />
               </span>
               <div className="flex min-w-0 flex-col">

@@ -74,7 +74,7 @@ export function ProfileForm({
               required
               defaultValue={currentNombreUsuario}
               placeholder="Nombre completo"
-              className="block w-full rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-violet-300/60"
+              className="block w-full rounded-md border border-white/10 bg-black/30 p-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-violet-300/60"
             />
           </label>
 
@@ -88,7 +88,7 @@ export function ProfileForm({
               autoComplete="email"
               defaultValue={currentEmail}
               placeholder="nuevo@campus.com"
-              className="block w-full rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-violet-300/60"
+              className="block w-full rounded-md border border-white/10 bg-black/30 p-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-violet-300/60"
             />
           </label>
         </div>
@@ -120,7 +120,7 @@ export function ProfileForm({
               type="password"
               required
               autoComplete="current-password"
-              className="block w-full rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition focus:border-violet-300/60"
+              className="block w-full rounded-md border border-white/10 bg-black/30 p-3 text-sm text-white outline-none transition focus:border-violet-300/60"
             />
           </label>
 
@@ -133,7 +133,7 @@ export function ProfileForm({
               minLength={8}
               autoComplete="new-password"
               placeholder="Mínimo 8 caracteres"
-              className="block w-full rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-violet-300/60"
+              className="block w-full rounded-md border border-white/10 bg-black/30 p-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-violet-300/60"
             />
           </label>
 
@@ -145,7 +145,7 @@ export function ProfileForm({
               required
               minLength={8}
               autoComplete="new-password"
-              className="block w-full rounded-md border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none transition focus:border-violet-300/60"
+              className="block w-full rounded-md border border-white/10 bg-black/30 p-3 text-sm text-white outline-none transition focus:border-violet-300/60"
             />
           </label>
         </div>

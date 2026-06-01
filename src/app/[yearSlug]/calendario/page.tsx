@@ -1,9 +1,15 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getCareer, getYearBySlug, getTiposEvento, getCategoriasApunte } from '@/lib/queries'
 import { getYearColorClasses, getYearTone } from '@/lib/yearColors'
 import { type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { YearCalendarView } from '@/components/year/YearCalendarView'
+
+export const metadata: Metadata = {
+  title: 'Calendario del año | NextCampus',
+  description: 'Consultá las fechas y actividades de las materias del año.',
+}
 
 export const revalidate = 300
 

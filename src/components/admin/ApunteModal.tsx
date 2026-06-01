@@ -122,9 +122,9 @@ function CollapsibleFormSection({
             {hint}
           </span>
         </span>
-        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/35 transition-colors group-hover:border-white/20 group-hover:text-white">
+        <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/35 transition-colors group-hover:border-white/20 group-hover:text-white">
           <ChevronDown
-            className={`h-4 w-4 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+            className={`size-4 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
           />
         </span>
       </button>
@@ -461,29 +461,30 @@ export function ApunteModal({
 
   // Serialize recursos for the hidden input
   const recursosJson = JSON.stringify(
-    recursos
-      .filter((r) => (r.kind === 'HTML' ? r.tipo === 'HTML' : r.url.trim() && r.tipo))
-      .map((r, idx) => {
-        const nombre = r.nombre.trim()
-        if (r.kind === 'HTML') {
-          return {
-            tipo: 'HTML',
-            localId: r.localId,
-            url: '',
-            orden: idx,
-            ...(nombre.length > 0 ? { nombre } : {}),
-            ...(r.storageKey && !r.replacingStorage ? { storageKey: r.storageKey } : {}),
-            ...(r.mimeType ? { mimeType: r.mimeType } : {}),
-            ...(r.sizeBytes ? { sizeBytes: r.sizeBytes } : {}),
-          }
-        }
-        return {
-          url: r.url.trim(),
-          tipo: r.tipo!,
+    recursos.flatMap((r, idx) => {
+      if (!(r.kind === 'HTML' ? r.tipo === 'HTML' : r.url.trim() && r.tipo)) return []
+
+      const nombre = r.nombre.trim()
+      if (r.kind === 'HTML') {
+        return [{
+          tipo: 'HTML',
+          localId: r.localId,
+          url: '',
           orden: idx,
           ...(nombre.length > 0 ? { nombre } : {}),
-        }
-      }),
+          ...(r.storageKey && !r.replacingStorage ? { storageKey: r.storageKey } : {}),
+          ...(r.mimeType ? { mimeType: r.mimeType } : {}),
+          ...(r.sizeBytes ? { sizeBytes: r.sizeBytes } : {}),
+        }]
+      }
+
+      return [{
+        url: r.url.trim(),
+        tipo: r.tipo!,
+        orden: idx,
+        ...(nombre.length > 0 ? { nombre } : {}),
+      }]
+    }),
   )
 
   return (
@@ -612,7 +613,7 @@ export function ApunteModal({
             onClick={addRecurso}
             className="inline-flex items-center gap-1.5 rounded border border-white/10 bg-surface-0 px-3 py-1.5 text-xs font-semibold text-white/60 transition-colors hover:bg-white/5 hover:text-white cursor-pointer"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="size-3.5" />
             Agregar recurso
           </button>
         </div>
@@ -960,7 +961,7 @@ function RecursoRow({
           type="button"
           onClick={() => onRemove(recurso.localId)}
           title="Eliminar recurso"
-          className="inline-flex h-8 w-8 items-center justify-center rounded text-rose-400/60 transition-colors hover:bg-rose-500/10 hover:text-rose-300 cursor-pointer"
+          className="inline-flex size-8 items-center justify-center rounded text-rose-400/60 transition-colors hover:bg-rose-500/10 hover:text-rose-300 cursor-pointer"
         >
           <Trash2 className="size-3.5" />
         </button>

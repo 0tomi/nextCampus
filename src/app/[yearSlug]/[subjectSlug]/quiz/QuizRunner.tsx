@@ -83,14 +83,13 @@ export function QuizRunner({
 
   const availableUnits = useMemo(() => {
     const unitsMap = new Map<string, number>()
-    bancos
-      .filter((b) => selectedBancos.includes(b.id))
-      .forEach((b) => {
+    for (const b of bancos) {
+      if (!selectedBancos.includes(b.id)) continue
         b.unidades?.forEach((u) => {
           const current = unitsMap.get(u.nombre) || 0
           unitsMap.set(u.nombre, current + u.totalPreguntas)
         })
-      })
+    }
     return Array.from(unitsMap.entries()).map(([nombre, totalPreguntas]) => ({
       nombre,
       totalPreguntas,
@@ -122,9 +121,9 @@ export function QuizRunner({
       setError('Elegí al menos un banco de preguntas.')
       return
     }
-    const activeUnits = availableUnits
-      .map((u) => u.nombre)
-      .filter((name) => !excludedUnits.includes(name))
+    const activeUnits = availableUnits.flatMap((unit) =>
+      excludedUnits.includes(unit.nombre) ? [] : [unit.nombre],
+    )
 
     if (activeUnits.length === 0) {
       setError('Elegí al menos una unidad.')
@@ -349,8 +348,8 @@ export function QuizRunner({
   if (bancos.length === 0) {
     return (
       <DarkCard className="px-6 py-16 text-center">
-        <span className="mx-auto flex h-12 w-12 items-center justify-center border border-white/[0.06] bg-surface-3">
-          <Layers className="h-5 w-5 text-white/28" />
+        <span className="mx-auto flex size-12 items-center justify-center border border-white/[0.06] bg-surface-3">
+          <Layers className="size-5 text-white/28" />
         </span>
         <p className="mt-5 text-lg font-black tracking-tight text-white">
           Todavía no hay preguntas para practicar
@@ -391,7 +390,7 @@ export function QuizRunner({
                   <button
                     type="button"
                     onClick={() => toggleBanco(b.id)}
-                    className="absolute inset-0 w-full h-full cursor-pointer text-left"
+                    className="absolute inset-0 size-full cursor-pointer text-left"
                     aria-pressed={active}
                   >
                     <span className="sr-only">Seleccionar {b.nombre}</span>
@@ -415,22 +414,22 @@ export function QuizRunner({
                         <input type="hidden" name="bankId" value={b.id} />
                         <button
                           type="submit"
-                          className="flex h-7 w-7 items-center justify-center rounded text-white/55 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+                          className="flex size-7 items-center justify-center rounded text-white/55 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
                           title="Eliminar banco de preguntas"
                         >
-                          <Trash2 className="h-4 w-4 text-rose-400" />
+                          <Trash2 className="size-4 text-rose-400" />
                         </button>
                       </form>
                     </AdminControls>
                     <span
                       className={cn(
-                        'flex h-5 w-5 shrink-0 items-center justify-center transition-colors pointer-events-none',
+                        'flex size-5 shrink-0 items-center justify-center transition-colors pointer-events-none',
                         active
                           ? 'bg-primary text-white'
                           : 'border border-white/15',
                       )}
                     >
-                      {active && <Check className="h-3 w-3" strokeWidth={3} />}
+                      {active && <Check className="size-3" strokeWidth={3} />}
                     </span>
                   </div>
                 </div>
@@ -464,7 +463,7 @@ export function QuizRunner({
                     <button
                       type="button"
                       onClick={() => toggleUnit(unit.nombre)}
-                      className="absolute inset-0 w-full h-full cursor-pointer text-left"
+                      className="absolute inset-0 size-full cursor-pointer text-left"
                       aria-pressed={active}
                     >
                       <span className="sr-only">Seleccionar {unit.nombre}</span>
@@ -483,13 +482,13 @@ export function QuizRunner({
                     {/* Check indicator */}
                     <span
                       className={cn(
-                        'flex h-5 w-5 shrink-0 items-center justify-center transition-colors pointer-events-none z-10',
+                        'flex size-5 shrink-0 items-center justify-center transition-colors pointer-events-none z-10',
                         active
                           ? 'bg-primary text-white'
                           : 'border border-white/15',
                       )}
                     >
-                      {active && <Check className="h-3 w-3" strokeWidth={3} />}
+                      {active && <Check className="size-3" strokeWidth={3} />}
                     </span>
                   </div>
                 )
@@ -700,7 +699,7 @@ export function QuizRunner({
             className="inline-flex w-full items-center justify-center gap-2 bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
           >
             {loading ? 'Cargando…' : 'Comenzar quiz'}
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="size-4" />
           </button>
         </section>
       </DarkCard>
@@ -733,7 +732,7 @@ export function QuizRunner({
               onClick={reset}
               className="inline-flex items-center gap-2 border border-white/[0.06] bg-surface-3 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:border-white/12 cursor-pointer"
             >
-              <RotateCcw className="h-4 w-4" />
+              <RotateCcw className="size-4" />
               Volver a empezar
             </button>
             <button
@@ -757,7 +756,7 @@ export function QuizRunner({
                 <div className="flex items-start gap-4">
                   <span
                     className={cn(
-                      'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center text-xs font-black tabular-nums',
+                      'mt-0.5 flex size-7 shrink-0 items-center justify-center text-xs font-black tabular-nums',
                       ok
                         ? 'bg-emerald-500/15 text-emerald-300'
                         : 'bg-rose-500/15 text-rose-300',
@@ -923,7 +922,7 @@ export function QuizRunner({
             disabled={index === 0}
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/52 transition-colors hover:text-white disabled:pointer-events-none disabled:opacity-25 cursor-pointer"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="size-4" />
             Anterior
           </button>
 
@@ -968,7 +967,7 @@ export function QuizRunner({
                     : isLast
                       ? 'Finalizar'
                       : 'Siguiente'}
-                  {!isLast ? <ChevronRight className="h-4 w-4" /> : null}
+                  {!isLast ? <ChevronRight className="size-4" /> : null}
                 </button>
               </>
             )}
@@ -1134,7 +1133,7 @@ function OptionButton({
     >
       <span
         className={cn(
-          'flex h-6 w-6 shrink-0 items-center justify-center text-xs font-bold tabular-nums transition-colors',
+          'flex size-6 shrink-0 items-center justify-center text-xs font-bold tabular-nums transition-colors',
           state === 'correct'
             ? 'bg-emerald-500/20 text-emerald-300'
             : state === 'wrong' && selected

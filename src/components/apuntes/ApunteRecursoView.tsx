@@ -63,7 +63,7 @@ export function ApunteRecursoView({ recurso, variant = 'card', apunteHref }: Apu
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between border-b border-white/5 pb-2">
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)] shrink-0" />
+            <span className="size-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)] shrink-0" />
             <h3 className="font-display text-sm font-bold tracking-tight text-white/90 sm:text-base">
               {titulo}
             </h3>
@@ -154,7 +154,7 @@ function ApunteRecursoMedia({
         className="aspect-video w-full rounded-md border border-white/10 bg-black/20"
         loading="lazy"
         allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        sandbox="allow-scripts allow-presentation allow-popups allow-same-origin"
+        sandbox="allow-scripts allow-presentation allow-popups"
         allowFullScreen
         title={titulo}
       />
@@ -293,7 +293,7 @@ function HtmlPreviewIframe({
       >
         {isLoading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-black/35 backdrop-blur-sm transition-opacity duration-300 z-20">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
+            <div className="size-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
             <p className="mt-3 text-xs font-semibold text-white/55 tracking-wide">
               Cargando apunte…
             </p>
@@ -326,10 +326,10 @@ function HtmlPreviewIframe({
           </button>
         )}
 
-        <div className="w-full h-full">
+        <div className="size-full">
           <iframe
             src={`/api/apuntes/recursos/${recursoId}/preview`}
-            className={`h-full w-full rounded-xl bg-black/20 transition-opacity duration-300 ${
+            className={`size-full rounded-xl bg-black/20 transition-opacity duration-300 ${
               isExpanded ? 'border-none' : 'border border-white/5'
             } ${isLoading ? 'opacity-0' : 'opacity-100'}`}
             loading="lazy"

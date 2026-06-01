@@ -6,7 +6,7 @@ import { ApunteRecursoView } from '@/components/apuntes/ApunteRecursoView'
 import { CopyApunteLinkButton } from '@/components/apuntes/CopyApunteLinkButton'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { getApuntePageBySlug } from '@/lib/queries'
-import { sanitizeRichHtml } from '@/lib/sanitize'
+import { SafeHtml } from '@/components/ui/SafeHtml'
 
 export const revalidate = 300
 
@@ -54,7 +54,7 @@ export default async function ApuntePage({
 
   return (
     <main className="min-h-screen bg-[#101010] text-white">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-5 sm:px-6 lg:p-8">
         <header className="flex flex-col gap-4 border-b border-white/8 pb-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <Link
@@ -109,11 +109,9 @@ export default async function ApuntePage({
               ) : null}
 
               {apunte.descripcionHtml ? (
-                <div
+                <SafeHtml
                   className="mt-5 space-y-3 text-base leading-7 text-white/66 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
-                  dangerouslySetInnerHTML={{
-                    __html: sanitizeRichHtml(apunte.descripcionHtml),
-                  }}
+                  html={apunte.descripcionHtml}
                 />
               ) : null}
             </DarkCard>

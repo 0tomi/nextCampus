@@ -14,6 +14,7 @@ import { updateEventoFechaAction, deleteEvento } from '@/app/admin/actions'
 import { cn, formatEventDateTime } from '@/lib/utils'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { RelatedApunteLinks } from '@/components/events/RelatedApunteLinks'
+import { SafeHtml } from '@/components/ui/SafeHtml'
 import type { CommissionOption } from '@/lib/commission-preferences'
 
 // "Fecha · hora" del evento seleccionado. La fecha llega como "YYYY-MM-DD"; si
@@ -268,11 +269,9 @@ export function EventCalendarAdmin({
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-white/30 block mb-2">
                   Descripción
                 </span>
-                <div
+                <SafeHtml
                   className="text-sm leading-7 text-white/70 [&_a]:text-red-400 [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
-                  dangerouslySetInnerHTML={{
-                    __html: activeSelectedEvent.descripcionHtml,
-                  }}
+                  html={activeSelectedEvent.descripcionHtml}
                 />
               </div>
             ) : (
@@ -291,7 +290,7 @@ export function EventCalendarAdmin({
                   onClick={() => setIsEditModalOpen(true)}
                   className="inline-flex items-center gap-2 rounded border border-white/10 bg-surface-1 px-3 py-2 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
                 >
-                  <Pencil className="h-3.5 w-3.5" />
+                  <Pencil className="size-3.5" />
                   Editar evento
                 </button>
                 <button
@@ -300,7 +299,7 @@ export function EventCalendarAdmin({
                   onClick={() => setConfirmDeleteOpen(true)}
                   className="inline-flex items-center gap-2 rounded border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-400 shadow-lg transition-colors hover:bg-rose-500/20 hover:text-rose-300 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <Trash2 className="size-3.5" />
                   {isDeleting ? 'Eliminando...' : 'Eliminar evento'}
                 </button>
               </div>

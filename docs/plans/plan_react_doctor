@@ -1,0 +1,91 @@
+ # Plan: Remediar diagnóstico React Doctor en nextCampus
+
+  ## Summary
+
+  - Baseline actual: React Doctor 52/100, 862 issues (29 errors, 833 warnings).
+  - pnpm lint pasa y pnpm test pasa: 171 tests.
+  - Usar npx -y react-doctor@latest . --verbose --diff para validar, porque pnpm dlx falla hoy con oxc-
+    parser.
+
+  - Prioridad: primero src/ y seguridad/correctitud; luego performance/arquitectura; al final docs/
+    MobileDesign/**, que ESLint ignora pero React Doctor sí escanea.
+
+  ## Key Changes
+
+  - P0 errores
+      - server-auth-actions: agregar un auth gate explícito al inicio de cada Server Action exportada en
+        src/app/admin/actions.ts, src/app/admin/users/actions.ts y src/app/admin/perfil/actions.ts.
+          - Usar requireGeneralAdmin, requireAnyAdmin o requireAcademicManager según corresponda.
+          - Mantener los checks específicos por año/entidad después de parsear IDs.
+
+      - server-no-mutable-module-state: reemplazar el Set global de slugs reservados por una estructura
+        inmutable (as const / Object.freeze) y helper de lectura.
+
+      - effect-needs-cleanup: devolver cleanup en PWARegister para remover el listener load.
+      - no-nested-component-definition: mover Arrow en docs/MobileDesign/design-canvas.jsx a module
+        scope.
+
+  - Seguridad, accesibilidad y HTML
+      - Corregir controles sin label, botones sin type, handlers en elementos estáticos, clicks sin
+        teclado, tabIndex no interactivo y botón anidado.
+
+      - Ajustar sandbox del iframe de YouTube quitando la combinación insegura allow-scripts + allow-
+        same-origin.
+
+      - Centralizar usos de HTML enriquecido en un componente seguro de render sanitizado; eliminar sinks
+        directos dispersos de dangerouslySetInnerHTML.
+
+  - Next.js / React correctness
+      - Agregar metadata a rutas públicas/admin marcadas por nextjs-missing-metadata.
+      - Resolver useSearchParams moviendo el boundary Suspense al propio LoginForm o separando
+        LoginFormInner.
+
+      - Reemplazar <img> por next/image donde aplique.
+      - Mover redirects de useEffect a submit handlers o server-side redirects.
+      - Corregir deps de efectos, listeners con useEffectEvent, estados derivados y efectos que simulan
+        eventos.
+
+  - Performance, arquitectura y limpieza
+      - Paralelizar awaits independientes con Promise.all tras confirmar que no dependen entre sí.
+      - Optimizar loops, maps/lookups, defaults no primitivos, refs con init lazy, estado sólo usado en
+        handlers y funciones puras dentro de componentes.
+
+      - Aplicar codemods seguros de Tailwind: w-* h-* → size-*, px-* py-* → p-*.
+      - Separar componentes/exports sólo donde sea bajo riesgo; dejar refactors grandes en commits
+        aislados.
+
+      - Verificar pg antes de removerlo: probablemente es dependencia runtime/peer de @prisma/adapter-pg.
+
+  ## Public APIs / Interfaces
+
+  - Sin cambios esperados en APIs públicas, rutas, Prisma schema ni contratos de base de datos.
+  - Cambios internos permitidos: componentes auxiliares, helpers de auth/render sanitizado, metadata de
+    páginas y hardening de pnpm-workspace.yaml.
+
+  ## Test Plan
+
+  - Después de cada batch:
+      - pnpm lint
+      - pnpm test
+      - npx -y react-doctor@latest . --verbose --diff
+
+  - Para auth/admin:
+      - Probar acciones de crear/editar/borrar eventos, apuntes, materias, años y usuarios.
+      - Confirmar que ayudantes/supervisores/admin mantienen permisos esperados.
+
+  - Para UI/a11y:
+      - Verificar navegación por teclado en modal, sheet, sidebar, mapa y login.
+      - Confirmar que botones siguen teniendo cursor-pointer.
+
+  - No correr pnpm build salvo pedido explícito del usuario.
+
+  ## Assumptions
+
+  - Se van a remediar todos los grupos reportados por React Doctor, pero los hallazgos de docs/
+    MobileDesign/** van al último batch por no ser código productivo.
+
+  - Los falsos positivos o dependencias necesarias, como pg, se documentan y no se eliminan sin
+    evidencia.
+
+  - Al finalizar implementación, hacer commit Conventional Commit sin atribución IA; si el cambio queda
+    muy grande, dividir por batch.

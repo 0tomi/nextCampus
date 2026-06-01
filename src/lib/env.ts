@@ -10,7 +10,7 @@ const schema = z.object({
   SUPABASE_SECRET_KEY: z.string().min(1),
   SUPABASE_STORAGE_BUCKET: z.string().min(1).default('apuntes'),
   ADMIN_EMAILS: z.string().min(1, 'ADMIN_EMAILS requerido'),
-  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+  UPSTASH_REDIS_REST_URL: z.url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
 })
 

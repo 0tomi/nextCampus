@@ -8,6 +8,7 @@ import { DeleteApunteButton } from '@/components/admin/SubjectPageAdminOverlay'
 import { ApunteRecursoView } from '@/components/apuntes/ApunteRecursoView'
 import { CopyApunteLinkButton } from '@/components/apuntes/CopyApunteLinkButton'
 import { DarkCard } from '@/components/ui/DarkCard'
+import { SafeHtml } from '@/components/ui/SafeHtml'
 import { EditApunteButton } from '@/components/admin/EditApunteButton'
 import type { RecursoTipo } from '@/lib/recursos'
 
@@ -59,9 +60,12 @@ function getInitialSelectedIds(categorias: CategoriaItem[]): string[] {
   const params = new URLSearchParams(window.location.search)
   const values = params
     .getAll('categoria')
-    .flatMap((value) => value.split(','))
-    .map((value) => value.trim())
-    .filter(Boolean)
+    .flatMap((value) =>
+      value.split(',').flatMap((item) => {
+        const trimmed = item.trim()
+        return trimmed ? [trimmed] : []
+      }),
+    )
   const validIds = new Set(categorias.map((categoria) => categoria.id))
   return [...new Set(values.filter((value) => validIds.has(value)))]
 }
@@ -319,10 +323,10 @@ function ApunteCard({
                     }),
                   )
                 }}
-                className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded text-white/55 transition-colors hover:bg-white/10 hover:text-white"
+                className="inline-flex size-7 cursor-pointer items-center justify-center rounded text-white/55 transition-colors hover:bg-white/10 hover:text-white"
                 title="Editar apunte"
               >
-                <Pencil className="h-3.5 w-3.5" />
+                <Pencil className="size-3.5" />
               </button>
             )}
             <DeleteApunteButton apunteId={apunte.id} subjectSlug={subjectSlug} yearId={yearId} />
@@ -331,11 +335,11 @@ function ApunteCard({
       </div>
 
       {apunte.descripcionHtml ? (
-        <div
+        <SafeHtml
           className={variant === 'desktop'
             ? 'mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white'
             : 'text-sm leading-6 text-white/60 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white'}
-          dangerouslySetInnerHTML={{ __html: apunte.descripcionHtml }}
+          html={apunte.descripcionHtml}
         />
       ) : null}
 

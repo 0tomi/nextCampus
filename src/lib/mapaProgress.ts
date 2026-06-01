@@ -2,7 +2,7 @@
 
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
 
-export const MAPA_PROGRESS_STORAGE_KEY = 'nextcampus_progreso_materias';
+const MAPA_PROGRESS_STORAGE_KEY = 'nextcampus_progreso_materias';
 export const MAPA_PROGRESS_UPDATED_EVENT = 'nextcampus:mapa-progress-updated';
 
 export function readMapaProgress(): string[] {

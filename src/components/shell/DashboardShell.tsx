@@ -58,7 +58,7 @@ export function DashboardShell({
             <button
               type="button"
               onClick={() => setIsOpen(true)}
-              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-white/70 hover:bg-white/5 hover:text-white lg:hidden transition-colors"
+              className="flex size-10 cursor-pointer items-center justify-center rounded-lg text-white/70 hover:bg-white/5 hover:text-white lg:hidden transition-colors"
               aria-label="Abrir menú"
             >
               <Menu size={22} strokeWidth={2} />
@@ -70,6 +70,7 @@ export function DashboardShell({
           <div className="flex items-center gap-3">
             {pathname === '/' ? (
               <button
+                type="button"
                 onClick={() => setIsAboutOpen(true)}
                 className="hidden lg:inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
               >
@@ -85,10 +86,12 @@ export function DashboardShell({
       </header>
 
       {/* Drawer móvil - Backdrop */}
-      <div
+      <button
+        type="button"
+        aria-label="Cerrar menú"
         onClick={() => setIsOpen(false)}
         className={cn(
-          'fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-240 lg:hidden',
+          'fixed inset-0 z-50 cursor-pointer bg-black/60 backdrop-blur-sm transition-opacity duration-240 lg:hidden',
           isOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
       />
@@ -107,13 +110,13 @@ export function DashboardShell({
           <button
             type="button"
             onClick={() => setIsOpen(false)}
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-white/50 hover:bg-white/5 hover:text-white transition-colors"
+            className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-white/50 hover:bg-white/5 hover:text-white transition-colors"
             aria-label="Cerrar menú"
           >
             <X size={18} strokeWidth={2} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto" onClick={() => setIsOpen(false)}>
+        <div className="flex-1 overflow-y-auto">
           {sidebar}
         </div>
       </aside>

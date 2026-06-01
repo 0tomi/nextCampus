@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useMemo } from 'react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { SubjectTabs } from './SubjectTabs'
@@ -67,8 +68,16 @@ interface SubjectMobileEvent {
 }
 
 function GoogleDriveIcon({ className }: { className?: string }) {
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src="/resources/google_drive_logo_icon_159334.png" alt="" aria-hidden="true" className={className} />
+  return (
+    <Image
+      src="/resources/google_drive_logo_icon_159334.png"
+      alt=""
+      width={20}
+      height={20}
+      aria-hidden="true"
+      className={className}
+    />
+  )
 }
 
 export function MobileSubject({

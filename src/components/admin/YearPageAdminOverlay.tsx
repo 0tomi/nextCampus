@@ -76,7 +76,7 @@ export function YearPageAdminOverlay({
             onClick={() => setNewEventOpen(true)}
             className="inline-flex items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2.5 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="size-4" />
             Nuevo evento de año
           </button>
         </div>

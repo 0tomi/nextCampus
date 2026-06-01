@@ -1,4 +1,4 @@
-export const EVENT_TONES: Record<string, { bg: string; border: string; text: string }> = {
+const EVENT_TONES: Record<string, { bg: string; border: string; text: string }> = {
   'Examen':           { bg: 'rgba(239,68,68,0.16)',  border: 'rgba(239,68,68,0.36)',  text: '#fecaca' },
   'Trabajo Práctico': { bg: 'rgba(251,191,36,0.16)', border: 'rgba(251,191,36,0.36)', text: '#fde68a' },
   'Exposición':       { bg: 'rgba(167,139,250,0.16)', border: 'rgba(167,139,250,0.36)', text: '#ddd6fe' },

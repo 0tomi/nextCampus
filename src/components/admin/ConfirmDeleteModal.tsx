@@ -63,7 +63,7 @@ export function ConfirmDeleteYearModal({
     <Modal open={open} onClose={handleClose} title="Eliminar año">
       <div className="space-y-4">
         <div className="flex items-start gap-3 rounded border border-amber-400/20 bg-amber-500/10 px-4 py-3">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-300" />
           <p className="text-sm text-amber-200">
             Esta acción es permanente y no se puede deshacer.
           </p>
@@ -136,7 +136,7 @@ export function ConfirmDeleteYearModal({
             disabled={isPending || loadingImpact}
             className="inline-flex items-center gap-2 rounded bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition-opacity hover:bg-rose-600 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="size-4" />
             {isPending ? 'Eliminando…' : 'Eliminar año'}
           </button>
         </div>
@@ -196,7 +196,7 @@ export function ConfirmDeleteSubjectModal({
     <Modal open={open} onClose={handleClose} title="Eliminar materia">
       <div className="space-y-4">
         <div className="flex items-start gap-3 rounded border border-amber-400/20 bg-amber-500/10 px-4 py-3">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-300" />
           <p className="text-sm text-amber-200">
             Esta acción es permanente y no se puede deshacer.
           </p>
@@ -263,7 +263,7 @@ export function ConfirmDeleteSubjectModal({
             disabled={isPending || loadingImpact}
             className="inline-flex items-center gap-2 rounded bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition-opacity hover:bg-rose-600 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="size-4" />
             {isPending ? 'Eliminando…' : 'Eliminar materia'}
           </button>
         </div>

@@ -11,9 +11,12 @@ const querySchema = z.object({
 function readRepeated(searchParams: URLSearchParams, key: string): string[] {
   return searchParams
     .getAll(key)
-    .flatMap((value) => value.split(','))
-    .map((value) => value.trim())
-    .filter(Boolean)
+    .flatMap((value) =>
+      value.split(',').flatMap((item) => {
+        const trimmed = item.trim()
+        return trimmed ? [trimmed] : []
+      }),
+    )
 }
 
 export async function GET(request: Request) {

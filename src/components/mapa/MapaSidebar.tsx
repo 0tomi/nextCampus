@@ -50,13 +50,13 @@ export function MapaSidebar() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+      <div className="flex-1 space-y-3 overflow-y-auto p-4">
         <button
           type="button"
           onClick={() => router.back()}
           className="flex w-full cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-left text-sm font-bold text-white/78 transition hover:bg-white/8 hover:text-white"
         >
-          <ArrowLeft className="h-4 w-4 shrink-0" />
+          <ArrowLeft className="size-4 shrink-0" />
           Volver atrás
         </button>
 
@@ -72,11 +72,11 @@ export function MapaSidebar() {
 
           <div className="mt-3 space-y-2">
             {!isHydrated ? (
-              <p className="rounded-md bg-white/5 px-3 py-3 text-xs text-white/45">
-                Cargando tu recorrido guardado...
+              <p className="rounded-md bg-white/5 p-3 text-xs text-white/45">
+                Cargando tu recorrido guardado…
               </p>
             ) : readySubjects.length === 0 ? (
-              <p className="rounded-md bg-white/5 px-3 py-3 text-xs leading-5 text-white/45">
+              <p className="rounded-md bg-white/5 p-3 text-xs leading-5 text-white/45">
                 Cuando marques materias, acá vas a ver las próximas opciones disponibles.
               </p>
             ) : (
@@ -107,8 +107,8 @@ function ReadySubjectLink({
       href={href}
       className="group flex cursor-pointer items-center gap-3 rounded-md border border-white/8 bg-white/5 px-3 py-2.5 transition hover:border-cyan-300/20 hover:bg-cyan-400/8"
     >
-      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded bg-cyan-300/14 text-cyan-100">
-        <BookOpen className="h-4 w-4" />
+      <span className="inline-flex size-9 shrink-0 items-center justify-center rounded bg-cyan-300/14 text-cyan-100">
+        <BookOpen className="size-4" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/58">
@@ -118,7 +118,7 @@ function ReadySubjectLink({
           {subject.nombre}
         </span>
       </span>
-      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-200/70" />
+      <CheckCircle2 className="size-4 shrink-0 text-emerald-200/70" />
     </Link>
   );
 }

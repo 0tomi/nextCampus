@@ -39,7 +39,7 @@ export function Sidebar({
   return (
     <div className={cn('flex h-full min-h-0 flex-col', className)}>
       {title || eyebrow ? (
-        <div className="border-b border-white/5 px-5 py-5">
+        <div className="border-b border-white/5 p-5">
           {eyebrow ? (
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38">
               {eyebrow}
@@ -109,7 +109,7 @@ export function Sidebar({
                       ) : null}
                     </span>
 
-                    <ChevronRight className="h-4 w-4 shrink-0 text-white/24 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-white/54" />
+                    <ChevronRight className="size-4 shrink-0 text-white/24 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-white/54" />
                   </Link>
                 </li>
               )
@@ -125,8 +125,8 @@ export function Sidebar({
           className="group flex items-center justify-between rounded-md bg-gradient-to-r from-amber-500/10 to-orange-500/5 hover:from-amber-500/20 hover:to-orange-500/10 border border-amber-500/20 hover:border-amber-500/40 px-3.5 py-3 transition-all duration-300 shadow-[0_0_15px_rgba(245,158,11,0.02)] hover:shadow-[0_0_20px_rgba(245,158,11,0.06)] cursor-pointer"
         >
           <div className="flex items-center gap-3">
-            <span className="flex h-8 w-8 items-center justify-center rounded bg-gradient-to-br from-amber-400 to-orange-500 text-black shadow-[0_0_10px_rgba(245,158,11,0.2)]">
-              <Map className="h-4.5 w-4.5" />
+            <span className="flex size-8 items-center justify-center rounded bg-gradient-to-br from-amber-400 to-orange-500 text-black shadow-[0_0_10px_rgba(245,158,11,0.2)]">
+              <Map className="size-4.5" />
             </span>
             <div className="text-left">
               <span className="block text-xs font-black uppercase tracking-wider text-white">
@@ -137,7 +137,7 @@ export function Sidebar({
               </span>
             </div>
           </div>
-          <ChevronRight className="h-4 w-4 text-white/20 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-white/60" />
+          <ChevronRight className="size-4 text-white/20 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-white/60" />
         </Link>
       </div>
     </div>

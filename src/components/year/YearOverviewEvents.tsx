@@ -12,7 +12,7 @@ import {
 } from '@/components/admin/SubjectPageAdminOverlay'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { formatEventDateTime } from '@/lib/utils'
-import { sanitizeRichHtml } from '@/lib/sanitize'
+import { SafeHtml } from '@/components/ui/SafeHtml'
 import { RelatedApunteLinks, type RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import {
   filterEventsByPreferredCommission,
@@ -131,7 +131,7 @@ export function YearOverviewEvents({
                 action="new-event"
                 className="inline-flex items-center gap-1.5 rounded border border-white/10 bg-surface-1 px-3 py-1.5 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
               >
-                <Plus className="h-3 w-3" />
+                <Plus className="size-3" />
                 Agregar nuevo evento
               </AdminTriggerButton>
             </AdminControls>
@@ -199,11 +199,9 @@ export function YearOverviewEvents({
                 </div>
 
                 {evento.descripcionHtml ? (
-                  <div
+                  <SafeHtml
                     className="mt-3 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
-                    dangerouslySetInnerHTML={{
-                      __html: sanitizeRichHtml(evento.descripcionHtml),
-                    }}
+                    html={evento.descripcionHtml}
                   />
                 ) : null}
               </DarkCard>

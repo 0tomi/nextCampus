@@ -1,0 +1,6 @@
+{
+  "$schema": "https://www.react.doctor/config.schema.json",
+  "ignore": {
+    "files": ["docs/MobileDesign/**"]
+  }
+}

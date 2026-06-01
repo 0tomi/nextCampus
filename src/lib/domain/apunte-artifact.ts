@@ -1,7 +1,6 @@
 import { build, type Plugin } from 'esbuild'
 
 export const MAX_APUNTE_REACT_SOURCE_BYTES = 500 * 1024
-export const APUNTE_ARTIFACT_HTML_MIME = 'text/html; charset=utf-8'
 
 const ALLOWED_IMPORTS = new Set(['react'])
 const ARTIFACT_BUNDLER_IMPORT_RE = /^(react|react-dom\/client|react\/jsx-runtime)$/

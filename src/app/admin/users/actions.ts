@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { UserRole, UserStatus } from '../../../../prisma/generated/client/enums'
 import { prisma } from '@/lib/prisma'
-import { requireGeneralAdmin } from '@/lib/auth'
+import { requireGeneralAdmin as requireAuth } from '@/lib/auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
 
@@ -82,8 +82,8 @@ export async function createAdminCampusAction(
   _prev: AdminUserActionState,
   formData: FormData,
 ): Promise<AdminUserActionState> {
+  const admin = await requireAuth()
   try {
-    const admin = await requireGeneralAdmin()
     const data = createAdminCampusSchema.parse({
       nombreUsuario: formData.get('nombreUsuario'),
       email: formData.get('email'),
@@ -156,8 +156,8 @@ export async function updateAdminCampusAction(
   _prev: AdminUserActionState,
   formData: FormData,
 ): Promise<AdminUserActionState> {
+  const admin = await requireAuth()
   try {
-    const admin = await requireGeneralAdmin()
     const data = editAdminCampusSchema.parse({
       id: formData.get('id'),
       nombreUsuario: formData.get('nombreUsuario'),

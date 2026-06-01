@@ -14,9 +14,11 @@ export function PWARegister() {
 
     if (document.readyState === 'complete') {
       register()
-    } else {
-      window.addEventListener('load', register, { once: true })
+      return
     }
+
+    window.addEventListener('load', register, { once: true })
+    return () => window.removeEventListener('load', register)
   }, [])
 
   return null

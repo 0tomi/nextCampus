@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { AlertTriangle, ArrowRight, Shield } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DarkCard } from '@/components/ui/DarkCard'
@@ -27,7 +27,7 @@ function formatRetryTime(totalSeconds: number) {
   return `${minutes} min ${seconds.toString().padStart(2, '0')} s`
 }
 
-export function LoginForm() {
+function LoginFormInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
@@ -93,18 +93,18 @@ export function LoginForm() {
 
   return (
     <div className="relative isolate mx-auto flex min-h-[calc(100vh-12rem)] max-w-5xl items-center justify-center overflow-hidden px-4 py-16">
-      <div className="absolute left-1/2 top-8 h-56 w-56 -translate-x-1/2 rounded-full bg-violet-500/20 blur-3xl" />
-      <div className="absolute right-10 top-16 h-24 w-24 border border-white/10 bg-white/[0.02]" />
-      <div className="absolute bottom-16 left-10 h-32 w-32 border border-violet-400/20 bg-violet-500/[0.03]" />
-      <div className="absolute left-[18%] top-[28%] h-3 w-3 bg-violet-300/60" />
-      <div className="absolute right-[24%] bottom-[28%] h-4 w-4 border border-white/20" />
+      <div className="absolute left-1/2 top-8 size-56 -translate-x-1/2 rounded-full bg-violet-500/20 blur-3xl" />
+      <div className="absolute right-10 top-16 size-24 border border-white/10 bg-white/[0.02]" />
+      <div className="absolute bottom-16 left-10 size-32 border border-violet-400/20 bg-violet-500/[0.03]" />
+      <div className="absolute left-[18%] top-[28%] size-3 bg-violet-300/60" />
+      <div className="absolute right-[24%] bottom-[28%] size-4 border border-white/20" />
 
       <DarkCard className="relative z-10 w-full max-w-md overflow-hidden p-8 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_40px_120px_rgba(76,29,149,0.28)]">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/60 to-transparent" />
 
         <div className="space-y-4">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-none border border-violet-400/20 bg-violet-500/10 text-violet-200">
-            <Shield className="h-5 w-5" />
+          <span className="inline-flex size-12 items-center justify-center rounded-none border border-violet-400/20 bg-violet-500/10 text-violet-200">
+            <Shield className="size-5" />
           </span>
 
           <div>
@@ -121,30 +121,34 @@ export function LoginForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-3">
+          <label className="sr-only" htmlFor="admin-email">Email</label>
           <input
+            id="admin-email"
             type="email"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
             disabled={loading || isBlocked}
-            className="block w-full rounded-none border border-white/5 bg-[#0a0a0a] px-3 py-3 text-sm text-white placeholder:text-white/28 focus:border-white/10 focus:outline-none"
+            className="block w-full rounded-none border border-white/5 bg-[#0a0a0a] p-3 text-sm text-white placeholder:text-white/28 focus:border-white/10 focus:outline-none"
           />
+          <label className="sr-only" htmlFor="admin-password">Contraseña</label>
           <input
+            id="admin-password"
             type="password"
             placeholder="Contraseña"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             disabled={loading || isBlocked}
-            className="block w-full rounded-none border border-white/5 bg-[#0a0a0a] px-3 py-3 text-sm text-white placeholder:text-white/28 focus:border-white/10 focus:outline-none"
+            className="block w-full rounded-none border border-white/5 bg-[#0a0a0a] p-3 text-sm text-white placeholder:text-white/28 focus:border-white/10 focus:outline-none"
           />
           {isBlocked ? (
-            <div className="relative overflow-hidden rounded-none border border-amber-300/20 bg-gradient-to-br from-amber-400/12 via-[#1a1304] to-rose-400/10 px-4 py-4 text-amber-50 shadow-[0_0_0_1px_rgba(251,191,36,0.06),0_18px_50px_rgba(251,191,36,0.08)]">
+            <div className="relative overflow-hidden rounded-none border border-amber-300/20 bg-gradient-to-br from-amber-400/12 via-[#1a1304] to-rose-400/10 p-4 text-amber-50 shadow-[0_0_0_1px_rgba(251,191,36,0.06),0_18px_50px_rgba(251,191,36,0.08)]">
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/70 to-transparent" />
               <div className="flex items-start gap-3">
-                <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center border border-amber-200/20 bg-amber-200/10 text-amber-100">
-                  <AlertTriangle className="h-4 w-4" />
+                <span className="mt-0.5 inline-flex size-10 shrink-0 items-center justify-center border border-amber-200/20 bg-amber-200/10 text-amber-100">
+                  <AlertTriangle className="size-4" />
                 </span>
                 <div className="space-y-1">
                   <p className="text-sm font-semibold tracking-[0.02em] text-amber-50">
@@ -168,10 +172,18 @@ export function LoginForm() {
             className="inline-flex w-full items-center justify-center gap-2 rounded-none border border-violet-400/20 bg-gradient-to-r from-violet-500 to-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_24px_80px_rgba(109,40,217,0.28)] transition hover:from-violet-400 hover:to-purple-500 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             {loading ? 'Ingresando…' : isBlocked ? 'Intentá más tarde' : 'Ingresar'}
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="size-4" />
           </button>
         </form>
       </DarkCard>
     </div>
+  )
+}
+
+export function LoginForm() {
+  return (
+    <Suspense fallback={null}>
+      <LoginFormInner />
+    </Suspense>
   )
 }

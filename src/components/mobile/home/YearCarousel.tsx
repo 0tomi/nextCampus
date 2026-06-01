@@ -67,7 +67,7 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
               style={active ? { border: `1px solid ${colors.tone}` } : undefined}
             >
               <span
-                className="block w-2 h-2 rounded-sm"
+                className="block size-2 rounded-sm"
                 style={{ background: colors.tone }}
               />
               Año {y.orden}
@@ -97,7 +97,7 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
                 <Link
                   href={`/${y.slug}`}
                   className={[
-                    'flex items-start justify-between gap-3 px-[18px] py-[18px] cursor-pointer',
+                    'flex items-start justify-between gap-3 p-[18px] cursor-pointer',
                     'bg-gradient-to-r',
                     colors.badgeClassName,
                   ].join(' ')}
@@ -110,7 +110,7 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
                       {y.nombre}
                     </h3>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-black/20 text-white">
+                  <div className="flex size-10 items-center justify-center rounded-lg bg-black/20 text-white">
                     <ChevronRight size={20} strokeWidth={2.5} />
                   </div>
                 </Link>

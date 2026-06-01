@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { Shield } from 'lucide-react'
@@ -25,6 +26,11 @@ import {
   isSubjectVisible,
   readPreferencesFromCookie,
 } from '@/lib/preferences'
+export const metadata: Metadata = {
+  title: 'Inicio | NextCampus',
+  description: 'Campus académico con calendario, apuntes y práctica por materia.',
+}
+
 export const revalidate = 300
 
 export default async function HomePage() {
@@ -52,7 +58,7 @@ export default async function HomePage() {
                   href="/admin"
                   className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
                 >
-                  <Shield className="h-4 w-4" />
+                  <Shield className="size-4" />
                   Admin
                 </Link>
               </div>
@@ -251,7 +257,7 @@ export default async function HomePage() {
                 href="/admin"
                 className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
               >
-                <Shield className="h-4 w-4" />
+                <Shield className="size-4" />
                 Admin
               </Link>
             </div>
