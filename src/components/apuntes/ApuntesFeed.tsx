@@ -141,8 +141,14 @@ export function ApuntesFeed({
     error: '',
   })
   const sentinelRef = useRef<HTMLDivElement | null>(null)
-  const cardRefs = useRef<Map<string, HTMLDivElement | null>>(new Map())
+  const cardRefs = useRef<Map<string, HTMLDivElement | null> | null>(null)
   const firstRunRef = useRef(true)
+  const getCardRefs = useCallback(() => {
+    if (cardRefs.current === null) {
+      cardRefs.current = new Map()
+    }
+    return cardRefs.current
+  }, [])
 
   const loadPage = useCallback(
     async ({ reset, cursor }: { reset: boolean; cursor?: string | null }) => {
@@ -191,11 +197,11 @@ export function ApuntesFeed({
   useEffect(() => {
     if (!focusApunteSlug) return
     const handle = window.requestAnimationFrame(() => {
-      const node = cardRefs.current.get(focusApunteSlug)
+      const node = getCardRefs().get(focusApunteSlug)
       if (node) node.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
     return () => window.cancelAnimationFrame(handle)
-  }, [focusApunteSlug, items])
+  }, [focusApunteSlug, getCardRefs, items])
 
   useEffect(() => {
     const sentinel = sentinelRef.current
@@ -286,8 +292,8 @@ export function ApuntesFeed({
               focusApunteSlug={focusApunteSlug}
               variant={variant}
               setRef={(node) => {
-                if (node) cardRefs.current.set(apunte.slug, node)
-                else cardRefs.current.delete(apunte.slug)
+                if (node) getCardRefs().set(apunte.slug, node)
+                else getCardRefs().delete(apunte.slug)
               }}
             />
           ))}
