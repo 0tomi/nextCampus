@@ -35,6 +35,7 @@ const eventoSelect = {
   fecha: true,
   hora: true,
   createdByUserId: true,
+  createdBy: { select: { nombreUsuario: true } },
   tipoEventoId: true,
   tipoEvento: { select: { nombre: true } },
   apuntes: {
@@ -87,6 +88,7 @@ type QueryEvent = {
   fecha: string
   hora: string | null
   createdByUserId: string | null
+  createdByNombre: string | null
   tipoEventoId: string
   tipoEvento: {
     nombre: string
@@ -108,8 +110,9 @@ type RelatedApunte = {
 
 // Shape cruda (lo que devuelve Prisma): fecha como Date a medianoche UTC y pivot
 // ApunteEvento envolviendo el apunte.
-type RawQueryEvent = Omit<QueryEvent, 'fecha' | 'apuntes'> & {
+type RawQueryEvent = Omit<QueryEvent, 'fecha' | 'apuntes' | 'createdByNombre'> & {
   fecha: Date
+  createdBy: { nombreUsuario: string } | null
   apuntes: Array<{ apunte: RelatedApunte }>
 }
 
@@ -158,6 +161,7 @@ function attachCommissionMetadataToAgenda(
     eventos: agenda.eventos.map((evento) => ({
       ...evento,
       fecha: toDateKey(evento.fecha),
+      createdByNombre: evento.createdBy?.nombreUsuario ?? null,
       apuntes: evento.apuntes.map(({ apunte }) => apunte),
       commissionId: agenda.commissionId,
       commission,
@@ -439,6 +443,7 @@ export function getApuntePageBySlug(subjectSlug: string, apunteSlug: string) {
               slug: true,
               descripcionHtml: true,
               createdAt: true,
+              createdBy: { select: { nombreUsuario: true } },
               categorias: {
                 select: { categoria: { select: categoriaSelect } },
                 orderBy: { categoria: { nombre: 'asc' } },
@@ -474,6 +479,7 @@ export function getApuntePageBySlug(subjectSlug: string, apunteSlug: string) {
         apunte: {
           ...apunte,
           createdAt: apunte.createdAt.toISOString(),
+          createdByNombre: apunte.createdBy?.nombreUsuario ?? null,
           categorias: apunte.categorias.map(({ categoria }) => categoria),
         },
       }
@@ -481,6 +487,27 @@ export function getApuntePageBySlug(subjectSlug: string, apunteSlug: string) {
     ['apunte-page', subjectSlug, apunteSlug],
     { tags: [TAGS.subject(subjectSlug)], revalidate: 3600 },
   )()
+}
+
+/**
+ * Resuelve nombres de usuario a partir de sus ids de cuenta. Lo usa el banco de
+ * preguntas: su meta guarda `subidoPorId` (id de cuenta, inmutable). El backfill
+ * `pnpm backfill:banco-author` completó ese id en los bancos viejos, así que hoy
+ * todos lo tienen. Devuelve un Map id → nombreUsuario; los ids sin cuenta (cuenta
+ * borrada) quedan fuera y el llamador omite la línea de autor.
+ */
+export async function getUserNamesByAccountId(
+  ids: readonly (string | null | undefined)[],
+): Promise<Map<string, string>> {
+  const unique = [...new Set(ids.filter((id): id is string => Boolean(id)))]
+  if (unique.length === 0) return new Map()
+
+  const users = await prisma.userAccount.findMany({
+    where: { id: { in: unique } },
+    select: { id: true, nombreUsuario: true },
+  })
+
+  return new Map(users.map((u) => [u.id, u.nombreUsuario]))
 }
 
 export async function getCategoriasApunte(): Promise<CategoriaListItem[]> {
@@ -553,6 +580,7 @@ export function getAdminSubjectBySlug(slug: string) {
             orderBy: eventoOrderBy,
             include: {
               tipoEvento: true,
+              createdBy: { select: { nombreUsuario: true } },
               apuntes: {
                 orderBy: { createdAt: 'asc' },
                 select: {
@@ -582,6 +610,7 @@ export function getAdminSubjectBySlug(slug: string) {
                 orderBy: eventoOrderBy,
                 include: {
                   tipoEvento: true,
+                  createdBy: { select: { nombreUsuario: true } },
                   apuntes: {
                     orderBy: { createdAt: 'asc' },
                     select: {

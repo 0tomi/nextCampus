@@ -92,6 +92,7 @@ export interface MobileCalendarEvent {
   commissionSlug?: string | null
   commissionNombre?: string | null
   createdByUserId?: string | null
+  createdByNombre?: string | null
   apuntes?: RelatedApunteLink[]
 }
 

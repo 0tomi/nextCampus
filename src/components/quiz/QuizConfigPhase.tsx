@@ -3,6 +3,7 @@
 import { Check, ChevronRight, Trash2 } from 'lucide-react'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { DarkCard } from '@/components/ui/DarkCard'
+import { UploaderByline } from '@/components/ui/UploaderByline'
 import { deleteQuizBankAction } from '@/app/admin/actions'
 import { cn } from '@/lib/utils'
 import { CONTROL, CONTROL_ACTIVE } from './quizStyles'
@@ -80,6 +81,9 @@ function QuestionBankCard({
       <div className="relative min-w-0 pointer-events-none z-10">
         <span className="block truncate text-sm font-semibold text-white">{banco.nombre}</span>
         <span className="mt-0.5 block text-xs text-white/44">{banco.totalPreguntas} preguntas</span>
+        {banco.subidoPorNombre ? (
+          <UploaderByline nombre={banco.subidoPorNombre} className="mt-1.5" />
+        ) : null}
       </div>
 
       <div className="relative flex items-center gap-2 z-10">

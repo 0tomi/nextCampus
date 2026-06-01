@@ -7,6 +7,7 @@ import { CopyApunteLinkButton } from '@/components/apuntes/CopyApunteLinkButton'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { getApuntePageBySlug } from '@/lib/queries'
 import { SafeHtml } from '@/components/ui/SafeHtml'
+import { UploaderByline } from '@/components/ui/UploaderByline'
 
 export const revalidate = 300
 
@@ -106,6 +107,10 @@ export default async function ApuntePage({
                     </span>
                   ))}
                 </div>
+              ) : null}
+
+              {apunte.createdByNombre ? (
+                <UploaderByline nombre={apunte.createdByNombre} className="mt-4" />
               ) : null}
 
               {apunte.descripcionHtml ? (

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
-import { getSubjectQuizMeta } from '@/lib/queries'
+import { getSubjectQuizMeta, getUserNamesByAccountId } from '@/lib/queries'
 import { listQuizBanks, readQuizBanks } from '@/lib/storage'
 import { CampusHeaderBrand } from '@/components/shell/CampusHeaderBrand'
 import {
@@ -42,6 +42,7 @@ export default async function QuizPage({
     subject.slug,
     banks.map((b) => b.id),
   )
+  const nombrePorId = await getUserNamesByAccountId(banks.map((b) => b.subidoPorId))
 
   const bancos = banks.map((b) => {
     const file = loadedBanks.get(b.id)
@@ -57,6 +58,7 @@ export default async function QuizPage({
       totalPreguntas: b.totalPreguntas,
       unidades,
       subidoPorId: b.subidoPorId ?? null,
+      subidoPorNombre: b.subidoPorId ? nombrePorId.get(b.subidoPorId) ?? null : null,
     }
   })
 

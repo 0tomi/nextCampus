@@ -47,6 +47,7 @@ function toSubjectEvents(events: readonly VisibleEvent[]) {
     commissionId: evento.commissionId,
     commissionSlug: evento.commission?.slug ?? null,
     commissionNombre: evento.commission?.nombre ?? null,
+    createdByNombre: evento.createdByNombre ?? null,
     apuntes: evento.apuntes,
   }))
 }
@@ -64,6 +65,7 @@ function toMobileEvents(events: readonly VisibleEvent[]) {
     commissionSlug: evento.commission?.slug ?? null,
     commissionNombre: evento.commission?.nombre ?? null,
     createdByUserId: evento.createdByUserId,
+    createdByNombre: evento.createdByNombre ?? null,
   }))
 }
 

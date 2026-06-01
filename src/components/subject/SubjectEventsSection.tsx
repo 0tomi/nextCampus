@@ -11,6 +11,7 @@ import {
 } from '@/components/admin/SubjectPageAdminOverlay'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { SafeHtml } from '@/components/ui/SafeHtml'
+import { UploaderByline } from '@/components/ui/UploaderByline'
 import { formatEventDateTime } from '@/lib/utils'
 import { RelatedApunteLinks, type RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import {
@@ -42,6 +43,7 @@ interface SubjectEventItem extends CommissionAwareEvent {
   commissionSlug?: string | null
   commissionNombre?: string | null
   createdByUserId?: string | null
+  createdByNombre?: string | null
   apuntes?: RelatedApunteLink[]
 }
 
@@ -273,6 +275,13 @@ export function SubjectEventsSection({
                     <SafeHtml
                       className="pointer-events-auto mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
                       html={evento.descripcionHtml ?? ''}
+                    />
+                  ) : null}
+
+                  {evento.createdByNombre ? (
+                    <UploaderByline
+                      nombre={evento.createdByNombre}
+                      className="pointer-events-auto mt-4"
                     />
                   ) : null}
                 </div>

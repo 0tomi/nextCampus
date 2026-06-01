@@ -4,7 +4,7 @@ import { useState, useTransition, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { CalendarDays, Clock, ExternalLink, Pencil, Trash2 } from 'lucide-react'
+import { CalendarDays, Clock, ExternalLink, Pencil, Trash2, UserRound } from 'lucide-react'
 import { EventModal } from '@/components/admin/EventModal'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { Sheet } from '@/components/ui/Sheet'
@@ -142,6 +142,13 @@ export function MobileEventDetailSheet({
               ) : null}
               {event.commissionNombre ? (
                 <DetailRow label="Comisión" value={event.commissionNombre} />
+              ) : null}
+              {event.createdByNombre ? (
+                <DetailRow
+                  icon={<UserRound className="size-4" />}
+                  label="Subido por"
+                  value={event.createdByNombre}
+                />
               ) : null}
             </div>
 

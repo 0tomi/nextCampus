@@ -24,7 +24,7 @@ interface SubjectForMobile {
   playlistUrl: string | null
   playlistEnabled: boolean
   year: { id: string; slug: string; nombre: string; color?: string | null; career: { nombre: string } }
-  agenda: { id: string; eventos: Array<{ id: string; titulo: string; descripcionHtml: string | null; fecha: string; hora: string | null; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId?: string | null; commissionSlug?: string | null; commissionNombre?: string | null; createdByUserId?: string | null; apuntes?: RelatedApunteLink[] }> } | null
+  agenda: { id: string; eventos: Array<{ id: string; titulo: string; descripcionHtml: string | null; fecha: string; hora: string | null; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId?: string | null; commissionSlug?: string | null; commissionNombre?: string | null; createdByUserId?: string | null; createdByNombre?: string | null; apuntes?: RelatedApunteLink[] }> } | null
   apuntes: Array<{
     id: string
     titulo: string
@@ -67,6 +67,7 @@ interface SubjectMobileEvent {
   commissionSlug?: string | null
   commissionNombre?: string | null
   createdByUserId?: string | null
+  createdByNombre?: string | null
   apuntes?: RelatedApunteLink[]
 }
 
@@ -283,6 +284,7 @@ export function MobileSubject({
             commissionSlug: e.commissionSlug ?? null,
             commissionNombre: e.commissionNombre ?? null,
             createdByUserId: e.createdByUserId ?? null,
+            createdByNombre: e.createdByNombre ?? null,
             apuntes: e.apuntes,
           }))}
           apuntes={subject.apuntes}
