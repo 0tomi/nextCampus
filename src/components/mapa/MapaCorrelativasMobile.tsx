@@ -190,402 +190,56 @@ export function MapaCorrelativasMobile({
         <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.16),transparent_54%),radial-gradient(circle_at_85%_8%,rgba(251,191,36,0.18),transparent_34%)]" />
 
         <div className="relative flex flex-col gap-6">
-          <section className="px-[18px] pt-4">
-            <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#131313] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)]">
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),transparent_35%,rgba(34,211,238,0.12)_78%,transparent)]" />
-              <div className="pointer-events-none absolute -right-10 top-[-26px] size-36 rounded-full bg-cyan-300/16 blur-3xl" />
-              <div className="pointer-events-none absolute left-[-24px] bottom-[-42px] size-32 rounded-full bg-amber-300/12 blur-3xl" />
-
-              <div className="relative flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100/62">
-                    Seguimiento personal
-                  </p>
-                  <h1 className="mt-2 max-w-[14rem] text-[28px] font-black leading-[1.02] tracking-[-0.04em] text-white">
-                    Calculá tu camino materia por materia
-                  </h1>
-                  <p className="mt-3 max-w-[16.5rem] text-[13px] leading-5 text-white/60">
-                    Marcá lo que ya cursaste y descubrí enseguida qué materias ya tenés listas para seguir.
-                  </p>
-                </div>
-
-                <div className="relative shrink-0">
-                  <div
-                    className="grid size-[84px] place-items-center rounded-full"
-                    style={{
-                      background: `conic-gradient(#fde68a 0 ${progressPercentage}%, rgba(255,255,255,0.1) ${progressPercentage}% 100%)`,
-                    }}
-                  >
-                    <div className="grid size-[64px] place-items-center rounded-full bg-[#111111] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
-                      <div className="text-center">
-                        <span className="block text-xl font-black leading-none text-white">
-                          {progressPercentage}%
-                        </span>
-                        <span className="mt-1 block text-[9px] font-black uppercase tracking-[0.18em] text-white/38">
-                          avance
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative mt-5 grid grid-cols-3 gap-2.5">
-                <MetricCard label="Marcadas" value={completedCount} tone="emerald" />
-                <MetricCard label="Listas" value={unlockedCount} tone="amber" />
-                <MetricCard label="Pendientes" value={lockedCount} tone="slate" />
-              </div>
-            </div>
-          </section>
-
-          <section className="px-[18px]">
-            <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-1.5">
-              <div className="grid grid-cols-2 gap-1.5">
-                {([
-                  { id: 'plan', label: 'Calculá', icon: GraduationCap },
-                  { id: 'ruta', label: 'Ruta', icon: Radar },
-                ] as const).map((view) => {
-                  const active = mode === view.id;
-                  const Icon = view.icon;
-
-                  return (
-                    <button
-                      key={view.id}
-                      type="button"
-                      onClick={() => setMode(view.id)}
-                      className={cn(
-                        'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-[14px] text-sm font-black transition',
-                        active
-                          ? 'bg-gradient-to-r from-amber-300 to-cyan-300 text-black shadow-[0_10px_30px_rgba(34,211,238,0.14)]'
-                          : 'bg-transparent text-white/58 hover:bg-white/5 hover:text-white',
-                      )}
-                    >
-                      <Icon className="size-4" />
-                      {view.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-
-          <section className="flex flex-col gap-3 px-[18px]">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/28" />
-              <input
-                type="search"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                aria-label="Buscar materia o código"
-                  placeholder="Buscar materia o código"
-                className="h-12 w-full rounded-2xl border border-white/10 bg-[#151515] pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-white/28 focus:border-cyan-300/40 focus:bg-white/[0.06]"
-              />
-            </div>
-
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-              <button
-                type="button"
-                onClick={() => setYearFilter('ALL')}
-                className={cn(
-                  'h-9 shrink-0 rounded-full border px-4 text-[11px] font-black uppercase tracking-[0.18em] transition',
-                  yearFilter === 'ALL'
-                    ? 'border-white/20 bg-white/10 text-white'
-                    : 'border-white/10 bg-transparent text-white/45 hover:text-white/74',
-                )}
-              >
-                Todos
-              </button>
-              {([1, 2, 3, 4, 5] as const).map((year) => (
-                <button
-                  key={year}
-                  type="button"
-                  onClick={() => setYearFilter(year)}
-                  className={cn(
-                    'h-9 shrink-0 rounded-full border px-4 text-[11px] font-black uppercase tracking-[0.18em] transition',
-                    yearFilter === year
-                      ? 'border-cyan-300/35 bg-cyan-300/12 text-cyan-50'
-                      : 'border-white/10 bg-transparent text-white/45 hover:text-white/74',
-                  )}
-                >
-                  {YEAR_SHORT_LABELS[year]}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="px-[18px]">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/38">
-                  Próximo paso
-                </p>
-                <h2 className="mt-1 text-lg font-black text-white">Lo que más te conviene mirar ahora</h2>
-              </div>
-              <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-50">
-                {recommendedSubjects.length}
-              </span>
-            </div>
-
-            <div className="mt-3 flex gap-3 overflow-x-auto pb-1 scrollbar-none">
-              {recommendedSubjects.length === 0 ? (
-                <div className="w-full rounded-2xl border border-dashed border-white/10 bg-[#171717] p-4 text-sm text-white/42">
-                  Cuando marques materias, acá vas a ver qué opciones ya tenés listas para seguir.
-                </div>
-              ) : (
-                recommendedSubjects.map((subject) => (
-                  <button
-                    key={subject.slug}
-                    type="button"
-                      onClick={() => openSubjectDetail(subject)}
-                    className={cn(
-                      'min-w-[260px] shrink-0 rounded-[22px] border p-4 text-left transition',
-                      selectedSubjectSlug === subject.slug
-                        ? 'border-cyan-300/38 bg-cyan-300/10 shadow-[0_18px_40px_rgba(34,211,238,0.08)]'
-                        : 'border-white/10 bg-[#151515] hover:border-white/18 hover:bg-white/[0.05]',
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/58">
-                          {YEAR_LABELS[subject.year as 1 | 2 | 3 | 4 | 5]}
-                        </p>
-                        <h3 className="mt-2 text-base font-black leading-5 text-white">
-                          {subject.nombre}
-                        </h3>
-                      </div>
-                      <span className="inline-flex size-10 items-center justify-center rounded-2xl bg-white/6 text-cyan-100">
-                        <Target className="size-4.5" />
-                      </span>
-                    </div>
-                    <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/8 pt-3">
-                      <span className="text-[11px] font-bold text-white/56">
-                        Abre {getUnlocks(subject.slug).length} materia{getUnlocks(subject.slug).length === 1 ? '' : 's'}
-                      </span>
-                      <span className="inline-flex items-center gap-1 text-[11px] font-black text-white">
-                        Ver foco
-                        <ChevronRight className="size-3.5" />
-                      </span>
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          </section>
-
-          <section className="px-[18px]">
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-              {([
-                { value: 'ALL', label: 'Todas' },
-                { value: 'UNLOCKED', label: 'Listas' },
-                { value: 'LOCKED', label: 'Todavía no' },
-                { value: 'COMPLETED', label: 'Marcadas' },
-              ] as const).map((filter) => (
-                <button
-                  key={filter.value}
-                  type="button"
-                  onClick={() => setStatusFilter(filter.value)}
-                  className={cn(
-                    'inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-full border px-4 text-[11px] font-black uppercase tracking-[0.16em] transition',
-                    statusFilter === filter.value
-                      ? 'border-amber-300/30 bg-amber-300/12 text-amber-50'
-                      : 'border-white/10 bg-transparent text-white/48 hover:text-white/74',
-                  )}
-                >
-                  <Filter className="size-3.5" />
-                  {filter.label}
-                </button>
-              ))}
-            </div>
-          </section>
+          <MapaMobileHero
+            completedCount={completedCount}
+            lockedCount={lockedCount}
+            progressPercentage={progressPercentage}
+            unlockedCount={unlockedCount}
+          />
+          <MapaModeTabs mode={mode} onChange={setMode} />
+          <MapaSearchFilters
+            searchTerm={searchTerm}
+            statusFilter={statusFilter}
+            yearFilter={yearFilter}
+            onSearchChange={setSearchTerm}
+            onStatusFilterChange={setStatusFilter}
+            onYearFilterChange={setYearFilter}
+          />
+          <RecommendedSubjects
+            recommendedSubjects={recommendedSubjects}
+            selectedSubjectSlug={selectedSubjectSlug}
+            onOpenSubject={openSubjectDetail}
+          />
 
           {mode === 'plan' ? (
-            <section className="flex flex-col gap-3 px-[18px]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/38">
-                    Explorá
-                  </p>
-                  <h2 className="mt-1 text-lg font-black text-white">Materias filtradas para tu momento</h2>
-                </div>
-                <span className="text-[11px] font-bold text-white/45">
-                  {filteredSubjects.length} resultado{filteredSubjects.length === 1 ? '' : 's'}
-                </span>
-              </div>
-
-              {filteredSubjects.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-white/10 bg-[#171717] px-4 py-5 text-sm text-white/42">
-                  No hay materias con esos filtros. Probá cambiar la búsqueda o el estado.
-                </div>
-              ) : (
-                filteredSubjects.map((subject) => (
-                  <SubjectListCard
-                    key={subject.slug}
-                    subject={subject}
-                    selected={selectedSubjectSlug === subject.slug}
-                    status={subjectStatuses[subject.slug]}
-                    missing={subject.correlativas.filter((slug) => !completed.includes(slug))}
-                    canOpen={availableSlugs.size === 0 || availableSlugs.has(subject.slug)}
-                    onSelect={() => openSubjectDetail(subject)}
-                    onToggle={() => handleToggleSubject(subject)}
-                  />
-                ))
-              )}
-            </section>
+            <MapaMobilePlanList
+              availableSlugs={availableSlugs}
+              completed={completed}
+              filteredSubjects={filteredSubjects}
+              selectedSubjectSlug={selectedSubjectSlug}
+              subjectStatuses={subjectStatuses}
+              onOpenSubject={openSubjectDetail}
+              onToggleSubject={handleToggleSubject}
+            />
           ) : (
-            <section className="flex flex-col gap-4 px-[18px]">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/38">
-                  Ruta visual
-                </p>
-                <h2 className="mt-1 text-lg font-black text-white">Leé tu carrera como un recorrido</h2>
-              </div>
-
-              <div className="rounded-[24px] border border-cyan-300/14 bg-[#121417] p-4 shadow-[0_22px_60px_rgba(0,0,0,0.24)]">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-100/58">
-                  Materia enfocada
-                </p>
-                <div className="mt-3 space-y-4">
-                  <RutaLane
-                    title="Antes"
-                    empty="No necesita materias previas."
-                    tone="rose"
-                    items={selectedSubject.correlativas.map((slug) => ({
-                      slug,
-                      label: getSubjectName(slug),
-                      done: completed.includes(slug),
-                    }))}
-                  />
-                  <div className="relative rounded-[22px] border border-white/10 bg-white/[0.04] p-4">
-                    <div className="absolute -left-1.5 top-1/2 size-3 -translate-y-1/2 rounded-full bg-cyan-200 shadow-[0_0_18px_rgba(103,232,249,0.45)]" />
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">
-                          {selectedSubject.codigo} · {YEAR_LABELS[selectedSubject.year as 1 | 2 | 3 | 4 | 5]}
-                        </p>
-                        <h3 className="mt-2 text-lg font-black leading-6 text-white">
-                          {selectedSubject.nombre}
-                        </h3>
-                      </div>
-                      <span className={cn('rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em]', STATUS_BADGE[selectedStatus])}>
-                        {STATUS_LABELS[selectedStatus]}
-                      </span>
-                    </div>
-                  </div>
-                  <RutaLane
-                    title="Después"
-                    empty="Por ahora no abre materias directas."
-                    tone="cyan"
-                    items={selectedUnlocks.map((subject) => ({
-                      slug: subject.slug,
-                      label: subject.nombre,
-                      done: subjectStatuses[subject.slug] === 'COMPLETED',
-                    }))}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                {yearSummaries.map((summary) => (
-                  <div
-                    key={summary.year}
-                    className="rounded-[24px] border border-white/10 bg-[#151515] p-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/38">
-                          {YEAR_SHORT_LABELS[summary.year]}
-                        </p>
-                        <h3 className="mt-1 text-lg font-black text-white">{summary.title}</h3>
-                      </div>
-                      <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/55">
-                        {summary.done}/{summary.total}
-                      </span>
-                    </div>
-
-                    <div className="mt-4 grid grid-cols-3 gap-2">
-                      <MetricCard label="Hechas" value={summary.done} tone="emerald" compact />
-                      <MetricCard label="Listas" value={summary.ready} tone="amber" compact />
-                      <MetricCard label="Total" value={summary.total} tone="slate" compact />
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {summary.subjects.map((subject) => {
-                        const status = subjectStatuses[subject.slug];
-
-                        return (
-                          <button
-                            key={subject.slug}
-                            type="button"
-                            onClick={() => openSubjectDetail(subject)}
-                            className={cn(
-                              'cursor-pointer rounded-full border px-3 py-2 text-left text-[11px] font-bold leading-4 transition',
-                              STATUS_CARD[status],
-                              selectedSubjectSlug === subject.slug && 'border-cyan-300/36 ring-1 ring-cyan-300/30',
-                            )}
-                          >
-                            {subject.nombre}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+            <MapaMobileRouteView
+              completed={completed}
+              selectedSubject={selectedSubject}
+              selectedSubjectSlug={selectedSubjectSlug}
+              selectedStatus={selectedStatus}
+              selectedUnlocks={selectedUnlocks}
+              subjectStatuses={subjectStatuses}
+              yearSummaries={yearSummaries}
+              onOpenSubject={openSubjectDetail}
+            />
           )}
 
-          <section className="px-[18px]">
-            <div className="rounded-[24px] border border-white/10 bg-[#141414] p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/38">
-                    Atajos
-                  </p>
-                  <h2 className="mt-1 text-lg font-black text-white">Acciones rápidas</h2>
-                </div>
-                <span className="inline-flex size-10 items-center justify-center rounded-2xl bg-white/5 text-white/52">
-                  <Layers3 className="size-4.5" />
-                </span>
-              </div>
-
-              <div className="mt-4 flex flex-col gap-2.5">
-                {suggestedYearToComplete ? (
-                  <button
-                    type="button"
-                    onClick={() => handleAutocompleteYear(suggestedYearToComplete)}
-                    className="flex min-h-12 cursor-pointer items-center justify-between rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-4 text-left transition hover:bg-emerald-400/14"
-                  >
-                    <span>
-                      <span className="block text-[11px] font-black uppercase tracking-[0.16em] text-emerald-50">
-                        Marcar año completo
-                      </span>
-                      <span className="mt-1 block text-sm font-bold text-white">
-                        Completar {YEAR_SHORT_LABELS[suggestedYearToComplete]} de una vez
-                      </span>
-                    </span>
-                    <Sparkles className="size-4.5 text-emerald-100" />
-                  </button>
-                ) : null}
-
-                <button
-                  type="button"
-                  onClick={() => setConfirmResetOpen(true)}
-                  disabled={completed.length === 0}
-                  className="flex min-h-12 cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 text-left transition hover:bg-white/8 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <span>
-                    <span className="block text-[11px] font-black uppercase tracking-[0.16em] text-white/45">
-                      Empezar de nuevo
-                    </span>
-                    <span className="mt-1 block text-sm font-bold text-white">
-                      Reiniciar las materias marcadas
-                    </span>
-                  </span>
-                  <RefreshCw className="size-4.5 text-white/58" />
-                </button>
-              </div>
-            </div>
-          </section>
+          <MapaQuickActions
+            completedCount={completed.length}
+            suggestedYearToComplete={suggestedYearToComplete}
+            onAutocompleteYear={handleAutocompleteYear}
+            onRequestReset={() => setConfirmResetOpen(true)}
+          />
         </div>
       </div>
 
@@ -609,6 +263,515 @@ export function MapaCorrelativasMobile({
         variant="destructive"
       />
     </MobileShell>
+  );
+}
+
+type YearSummary = {
+  year: 1 | 2 | 3 | 4 | 5;
+  title: string;
+  done: number;
+  ready: number;
+  total: number;
+  subjects: SubjectNode[];
+};
+
+function MapaMobileHero({
+  completedCount,
+  lockedCount,
+  progressPercentage,
+  unlockedCount,
+}: {
+  completedCount: number;
+  lockedCount: number;
+  progressPercentage: number;
+  unlockedCount: number;
+}) {
+  return (
+    <section className="px-[18px] pt-4">
+      <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#131313] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)]">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),transparent_35%,rgba(34,211,238,0.12)_78%,transparent)]" />
+        <div className="pointer-events-none absolute -right-10 top-[-26px] size-36 rounded-full bg-cyan-300/16 blur-3xl" />
+        <div className="pointer-events-none absolute left-[-24px] bottom-[-42px] size-32 rounded-full bg-amber-300/12 blur-3xl" />
+
+        <div className="relative flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100/62">Seguimiento personal</p>
+            <h1 className="mt-2 max-w-[14rem] text-[28px] font-black leading-[1.02] tracking-[-0.04em] text-white">
+              Calculá tu camino materia por materia
+            </h1>
+            <p className="mt-3 max-w-[16.5rem] text-[13px] leading-5 text-white/60">
+              Marcá lo que ya cursaste y descubrí enseguida qué materias ya tenés listas para seguir.
+            </p>
+          </div>
+
+          <div className="relative shrink-0">
+            <div
+              className="grid size-[84px] place-items-center rounded-full"
+              style={{ background: `conic-gradient(#fde68a 0 ${progressPercentage}%, rgba(255,255,255,0.1) ${progressPercentage}% 100%)` }}
+            >
+              <div className="grid size-[64px] place-items-center rounded-full bg-[#111111] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
+                <div className="text-center">
+                  <span className="block text-xl font-black leading-none text-white">{progressPercentage}%</span>
+                  <span className="mt-1 block text-[9px] font-black uppercase tracking-[0.18em] text-white/38">avance</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative mt-5 grid grid-cols-3 gap-2.5">
+          <MetricCard label="Marcadas" value={completedCount} tone="emerald" />
+          <MetricCard label="Listas" value={unlockedCount} tone="amber" />
+          <MetricCard label="Pendientes" value={lockedCount} tone="slate" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MapaModeTabs({ mode, onChange }: { mode: MobileMapaMode; onChange: (mode: MobileMapaMode) => void }) {
+  return (
+    <section className="px-[18px]">
+      <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-1.5">
+        <div className="grid grid-cols-2 gap-1.5">
+          {([
+            { id: 'plan', label: 'Calculá', icon: GraduationCap },
+            { id: 'ruta', label: 'Ruta', icon: Radar },
+          ] as const).map((view) => {
+            const active = mode === view.id;
+            const Icon = view.icon;
+
+            return (
+              <button
+                key={view.id}
+                type="button"
+                onClick={() => onChange(view.id)}
+                className={cn(
+                  'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-[14px] text-sm font-black transition',
+                  active
+                    ? 'bg-gradient-to-r from-amber-300 to-cyan-300 text-black shadow-[0_10px_30px_rgba(34,211,238,0.14)]'
+                    : 'bg-transparent text-white/58 hover:bg-white/5 hover:text-white',
+                )}
+              >
+                <Icon className="size-4" />
+                {view.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MapaSearchFilters({
+  searchTerm,
+  statusFilter,
+  yearFilter,
+  onSearchChange,
+  onStatusFilterChange,
+  onYearFilterChange,
+}: {
+  searchTerm: string;
+  statusFilter: StatusFilter;
+  yearFilter: YearFilter;
+  onSearchChange: (value: string) => void;
+  onStatusFilterChange: (value: StatusFilter) => void;
+  onYearFilterChange: (value: YearFilter) => void;
+}) {
+  return (
+    <>
+      <section className="flex flex-col gap-3 px-[18px]">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/28" />
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(event) => onSearchChange(event.target.value)}
+            aria-label="Buscar materia o código"
+            placeholder="Buscar materia o código"
+            className="h-12 w-full rounded-2xl border border-white/10 bg-[#151515] pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-white/28 focus:border-cyan-300/40 focus:bg-white/[0.06]"
+          />
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <button type="button" onClick={() => onYearFilterChange('ALL')} className={yearFilterButtonClassName(yearFilter === 'ALL')}>
+            Todos
+          </button>
+          {MAPA_YEARS.map((year) => (
+            <button key={year} type="button" onClick={() => onYearFilterChange(year)} className={yearFilterButtonClassName(yearFilter === year)}>
+              {YEAR_SHORT_LABELS[year]}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="px-[18px]">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {([
+            { value: 'ALL', label: 'Todas' },
+            { value: 'UNLOCKED', label: 'Listas' },
+            { value: 'LOCKED', label: 'Todavía no' },
+            { value: 'COMPLETED', label: 'Marcadas' },
+          ] as const).map((filter) => (
+            <button
+              key={filter.value}
+              type="button"
+              onClick={() => onStatusFilterChange(filter.value)}
+              className={cn(
+                'inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-full border px-4 text-[11px] font-black uppercase tracking-[0.16em] transition',
+                statusFilter === filter.value
+                  ? 'border-amber-300/30 bg-amber-300/12 text-amber-50'
+                  : 'border-white/10 bg-transparent text-white/48 hover:text-white/74',
+              )}
+            >
+              <Filter className="size-3.5" />
+              {filter.label}
+            </button>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
+
+function yearFilterButtonClassName(isActive: boolean) {
+  return cn(
+    'h-9 shrink-0 rounded-full border px-4 text-[11px] font-black uppercase tracking-[0.18em] transition',
+    isActive ? 'border-cyan-300/35 bg-cyan-300/12 text-cyan-50' : 'border-white/10 bg-transparent text-white/45 hover:text-white/74',
+  );
+}
+
+function RecommendedSubjects({
+  recommendedSubjects,
+  selectedSubjectSlug,
+  onOpenSubject,
+}: {
+  recommendedSubjects: SubjectNode[];
+  selectedSubjectSlug: string;
+  onOpenSubject: (subject: SubjectNode) => void;
+}) {
+  return (
+    <section className="px-[18px]">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/38">Próximo paso</p>
+          <h2 className="mt-1 text-lg font-black text-white">Lo que más te conviene mirar ahora</h2>
+        </div>
+        <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-50">
+          {recommendedSubjects.length}
+        </span>
+      </div>
+
+      <div className="mt-3 flex gap-3 overflow-x-auto pb-1 scrollbar-none">
+        {recommendedSubjects.length === 0 ? (
+          <div className="w-full rounded-2xl border border-dashed border-white/10 bg-[#171717] p-4 text-sm text-white/42">
+            Cuando marques materias, acá vas a ver qué opciones ya tenés listas para seguir.
+          </div>
+        ) : (
+          recommendedSubjects.map((subject) => (
+            <RecommendedSubjectCard
+              key={subject.slug}
+              subject={subject}
+              selected={selectedSubjectSlug === subject.slug}
+              onOpen={() => onOpenSubject(subject)}
+            />
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function RecommendedSubjectCard({ subject, selected, onOpen }: { subject: SubjectNode; selected: boolean; onOpen: () => void }) {
+  const unlockCount = getUnlocks(subject.slug).length;
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className={cn(
+        'min-w-[260px] shrink-0 rounded-[22px] border p-4 text-left transition',
+        selected ? 'border-cyan-300/38 bg-cyan-300/10 shadow-[0_18px_40px_rgba(34,211,238,0.08)]' : 'border-white/10 bg-[#151515] hover:border-white/18 hover:bg-white/[0.05]',
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/58">{YEAR_LABELS[subject.year as 1 | 2 | 3 | 4 | 5]}</p>
+          <h3 className="mt-2 text-base font-black leading-5 text-white">{subject.nombre}</h3>
+        </div>
+        <span className="inline-flex size-10 items-center justify-center rounded-2xl bg-white/6 text-cyan-100">
+          <Target className="size-4.5" />
+        </span>
+      </div>
+      <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/8 pt-3">
+        <span className="text-[11px] font-bold text-white/56">Abre {unlockCount} materia{unlockCount === 1 ? '' : 's'}</span>
+        <span className="inline-flex items-center gap-1 text-[11px] font-black text-white">
+          Ver foco
+          <ChevronRight className="size-3.5" />
+        </span>
+      </div>
+    </button>
+  );
+}
+
+function MapaMobilePlanList({
+  availableSlugs,
+  completed,
+  filteredSubjects,
+  selectedSubjectSlug,
+  subjectStatuses,
+  onOpenSubject,
+  onToggleSubject,
+}: {
+  availableSlugs: Set<string>;
+  completed: readonly string[];
+  filteredSubjects: SubjectNode[];
+  selectedSubjectSlug: string;
+  subjectStatuses: Record<string, SubjectStatus>;
+  onOpenSubject: (subject: SubjectNode) => void;
+  onToggleSubject: (subject: SubjectNode) => void;
+}) {
+  return (
+    <section className="flex flex-col gap-3 px-[18px]">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/38">Explorá</p>
+          <h2 className="mt-1 text-lg font-black text-white">Materias filtradas para tu momento</h2>
+        </div>
+        <span className="text-[11px] font-bold text-white/45">{filteredSubjects.length} resultado{filteredSubjects.length === 1 ? '' : 's'}</span>
+      </div>
+
+      {filteredSubjects.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-white/10 bg-[#171717] px-4 py-5 text-sm text-white/42">
+          No hay materias con esos filtros. Probá cambiar la búsqueda o el estado.
+        </div>
+      ) : (
+        filteredSubjects.map((subject) => (
+          <SubjectListCard
+            key={subject.slug}
+            subject={subject}
+            selected={selectedSubjectSlug === subject.slug}
+            status={subjectStatuses[subject.slug]}
+            completed={completed}
+            canOpen={availableSlugs.size === 0 || availableSlugs.has(subject.slug)}
+            onSelect={() => onOpenSubject(subject)}
+            onToggle={() => onToggleSubject(subject)}
+          />
+        ))
+      )}
+    </section>
+  );
+}
+
+function MapaMobileRouteView({
+  completed,
+  selectedSubject,
+  selectedSubjectSlug,
+  selectedStatus,
+  selectedUnlocks,
+  subjectStatuses,
+  yearSummaries,
+  onOpenSubject,
+}: {
+  completed: readonly string[];
+  selectedSubject: SubjectNode;
+  selectedSubjectSlug: string;
+  selectedStatus: SubjectStatus;
+  selectedUnlocks: SubjectNode[];
+  subjectStatuses: Record<string, SubjectStatus>;
+  yearSummaries: YearSummary[];
+  onOpenSubject: (subject: SubjectNode) => void;
+}) {
+  return (
+    <section className="flex flex-col gap-4 px-[18px]">
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/38">Ruta visual</p>
+        <h2 className="mt-1 text-lg font-black text-white">Leé tu carrera como un recorrido</h2>
+      </div>
+
+      <FocusedRouteCard
+        completed={completed}
+        selectedSubject={selectedSubject}
+        selectedStatus={selectedStatus}
+        selectedUnlocks={selectedUnlocks}
+        subjectStatuses={subjectStatuses}
+      />
+      <YearSummaryList
+        selectedSubjectSlug={selectedSubjectSlug}
+        subjectStatuses={subjectStatuses}
+        yearSummaries={yearSummaries}
+        onOpenSubject={onOpenSubject}
+      />
+    </section>
+  );
+}
+
+function FocusedRouteCard({
+  completed,
+  selectedSubject,
+  selectedStatus,
+  selectedUnlocks,
+  subjectStatuses,
+}: {
+  completed: readonly string[];
+  selectedSubject: SubjectNode;
+  selectedStatus: SubjectStatus;
+  selectedUnlocks: SubjectNode[];
+  subjectStatuses: Record<string, SubjectStatus>;
+}) {
+  return (
+    <div className="rounded-[24px] border border-cyan-300/14 bg-[#121417] p-4 shadow-[0_22px_60px_rgba(0,0,0,0.24)]">
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-100/58">Materia enfocada</p>
+      <div className="mt-3 space-y-4">
+        <RutaLane
+          title="Antes"
+          empty="No necesita materias previas."
+          tone="rose"
+          items={selectedSubject.correlativas.map((slug) => ({
+            slug,
+            label: getSubjectName(slug),
+            done: completed.includes(slug),
+          }))}
+        />
+        <div className="relative rounded-[22px] border border-white/10 bg-white/[0.04] p-4">
+          <div className="absolute -left-1.5 top-1/2 size-3 -translate-y-1/2 rounded-full bg-cyan-200 shadow-[0_0_18px_rgba(103,232,249,0.45)]" />
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">{selectedSubject.codigo} · {YEAR_LABELS[selectedSubject.year as 1 | 2 | 3 | 4 | 5]}</p>
+              <h3 className="mt-2 text-lg font-black leading-6 text-white">{selectedSubject.nombre}</h3>
+            </div>
+            <span className={cn('rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em]', STATUS_BADGE[selectedStatus])}>
+              {STATUS_LABELS[selectedStatus]}
+            </span>
+          </div>
+        </div>
+        <RutaLane
+          title="Después"
+          empty="Por ahora no abre materias directas."
+          tone="cyan"
+          items={selectedUnlocks.map((subject) => ({
+            slug: subject.slug,
+            label: subject.nombre,
+            done: subjectStatuses[subject.slug] === 'COMPLETED',
+          }))}
+        />
+      </div>
+    </div>
+  );
+}
+
+function YearSummaryList({
+  selectedSubjectSlug,
+  subjectStatuses,
+  yearSummaries,
+  onOpenSubject,
+}: {
+  selectedSubjectSlug: string;
+  subjectStatuses: Record<string, SubjectStatus>;
+  yearSummaries: YearSummary[];
+  onOpenSubject: (subject: SubjectNode) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      {yearSummaries.map((summary) => (
+        <div key={summary.year} className="rounded-[24px] border border-white/10 bg-[#151515] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/38">{YEAR_SHORT_LABELS[summary.year]}</p>
+              <h3 className="mt-1 text-lg font-black text-white">{summary.title}</h3>
+            </div>
+            <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/55">
+              {summary.done}/{summary.total}
+            </span>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <MetricCard label="Hechas" value={summary.done} tone="emerald" compact />
+            <MetricCard label="Listas" value={summary.ready} tone="amber" compact />
+            <MetricCard label="Total" value={summary.total} tone="slate" compact />
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {summary.subjects.map((subject) => {
+              const status = subjectStatuses[subject.slug];
+
+              return (
+                <button
+                  key={subject.slug}
+                  type="button"
+                  onClick={() => onOpenSubject(subject)}
+                  className={cn(
+                    'cursor-pointer rounded-full border px-3 py-2 text-left text-[11px] font-bold leading-4 transition',
+                    STATUS_CARD[status],
+                    selectedSubjectSlug === subject.slug && 'border-cyan-300/36 ring-1 ring-cyan-300/30',
+                  )}
+                >
+                  {subject.nombre}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MapaQuickActions({
+  completedCount,
+  suggestedYearToComplete,
+  onAutocompleteYear,
+  onRequestReset,
+}: {
+  completedCount: number;
+  suggestedYearToComplete: 2 | 3 | 4 | 5 | null;
+  onAutocompleteYear: (year: 2 | 3 | 4 | 5) => void;
+  onRequestReset: () => void;
+}) {
+  return (
+    <section className="px-[18px]">
+      <div className="rounded-[24px] border border-white/10 bg-[#141414] p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/38">Atajos</p>
+            <h2 className="mt-1 text-lg font-black text-white">Acciones rápidas</h2>
+          </div>
+          <span className="inline-flex size-10 items-center justify-center rounded-2xl bg-white/5 text-white/52">
+            <Layers3 className="size-4.5" />
+          </span>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2.5">
+          {suggestedYearToComplete ? (
+            <button
+              type="button"
+              onClick={() => onAutocompleteYear(suggestedYearToComplete)}
+              className="flex min-h-12 cursor-pointer items-center justify-between rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-4 text-left transition hover:bg-emerald-400/14"
+            >
+              <span>
+                <span className="block text-[11px] font-black uppercase tracking-[0.16em] text-emerald-50">Marcar año completo</span>
+                <span className="mt-1 block text-sm font-bold text-white">Completar {YEAR_SHORT_LABELS[suggestedYearToComplete]} de una vez</span>
+              </span>
+              <Sparkles className="size-4.5 text-emerald-100" />
+            </button>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={onRequestReset}
+            disabled={completedCount === 0}
+            className="flex min-h-12 cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 text-left transition hover:bg-white/8 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <span>
+              <span className="block text-[11px] font-black uppercase tracking-[0.16em] text-white/45">Empezar de nuevo</span>
+              <span className="mt-1 block text-sm font-bold text-white">Reiniciar las materias marcadas</span>
+            </span>
+            <RefreshCw className="size-4.5 text-white/58" />
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -728,7 +891,7 @@ function SubjectListCard({
   subject,
   status,
   selected,
-  missing,
+  completed,
   canOpen,
   onSelect,
   onToggle,
@@ -736,11 +899,13 @@ function SubjectListCard({
   subject: SubjectNode;
   status: SubjectStatus;
   selected: boolean;
-  missing: string[];
+  completed: readonly string[];
   canOpen: boolean;
   onSelect: () => void;
   onToggle: () => void;
 }) {
+  const missing = getMissingCorrelatives(subject, completed);
+
   return (
     <div
       role="button"
