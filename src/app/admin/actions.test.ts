@@ -4,6 +4,7 @@ const revalidatePathMock = vi.fn()
 const revalidateTagRawMock = vi.fn()
 const requireGeneralAdminMock = vi.fn()
 const requireAcademicManagerMock = vi.fn()
+const requireAnyAdminMock = vi.fn()
 const getSubjectDeleteImpactMock = vi.fn()
 const requireYearAdminForAgendaIdMock = vi.fn()
 const requireYearAdminForApunteIdMock = vi.fn()
@@ -47,6 +48,7 @@ vi.mock('next/cache', () => ({
 vi.mock('@/lib/auth', () => ({
   requireGeneralAdmin: requireGeneralAdminMock,
   requireAcademicManager: requireAcademicManagerMock,
+  requireAnyAdmin: requireAnyAdminMock,
   requireYearAdminForAgendaId: requireYearAdminForAgendaIdMock,
   requireYearAdminForApunteId: requireYearAdminForApunteIdMock,
   requireYearAdminForCommissionId: requireYearAdminForCommissionIdMock,
@@ -168,6 +170,7 @@ beforeEach(() => {
       createMany: vi.fn().mockResolvedValue(undefined),
     },
   }))
+  requireAnyAdminMock.mockResolvedValue({ id: 'admin-1' })
   recordAuditMock.mockResolvedValue(undefined)
   uploadApunteHtmlMock.mockResolvedValue('apuntes/primer-anio/calculo/apunte-1/html-1.html')
   deleteApunteHtmlMock.mockResolvedValue(undefined)
