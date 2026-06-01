@@ -6,7 +6,7 @@ import { Layers, SlidersHorizontal, ArrowRight, Plus, EyeOff } from 'lucide-reac
 import { cn } from '@/lib/utils'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { usePreferences } from '@/hooks/usePreferences'
-import { isYearVisible, isSubjectVisible, type UserPreferences } from '@/lib/preferences'
+import type { UserPreferences } from '@/lib/preferences'
 import { AdminControls } from '@/components/admin/AdminControls'
 import {
   YearAdminBar,
@@ -18,79 +18,14 @@ import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { SubjectModal } from '@/components/admin/SubjectModal'
 import { useAdminAccess } from '@/components/admin/adminAccess'
+import {
+  getHomeYearsForDisplay,
+  type HomeGridYear,
+} from './HomeYearsGrid.utils'
 
 interface HomeYearsGridProps {
   initialPrefs: UserPreferences | null
   years: HomeGridYear[]
-}
-
-type HomeGridSubject = {
-  id: string
-  slug: string
-  nombre: string
-  descripcion: string | null
-  driveUrl: string | null
-}
-
-type HomeGridYear = {
-  id: string
-  slug: string
-  nombre: string
-  descripcion?: string | null
-  driveUrl?: string | null
-  playlistUrl?: string | null
-  playlistEnabled?: boolean
-  color?: string | null
-  subjects: HomeGridSubject[]
-}
-
-type HomeGridDisplayedYear = {
-  year: HomeGridYear
-  originalIndex: number
-  isHiddenByPrefs: boolean
-}
-
-interface GetHomeYearsForDisplayParams {
-  years: HomeGridYear[]
-  prefs: UserPreferences | null
-  isAdmin: boolean
-  showHiddenYears: boolean
-}
-
-export function getHomeYearsForDisplay({
-  years,
-  prefs,
-  isAdmin,
-  showHiddenYears,
-}: GetHomeYearsForDisplayParams): HomeGridDisplayedYear[] {
-  return years
-    .map((year, originalIndex) => {
-      const isHiddenByPrefs = !isYearVisible(year.slug, prefs)
-      const shouldIncludeYear = !isHiddenByPrefs || (isAdmin && showHiddenYears)
-
-      if (!shouldIncludeYear) return null
-
-      const subjects = year.subjects.filter((subject) => {
-        // Cuando el admin revela un año oculto mostramos todas sus materias:
-        // ocultar el año marca todas sus materias como ocultas, así que
-        // filtrar por ese mismo estado dejaría el año revelado sin contenido.
-        if (isHiddenByPrefs && isAdmin && showHiddenYears) {
-          return true
-        }
-
-        return isSubjectVisible(year.slug, subject.slug, prefs)
-      })
-
-      return {
-        year: {
-          ...year,
-          subjects,
-        },
-        originalIndex,
-        isHiddenByPrefs,
-      }
-    })
-    .filter((value): value is HomeGridDisplayedYear => value !== null)
 }
 
 export function HomeYearsGrid({ initialPrefs, years }: HomeYearsGridProps) {

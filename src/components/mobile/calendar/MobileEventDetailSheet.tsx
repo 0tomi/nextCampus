@@ -32,6 +32,8 @@ interface EventModalSubject {
   categoriasDisponibles?: Array<{ id: string; nombre: string }>
 }
 
+const EMPTY_TIPOS_EVENTO: readonly TipoEvento[] = []
+
 interface MobileEventDetailSheetProps {
   event: MobileCalendarEvent | null
   open: boolean
@@ -53,7 +55,7 @@ export function MobileEventDetailSheet({
   yearSlug,
   subjectSlug,
   agendaId = '',
-  tiposEvento = [],
+  tiposEvento = EMPTY_TIPOS_EVENTO,
   subjects,
   commissions,
 }: MobileEventDetailSheetProps) {

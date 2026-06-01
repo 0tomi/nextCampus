@@ -54,6 +54,8 @@ interface EventCalendarProps {
   onEventClick?: (event: EventCalendarEvent) => void
 }
 
+const EMPTY_EVENTS: readonly EventCalendarEvent[] = []
+
 const EVENT_TYPE_CLASS_MAP = {
   examen: 'fc-event-tone-red',
   parcial: 'fc-event-tone-red',
@@ -136,7 +138,7 @@ function buildDayKey(dateValue: EventCalendarDateInput): string {
 }
 
 export function EventCalendar({
-  events = [],
+  events = EMPTY_EVENTS,
   emptyMessage = 'Sin eventos cargados por ahora.',
   className,
   dayMaxEvents = 3,

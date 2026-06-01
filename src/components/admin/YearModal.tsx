@@ -165,9 +165,9 @@ export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
         <input type="hidden" name="color" value={color} />
 
         <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase tracking-widest text-white/40">
+          <span className="block text-xs font-semibold uppercase tracking-widest text-white/40">
             Color del año
-          </label>
+          </span>
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -191,6 +191,7 @@ export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
                   type="button"
                   onClick={() => setColor(preset.tone)}
                   title={preset.name}
+                  aria-label={`Usar color ${preset.name}`}
                   aria-pressed={selected}
                   className={`size-8 rounded-full border-2 transition-transform cursor-pointer hover:scale-110 ${
                     selected ? 'border-white' : 'border-white/20'
@@ -206,6 +207,7 @@ export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
             >
               <input
                 type="color"
+                aria-label="Elegir color personalizado"
                 value={/^#[0-9a-f]{6}$/i.test(color) ? color : '#cc0000'}
                 onChange={(e) => setColor(e.target.value)}
                 className="size-10 cursor-pointer border-0 bg-transparent p-0"

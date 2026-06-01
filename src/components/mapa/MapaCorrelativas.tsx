@@ -70,6 +70,7 @@ type MapaActions = {
 };
 
 const EMPTY_AVAILABLE_SUBJECT_SLUGS: string[] = [];
+const EMPTY_RELATION_MISSING_SLUGS: string[] = [];
 const STATUS_FILTERS: readonly StatusFilter[] = ['ALL', 'UNLOCKED', 'LOCKED', 'COMPLETED'];
 
 export function MapaCorrelativas({
@@ -1152,7 +1153,7 @@ function RelationList({
   title,
   slugs,
   empty,
-  missing = [],
+  missing = EMPTY_RELATION_MISSING_SLUGS,
 }: {
   title: string;
   slugs: string[];

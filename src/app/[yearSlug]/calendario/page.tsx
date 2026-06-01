@@ -13,6 +13,10 @@ export const metadata: Metadata = {
 
 export const revalidate = 300
 
+function getSubjectVisibleEvents<TEvent>(subject: { agendas: Array<{ eventos: TEvent[] }> }): TEvent[] {
+  return subject.agendas.flatMap((agenda) => agenda.eventos)
+}
+
 export default async function YearCalendarPage({
   params,
 }: {
@@ -29,9 +33,6 @@ export default async function YearCalendarPage({
 
   const colors = getYearColorClasses({ slug: year.slug, color: year.color })
   const tone = getYearTone({ slug: year.slug, color: year.color })
-  const getSubjectVisibleEvents = (subject: (typeof year.subjects)[number]) =>
-    subject.agendas.flatMap((agenda) => agenda.eventos)
-
   const events = year.subjects
     .flatMap((s) =>
       getSubjectVisibleEvents(s).map((e) => ({

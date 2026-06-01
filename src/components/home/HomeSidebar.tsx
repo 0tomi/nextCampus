@@ -22,20 +22,23 @@ export function HomeSidebar({ careerName, initialPrefs, years }: HomeSidebarProp
   const shouldWaitForStoredPrefs = !isHydrated && initialPrefs === null
   const effectivePrefs = isHydrated ? prefs : initialPrefs
 
-  const yearsWithFilteredSubjects = years
-    .map((y, i) => {
-      const filteredSubjects = y.subjects.filter((s) =>
-        shouldWaitForStoredPrefs ? false : isSubjectVisible(y.slug, s.slug, effectivePrefs),
-      )
-      return {
-        ...y,
-        subjects: filteredSubjects,
-        originalIndex: i,
-      }
-    })
-    .filter((y) =>
-      shouldWaitForStoredPrefs ? false : isYearVisible(y.slug, effectivePrefs),
+  const yearsWithFilteredSubjects = years.reduce<
+    Array<(typeof years)[number] & { originalIndex: number }>
+  >((acc, year, index) => {
+    if (shouldWaitForStoredPrefs || !isYearVisible(year.slug, effectivePrefs)) return acc
+
+    const filteredSubjects = year.subjects.filter((subject) =>
+      isSubjectVisible(year.slug, subject.slug, effectivePrefs),
     )
+
+    acc.push({
+      ...year,
+      subjects: filteredSubjects,
+      originalIndex: index,
+    })
+
+    return acc
+  }, [])
 
   const totalVisibleSubjects = yearsWithFilteredSubjects.reduce(
     (sum, y) => sum + y.subjects.length,

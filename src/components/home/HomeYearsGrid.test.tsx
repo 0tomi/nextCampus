@@ -108,7 +108,7 @@ describe('HomeYearsGrid', () => {
   })
 
   it('incluye años ocultos sin escribir preferencias cuando el admin activa la vista local', async () => {
-    const { getHomeYearsForDisplay } = await import('./HomeYearsGrid')
+    const { getHomeYearsForDisplay } = await import('./HomeYearsGrid.utils')
 
     const result = getHomeYearsForDisplay({
       years: makeYears(),
@@ -141,7 +141,7 @@ describe('HomeYearsGrid', () => {
   })
 
   it('muestra las materias de un año revelado aunque estén marcadas como ocultas al ocultar el año', async () => {
-    const { getHomeYearsForDisplay } = await import('./HomeYearsGrid')
+    const { getHomeYearsForDisplay } = await import('./HomeYearsGrid.utils')
 
     // Ocultar un año arrastra todas sus materias a hiddenSubjects, así que un
     // año revelado por el admin debe seguir mostrando su contenido completo.

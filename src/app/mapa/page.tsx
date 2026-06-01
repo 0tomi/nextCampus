@@ -65,10 +65,13 @@ export default async function MapaPage() {
     );
   }
 
-  const visibleYears = career.years
-    .map((year, index) => ({ year, index }))
-    .filter(({ year }) => isYearVisible(year.slug, initialPrefs))
-    .map(({ year, index }) => ({ ...year, order: index }));
+  const visibleYears = career.years.reduce<
+    Array<(typeof career.years)[number] & { order: number }>
+  >((acc, year, index) => {
+    if (!isYearVisible(year.slug, initialPrefs)) return acc
+    acc.push({ ...year, order: index })
+    return acc
+  }, []);
 
   const availableSubjectSlugs = career.years.flatMap((year) =>
     year.subjects.map((subject) => subject.slug),

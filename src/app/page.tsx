@@ -139,33 +139,58 @@ export default async function HomePage() {
     )
   }
 
-  const upcomingEvents = homeCalendarEventsRaw
-    .filter((event) => event.fecha >= todayKey)
-    .map((event) => {
-      const subject = event.agenda?.subject
-      const year = subject?.year
+  const upcomingEvents = homeCalendarEventsRaw.reduce<
+    Array<{
+      id: string
+      titulo: string
+      descripcionHtml: string | null
+      fecha: string
+      hora: string | null
+      tipo: string
+      tipoId: string
+      subjectId: string
+      subjectSlug: string
+      subjectNombre: string
+      yearId: string | null
+      yearSlug: string | null
+      commissionId: string | null
+      commissionSlug: string | null
+      commissionNombre: string | null
+      apuntes: (typeof homeCalendarEventsRaw)[number]['apuntes']
+    }>
+  >((acc, event) => {
+    if (event.fecha < todayKey) return acc
 
-      return {
-        id: event.id,
-        titulo: event.titulo,
-        descripcionHtml: event.descripcionHtml,
-        fecha: event.fecha,
-        hora: event.hora,
-        tipo: event.tipoEvento.nombre,
-        tipoId: event.tipoEventoId,
-        subjectId: subject?.id ?? '',
-        subjectSlug: subject?.slug ?? '',
-        subjectNombre: subject?.nombre ?? '',
-        yearId: year?.id ?? null,
-        yearSlug: year?.slug ?? null,
-        commissionId: event.agenda?.commissionId ?? null,
-        commissionSlug: event.agenda?.commission?.slug ?? null,
-        commissionNombre: event.agenda?.commission?.nombre ?? null,
-        apuntes: event.apuntes,
-      }
-    })
-    .filter((event) => event.subjectSlug && event.yearSlug)
-    .filter(isEventVisibleForPrefs)
+    const subject = event.agenda?.subject
+    const year = subject?.year
+
+    if (!subject || !year) return acc
+
+    const visibleEvent = {
+      id: event.id,
+      titulo: event.titulo,
+      descripcionHtml: event.descripcionHtml,
+      fecha: event.fecha,
+      hora: event.hora,
+      tipo: event.tipoEvento.nombre,
+      tipoId: event.tipoEventoId,
+      subjectId: subject.id,
+      subjectSlug: subject.slug,
+      subjectNombre: subject.nombre,
+      yearId: year.id,
+      yearSlug: year.slug,
+      commissionId: event.agenda?.commissionId ?? null,
+      commissionSlug: event.agenda?.commission?.slug ?? null,
+      commissionNombre: event.agenda?.commission?.nombre ?? null,
+      apuntes: event.apuntes,
+    }
+
+    if (isEventVisibleForPrefs(visibleEvent)) {
+      acc.push(visibleEvent)
+    }
+
+    return acc
+  }, [])
     .sort((a, b) => a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? ''))
     .slice(0, 50)
 
@@ -203,7 +228,7 @@ export default async function HomePage() {
       return acc
     }
 
-    acc.push({
+    const calendarEvent = {
       id: event.id,
       titulo: event.titulo,
       fecha: event.fecha,
@@ -221,17 +246,34 @@ export default async function HomePage() {
       agendaId: event.agenda.id,
       yearId: year.id,
       apuntes: event.apuntes,
-    })
+    }
+
+    if (isEventVisibleForPrefs(calendarEvent)) {
+      acc.push(calendarEvent)
+    }
 
     return acc
-  }, []).filter(isEventVisibleForPrefs)
+  }, [])
 
   // Señal aparte: ¿existe algún apunte en todo el sistema? El mensaje de estado
   // vacío de la sección depende de esto, no de cuántos quedaron tras filtrar.
   const hasAnyApuntes = latestApuntesRaw.length > 0
 
-  const latestApuntes = latestApuntesRaw
-    .map((apunte) => ({
+  const latestApuntes = latestApuntesRaw.reduce<
+    Array<{
+      id: string
+      titulo: string
+      slug: string
+      createdAt: Date
+      subjectSlug: string
+      subjectNombre: string
+      yearSlug: string
+      yearNombre: string
+    }>
+  >((acc, apunte) => {
+    if (acc.length >= 6) return acc
+
+    const visibleApunte = {
       id: apunte.id,
       titulo: apunte.titulo,
       slug: apunte.slug,
@@ -240,11 +282,14 @@ export default async function HomePage() {
       subjectNombre: apunte.subject.nombre,
       yearSlug: apunte.subject.year.slug,
       yearNombre: apunte.subject.year.nombre,
-    }))
-    .filter((apunte) =>
-      hasPrefs && isSubjectVisible(apunte.yearSlug, apunte.subjectSlug, initialPrefs),
-    )
-    .slice(0, 6)
+    }
+
+    if (hasPrefs && isSubjectVisible(visibleApunte.yearSlug, visibleApunte.subjectSlug, initialPrefs)) {
+      acc.push(visibleApunte)
+    }
+
+    return acc
+  }, [])
 
   return (
     <>

@@ -15,7 +15,7 @@ interface EditApunteButtonProps {
  * SubjectPageAdminOverlay escucha el evento y abre el modal con la data correcta.
  */
 export function EditApunteButton({ apunte }: EditApunteButtonProps) {
-  const handleClick = () => {
+  const editApunte = () => {
     window.dispatchEvent(
       new CustomEvent('open-admin-modal-edit-apunte', { detail: { apunte } }),
     )
@@ -24,7 +24,7 @@ export function EditApunteButton({ apunte }: EditApunteButtonProps) {
   return (
     <button
       type="button"
-      onClick={handleClick}
+      onClick={editApunte}
       title="Editar apunte"
       className="inline-flex size-7 items-center justify-center rounded text-white/40 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
     >

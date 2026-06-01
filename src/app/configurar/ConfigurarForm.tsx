@@ -44,6 +44,10 @@ function buildNewDevicePreferences(years: YearForConfig[]): UserPreferences {
   }
 }
 
+function navigateHomeWithFreshState() {
+  window.location.assign('/')
+}
+
 function CheckBox({ checked, size = 'md' }: { checked: boolean; size?: 'sm' | 'md' }) {
   return (
     <span
@@ -92,9 +96,6 @@ function ConfigurarFormInner({
   const router = useRouter()
   const [draft, setDraft] = useState<UserPreferences>(initialPrefs)
 
-  const navigateHomeWithFreshState = () => {
-    window.location.assign('/')
-  }
 
   const toggleYear = (slug: string) => {
     const targetYear = years.find((y) => y.slug === slug)

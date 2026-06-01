@@ -53,6 +53,7 @@ interface EventModalProps {
 }
 
 const emptyState: EventoActionState = { ok: false, message: '' }
+const EMPTY_CATEGORIAS_DISPONIBLES: Array<{ id: string; nombre: string }> = []
 
 // Extrae la clave de día "YYYY-MM-DD" para el input type="date". La fecha de un
 // evento ya viaja como string "YYYY-MM-DD"; si llegara un Date, tomamos su día
@@ -83,7 +84,7 @@ function EventModalContent({
   subjects,
   commissions,
   eventToEdit,
-  categoriasDisponibles = [],
+  categoriasDisponibles = EMPTY_CATEGORIAS_DISPONIBLES,
 }: EventModalProps) {
   const router = useRouter()
   const actionToUse = eventToEdit ? updateEventoAction : createEventoAction

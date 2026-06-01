@@ -9,13 +9,10 @@ import { DarkCard } from '@/components/ui/DarkCard'
 import { usePreferences } from '@/hooks/usePreferences'
 import { cn, formatEventDateTime, todayKeyAR } from '@/lib/utils'
 import { SafeHtml } from '@/components/ui/SafeHtml'
-import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { RelatedApunteLinks, type RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
-import {
-  isCommissionVisible,
-  isSubjectVisible,
-  type UserPreferences,
-} from '@/lib/preferences'
+import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
+import type { UserPreferences } from '@/lib/preferences'
+import { buildHomeCalendarEventHref, isHomeCalendarEventVisible } from './HomeGlobalCalendar.utils'
 
 export interface HomeGlobalCalendarEvent {
   id: string
@@ -33,36 +30,6 @@ export interface HomeGlobalCalendarEvent {
   commissionSlug: string | null
   commissionNombre: string | null
   apuntes?: RelatedApunteLink[]
-}
-
-export function buildHomeCalendarEventHref(
-  event: Pick<HomeGlobalCalendarEvent, 'yearSlug' | 'subjectSlug' | 'commissionSlug'>,
-) {
-  return buildSubjectHref({
-    yearSlug: event.yearSlug,
-    subjectSlug: event.subjectSlug,
-    commissionSlug: event.commissionSlug,
-  })
-}
-
-export function isHomeCalendarEventVisible(
-  event: Pick<HomeGlobalCalendarEvent, 'yearSlug' | 'subjectSlug' | 'commissionSlug'>,
-  prefs: UserPreferences | null,
-) {
-  if (!isSubjectVisible(event.yearSlug, event.subjectSlug, prefs)) {
-    return false
-  }
-
-  if (!event.commissionSlug) {
-    return true
-  }
-
-  return isCommissionVisible(
-    event.yearSlug,
-    event.subjectSlug,
-    event.commissionSlug,
-    prefs,
-  )
 }
 
 interface HomeGlobalCalendarProps {

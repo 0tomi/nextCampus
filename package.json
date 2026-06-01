@@ -14,7 +14,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "test": "node_modules/.bin/vitest run",
     "test:watch": "node_modules/.bin/vitest",
-    "backfill:contributions": "tsx prisma/backfill-contributions.ts"
+    "backfill:contributions": "tsx prisma/backfill-contributions.ts",
+    "doctor": "npx react-doctor@latest"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

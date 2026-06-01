@@ -35,6 +35,10 @@ export const metadata: Metadata = {
 
 export const revalidate = 300
 
+function getSubjectVisibleEvents<TEvent>(subject: { agendas: Array<{ eventos: TEvent[] }> }): TEvent[] {
+  return subject.agendas.flatMap((agenda) => agenda.eventos)
+}
+
 export default async function YearPage({
   params,
 }: {
@@ -48,9 +52,6 @@ export default async function YearPage({
     getCategoriasApunte(),
   ])
   if (!year) notFound()
-
-  const getSubjectVisibleEvents = (subject: (typeof year.subjects)[number]) =>
-    subject.agendas.flatMap((agenda) => agenda.eventos)
 
   const allYears = (career?.years ?? []).map(y => ({
     slug: y.slug,
@@ -69,26 +70,51 @@ export default async function YearPage({
 
   // El corte "próximos eventos" depende del día actual del render.
   const todayKey = todayKeyAR()
-  const nextEvents = year.subjects
-    .flatMap(s => getSubjectVisibleEvents(s).map(e => ({
-      id: e.id,
-      titulo: e.titulo,
-      fecha: e.fecha,
-      hora: e.hora,
-      tipo: e.tipoEvento.nombre,
-      tipoId: e.tipoEventoId,
-      subjectId: s.id,
-      subjectSlug: s.slug,
-      subjectNombre: s.nombre,
-      materiaNombre: s.nombre,
-      descripcionHtml: e.descripcionHtml,
-      commissionId: e.commissionId,
-      commissionSlug: e.commission?.slug ?? null,
-      commissionNombre: e.commission?.nombre ?? null,
-      createdByUserId: e.createdByUserId,
-      apuntes: e.apuntes,
-    })))
-    .filter(e => e.fecha >= todayKey)
+  const nextEvents = year.subjects.reduce<
+    Array<{
+      id: string
+      titulo: string
+      fecha: string
+      hora: string | null
+      tipo: string
+      tipoId: string
+      subjectId: string
+      subjectSlug: string
+      subjectNombre: string
+      materiaNombre: string
+      descripcionHtml: string | null
+      commissionId: string | null
+      commissionSlug: string | null
+      commissionNombre: string | null
+      createdByUserId: string | null
+      apuntes: (typeof year.subjects)[number]['agendas'][number]['eventos'][number]['apuntes']
+    }>
+  >((acc, subject) => {
+    for (const event of getSubjectVisibleEvents(subject)) {
+      if (event.fecha < todayKey) continue
+
+      acc.push({
+        id: event.id,
+        titulo: event.titulo,
+        fecha: event.fecha,
+        hora: event.hora,
+        tipo: event.tipoEvento.nombre,
+        tipoId: event.tipoEventoId,
+        subjectId: subject.id,
+        subjectSlug: subject.slug,
+        subjectNombre: subject.nombre,
+        materiaNombre: subject.nombre,
+        descripcionHtml: event.descripcionHtml,
+        commissionId: event.commissionId,
+        commissionSlug: event.commission?.slug ?? null,
+        commissionNombre: event.commission?.nombre ?? null,
+        createdByUserId: event.createdByUserId,
+        apuntes: event.apuntes,
+      })
+    }
+
+    return acc
+  }, [])
     .sort((a, b) => a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? ''))
 
   const colors = getYearColorClasses({ slug: year.slug, color: year.color })

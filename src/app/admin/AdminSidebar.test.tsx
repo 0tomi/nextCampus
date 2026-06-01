@@ -6,7 +6,7 @@ vi.mock('next/navigation', () => ({
 
 describe('AdminSidebar navigation helpers', () => {
   it('incluye perfil, usuarios e historial para admins con gestión de usuarios', async () => {
-    const { buildAdminSidebarItems } = await import('./AdminSidebar')
+    const { buildAdminSidebarItems } = await import('./AdminSidebar.utils')
 
     const items = buildAdminSidebarItems({
       pathname: '/admin/users',
@@ -23,7 +23,7 @@ describe('AdminSidebar navigation helpers', () => {
   })
 
   it('muestra historial sin usuarios para supervisores', async () => {
-    const { buildAdminSidebarItems } = await import('./AdminSidebar')
+    const { buildAdminSidebarItems } = await import('./AdminSidebar.utils')
 
     const items = buildAdminSidebarItems({
       pathname: '/admin/historial',
@@ -40,7 +40,7 @@ describe('AdminSidebar navigation helpers', () => {
   })
 
   it('deja solo perfil para ayudantes sin permisos de historial', async () => {
-    const { buildAdminSidebarItems } = await import('./AdminSidebar')
+    const { buildAdminSidebarItems } = await import('./AdminSidebar.utils')
 
     const items = buildAdminSidebarItems({
       pathname: '/admin/perfil',
