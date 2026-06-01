@@ -31,3 +31,9 @@ Este proyecto tiene skills disponibles que DEBES usar para trabajar de forma int
 - Los commits deben tener descripciones claras de lo implementado.
 - **NUNCA** agregar "Co-Authored-By" ni ninguna atribución a IA en los mensajes de commit.
 
+### Verificación pre-deploy
+El deploy en Vercel corre `pnpm build` (`prisma generate && next build` con Turbopack). Si el build falla ahí, el deploy se cae. Para cachar esos errores ANTES, en capas:
+
+- **Antes de dar una tarea por terminada (rápido, segundos):** corré `pnpm typecheck`. Agarra errores de tipos, identificadores duplicados (ej: `name defined multiple times`) e imports rotos — la mayoría de los errores que rompen el build.
+- **Antes de mergear/pushear a `main` (autoritativo):** corré `pnpm build`. Es lo único que reproduce el 100% de lo que Vercel rechaza (incluye errores de RSC, boundaries client/server, etc.). Es más lento, por eso solo en este punto.
+
