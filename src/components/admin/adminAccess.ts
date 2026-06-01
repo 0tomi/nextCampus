@@ -27,6 +27,14 @@ export interface AdminAccessRequirements {
   requireGlobal?: boolean
   requireUserManagement?: boolean
   requireAcademicStructure?: boolean
+  /**
+   * Cuando se define, el acceso además exige propiedad del contenido: los
+   * managers (admin/supervisor con canManageAnyContribution) pasan siempre;
+   * el resto (ayudantes) solo si son los autores. `undefined` = no se evalúa
+   * propiedad (botones estructurales, comportamiento previo). `null` explícito
+   * (contenido sin autor) = solo managers.
+   */
+  ownerUserId?: string | null
 }
 
 export function hasAdminAccess(
@@ -41,22 +49,35 @@ export function hasAdminAccess(
     requireGlobal = false,
     requireUserManagement = false,
     requireAcademicStructure = false,
+    ownerUserId,
   } = requirements
 
-  if (requireUserManagement) return session.admin.canCreateUsers
-  if (requireGlobal) return session.admin.canManageAllYears
-  if (requireAcademicStructure) return session.admin.canManageAcademicStructure
-
-  if (yearId) {
-    return (
+  // 1) Acceso base (sin tener en cuenta propiedad del contenido).
+  let baseAccess: boolean
+  if (requireUserManagement) {
+    baseAccess = session.admin.canCreateUsers
+  } else if (requireGlobal) {
+    baseAccess = session.admin.canManageAllYears
+  } else if (requireAcademicStructure) {
+    baseAccess = session.admin.canManageAcademicStructure
+  } else if (yearId) {
+    baseAccess =
       session.admin.canManageAllYears || session.admin.yearIds.includes(yearId)
-    )
-  }
-
-  if (yearSlug) {
-    return (
+  } else if (yearSlug) {
+    baseAccess =
       session.admin.canManageAllYears ||
       session.admin.yearSlugs.includes(yearSlug)
+  } else {
+    baseAccess = true
+  }
+
+  if (!baseAccess) return false
+
+  // 2) Propiedad (solo si el llamador la pide explícitamente).
+  if (ownerUserId !== undefined) {
+    return (
+      session.admin.canManageAnyContribution ||
+      (Boolean(ownerUserId) && session.admin.id === ownerUserId)
     )
   }
 

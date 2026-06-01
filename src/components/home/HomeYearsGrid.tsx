@@ -40,6 +40,7 @@ type HomeGridYear = {
   driveUrl?: string | null
   playlistUrl?: string | null
   playlistEnabled?: boolean
+  color?: string | null
   subjects: HomeGridSubject[]
 }
 
@@ -180,7 +181,7 @@ export function HomeYearsGrid({ initialPrefs, years }: HomeYearsGridProps) {
       {adminControls}
       <div className="stagger-children grid gap-4 md:grid-cols-3 xl:grid-cols-5">
         {visibleYears.map(({ year, originalIndex, isHiddenByPrefs }) => {
-          const colors = getYearColorClasses(year.slug)
+          const colors = getYearColorClasses({ slug: year.slug, color: year.color })
 
           return (
             <div
@@ -197,6 +198,7 @@ export function HomeYearsGrid({ initialPrefs, years }: HomeYearsGridProps) {
                     'px-5 py-4 transition-opacity group-hover:opacity-90',
                     colors.progressClassName,
                   )}
+                  style={colors.style}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-white/90">
@@ -234,7 +236,7 @@ export function HomeYearsGrid({ initialPrefs, years }: HomeYearsGridProps) {
                       <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-white/60 transition-colors group-hover:text-white">
                         {subject.nombre}
                       </span>
-                      <AdminControls yearId={year.id}>
+                      <AdminControls requireAcademicStructure>
                         <SubjectAdminRow
                           subject={{
                             id: subject.id,
@@ -339,7 +341,7 @@ function HomeYearCardSection({
   originalIndex,
   isHiddenByPrefs,
 }: HomeYearCardSectionProps) {
-  const colors = getYearColorClasses(year.slug)
+  const colors = getYearColorClasses({ slug: year.slug, color: year.color })
   const hasSubjects = year.subjects.length > 0
   const isAdmin = useAdminAccess({ yearId: year.id })
 
@@ -359,6 +361,7 @@ function HomeYearCardSection({
               colors.textClassName,
               'group-hover:opacity-80',
             )}
+            style={colors.style}
           >
             {year.nombre}
             <ArrowRight className="size-4 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
@@ -395,7 +398,7 @@ function HomeYearCardSection({
 
       {/* Grid de Materias en formato Tarjeta */}
       {!hasSubjects ? (
-        <AdminControls yearId={year.id}>
+        <AdminControls requireAcademicStructure>
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             <AddSubjectCard yearId={year.id} />
           </div>
@@ -420,7 +423,7 @@ function HomeYearCardSection({
                     <div className="min-w-0">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38 flex items-center gap-2">
                         <span>Materia {String(index + 1).padStart(2, '0')}</span>
-                        <AdminControls yearId={year.id} noWrapper>
+                        <AdminControls requireAcademicStructure noWrapper>
                           <span
                             className="pointer-events-auto flex items-center"
                             onClick={(e) => {
@@ -448,6 +451,7 @@ function HomeYearCardSection({
                         'inline-flex h-10 min-w-10 shrink-0 items-center justify-center px-3 text-xs font-black tracking-[0.16em] text-white',
                         colors.progressClassName,
                       )}
+                      style={colors.style}
                     >
                       {String(index + 1).padStart(2, '0')}
                     </span>

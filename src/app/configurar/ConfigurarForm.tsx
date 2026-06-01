@@ -20,6 +20,7 @@ type YearForConfig = {
   id: string
   slug: string
   nombre: string
+  color?: string | null
   subjects: Array<{
     id: string
     slug: string
@@ -215,7 +216,7 @@ function ConfigurarFormInner({
         {/* Years grid */}
         <div className="grid gap-4 lg:grid-cols-2">
           {years.map((year, index) => {
-            const colors = getYearColorClasses(year.slug)
+            const colors = getYearColorClasses({ slug: year.slug, color: year.color })
             const yearChecked = !draft.hiddenYears.includes(year.slug)
             const visibleSubjectsCount = year.subjects.filter(
               (s) => !draft.hiddenSubjects.includes(s.slug),
@@ -232,6 +233,7 @@ function ConfigurarFormInner({
                     'flex cursor-pointer items-center gap-4 px-5 py-4 transition-opacity hover:opacity-90',
                     colors.progressClassName,
                   )}
+                  style={colors.style}
                 >
                   <input
                     type="checkbox"
@@ -402,7 +404,7 @@ function ConfigurarFormSkeleton({ careerName, years }: ConfigurarFormProps) {
         {/* Years grid — default empty selection while loading */}
         <div className="grid gap-4 lg:grid-cols-2">
           {years.map((year, index) => {
-            const colors = getYearColorClasses(year.slug)
+            const colors = getYearColorClasses({ slug: year.slug, color: year.color })
 
             return (
               <div
@@ -414,6 +416,7 @@ function ConfigurarFormSkeleton({ careerName, years }: ConfigurarFormProps) {
                     'flex cursor-pointer items-center gap-4 px-5 py-4 transition-opacity hover:opacity-90',
                     colors.progressClassName,
                   )}
+                  style={colors.style}
                 >
                   <input
                     type="checkbox"

@@ -272,6 +272,7 @@ export function getCareer() {
           playlistUrl: true,
           playlistEnabled: true,
           orden: true,
+          color: true,
           subjects: {
             orderBy: { nombre: 'asc' },
             select: {
@@ -305,6 +306,7 @@ export function getYearBySlug(slug: string) {
           driveUrl: true,
           playlistUrl: true,
           playlistEnabled: true,
+          color: true,
           subjects: {
             orderBy: { nombre: 'asc' },
             select: {
@@ -359,6 +361,7 @@ export function getSubjectPageBySlug(slug: string) {
               id: true,
               slug: true,
               nombre: true,
+              color: true,
               career: { select: { nombre: true } },
             },
           },
@@ -423,6 +426,7 @@ export function getApuntePageBySlug(subjectSlug: string, apunteSlug: string) {
               id: true,
               slug: true,
               nombre: true,
+              color: true,
               career: { select: { nombre: true } },
             },
           },

@@ -52,7 +52,7 @@ export function SubjectRoutePage({
   agendaId,
   focusApunteSlug,
 }: SubjectRouteContext & { focusApunteSlug?: string }) {
-  const colors = getYearColorClasses(subject.year.slug)
+  const colors = getYearColorClasses({ slug: subject.year.slug, color: subject.year.color })
   const subjectHref = buildSubjectHref({
     yearSlug: subject.year.slug,
     subjectSlug: subject.slug,
@@ -98,7 +98,7 @@ export function SubjectRoutePage({
 
   return (
     <>
-      <div className="hidden lg:block">
+      <div className="hidden lg:block" style={colors.style}>
         <DashboardShell
           topbar={
             <Link

@@ -234,6 +234,7 @@ interface DeleteEventoButtonProps {
   subjectSlug: string
   yearId?: string
   yearSlug?: string
+  ownerUserId?: string | null
 }
 
 export function DeleteEventoButton({
@@ -241,9 +242,10 @@ export function DeleteEventoButton({
   subjectSlug,
   yearId,
   yearSlug,
+  ownerUserId,
 }: DeleteEventoButtonProps) {
   return (
-    <AdminControls yearId={yearId} yearSlug={yearSlug}>
+    <AdminControls yearId={yearId} yearSlug={yearSlug} ownerUserId={ownerUserId}>
       <form action={deleteEvento}>
         <input type="hidden" name="id" value={eventoId} />
         <input type="hidden" name="subjectSlug" value={subjectSlug} />
@@ -267,6 +269,7 @@ interface DeleteApunteButtonProps {
   subjectSlug: string
   yearId?: string
   yearSlug?: string
+  ownerUserId?: string | null
 }
 
 export function DeleteApunteButton({
@@ -274,11 +277,12 @@ export function DeleteApunteButton({
   subjectSlug,
   yearId,
   yearSlug,
+  ownerUserId,
 }: DeleteApunteButtonProps) {
   const [pending, startTransition] = useTransition()
 
   return (
-    <AdminControls yearId={yearId} yearSlug={yearSlug}>
+    <AdminControls yearId={yearId} yearSlug={yearSlug} ownerUserId={ownerUserId}>
       <button
         type="button"
         title="Eliminar apunte"

@@ -35,6 +35,8 @@ export interface EventCalendarEvent {
   commissionSlug?: string | null
   commissionNombre?: string | null
   apuntes?: RelatedApunteLink[]
+  /** Autor del evento, para gatear edición/eliminación por propiedad. */
+  createdByUserId?: string | null
 }
 
 interface EventCalendarProps {

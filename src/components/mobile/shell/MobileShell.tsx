@@ -33,6 +33,7 @@ export interface MobileShellDrawerSubject {
 export interface MobileShellDrawerYear {
   slug: string
   nombre: string
+  color?: string | null
   subjectsCount: number
   orden: number
   subjects?: MobileShellDrawerSubject[]
@@ -300,7 +301,7 @@ export function MobileShell({
                 )
 
                 const items = year.subjects.map((subject, subjectIndex) => {
-                  const colors = getYearColorClasses(year.slug)
+                  const colors = getYearColorClasses({ slug: year.slug, color: year.color })
                   const isActive = pathname === `/${year.slug}/${subject.slug}`
                   return (
                     <li key={subject.id}>
@@ -317,6 +318,7 @@ export function MobileShell({
                             'flex size-[34px] shrink-0 items-center justify-center rounded-md bg-gradient-to-br text-white',
                             colors.badgeClassName,
                           )}
+                          style={colors.style}
                         >
                           <span className="text-[13px] font-black leading-none">
                             {subjectIndex + 1}
@@ -341,7 +343,7 @@ export function MobileShell({
               })
             ) : (
               yearsWithFilteredSubjects.map((year) => {
-                const colorClasses = getYearColorClasses(year.slug)
+                const colorClasses = getYearColorClasses({ slug: year.slug, color: year.color })
                 const isActive = year.slug === currentYearSlug
                 const subjectsCount = year.subjects?.length ?? 0
                 return (
@@ -359,6 +361,7 @@ export function MobileShell({
                           'flex size-[34px] shrink-0 items-center justify-center rounded-md bg-gradient-to-br',
                           colorClasses.badgeClassName,
                         )}
+                        style={colorClasses.style}
                       >
                         <span className="text-[13px] font-black leading-none">
                           {year.orden}

@@ -11,6 +11,12 @@ interface AdminControlsProps {
   requireGlobal?: boolean
   requireUserManagement?: boolean
   requireAcademicStructure?: boolean
+  /**
+   * Autor del contenido. Cuando se pasa, los botones solo se muestran a quien
+   * puede gestionar cualquier contribución o al propio autor (los ayudantes no
+   * ven editar/eliminar contenido ajeno).
+   */
+  ownerUserId?: string | null
   noWrapper?: boolean
 }
 
@@ -29,6 +35,7 @@ export function AdminControls({
   requireGlobal = false,
   requireUserManagement = false,
   requireAcademicStructure = false,
+  ownerUserId,
   noWrapper = false,
 }: AdminControlsProps) {
   const hasAccess = useAdminAccess({
@@ -37,6 +44,7 @@ export function AdminControls({
     requireGlobal,
     requireUserManagement,
     requireAcademicStructure,
+    ownerUserId,
   })
 
   if (!hasAccess) return null

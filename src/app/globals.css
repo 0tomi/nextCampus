@@ -858,3 +858,37 @@ body {
   width: 0 !important;
   height: 0 !important;
 }
+
+/*
+ * Color personalizado de un año. El tono base llega por la variable inline
+ * --year-tone; el resto de los matices se derivan con color-mix. Estas reglas
+ * van fuera de @layer a propósito, para ganarle a las utilidades de gradiente
+ * de Tailwind que el consumidor pueda tener en el mismo elemento.
+ */
+.year-badge {
+  background-image: linear-gradient(
+    to bottom right,
+    var(--year-tone),
+    color-mix(in srgb, var(--year-tone), black 22%)
+  );
+  color: #fff;
+}
+
+.year-progress {
+  background-image: linear-gradient(
+    to right,
+    var(--year-tone),
+    color-mix(in srgb, var(--year-tone), black 22%)
+  );
+}
+
+.year-text {
+  color: var(--year-tone);
+}
+
+.year-chip {
+  border-color: color-mix(in srgb, var(--year-tone), transparent 80%);
+  background-color: color-mix(in srgb, var(--year-tone), transparent 90%);
+  color: var(--year-tone);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--year-tone), transparent 92%);
+}

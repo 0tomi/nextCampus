@@ -9,6 +9,7 @@ import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { YearPageAdminOverlay } from '@/components/admin/YearPageAdminOverlay'
+import { EditYearButton } from '@/components/admin/EditYearButton'
 import { MobileYear } from '@/components/mobile/year/MobileYear'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { YearOverviewEvents } from '@/components/year/YearOverviewEvents'
@@ -54,6 +55,7 @@ export default async function YearPage({
   const allYears = (career?.years ?? []).map(y => ({
     slug: y.slug,
     nombre: y.nombre,
+    color: y.color,
     subjectsCount: y.subjects.length,
     orden: y.orden,
     subjects: y.subjects.map(s => ({
@@ -83,12 +85,13 @@ export default async function YearPage({
       commissionId: e.commissionId,
       commissionSlug: e.commission?.slug ?? null,
       commissionNombre: e.commission?.nombre ?? null,
+      createdByUserId: e.createdByUserId,
       apuntes: e.apuntes,
     })))
     .filter(e => e.fecha >= todayKey)
     .sort((a, b) => a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? ''))
 
-  const colors = getYearColorClasses(year.slug)
+  const colors = getYearColorClasses({ slug: year.slug, color: year.color })
   const sidebarItems = year.subjects.map((subject, index) => ({
     id: subject.id,
     href: buildSubjectHref({ yearSlug: year.slug, subjectSlug: subject.slug }),
@@ -116,6 +119,7 @@ export default async function YearPage({
         commissionId: evento.commissionId,
         commissionSlug: evento.commission?.slug ?? null,
         commissionNombre: evento.commission?.nombre ?? null,
+        createdByUserId: evento.createdByUserId,
         apuntes: evento.apuntes,
       }))
     })
@@ -157,7 +161,7 @@ export default async function YearPage({
 
   return (
     <>
-      <div className="hidden lg:block">
+      <div className="hidden lg:block" style={colors.style}>
         <DashboardShell
           topbar={
             <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/42">
@@ -183,9 +187,12 @@ export default async function YearPage({
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
                 Año académico
               </p>
-              <h1 className="mt-3 font-display text-4xl font-black tracking-tight text-white sm:text-5xl">
-                {year.nombre}
-              </h1>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                <h1 className="font-display text-4xl font-black tracking-tight text-white sm:text-5xl">
+                  {year.nombre}
+                </h1>
+                <EditYearButton />
+              </div>
               {year.descripcion?.trim() ? (
                 <p className="mt-4 max-w-3xl text-sm leading-7 text-white/64 sm:text-base">
                   {formatDescription(year.descripcion.trim())}
@@ -308,6 +315,7 @@ export default async function YearPage({
           playlistUrl: year.playlistUrl,
           playlistEnabled: year.playlistEnabled,
           orden: yearIndex >= 0 ? yearIndex + 1 : 1,
+          color: year.color,
         }}
       />
     </>

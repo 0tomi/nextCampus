@@ -23,7 +23,7 @@ interface SubjectForMobile {
   driveUrl: string | null
   playlistUrl: string | null
   playlistEnabled: boolean
-  year: { id: string; slug: string; nombre: string; career: { nombre: string } }
+  year: { id: string; slug: string; nombre: string; color?: string | null; career: { nombre: string } }
   agenda: { id: string; eventos: Array<{ id: string; titulo: string; descripcionHtml: string | null; fecha: string; hora: string | null; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId?: string | null; commissionSlug?: string | null; commissionNombre?: string | null; apuntes?: RelatedApunteLink[] }> } | null
   apuntes: Array<{
     id: string
@@ -31,6 +31,7 @@ interface SubjectForMobile {
     slug: string
     descripcionHtml: string | null
     createdAt: string
+    createdByUserId: string | null
     categorias: Array<{ id: string; nombre: string }>
     recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE' | 'HTML'; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }>
   }>
@@ -43,6 +44,7 @@ interface SubjectForMobile {
 interface AllYear {
   slug: string
   nombre: string
+  color?: string | null
   subjectsCount: number
   orden: number
   subjects?: Array<{ id: string; slug: string; nombre: string }>
@@ -97,10 +99,11 @@ export function MobileSubject({
   tiposEvento: readonly TipoEvento[]
   focusApunteSlug?: string
 }) {
-  const colors = getYearColorClasses(subject.year.slug)
+  const colors = getYearColorClasses({ slug: subject.year.slug, color: subject.year.color })
   const drawerYears: MobileShellDrawerYear[] = allYears.map((y) => ({
     slug: y.slug,
     nombre: y.nombre,
+    color: y.color,
     subjectsCount: y.subjectsCount,
     orden: y.orden,
     subjects: y.subjects,
@@ -136,7 +139,7 @@ export function MobileSubject({
       careerName={subject.year.career.nombre}
       currentYearSlug={subject.year.slug}
     >
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6" style={colors.style}>
         {/* HERO */}
         <section className="px-[18px] pt-4">
           <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
@@ -258,6 +261,7 @@ export function MobileSubject({
           subjectSlug={subject.slug}
           subjectName={subject.nombre}
           yearSlug={subject.year.slug}
+          yearColor={subject.year.color}
           yearId={subject.year.id}
           agendaId={subject.agenda?.id ?? ''}
           events={eventos.map(e => ({

@@ -30,6 +30,7 @@ interface SubjectTabsProps {
   subjectSlug: string
   subjectName: string
   yearSlug: string
+  yearColor?: string | null
   yearId: string
   agendaId: string
   events: MobileCalendarEvent[]
@@ -39,6 +40,7 @@ interface SubjectTabsProps {
     slug: string
     descripcionHtml: string | null
     createdAt: string
+    createdByUserId: string | null
     categorias: Array<{ id: string; nombre: string }>
     recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE' | 'HTML'; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }>
   }>
@@ -64,14 +66,14 @@ const HASH_MAP: Record<string, TabKey> = {
   '#apuntes': 'apuntes',
 }
 
-export function SubjectTabs({ subjectId, subjectSlug, subjectName, yearSlug, yearId, agendaId, events, apuntes, categorias, apuntesHasMore, apuntesNextCursor, tiposEvento, subjects, commissions, focusApunteSlug, activeCommissionName }: SubjectTabsProps) {
+export function SubjectTabs({ subjectId, subjectSlug, subjectName, yearSlug, yearColor, yearId, agendaId, events, apuntes, categorias, apuntesHasMore, apuntesNextCursor, tiposEvento, subjects, commissions, focusApunteSlug, activeCommissionName }: SubjectTabsProps) {
   const [active, setActive] = useState<TabKey>(() => {
     if (focusApunteSlug) return 'apuntes'
     if (typeof window === 'undefined') return 'agenda'
     const hash = window.location.hash
     return hash in HASH_MAP ? HASH_MAP[hash] : 'agenda'
   })
-  const colors = getYearColorClasses(yearSlug)
+  const colors = getYearColorClasses({ slug: yearSlug, color: yearColor })
 
   const onSelect = (key: TabKey) => {
     setActive(key)
@@ -124,7 +126,7 @@ export function SubjectTabs({ subjectId, subjectSlug, subjectName, yearSlug, yea
             activeCommissionName={activeCommissionName}
           />
         )}
-        {active === 'quiz' && <QuizTab subjectSlug={subjectSlug} subjectName={subjectName} yearSlug={yearSlug} yearId={yearId} />}
+        {active === 'quiz' && <QuizTab subjectSlug={subjectSlug} subjectName={subjectName} yearSlug={yearSlug} yearColor={yearColor} yearId={yearId} />}
         {active === 'apuntes' && (
           <ApuntesTab
             apuntes={apuntes}

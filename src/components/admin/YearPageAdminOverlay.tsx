@@ -31,6 +31,7 @@ interface YearData {
   playlistUrl?: string | null
   playlistEnabled?: boolean
   orden: number
+  color?: string | null
 }
 
 interface YearPageAdminOverlayProps {
@@ -104,6 +105,7 @@ export function YearPageAdminOverlay({
                 playlistUrl: year.playlistUrl,
                 playlistEnabled: year.playlistEnabled,
                 orden: year.orden,
+                color: year.color,
               }}
             />
             <ConfirmDeleteYearModal

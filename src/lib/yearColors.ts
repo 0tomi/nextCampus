@@ -1,4 +1,17 @@
-export type YearColorName = 'amber' | 'emerald' | 'violet' | 'rose' | 'cyan'
+import type { CSSProperties } from 'react'
+
+export type YearColorName =
+  | 'amber'
+  | 'emerald'
+  | 'violet'
+  | 'rose'
+  | 'cyan'
+  | 'sky'
+  | 'fuchsia'
+  | 'lime'
+  | 'orange'
+  | 'indigo'
+  | 'custom'
 
 export interface YearColorClasses {
   name: YearColorName
@@ -6,7 +19,15 @@ export interface YearColorClasses {
   chipClassName: string
   progressClassName: string
   textClassName: string
+  /** Hex del tono base (para borderColor, dots, etc.). */
   tone: string
+  /**
+   * Variables CSS inline para los colores personalizados. `undefined` en los
+   * tonos predefinidos (que ya usan clases Tailwind curadas). Los consumidores
+   * lo aplican siempre con `style={colors.style}`: queda sin efecto en presets
+   * y activa el tono custom cuando corresponde.
+   */
+  style?: CSSProperties
 }
 
 export type YearColorInput =
@@ -15,9 +36,14 @@ export type YearColorInput =
   | {
       orden?: number | null
       slug?: string | null
+      /** Color elegido y guardado del año (hex `#rrggbb`). null = automático. */
+      color?: string | null
     }
   | null
   | undefined
+
+/** Entrada de paleta sin el campo `style` (se agrega al resolver). */
+type YearPaletteEntry = Omit<YearColorClasses, 'style'>
 
 export const YEAR_COLOR_PALETTE = [
   {
@@ -65,7 +91,58 @@ export const YEAR_COLOR_PALETTE = [
     textClassName: 'text-cyan-300',
     tone: '#22d3ee',
   },
-] as const satisfies readonly YearColorClasses[]
+  {
+    name: 'sky',
+    badgeClassName: 'from-sky-400 to-indigo-500 text-white',
+    chipClassName:
+      'border-sky-400/20 bg-sky-500/10 text-sky-300 shadow-[0_0_24px_rgba(56,189,248,0.08)]',
+    progressClassName: 'bg-gradient-to-r from-sky-400 to-indigo-500',
+    textClassName: 'text-sky-300',
+    tone: '#38bdf8',
+  },
+  {
+    name: 'fuchsia',
+    badgeClassName: 'from-fuchsia-400 to-pink-600 text-white',
+    chipClassName:
+      'border-fuchsia-400/20 bg-fuchsia-500/10 text-fuchsia-300 shadow-[0_0_24px_rgba(232,121,249,0.08)]',
+    progressClassName: 'bg-gradient-to-r from-fuchsia-400 to-pink-600',
+    textClassName: 'text-fuchsia-300',
+    tone: '#e879f9',
+  },
+  {
+    name: 'lime',
+    badgeClassName: 'from-lime-400 to-emerald-500 text-white',
+    chipClassName:
+      'border-lime-400/20 bg-lime-500/10 text-lime-300 shadow-[0_0_24px_rgba(163,230,53,0.08)]',
+    progressClassName: 'bg-gradient-to-r from-lime-400 to-emerald-500',
+    textClassName: 'text-lime-300',
+    tone: '#a3e635',
+  },
+  {
+    name: 'orange',
+    badgeClassName: 'from-orange-400 to-red-500 text-white',
+    chipClassName:
+      'border-orange-400/20 bg-orange-500/10 text-orange-300 shadow-[0_0_24px_rgba(251,146,60,0.08)]',
+    progressClassName: 'bg-gradient-to-r from-orange-400 to-red-500',
+    textClassName: 'text-orange-300',
+    tone: '#fb923c',
+  },
+  {
+    name: 'indigo',
+    badgeClassName: 'from-indigo-400 to-violet-600 text-white',
+    chipClassName:
+      'border-indigo-400/20 bg-indigo-500/10 text-indigo-300 shadow-[0_0_24px_rgba(129,140,248,0.08)]',
+    progressClassName: 'bg-gradient-to-r from-indigo-400 to-violet-600',
+    textClassName: 'text-indigo-300',
+    tone: '#818cf8',
+  },
+] as const satisfies readonly YearPaletteEntry[]
+
+/** Tonos predefinidos para el selector de color del modal. */
+export const YEAR_COLOR_PRESETS: readonly { name: YearColorName; tone: string }[] =
+  YEAR_COLOR_PALETTE.map((entry) => ({ name: entry.name, tone: entry.tone }))
+
+const HEX_COLOR_REGEX = /^#[0-9a-f]{6}$/i
 
 function normalizeIndex(index: number): number {
   return ((index % YEAR_COLOR_PALETTE.length) + YEAR_COLOR_PALETTE.length) %
@@ -104,8 +181,43 @@ function getYearColorIndex(input: YearColorInput): number {
   return 0
 }
 
+/** Devuelve el color guardado del año si la entrada lo trae, si no `null`. */
+function getStoredColor(input: YearColorInput): string | null {
+  if (input && typeof input === 'object' && typeof input.color === 'string') {
+    const value = input.color.trim()
+    return value.length > 0 ? value : null
+  }
+  return null
+}
+
+function findPresetByTone(hex: string): YearPaletteEntry | undefined {
+  const normalized = hex.toLowerCase()
+  return YEAR_COLOR_PALETTE.find((entry) => entry.tone.toLowerCase() === normalized)
+}
+
+/** Color custom: clases reales (definidas en globals.css) + variable CSS inline. */
+function buildCustomColorClasses(hex: string): YearColorClasses {
+  return {
+    name: 'custom',
+    badgeClassName: 'year-badge',
+    chipClassName: 'year-chip',
+    progressClassName: 'year-progress',
+    textClassName: 'year-text',
+    tone: hex,
+    style: { ['--year-tone']: hex } as CSSProperties,
+  }
+}
+
 export function getYearColorClasses(input: YearColorInput): YearColorClasses {
-  return YEAR_COLOR_PALETTE[getYearColorIndex(input)]
+  const storedColor = getStoredColor(input)
+
+  if (storedColor && HEX_COLOR_REGEX.test(storedColor)) {
+    const preset = findPresetByTone(storedColor)
+    if (preset) return { ...preset }
+    return buildCustomColorClasses(storedColor)
+  }
+
+  return { ...YEAR_COLOR_PALETTE[getYearColorIndex(input)] }
 }
 
 export function getYearTone(input: YearColorInput): string {

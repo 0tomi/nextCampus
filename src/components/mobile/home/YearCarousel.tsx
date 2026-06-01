@@ -16,6 +16,7 @@ interface CarouselYear {
   id: string
   slug: string
   nombre: string
+  color?: string | null
   orden: number
   subjects: Array<{
     id: string
@@ -50,7 +51,7 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
       {/* PILL ROW */}
       <div className="flex gap-2 px-[18px] overflow-x-auto scrollbar-none">
         {years.map((y, idx) => {
-          const colors = getYearColorClasses(y.slug)
+          const colors = getYearColorClasses({ slug: y.slug, color: y.color })
           const active = page === idx
           return (
             <button
@@ -84,7 +85,7 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {years.map((y, idx) => {
-          const colors = getYearColorClasses(y.slug)
+          const colors = getYearColorClasses({ slug: y.slug, color: y.color })
           return (
             <div
               key={y.id}
@@ -101,6 +102,7 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
                     'bg-gradient-to-r',
                     colors.badgeClassName,
                   ].join(' ')}
+                  style={colors.style}
                 >
                   <div>
                     <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/72">
@@ -133,7 +135,7 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
                         <span className="flex-1 min-w-0 text-[13px] font-semibold text-white/75 leading-snug">
                           {s.nombre}
                         </span>
-                        <AdminControls yearId={y.id} noWrapper>
+                        <AdminControls requireAcademicStructure noWrapper>
                           <SubjectAdminRow
                             subject={{
                               id: s.id,
@@ -149,7 +151,7 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
                       </Link>
                     </li>
                   ))}
-                  <AdminControls yearId={y.id} noWrapper>
+                  <AdminControls requireAcademicStructure noWrapper>
                     <li className="border-t border-white/5">
                       <AddSubjectButton yearId={y.id} />
                     </li>
@@ -176,7 +178,7 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
       {/* DOTS */}
       <div className="flex gap-1.5 justify-center pt-1">
         {years.map((y, idx) => {
-          const colors = getYearColorClasses(y.slug)
+          const colors = getYearColorClasses({ slug: y.slug, color: y.color })
           const active = page === idx
           return (
             <button

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import Link from 'next/link'
 import { ChevronRight, Map } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -14,6 +14,8 @@ export interface SidebarItem {
   meta?: string
   active?: boolean
   badgeClassName?: string
+  /** Variables CSS inline para el badge (color personalizado del año). */
+  badgeStyle?: CSSProperties
   isHeader?: boolean
 }
 
@@ -94,6 +96,7 @@ export function Sidebar({
                         item.badgeClassName ?? DEFAULT_BADGE_CLASSNAME,
                         'text-white',
                       )}
+                      style={item.badgeStyle}
                     >
                       {item.badge}
                     </span>

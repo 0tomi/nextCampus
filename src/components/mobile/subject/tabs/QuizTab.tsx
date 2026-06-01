@@ -10,16 +10,18 @@ export function QuizTab({
   subjectSlug,
   subjectName,
   yearSlug,
+  yearColor,
   yearId,
 }: {
   subjectSlug: string
   subjectName: string
   yearSlug: string
+  yearColor?: string | null
   yearId: string
 }) {
-  const colors = getYearColorClasses(yearSlug)
+  const colors = getYearColorClasses({ slug: yearSlug, color: yearColor })
   return (
-    <div className="px-[18px] flex flex-col gap-3">
+    <div className="px-[18px] flex flex-col gap-3" style={colors.style}>
       <div className="bg-[#1a1a1a] border border-white/5 rounded-xl p-5 flex flex-col gap-4">
         <div className="flex items-start gap-3">
           <span className={['flex items-center justify-center size-11 shrink-0 rounded-md bg-gradient-to-br', colors.badgeClassName].join(' ')}>

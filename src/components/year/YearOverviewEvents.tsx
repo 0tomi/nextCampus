@@ -49,6 +49,7 @@ interface YearOverviewEvent {
   commissionId?: string | null
   commissionSlug?: string | null
   commissionNombre?: string | null
+  createdByUserId?: string | null
   apuntes?: RelatedApunteLink[]
 }
 
@@ -193,6 +194,7 @@ export function YearOverviewEvents({
                         eventoId={evento.id}
                         subjectSlug={evento.subjectSlug}
                         yearId={year.id}
+                        ownerUserId={evento.createdByUserId}
                       />
                     </div>
                   </div>

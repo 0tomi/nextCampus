@@ -1217,6 +1217,13 @@ const yearSchema = z.object({
     .number()
     .int('El orden debe ser un número entero')
     .min(1, 'El orden debe ser mayor a 0'),
+  color: z
+    .string()
+    .trim()
+    .regex(/^#[0-9a-f]{6}$/i, 'El color debe ser un hexadecimal válido (#rrggbb)')
+    .or(z.literal(''))
+    .nullable()
+    .optional(),
 })
 
 export async function createYearAction(
@@ -1232,11 +1239,12 @@ export async function createYearAction(
     playlistUrl: formData.get('playlistUrl') ?? '',
     playlistEnabled: formData.get('playlistEnabled'),
     orden: formData.get('orden'),
+    color: formData.get('color') ?? '',
   })
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0].message }
   }
-  const { nombre, descripcion, driveUrl, playlistUrl, playlistEnabled, orden } = parsed.data
+  const { nombre, descripcion, driveUrl, playlistUrl, playlistEnabled, orden, color } = parsed.data
 
   const normalizedPlaylistUrl = playlistUrl || null
   if (normalizedPlaylistUrl) {
@@ -1277,6 +1285,7 @@ export async function createYearAction(
       playlistUrl: normalizedPlaylistUrl,
       playlistEnabled,
       orden,
+      color: color || null,
       careerId: career.id,
     },
     select: { id: true },
@@ -1311,11 +1320,12 @@ export async function updateYearAction(
     playlistUrl: formData.get('playlistUrl') ?? '',
     playlistEnabled: formData.get('playlistEnabled'),
     orden: formData.get('orden'),
+    color: formData.get('color') ?? '',
   })
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0].message }
   }
-  const { nombre, descripcion, driveUrl, playlistUrl, playlistEnabled, orden } = parsed.data
+  const { nombre, descripcion, driveUrl, playlistUrl, playlistEnabled, orden, color } = parsed.data
 
   const normalizedPlaylistUrl = playlistUrl || null
   if (normalizedPlaylistUrl) {
@@ -1361,6 +1371,7 @@ export async function updateYearAction(
       playlistUrl: normalizedPlaylistUrl,
       playlistEnabled,
       orden,
+      color: color || null,
     },
   })
 

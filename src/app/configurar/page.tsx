@@ -35,6 +35,7 @@ export default async function ConfigurarPage() {
     id: year.id,
     slug: year.slug,
     nombre: year.nombre,
+    color: year.color,
     subjects: year.subjects.map((subject) => ({
       id: subject.id,
       slug: subject.slug,

@@ -27,8 +27,8 @@ export default async function YearCalendarPage({
   ])
   if (!year) notFound()
 
-  const colors = getYearColorClasses(year.slug)
-  const tone = getYearTone(year.slug)
+  const colors = getYearColorClasses({ slug: year.slug, color: year.color })
+  const tone = getYearTone({ slug: year.slug, color: year.color })
   const getSubjectVisibleEvents = (subject: (typeof year.subjects)[number]) =>
     subject.agendas.flatMap((agenda) => agenda.eventos)
 
@@ -49,6 +49,7 @@ export default async function YearCalendarPage({
         commissionId: e.commissionId,
         commissionSlug: e.commission?.slug ?? null,
         commissionNombre: e.commission?.nombre ?? null,
+        createdByUserId: e.createdByUserId,
         apuntes: e.apuntes,
       })),
     )
@@ -57,6 +58,7 @@ export default async function YearCalendarPage({
   const allYears = (career?.years ?? []).map((y) => ({
     slug: y.slug,
     nombre: y.nombre,
+    color: y.color,
     subjectsCount: y.subjects.length,
     orden: y.orden,
     subjects: y.subjects.map(s => ({

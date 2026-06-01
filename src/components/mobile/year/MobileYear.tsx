@@ -26,6 +26,7 @@ interface YearForMobile {
   driveUrl?: string | null
   playlistUrl?: string | null
   playlistEnabled?: boolean
+  color?: string | null
   subjects: Array<{
     id: string
     slug: string
@@ -52,6 +53,7 @@ function GoogleDriveIcon({ className }: { className?: string }) {
 interface AllYear {
   slug: string
   nombre: string
+  color?: string | null
   subjectsCount: number
   orden: number
   subjects?: Array<{ id: string; slug: string; nombre: string }>
@@ -95,7 +97,7 @@ export function MobileYear({
   tiposEvento: readonly TipoEvento[]
 }) {
   const [detailEvent, setDetailEvent] = useState<MobileCalendarEvent | null>(null)
-  const colors = getYearColorClasses(year.slug)
+  const colors = getYearColorClasses({ slug: year.slug, color: year.color })
   const preferredBySubject = usePreferredCommissionMap(year.subjects)
   const yearIndex = allYears.findIndex(y => y.slug === year.slug)
   const yearNumber = yearIndex >= 0 ? yearIndex + 1 : 1
@@ -149,6 +151,7 @@ export function MobileYear({
   const drawerYears: MobileShellDrawerYear[] = allYears.map(y => ({
     slug: y.slug,
     nombre: y.nombre,
+    color: y.color,
     subjectsCount: y.subjectsCount,
     orden: y.orden,
     subjects: y.subjects,
@@ -194,7 +197,7 @@ export function MobileYear({
       careerName={careerName}
       currentYearSlug={year.slug}
     >
-      <div className="flex flex-col gap-7">
+      <div className="flex flex-col gap-7" style={colors.style}>
         {/* HERO gradient */}
         <section className="px-[18px] pt-4">
           <div
@@ -211,7 +214,7 @@ export function MobileYear({
                     {year.nombre}
                   </h1>
                 </div>
-                <AdminControls yearId={year.id} noWrapper>
+                <AdminControls requireAcademicStructure noWrapper>
                   <div className="flex gap-1 shrink-0 mt-1">
                     <button
                       type="button"

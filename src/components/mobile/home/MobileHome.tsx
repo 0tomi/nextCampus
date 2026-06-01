@@ -30,6 +30,7 @@ interface CareerForMobile {
     id: string
     slug: string
     nombre: string
+    color?: string | null
     orden: number
     subjects: Array<{
       id: string
@@ -149,6 +150,7 @@ export function MobileHome({
   const drawerYears: MobileShellDrawerYear[] = (isConfigured ? visibleYears : career.years).map((y) => ({
     slug: y.slug,
     nombre: y.nombre,
+    color: y.color,
     subjectsCount: y.subjects.length,
     orden: y.orden,
     subjects: y.subjects,

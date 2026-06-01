@@ -103,6 +103,15 @@ export function EventCalendarAdmin({
   const setActiveSelectedEvent = setSelectedEvent ?? setLocalSelectedEvent
   const setActiveSheetOpen = setSheetOpen ?? setLocalSheetOpen
 
+  // Editar/eliminar un evento concreto exige propiedad: los managers pueden con
+  // cualquiera; el ayudante solo con los que creó.
+  const canEditSelectedEvent =
+    useAdminAccess({
+      yearId,
+      yearSlug,
+      ownerUserId: activeSelectedEvent?.createdByUserId,
+    }) ?? false
+
   const handleEventDrop = useCallback(
     async (id: string, nuevaFechaKey: string): Promise<boolean> => {
       try {
@@ -283,7 +292,7 @@ export function EventCalendarAdmin({
             )}
 
             {/* Admin Actions */}
-            {canEdit && (
+            {canEditSelectedEvent && (
               <div className="flex items-center gap-2 border-t border-white/6 pt-5">
                 <button
                   type="button"
@@ -337,7 +346,7 @@ export function EventCalendarAdmin({
         />
       )}
 
-      {canEdit && activeSelectedEvent && (
+      {canEditSelectedEvent && activeSelectedEvent && (
         <EventModal
           key={`edit-${activeSelectedEvent.id}`}
           open={isEditModalOpen}

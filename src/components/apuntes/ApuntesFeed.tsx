@@ -23,6 +23,7 @@ export interface ApunteFeedItem {
   slug: string
   descripcionHtml: string | null
   createdAt: string
+  createdByUserId: string | null
   categorias: CategoriaItem[]
   recursos: Array<{
     id: string
@@ -352,7 +353,7 @@ function ApunteCard({
             </div>
           ) : null}
         </div>
-        <AdminControls yearId={yearId} noWrapper>
+        <AdminControls yearId={yearId} ownerUserId={apunte.createdByUserId} noWrapper>
           <div className="flex shrink-0 gap-1">
             {variant === 'desktop' ? (
               <EditApunteButton
@@ -381,7 +382,7 @@ function ApunteCard({
                 <Pencil className="size-3.5" />
               </button>
             )}
-            <DeleteApunteButton apunteId={apunte.id} subjectSlug={subjectSlug} yearId={yearId} />
+            <DeleteApunteButton apunteId={apunte.id} subjectSlug={subjectSlug} yearId={yearId} ownerUserId={apunte.createdByUserId} />
           </div>
         </AdminControls>
       </div>

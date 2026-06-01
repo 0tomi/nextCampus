@@ -60,6 +60,7 @@ export async function getSubjectRouteContext({
   const allYears = (career?.years ?? []).map((year) => ({
     slug: year.slug,
     nombre: year.nombre,
+    color: year.color,
     subjectsCount: year.subjects.length,
     orden: year.orden,
     subjects: year.subjects.map((s) => ({

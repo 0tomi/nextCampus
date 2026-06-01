@@ -41,6 +41,7 @@ interface SubjectEventItem extends CommissionAwareEvent {
   tipoEventoId: string
   commissionSlug?: string | null
   commissionNombre?: string | null
+  createdByUserId?: string | null
   apuntes?: RelatedApunteLink[]
 }
 
@@ -169,6 +170,7 @@ export function SubjectEventsSection({
             commissionId: evento.commissionId,
             commissionSlug: evento.commissionSlug,
             commissionNombre: evento.commissionNombre,
+            createdByUserId: evento.createdByUserId,
             apuntes: evento.apuntes,
           }))}
           emptyMessage={
@@ -225,6 +227,7 @@ export function SubjectEventsSection({
                       commissionId: evento.commissionId,
                       commissionSlug: evento.commissionSlug,
                       commissionNombre: evento.commissionNombre,
+                      createdByUserId: evento.createdByUserId,
                       apuntes: evento.apuntes,
                     })
                     setSheetOpen(true)
@@ -260,6 +263,7 @@ export function SubjectEventsSection({
                           eventoId={evento.id}
                           subjectSlug={subject.slug}
                           yearId={subject.year.id}
+                          ownerUserId={evento.createdByUserId}
                         />
                       </div>
                     </div>

@@ -8,6 +8,7 @@ import {
   type YearActionState,
 } from '@/app/admin/actions'
 import { detectarRecurso } from '@/lib/recursos'
+import { YEAR_COLOR_PRESETS } from '@/lib/yearColors'
 
 interface YearModalProps {
   open: boolean
@@ -21,6 +22,7 @@ interface YearModalProps {
     playlistUrl?: string | null
     playlistEnabled?: boolean
     orden: number
+    color?: string | null
   }
   /** Se llama cuando la acción termina bien (para cerrar el modal). */
   onSuccess?: () => void
@@ -31,6 +33,13 @@ const emptyState: YearActionState = { ok: false, message: '' }
 export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
   const isEdit = !!year
   const [playlistUrlError, setPlaylistUrlError] = useState('')
+  const colorScope = year?.id ?? 'new-year'
+  const [colorDraft, setColorDraft] = useState(() => ({
+    scope: colorScope,
+    value: year?.color ?? '',
+  }))
+  const color = colorDraft.scope === colorScope ? colorDraft.value : (year?.color ?? '')
+  const setColor = (value: string) => setColorDraft({ scope: colorScope, value })
 
   const handlePlaylistUrlBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const val = e.target.value.trim()
@@ -152,6 +161,61 @@ export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
         </div>
 
         <input type="hidden" name="playlistEnabled" value="true" />
+
+        <input type="hidden" name="color" value={color} />
+
+        <div className="space-y-2">
+          <label className="block text-xs font-semibold uppercase tracking-widest text-white/40">
+            Color del año
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setColor('')}
+              title="Color automático"
+              aria-pressed={color === ''}
+              className={`flex h-8 items-center rounded border px-2.5 text-xs font-semibold transition-colors cursor-pointer ${
+                color === ''
+                  ? 'border-white/60 bg-white/10 text-white'
+                  : 'border-white/10 text-white/60 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              Automático
+            </button>
+
+            {YEAR_COLOR_PRESETS.map((preset) => {
+              const selected = color.toLowerCase() === preset.tone.toLowerCase()
+              return (
+                <button
+                  key={preset.name}
+                  type="button"
+                  onClick={() => setColor(preset.tone)}
+                  title={preset.name}
+                  aria-pressed={selected}
+                  className={`size-8 rounded-full border-2 transition-transform cursor-pointer hover:scale-110 ${
+                    selected ? 'border-white' : 'border-white/20'
+                  }`}
+                  style={{ backgroundColor: preset.tone }}
+                />
+              )
+            })}
+
+            <label
+              title="Color personalizado"
+              className="flex size-8 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-white/30 hover:border-white/60"
+            >
+              <input
+                type="color"
+                value={/^#[0-9a-f]{6}$/i.test(color) ? color : '#cc0000'}
+                onChange={(e) => setColor(e.target.value)}
+                className="size-10 cursor-pointer border-0 bg-transparent p-0"
+              />
+            </label>
+          </div>
+          <p className="text-[11px] text-white/30">
+            Elegí un tono predefinido o uno personalizado. «Automático» asigna un color según el año.
+          </p>
+        </div>
 
         <div className="space-y-1">
           <label

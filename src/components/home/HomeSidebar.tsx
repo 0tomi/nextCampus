@@ -12,6 +12,7 @@ interface HomeSidebarProps {
     id: string
     slug: string
     nombre: string
+    color?: string | null
     subjects: Array<{ id: string; slug: string; nombre: string }>
   }>
 }
@@ -57,19 +58,20 @@ export function HomeSidebar({ careerName, initialPrefs, years }: HomeSidebarProp
       })
 
       y.subjects.forEach((subject, subjectIndex) => {
-        const colors = getYearColorClasses(y.slug)
+        const colors = getYearColorClasses({ slug: y.slug, color: y.color })
         items.push({
           id: subject.id,
           href: `/${y.slug}/${subject.slug}`,
           label: subject.nombre,
           badge: String(subjectIndex + 1),
           badgeClassName: colors.progressClassName + ' text-white',
+          badgeStyle: colors.style,
         })
       })
     })
   } else {
     yearsWithFilteredSubjects.forEach((y) => {
-      const colors = getYearColorClasses(y.slug)
+      const colors = getYearColorClasses({ slug: y.slug, color: y.color })
       items.push({
         id: y.id,
         href: `/${y.slug}`,
@@ -77,6 +79,7 @@ export function HomeSidebar({ careerName, initialPrefs, years }: HomeSidebarProp
         badge: String(y.originalIndex + 1),
         meta: `${y.subjects.length} ${y.subjects.length === 1 ? 'materia' : 'materias'}`,
         badgeClassName: colors.progressClassName + ' text-white',
+        badgeStyle: colors.style,
       })
     })
   }
