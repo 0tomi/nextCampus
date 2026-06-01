@@ -3,6 +3,7 @@
 import { useEffect, useActionState, useMemo, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { ChevronDown } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import {
@@ -133,11 +134,14 @@ function EventModalContent({
 
   useEffect(() => {
     if (state.ok) {
+      toast.success(eventToEdit ? 'Evento actualizado' : 'Evento creado')
       router.refresh()
       onSuccess?.()
       onClose()
+    } else if (state.message) {
+      toast.error(state.message)
     }
-  }, [state.ok, onClose, onSuccess, router])
+  }, [state, eventToEdit, onClose, onSuccess, router])
 
   useEffect(() => {
     const handle = window.setTimeout(() => {

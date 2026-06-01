@@ -4,6 +4,7 @@ import { useState, useCallback, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Pencil, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { EventCalendar, type EventCalendarEvent } from './EventCalendar'
 import { EventModal } from '@/components/admin/EventModal'
 import { useAdminAccess } from '@/components/admin/adminAccess'
@@ -137,8 +138,10 @@ export function EventCalendarAdmin({
           setActiveSheetOpen(false)
           setActiveSelectedEvent(null)
           router.refresh()
+          toast.success('Evento eliminado')
         } catch (err) {
           console.error(err)
+          toast.error('No pudimos eliminar el evento. Probá de nuevo.')
         }
       })
     }

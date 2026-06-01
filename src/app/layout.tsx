@@ -4,6 +4,7 @@ import './globals.css'
 import { getAdminClientSession } from '@/lib/auth'
 import { AdminSessionProvider } from '@/components/admin/AdminSessionProvider'
 import { PWARegister } from '@/components/pwa/PWARegister'
+import { Toaster } from '@/components/ui/Toaster'
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -59,6 +60,7 @@ export default async function RootLayout({
     >
       <body className="min-h-full bg-surface-0 font-sans text-white antialiased">
         <AdminSessionProvider session={session}>{children}</AdminSessionProvider>
+        <Toaster />
         <PWARegister />
       </body>
     </html>
