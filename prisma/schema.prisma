@@ -34,6 +34,7 @@ model AcademicYear {
   playlistUrl      String?
   playlistEnabled  Boolean              @default(false)
   orden            Int
+  color            String?
   subjects         Subject[]
   adminPermissions UserYearPermission[]
   createdAt        DateTime             @default(now())
