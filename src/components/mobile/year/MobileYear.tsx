@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useMemo, useState } from 'react'
-import { ArrowRight, ChevronRight, Calendar, Layers, Pencil, Trash2, Plus } from 'lucide-react'
+import { ArrowRight, ChevronRight, Calendar, Layers, Pencil, Trash2, Plus, CirclePlay } from 'lucide-react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
 import { getYearColorClasses } from '@/lib/yearColors'
@@ -15,11 +16,16 @@ import {
   type CommissionOption,
 } from '@/lib/commission-preferences'
 import { usePreferredCommissionMap } from '@/components/commissions/usePreferredCommission'
+import { formatDescription } from '@/lib/text'
 
 interface YearForMobile {
   id: string
   slug: string
   nombre: string
+  descripcion?: string | null
+  driveUrl?: string | null
+  playlistUrl?: string | null
+  playlistEnabled?: boolean
   subjects: Array<{
     id: string
     slug: string
@@ -28,6 +34,19 @@ interface YearForMobile {
     agenda: { id: string; eventos: Array<{ id: string; titulo: string; fecha: string; hora: string | null; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId: string | null; commissionSlug: string | null; commissionNombre: string | null }> } | null
   }>
   career: { nombre: string }
+}
+
+function GoogleDriveIcon({ className }: { className?: string }) {
+  return (
+    <Image
+      src="/resources/google_drive_logo_icon_159334.png"
+      alt=""
+      aria-hidden="true"
+      width={20}
+      height={20}
+      className={className}
+    />
+  )
 }
 
 interface AllYear {
@@ -223,6 +242,37 @@ export function MobileYear({
                   {year.subjects.length} {year.subjects.length === 1 ? 'materia' : 'materias'}
                 </span>
               </div>
+              {year.descripcion?.trim() ? (
+                <p className="mt-4 text-sm leading-relaxed text-white/78">
+                  {formatDescription(year.descripcion.trim())}
+                </p>
+              ) : null}
+              {(year.driveUrl || year.playlistUrl) && (
+                <div className="mt-4 flex flex-col gap-2">
+                  {year.driveUrl && (
+                    <a
+                      href={year.driveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-white/15 bg-black/20 text-sm font-bold text-white transition-colors hover:bg-black/30"
+                    >
+                      <GoogleDriveIcon className="size-5" />
+                      Drive del año
+                    </a>
+                  )}
+                  {year.playlistUrl && (
+                    <a
+                      href={year.playlistUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-white/15 bg-black/20 text-sm font-bold text-white transition-colors hover:bg-black/30"
+                    >
+                      <CirclePlay className="size-5 text-red-100" />
+                      Playlist del año
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </section>

@@ -1,6 +1,7 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { notFound } from 'next/navigation'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, CirclePlay } from 'lucide-react'
 import { getYearBySlug, getTiposEvento, getCareer, getCategoriasApunte } from '@/lib/queries'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { DashboardShell } from '@/components/shell/DashboardShell'
@@ -11,6 +12,19 @@ import { MobileYear } from '@/components/mobile/year/MobileYear'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { YearOverviewEvents } from '@/components/year/YearOverviewEvents'
 import { todayKeyAR } from '@/lib/utils'
+import { formatDescription } from '@/lib/text'
+
+function GoogleDriveIcon({ className }: { className?: string }) {
+  return (
+    <Image
+      src="/resources/google_drive_logo_icon_159334.png"
+      alt="Google Drive"
+      width={20}
+      height={20}
+      className={className}
+    />
+  )
+}
 
 export const revalidate = 300
 
@@ -158,6 +172,50 @@ export default async function YearPage({
           }
           mainClassName="space-y-8"
         >
+          <section className="space-y-5">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
+                Año académico
+              </p>
+              <h1 className="mt-3 font-display text-4xl font-black tracking-tight text-white sm:text-5xl">
+                {year.nombre}
+              </h1>
+              {year.descripcion?.trim() ? (
+                <p className="mt-4 max-w-3xl text-sm leading-7 text-white/64 sm:text-base">
+                  {formatDescription(year.descripcion.trim())}
+                </p>
+              ) : null}
+            </div>
+
+            {(year.driveUrl || year.playlistUrl) && (
+              <div className="flex flex-wrap items-center gap-2">
+                {year.driveUrl && (
+                  <a
+                    href={year.driveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex cursor-pointer items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                  >
+                    <GoogleDriveIcon className="h-5 w-5" />
+                    Drive del año
+                  </a>
+                )}
+
+                {year.playlistUrl && (
+                  <a
+                    href={year.playlistUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex cursor-pointer items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                  >
+                    <CirclePlay className="h-5 w-5 text-red-400" />
+                    Playlist del año
+                  </a>
+                )}
+              </div>
+            )}
+          </section>
+
           <YearOverviewEvents
             year={{
               id: year.id,
@@ -239,6 +297,10 @@ export default async function YearPage({
           id: year.id,
           slug: year.slug,
           nombre: year.nombre,
+          descripcion: year.descripcion,
+          driveUrl: year.driveUrl,
+          playlistUrl: year.playlistUrl,
+          playlistEnabled: year.playlistEnabled,
           orden: yearIndex >= 0 ? yearIndex + 1 : 1,
         }}
       />

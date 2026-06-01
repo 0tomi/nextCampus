@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useActionState } from 'react'
+import { useEffect, useActionState, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import {
   createYearAction,
   updateYearAction,
   type YearActionState,
 } from '@/app/admin/actions'
+import { detectarRecurso } from '@/lib/recursos'
 
 interface YearModalProps {
   open: boolean
@@ -15,6 +16,10 @@ interface YearModalProps {
   year?: {
     id: string
     nombre: string
+    descripcion?: string | null
+    driveUrl?: string | null
+    playlistUrl?: string | null
+    playlistEnabled?: boolean
     orden: number
   }
   /** Se llama cuando la acción termina bien (para cerrar el modal). */
@@ -25,6 +30,21 @@ const emptyState: YearActionState = { ok: false, message: '' }
 
 export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
   const isEdit = !!year
+  const [playlistUrlError, setPlaylistUrlError] = useState('')
+
+  const handlePlaylistUrlBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const val = e.target.value.trim()
+    if (!val) {
+      setPlaylistUrlError('')
+      return
+    }
+    const result = detectarRecurso(val)
+    setPlaylistUrlError(
+      !result || result.tipo !== 'YOUTUBE'
+        ? 'El link debe ser de YouTube (youtube.com o youtu.be).'
+        : '',
+    )
+  }
 
   const action = isEdit ? updateYearAction : createYearAction
 
@@ -62,6 +82,76 @@ export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
             className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
           />
         </div>
+
+        <div className="space-y-1">
+          <label
+            htmlFor="year-descripcion"
+            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
+          >
+            Descripción{' '}
+            <span className="font-normal normal-case tracking-normal text-white/30">
+              (opcional)
+            </span>
+          </label>
+          <textarea
+            id="year-descripcion"
+            name="descripcion"
+            rows={3}
+            defaultValue={year?.descripcion ?? ''}
+            placeholder="Breve descripción del año"
+            className="w-full resize-none rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label
+            htmlFor="year-driveUrl"
+            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
+          >
+            Enlace de Google Drive{' '}
+            <span className="font-normal normal-case tracking-normal text-white/30">
+              (opcional)
+            </span>
+          </label>
+          <input
+            id="year-driveUrl"
+            type="url"
+            name="driveUrl"
+            defaultValue={year?.driveUrl ?? ''}
+            placeholder="Ej: https://drive.google.com/drive/folders/..."
+            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label
+            htmlFor="year-playlistUrl"
+            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
+          >
+            Playlist de YouTube{' '}
+            <span className="font-normal normal-case tracking-normal text-white/30">
+              (opcional)
+            </span>
+          </label>
+          <input
+            id="year-playlistUrl"
+            type="url"
+            name="playlistUrl"
+            defaultValue={year?.playlistUrl ?? ''}
+            placeholder="Ej: https://www.youtube.com/playlist?list=..."
+            onBlur={handlePlaylistUrlBlur}
+            className={`w-full rounded border bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none ${
+              playlistUrlError
+                ? 'border-rose-400/50 focus:border-rose-400/70'
+                : 'border-white/10 focus:border-white/20'
+            }`}
+          />
+          {playlistUrlError && (
+            <p className="text-xs text-rose-400">{playlistUrlError}</p>
+          )}
+        </div>
+
+        <input type="hidden" name="playlistEnabled" value="true" />
 
         <div className="space-y-1">
           <label

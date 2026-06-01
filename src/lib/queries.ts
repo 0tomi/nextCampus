@@ -267,6 +267,10 @@ export function getCareer() {
           id: true,
           slug: true,
           nombre: true,
+          descripcion: true,
+          driveUrl: true,
+          playlistUrl: true,
+          playlistEnabled: true,
           orden: true,
           subjects: {
             orderBy: { nombre: 'asc' },
@@ -297,6 +301,10 @@ export function getYearBySlug(slug: string) {
           id: true,
           slug: true,
           nombre: true,
+          descripcion: true,
+          driveUrl: true,
+          playlistUrl: true,
+          playlistEnabled: true,
           subjects: {
             orderBy: { nombre: 'asc' },
             select: {

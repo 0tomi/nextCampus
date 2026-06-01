@@ -33,7 +33,8 @@ export function Sheet({
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
+    const handle = window.setTimeout(() => setMounted(true), 0)
+    return () => window.clearTimeout(handle)
   }, [])
 
   // Lock scroll while open

@@ -21,6 +21,10 @@ export async function GET() {
       yearSlugs: admin.yearSlugs,
       canManageAllYears: admin.canManageAllYears,
       canCreateUsers: admin.canCreateUsers,
+      canViewAuditHistory: admin.canViewAuditHistory,
+      canManageAcademicStructure: admin.canManageAcademicStructure,
+      canManageAnyContribution: admin.canManageAnyContribution,
+      canCreateContributions: admin.canCreateContributions,
     },
   })
 }

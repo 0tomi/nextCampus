@@ -257,6 +257,8 @@ export async function createEvento(formData: FormData): Promise<void> {
     action: AUDIT_ACTIONS.EVENTO_CREATED,
     entityType: 'evento',
     entityId: evento.id,
+    yearId: scope.yearId,
+    yearSlug: scope.yearSlug,
     detail: {
       titulo: evento.titulo,
       fecha: data.fecha,
@@ -325,10 +327,13 @@ export async function updateEventoFechaAction(
     action: AUDIT_ACTIONS.EVENTO_DATE_UPDATED,
     entityType: 'evento',
     entityId: validId,
+    yearId: scope.yearId,
+    yearSlug: scope.yearSlug,
     detail: {
       titulo: updated.titulo,
       fecha: validFecha,
       subjectSlug: scope.subjectSlug,
+      yearSlug: scope.yearSlug,
     },
   })
   return { ok: true }
@@ -399,11 +404,14 @@ export async function updateEventoAction(
       action: AUDIT_ACTIONS.EVENTO_UPDATED,
       entityType: 'evento',
       entityId: id,
+      yearId: currentScope.yearId,
+      yearSlug: currentScope.yearSlug,
       detail: {
         titulo: data.titulo,
         fecha: data.fecha,
         hora: data.hora,
         subjectSlug: currentScope.subjectSlug,
+        yearSlug: currentScope.yearSlug,
         apuntesCount: apunteIds.length,
         ...(targetScope.commissionSlug ? { commissionSlug: targetScope.commissionSlug } : {}),
       },
@@ -439,11 +447,14 @@ export async function deleteEvento(formData: FormData): Promise<void> {
       action: AUDIT_ACTIONS.EVENTO_DELETED,
       entityType: 'evento',
       entityId: id,
+      yearId: scope.yearId,
+      yearSlug: scope.yearSlug,
       detail: {
         titulo: evento.titulo,
         fecha: evento.fecha.toISOString().slice(0, 10),
         hora: evento.hora,
         subjectSlug: scope.subjectSlug,
+        yearSlug: scope.yearSlug,
       },
     })
   }
@@ -840,6 +851,8 @@ export async function createApunteAction(
     action: AUDIT_ACTIONS.APUNTE_CREATED,
     entityType: 'apunte',
     entityId: apunteId,
+    yearId: scope.yearId,
+    yearSlug: scope.yearSlug,
     detail: {
       titulo,
       slug: finalSlug,
@@ -1000,10 +1013,13 @@ export async function updateApunteAction(
     action: AUDIT_ACTIONS.APUNTE_UPDATED,
     entityType: 'apunte',
     entityId: apunteId.data,
+    yearId: scope.yearId,
+    yearSlug: scope.yearSlug,
     detail: {
       titulo,
       slug: finalSlug,
       subjectSlug: scope.subjectSlug,
+      yearSlug: scope.yearSlug,
       recursosCount: built.data.length,
       categoriasCount: validCategoriaIds.length,
     },
@@ -1044,9 +1060,12 @@ export async function deleteApunteAction(formData: FormData): Promise<void> {
       action: AUDIT_ACTIONS.APUNTE_DELETED,
       entityType: 'apunte',
       entityId: id,
+      yearId: scope.yearId,
+      yearSlug: scope.yearSlug,
       detail: {
         titulo: apunte.titulo,
         subjectSlug: scope.subjectSlug,
+        yearSlug: scope.yearSlug,
       },
     })
   }
@@ -1118,6 +1137,8 @@ export async function uploadQuizBankAction(
     userId: scope.admin.id,
     action: AUDIT_ACTIONS.QUIZ_BANK_UPLOADED,
     entityType: 'quizBank',
+    yearId: scope.yearId,
+    yearSlug: scope.yearSlug,
     detail: {
       nombre,
       totalPreguntas: bank.totalPreguntas,
@@ -1154,6 +1175,8 @@ export async function deleteQuizBankAction(formData: FormData): Promise<void> {
     action: AUDIT_ACTIONS.QUIZ_BANK_DELETED,
     entityType: 'quizBank',
     entityId: bankId,
+    yearId: scope.yearId,
+    yearSlug: scope.yearSlug,
     detail: {
       bankId,
       subjectSlug: scope.subjectSlug,
@@ -1171,6 +1194,16 @@ export interface YearActionState {
 
 const yearSchema = z.object({
   nombre: z.string().trim().min(1, 'El nombre es obligatorio').max(120),
+  descripcion: z.string().trim().max(500).default(''),
+  driveUrl: z
+    .string()
+    .trim()
+    .url('El enlace de Drive debe ser una URL válida')
+    .or(z.literal(''))
+    .nullable()
+    .optional(),
+  playlistUrl: z.string().trim().url().or(z.literal('')).nullable().optional(),
+  playlistEnabled: z.coerce.boolean().default(false),
   orden: z.coerce
     .number()
     .int('El orden debe ser un número entero')
@@ -1185,12 +1218,24 @@ export async function createYearAction(
 
   const parsed = yearSchema.safeParse({
     nombre: formData.get('nombre'),
+    descripcion: formData.get('descripcion') ?? '',
+    driveUrl: formData.get('driveUrl') ?? '',
+    playlistUrl: formData.get('playlistUrl') ?? '',
+    playlistEnabled: formData.get('playlistEnabled'),
     orden: formData.get('orden'),
   })
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0].message }
   }
-  const { nombre, orden } = parsed.data
+  const { nombre, descripcion, driveUrl, playlistUrl, playlistEnabled, orden } = parsed.data
+
+  const normalizedPlaylistUrl = playlistUrl || null
+  if (normalizedPlaylistUrl) {
+    const detected = detectarRecurso(normalizedPlaylistUrl)
+    if (!detected || detected.tipo !== 'YOUTUBE') {
+      return { ok: false, message: 'La playlist debe ser un enlace de YouTube válido.' }
+    }
+  }
 
   const career = await prisma.career.findFirst({ select: { id: true } })
   if (!career) {
@@ -1215,7 +1260,16 @@ export async function createYearAction(
   const slug = uniqueSlug(base, takenSlugs)
 
   const year = await prisma.academicYear.create({
-    data: { nombre, slug, orden, careerId: career.id },
+    data: {
+      nombre,
+      slug,
+      descripcion,
+      driveUrl: driveUrl || null,
+      playlistUrl: normalizedPlaylistUrl,
+      playlistEnabled,
+      orden,
+      careerId: career.id,
+    },
     select: { id: true },
   })
 
@@ -1226,6 +1280,8 @@ export async function createYearAction(
     action: AUDIT_ACTIONS.YEAR_CREATED,
     entityType: 'year',
     entityId: year.id,
+    yearId: year.id,
+    yearSlug: slug,
     detail: { nombre, slug, orden },
   })
   return { ok: true, message: 'Año creado correctamente.' }
@@ -1241,12 +1297,24 @@ export async function updateYearAction(
 
   const parsed = yearSchema.safeParse({
     nombre: formData.get('nombre'),
+    descripcion: formData.get('descripcion') ?? '',
+    driveUrl: formData.get('driveUrl') ?? '',
+    playlistUrl: formData.get('playlistUrl') ?? '',
+    playlistEnabled: formData.get('playlistEnabled'),
     orden: formData.get('orden'),
   })
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0].message }
   }
-  const { nombre, orden } = parsed.data
+  const { nombre, descripcion, driveUrl, playlistUrl, playlistEnabled, orden } = parsed.data
+
+  const normalizedPlaylistUrl = playlistUrl || null
+  if (normalizedPlaylistUrl) {
+    const detected = detectarRecurso(normalizedPlaylistUrl)
+    if (!detected || detected.tipo !== 'YOUTUBE') {
+      return { ok: false, message: 'La playlist debe ser un enlace de YouTube válido.' }
+    }
+  }
 
   const year = await prisma.academicYear.findUnique({
     where: { id },
@@ -1276,7 +1344,15 @@ export async function updateYearAction(
 
   await prisma.academicYear.update({
     where: { id },
-    data: { nombre, slug: newSlug, orden },
+    data: {
+      nombre,
+      slug: newSlug,
+      descripcion,
+      driveUrl: driveUrl || null,
+      playlistUrl: normalizedPlaylistUrl,
+      playlistEnabled,
+      orden,
+    },
   })
 
   revalidateTag(queryTags.career)
@@ -1294,6 +1370,8 @@ export async function updateYearAction(
     action: AUDIT_ACTIONS.YEAR_UPDATED,
     entityType: 'year',
     entityId: id,
+    yearId: id,
+    yearSlug: newSlug,
     detail: { nombre, oldSlug, newSlug, orden },
   })
   return { ok: true, message: 'Año actualizado correctamente.' }
@@ -1340,6 +1418,8 @@ export async function deleteYearAction(formData: FormData): Promise<void> {
     action: AUDIT_ACTIONS.YEAR_DELETED,
     entityType: 'year',
     entityId: id,
+    yearId: id,
+    yearSlug: year.slug,
     detail: {
       nombre: year.nombre,
       slug: year.slug,
@@ -1460,6 +1540,8 @@ export async function createSubjectAction(
     action: AUDIT_ACTIONS.SUBJECT_CREATED,
     entityType: 'subject',
     entityId: subject.id,
+    yearId,
+    yearSlug: year.slug,
     detail: { nombre, slug, yearSlug: year.slug },
   })
   return { ok: true, message: 'Materia creada correctamente.' }
@@ -1520,6 +1602,8 @@ export async function createCommissionAction(
     action: AUDIT_ACTIONS.COMMISSION_CREATED,
     entityType: 'commission',
     entityId: commission.id,
+    yearId: scope.yearId,
+    yearSlug: scope.yearSlug,
     detail: {
       nombre: commission.nombre,
       slug: commission.slug,
@@ -1602,6 +1686,8 @@ export async function updateSubjectAction(
     action: AUDIT_ACTIONS.SUBJECT_UPDATED,
     entityType: 'subject',
     entityId: id,
+    yearId: scope.yearId,
+    yearSlug: scope.yearSlug,
     detail: { nombre, oldSlug, newSlug, yearSlug: scope.yearSlug },
   })
   return {
@@ -1649,6 +1735,8 @@ export async function deleteSubjectAction(formData: FormData): Promise<void> {
       action: AUDIT_ACTIONS.SUBJECT_DELETED,
       entityType: 'subject',
       entityId: id,
+      yearId: scope.yearId,
+      yearSlug,
       detail: { nombre: subject.nombre, slug: subjectSlug, yearSlug },
     })
   }
@@ -1709,9 +1797,12 @@ export async function updateSubjectDriveUrlAction(
     action: AUDIT_ACTIONS.SUBJECT_DRIVE_UPDATED,
     entityType: 'subject',
     entityId: validSubjectId,
+    yearId: scope.yearId,
+    yearSlug: scope.yearSlug,
     detail: {
       driveUrl: normalizedDriveUrl,
       subjectSlug: scope.subjectSlug,
+      yearSlug: scope.yearSlug,
     },
   })
 
@@ -1770,10 +1861,13 @@ export async function updateSubjectPlaylistAction(
     action: AUDIT_ACTIONS.SUBJECT_PLAYLIST_UPDATED,
     entityType: 'subject',
     entityId: validSubjectId,
+    yearId: scope.yearId,
+    yearSlug: scope.yearSlug,
     detail: {
       playlistUrl: normalizedPlaylistUrl,
       playlistEnabled,
       subjectSlug: scope.subjectSlug,
+      yearSlug: scope.yearSlug,
     },
   })
 

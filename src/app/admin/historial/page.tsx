@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
-import { requireGeneralAdmin } from '@/lib/auth'
+import { requireAuditViewer } from '@/lib/auth'
 import { AUDIT_ACTION_LABELS, type AuditAction, type AuditDetail } from '@/lib/audit-types'
+import { auditLogScopeWhere, userHasScopedAuditWhere } from '@/lib/audit-history-scope'
 import { HistorialList, type HistorialEntry, type HistorialUserOption } from './HistorialList'
 
 export const dynamic = 'force-dynamic'
@@ -17,14 +18,16 @@ function readParamList(value: string | string[] | undefined): string[] {
 }
 
 export default async function HistorialPage({ searchParams }: PageProps) {
-  await requireGeneralAdmin()
+  const admin = await requireAuditViewer()
   const resolved = await searchParams
   const selectedUserIds = readParamList(resolved.userId)
   const selectedActions = readParamList(resolved.action)
+  const scopeWhere = auditLogScopeWhere(admin)
 
   const [rows, selectedUsers] = await Promise.all([
     prisma.auditLog.findMany({
       where: {
+        ...scopeWhere,
         ...(selectedUserIds.length > 0 ? { userId: { in: selectedUserIds } } : {}),
         ...(selectedActions.length > 0 ? { action: { in: selectedActions } } : {}),
       },
@@ -34,7 +37,10 @@ export default async function HistorialPage({ searchParams }: PageProps) {
     }),
     selectedUserIds.length > 0
       ? prisma.userAccount.findMany({
-          where: { id: { in: selectedUserIds } },
+          where: {
+            id: { in: selectedUserIds },
+            ...userHasScopedAuditWhere(admin),
+          },
           select: { id: true, email: true },
           orderBy: { email: 'asc' },
         })

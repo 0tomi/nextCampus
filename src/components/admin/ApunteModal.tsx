@@ -50,6 +50,7 @@ interface RecursoDraft {
   mimeType?: string | null
   sizeBytes?: number | null
   fileName?: string
+  replacingStorage?: boolean
   error?: string
 }
 
@@ -169,6 +170,7 @@ export function ApunteModal({
             storageKey: r.storageKey,
             mimeType: r.mimeType,
             sizeBytes: r.sizeBytes,
+            replacingStorage: false,
           }),
         )
       : [],
@@ -370,6 +372,26 @@ export function ApunteModal({
     )
   }, [])
 
+  const startHtmlReplace = useCallback((localId: string) => {
+    setRecursos((prev) =>
+      prev.map((r) =>
+        r.localId === localId
+          ? { ...r, replacingStorage: true, fileName: undefined, error: undefined }
+          : r,
+      ),
+    )
+  }, [])
+
+  const cancelHtmlReplace = useCallback((localId: string) => {
+    setRecursos((prev) =>
+      prev.map((r) =>
+        r.localId === localId
+          ? { ...r, replacingStorage: false, fileName: undefined, error: undefined }
+          : r,
+      ),
+    )
+  }, [])
+
   const handleUrlBlur = useCallback((localId: string, value: string) => {
     if (!value.trim()) {
       setRecursos((prev) =>
@@ -411,7 +433,7 @@ export function ApunteModal({
       }
 
       const invalidHtml = recursos.find(
-        (r) => r.kind === 'HTML' && !r.storageKey && !r.fileName,
+        (r) => r.kind === 'HTML' && (!r.storageKey || r.replacingStorage) && !r.fileName,
       )
       if (invalidHtml) {
         e.preventDefault()
@@ -450,7 +472,7 @@ export function ApunteModal({
             url: '',
             orden: idx,
             ...(nombre.length > 0 ? { nombre } : {}),
-            ...(r.storageKey ? { storageKey: r.storageKey } : {}),
+            ...(r.storageKey && !r.replacingStorage ? { storageKey: r.storageKey } : {}),
             ...(r.mimeType ? { mimeType: r.mimeType } : {}),
             ...(r.sizeBytes ? { sizeBytes: r.sizeBytes } : {}),
           }
@@ -574,6 +596,8 @@ export function ApunteModal({
                   onUrlChange={handleUrlChange}
                   onUrlBlur={handleUrlBlur}
                   onHtmlFileChange={handleHtmlFileChange}
+                  onStartHtmlReplace={startHtmlReplace}
+                  onCancelHtmlReplace={cancelHtmlReplace}
                   onNombreChange={handleNombreChange}
                   onRemove={removeRecurso}
                   onMoveUp={moveUp}
@@ -698,6 +722,8 @@ interface RecursoRowProps {
   onUrlChange: (localId: string, value: string) => void
   onUrlBlur: (localId: string, value: string) => void
   onHtmlFileChange: (localId: string, file: File | null) => void
+  onStartHtmlReplace: (localId: string) => void
+  onCancelHtmlReplace: (localId: string) => void
   onNombreChange: (localId: string, value: string) => void
   onRemove: (localId: string) => void
   onMoveUp: (index: number) => void
@@ -719,6 +745,8 @@ function RecursoRow({
   onUrlChange,
   onUrlBlur,
   onHtmlFileChange,
+  onStartHtmlReplace,
+  onCancelHtmlReplace,
   onNombreChange,
   onRemove,
   onMoveUp,
@@ -862,22 +890,45 @@ function RecursoRow({
           </div>
         ) : (
           <div className="flex-1">
-            {recurso.storageKey ? (
-              <div className="flex min-h-10 items-center gap-2 rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white/70">
-                <FileCode2 className="size-4 text-cyan-300" />
-                Apunte interactivo cargado
+            {recurso.storageKey && !recurso.replacingStorage ? (
+              <div className="flex min-h-10 flex-wrap items-center justify-between gap-2 rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white/70">
+                <span className="inline-flex min-w-0 items-center gap-2">
+                  <FileCode2 className="size-4 shrink-0 text-cyan-300" />
+                  <span>Apunte interactivo cargado</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onStartHtmlReplace(recurso.localId)}
+                  className="cursor-pointer rounded border border-cyan-300/25 bg-cyan-300/10 px-2.5 py-1 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/15"
+                >
+                  Reemplazar
+                </button>
               </div>
             ) : (
-              <input
-                type="file"
-                aria-label="Archivo del apunte interactivo"
-                name={`htmlFile:${recurso.localId}`}
-                accept=".html,.htm,.jsx,.tsx,text/html,text/javascript,application/javascript"
-                onChange={(e) => onHtmlFileChange(recurso.localId, e.target.files?.[0] ?? null)}
-                className={`w-full cursor-pointer rounded border bg-surface-0 px-3 py-2 text-sm text-white file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white hover:file:bg-white/15 ${
-                  recurso.error ? 'border-rose-400/50' : 'border-white/10'
-                }`}
-              />
+              <div className="space-y-2">
+                <input
+                  type="file"
+                  aria-label="Archivo del apunte interactivo"
+                  name={`htmlFile:${recurso.localId}`}
+                  accept=".html,.htm,.jsx,.tsx,text/html,text/javascript,application/javascript"
+                  onChange={(e) => onHtmlFileChange(recurso.localId, e.target.files?.[0] ?? null)}
+                  className={`w-full cursor-pointer rounded border bg-surface-0 px-3 py-2 text-sm text-white file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white hover:file:bg-white/15 ${
+                    recurso.error ? 'border-rose-400/50' : 'border-white/10'
+                  }`}
+                />
+                {recurso.storageKey && recurso.replacingStorage ? (
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded border border-cyan-300/15 bg-cyan-300/10 px-3 py-2 text-[11px] text-cyan-100/80">
+                    <span>El archivo actual se mantiene hasta que guardes el reemplazo.</span>
+                    <button
+                      type="button"
+                      onClick={() => onCancelHtmlReplace(recurso.localId)}
+                      className="cursor-pointer rounded border border-white/10 bg-white/[0.04] px-2.5 py-1 font-semibold text-white/75 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                      Cancelar reemplazo
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             )}
           </div>
         )}

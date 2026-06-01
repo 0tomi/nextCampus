@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { requireGeneralAdmin } from '@/lib/auth'
+import { requireAuditViewer } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import type { AuditDetail } from '@/lib/audit-types'
+import { auditLogScopeWhere } from '@/lib/audit-history-scope'
 
 const PAGE_SIZE = 20
 
@@ -21,7 +22,7 @@ function readRepeated(searchParams: URLSearchParams, key: string): string[] {
 }
 
 export async function GET(request: Request) {
-  await requireGeneralAdmin()
+  const admin = await requireAuditViewer()
 
   const url = new URL(request.url)
   const parsed = querySchema.safeParse({
@@ -39,6 +40,7 @@ export async function GET(request: Request) {
 
   const rows = await prisma.auditLog.findMany({
     where: {
+      ...auditLogScopeWhere(admin),
       ...(parsed.data.userId.length > 0 ? { userId: { in: parsed.data.userId } } : {}),
       ...(parsed.data.action.length > 0 ? { action: { in: parsed.data.action } } : {}),
     },

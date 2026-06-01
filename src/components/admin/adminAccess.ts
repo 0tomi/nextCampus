@@ -10,6 +10,7 @@ export interface AdminSessionUser {
   yearSlugs: string[]
   canManageAllYears: boolean
   canCreateUsers: boolean
+  canViewAuditHistory: boolean
   canManageAcademicStructure: boolean
   canManageAnyContribution: boolean
   canCreateContributions: boolean

@@ -12,11 +12,13 @@ const BADGE_HISTORY = 'from-violet-400 to-fuchsia-500 text-black shadow-[0_0_0_1
 interface BuildAdminSidebarItemsInput {
   pathname: string
   canCreateUsers: boolean
+  canViewAuditHistory: boolean
 }
 
 export function buildAdminSidebarItems({
   pathname,
   canCreateUsers,
+  canViewAuditHistory,
 }: BuildAdminSidebarItemsInput): SidebarItem[] {
   const items: SidebarItem[] = [
     {
@@ -30,12 +32,8 @@ export function buildAdminSidebarItems({
     },
   ]
 
-  if (!canCreateUsers) {
-    return items
-  }
-
-  items.push(
-    {
+  if (canCreateUsers) {
+    items.push({
       id: 'users',
       href: '/admin/users',
       label: 'Usuarios',
@@ -43,8 +41,11 @@ export function buildAdminSidebarItems({
       badge: <Users className="h-4 w-4" />,
       badgeClassName: BADGE_USERS,
       active: pathname.startsWith('/admin/users'),
-    },
-    {
+    })
+  }
+
+  if (canViewAuditHistory) {
+    items.push({
       id: 'historial',
       href: '/admin/historial',
       label: 'Historial',
@@ -52,8 +53,8 @@ export function buildAdminSidebarItems({
       badge: <History className="h-4 w-4" />,
       badgeClassName: BADGE_HISTORY,
       active: pathname.startsWith('/admin/historial'),
-    },
-  )
+    })
+  }
 
   return items
 }
@@ -62,7 +63,8 @@ export function AdminSidebar() {
   const pathname = usePathname() ?? ''
   const session = useAdminSession()
   const canCreateUsers = session?.admin?.canCreateUsers ?? false
-  const items = buildAdminSidebarItems({ pathname, canCreateUsers })
+  const canViewAuditHistory = session?.admin?.canViewAuditHistory ?? false
+  const items = buildAdminSidebarItems({ pathname, canCreateUsers, canViewAuditHistory })
 
   return (
     <Sidebar

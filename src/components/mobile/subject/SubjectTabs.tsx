@@ -109,7 +109,7 @@ export function SubjectTabs({ subjectId, subjectSlug, subjectName, yearSlug, yea
         </div>
       </div>
 
-      <div>
+      <div key={active} className="subject-tab-panel">
         {active === 'agenda' && (
           <AgendaTab
             events={events}

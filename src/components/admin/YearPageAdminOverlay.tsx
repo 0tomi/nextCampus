@@ -26,6 +26,10 @@ interface YearData {
   id: string
   slug: string
   nombre: string
+  descripcion?: string | null
+  driveUrl?: string | null
+  playlistUrl?: string | null
+  playlistEnabled?: boolean
   orden: number
 }
 
@@ -92,7 +96,15 @@ export function YearPageAdminOverlay({
             <YearModal
               open={editYearOpen}
               onClose={() => setEditYearOpen(false)}
-              year={{ id: year.id, nombre: year.nombre, orden: year.orden }}
+              year={{
+                id: year.id,
+                nombre: year.nombre,
+                descripcion: year.descripcion,
+                driveUrl: year.driveUrl,
+                playlistUrl: year.playlistUrl,
+                playlistEnabled: year.playlistEnabled,
+                orden: year.orden,
+              }}
             />
             <ConfirmDeleteYearModal
               open={deleteYearOpen}

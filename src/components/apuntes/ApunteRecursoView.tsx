@@ -13,7 +13,7 @@ import {
   type DriveKind,
   type RecursoTipo,
 } from '@/lib/recursos'
-import { ExternalLink, FileCode2, FileText, ImageIcon, PlayCircle, X, Maximize2, Minimize2 } from 'lucide-react'
+import { ExternalLink, FileText, ImageIcon, PlayCircle, Maximize2, Minimize2 } from 'lucide-react'
 
 function driveEmbedClassName(kind: DriveKind, variant: 'card' | 'wide'): string {
   const rounded = variant === 'wide' ? 'rounded-xl' : 'rounded-md'
@@ -201,7 +201,6 @@ function ApunteRecursoMedia({
 }
 
 function HtmlPreviewCard({
-  href,
   title,
   recursoId,
 }: {
@@ -209,225 +208,18 @@ function HtmlPreviewCard({
   title: string
   recursoId: string
 }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [animate, setAnimate] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isMaximized, setIsMaximized] = useState(false)
-  const [isResizing, setIsResizing] = useState(false)
-  const [width, setWidth] = useState(0)
-  const [height, setHeight] = useState(0)
-
-  const handleOpen = () => {
-    setIsLoading(true)
-    setIsMaximized(false)
-    
-    // Inicializamos al 94vw y 90vh
-    const initialWidth = Math.round(window.innerWidth * 0.94)
-    const initialHeight = Math.round(window.innerHeight * 0.90)
-    setWidth(initialWidth)
-    setHeight(initialHeight)
-
-    setIsOpen(true)
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setAnimate(true)
-      })
-    })
-  }
-
-  const handleClose = () => {
-    setAnimate(false)
-    setTimeout(() => {
-      setIsOpen(false)
-    }, 300)
-  }
-
-  const handleClick = (e: React.MouseEvent) => {
-    if (!href) return
-    if (window.matchMedia('(min-width: 1024px)').matches) {
-      e.preventDefault()
-      handleOpen()
-    }
-  }
-
-  const handleResizeMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault()
-    setIsResizing(true)
-    const startWidth = width
-    const startHeight = height
-    const startX = e.clientX
-    const startY = e.clientY
-
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      const deltaX = moveEvent.clientX - startX
-      const deltaY = moveEvent.clientY - startY
-
-      const minWidth = 500
-      const minHeight = 400
-      const maxWidth = window.innerWidth * 0.98
-      const maxHeight = window.innerHeight * 0.98
-
-      setWidth(Math.min(maxWidth, Math.max(minWidth, startWidth + deltaX)))
-      setHeight(Math.min(maxHeight, Math.max(minHeight, startHeight + deltaY)))
-    }
-
-    const handleMouseUp = () => {
-      setIsResizing(false)
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-    }
-
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-  }
-
-  useEffect(() => {
-    if (!isOpen) return
-
-    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
-      if (e.key === 'Escape') handleClose()
-    }
-    window.addEventListener('keydown', handleKeyDown)
-
-    const originalOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = originalOverflow
-    }
-  }, [isOpen])
-
-  const content = (
-    <div className="rounded-md border border-cyan-300/15 bg-[radial-gradient(circle_at_18%_24%,rgba(34,211,238,0.14),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.045),rgba(255,255,255,0.015))] p-4">
-      <div className="flex items-start gap-3">
-        <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-md border border-cyan-300/20 bg-cyan-300/10 text-cyan-200">
-          <FileCode2 className="size-5" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-sm font-black text-white">Vista interactiva</p>
-          <p className="mt-1 text-xs leading-5 text-white/50">
-            Abrí el apunte completo para ver {title}.
-          </p>
-        </div>
-      </div>
-      <span className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-cyan-100/80">
-        Abrir apunte completo
-        <ExternalLink className="size-3.5" />
-      </span>
-    </div>
-  )
-
-  return (
-    <>
-      {href ? (
-        <a
-          href={href}
-          onClick={handleClick}
-          className="block cursor-pointer transition-opacity hover:opacity-90"
-        >
-          {content}
-        </a>
-      ) : (
-        content
-      )}
-
-      {isOpen && (
-        <div
-          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity duration-300 ${
-            animate ? 'opacity-100' : 'opacity-0'
-          }`}
-          onClick={handleClose}
-          role="presentation"
-        >
-          <div
-            className={`relative rounded-2xl border border-white/10 bg-surface-1 shadow-[0_24px_64px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden transition-all duration-300 ${
-              isMaximized
-                ? 'w-[98vw] h-[95vh]'
-                : 'w-[94vw] h-[90vh]'
-            } ${
-              animate ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
-            }`}
-            style={!isMaximized && width > 0 && height > 0 ? { width: `${width}px`, height: `${height}px` } : undefined}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 select-none">
-              <h2 className="text-base font-black tracking-tight text-white truncate pr-4">
-                {title}
-              </h2>
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsMaximized(!isMaximized)}
-                  aria-label={isMaximized ? "Restaurar" : "Maximizar"}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded text-white/50 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
-                >
-                  {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  aria-label="Cerrar"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded text-white/50 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="relative flex-1 w-full p-6">
-              {isResizing && (
-                <div className="absolute inset-0 z-40 bg-transparent cursor-se-resize" />
-              )}
-              {isLoading && (
-                <div className="absolute inset-6 flex flex-col items-center justify-center rounded-md border border-white/5 bg-black/35 backdrop-blur-sm transition-opacity duration-300">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
-                  <p className="mt-3 text-xs font-semibold text-white/50 tracking-wide">
-                    Cargando apunte...
-                  </p>
-                </div>
-              )}
-              <iframe
-                src={`/api/apuntes/recursos/${recursoId}/preview`}
-                className={`h-full w-full rounded-md border border-white/10 bg-black/20 transition-opacity duration-300 ${
-                  isLoading ? 'opacity-0' : 'opacity-100'
-                }`}
-                loading="lazy"
-                sandbox="allow-scripts"
-                title={title}
-                onLoad={() => setIsLoading(false)}
-              />
-            </div>
-
-            {/* Resizer Handle */}
-            {!isMaximized && (
-              <div
-                className="absolute bottom-0 right-0 h-5 w-5 cursor-se-resize flex items-end justify-end p-0.5 z-45 group select-none"
-                onMouseDown={handleResizeMouseDown}
-              >
-                <svg
-                  className="size-3 text-white/20 group-hover:text-white/50 transition-colors"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <path d="M20 6L6 20M20 12L12 20M20 18L18 20" />
-                </svg>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </>
-  )
+  return <HtmlPreviewIframe recursoId={recursoId} titulo={title} compact />
 }
 
-function HtmlPreviewIframe({ recursoId, titulo }: { recursoId: string; titulo: string }) {
+function HtmlPreviewIframe({
+  recursoId,
+  titulo,
+  compact = false,
+}: {
+  recursoId: string
+  titulo: string
+  compact?: boolean
+}) {
   const [isLoading, setIsLoading] = useState(true)
   const [isExpanded, setIsExpanded] = useState(false)
   const [animate, setAnimate] = useState(false)
@@ -469,9 +261,14 @@ function HtmlPreviewIframe({ recursoId, titulo }: { recursoId: string; titulo: s
 
   useEffect(() => {
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
+      const timer = timerRef.current
+      if (timer) clearTimeout(timer)
     }
   }, [])
+
+  const collapsedClassName = compact
+    ? 'relative h-[360px] min-h-[360px] w-full overflow-hidden rounded-xl border border-white/5 bg-surface-1 transition-all duration-300 sm:h-[420px]'
+    : 'relative w-full h-[70vh] min-h-[500px] sm:min-h-[750px] rounded-xl overflow-hidden border border-white/5 bg-surface-1 transition-all duration-300'
 
   return (
     <>
@@ -481,6 +278,7 @@ function HtmlPreviewIframe({ recursoId, titulo }: { recursoId: string; titulo: s
             animate ? 'opacity-100' : 'opacity-0'
           }`}
           onClick={handleReduce}
+          role="presentation"
         />
       )}
 
@@ -490,14 +288,14 @@ function HtmlPreviewIframe({ recursoId, titulo }: { recursoId: string; titulo: s
             ? `fixed inset-4 sm:inset-6 z-50 flex flex-col bg-[#101010] border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,0.8)] rounded-2xl p-0 overflow-hidden transition-all duration-300 ${
                 animate ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
               }`
-            : 'relative w-full h-[70vh] min-h-[500px] sm:min-h-[750px] rounded-xl overflow-hidden border border-white/5 bg-surface-1 transition-all duration-300'
+            : collapsedClassName
         }
       >
         {isLoading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-black/35 backdrop-blur-sm transition-opacity duration-300 z-20">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
             <p className="mt-3 text-xs font-semibold text-white/55 tracking-wide">
-              Cargando apunte...
+              Cargando apunte…
             </p>
           </div>
         )}

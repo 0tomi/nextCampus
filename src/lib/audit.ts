@@ -15,6 +15,8 @@ export interface RecordAuditInput {
   action: AuditAction
   entityType?: AuditEntityType
   entityId?: string
+  yearId?: string | null
+  yearSlug?: string | null
   detail: AuditDetail
 }
 
@@ -28,6 +30,8 @@ export async function recordAudit(input: RecordAuditInput): Promise<void> {
         action: input.action,
         entityType: input.entityType,
         entityId: input.entityId,
+        yearId: input.yearId ?? null,
+        yearSlug: input.yearSlug ?? null,
         detail: input.detail as object,
       },
     })

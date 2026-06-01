@@ -11,6 +11,7 @@ describe('AdminSidebar navigation helpers', () => {
     const items = buildAdminSidebarItems({
       pathname: '/admin/users',
       canCreateUsers: true,
+      canViewAuditHistory: true,
     })
 
     expect(items.map((item) => item.id)).toEqual(['perfil', 'users', 'historial'])
@@ -21,12 +22,30 @@ describe('AdminSidebar navigation helpers', () => {
     ])
   })
 
-  it('deja solo perfil para admins sin permisos de gestión', async () => {
+  it('muestra historial sin usuarios para supervisores', async () => {
+    const { buildAdminSidebarItems } = await import('./AdminSidebar')
+
+    const items = buildAdminSidebarItems({
+      pathname: '/admin/historial',
+      canCreateUsers: false,
+      canViewAuditHistory: true,
+    })
+
+    expect(items.map((item) => item.id)).toEqual(['perfil', 'historial'])
+    expect(items[1]).toMatchObject({
+      id: 'historial',
+      href: '/admin/historial',
+      active: true,
+    })
+  })
+
+  it('deja solo perfil para ayudantes sin permisos de historial', async () => {
     const { buildAdminSidebarItems } = await import('./AdminSidebar')
 
     const items = buildAdminSidebarItems({
       pathname: '/admin/perfil',
       canCreateUsers: false,
+      canViewAuditHistory: false,
     })
 
     expect(items).toHaveLength(1)

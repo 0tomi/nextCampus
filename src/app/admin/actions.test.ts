@@ -202,6 +202,7 @@ describe('admin apunte actions', () => {
     requireYearAdminForApunteIdMock.mockResolvedValue({
       subjectSlug: 'calculo',
       yearSlug: 'primer-anio',
+      yearId: 'year-1',
       admin: { id: 'admin-1' },
     })
     prismaMock.apunte.findUnique.mockResolvedValue({
@@ -223,6 +224,68 @@ describe('admin apunte actions', () => {
 
     expect(result).toEqual({ ok: true, message: 'Apunte actualizado correctamente.' })
     expect(revalidateTagRawMock).toHaveBeenCalledWith('latest-apuntes', 'max')
+  })
+
+  it('reemplaza un apunte interactivo sin borrar el archivo anterior antes de guardar', async () => {
+    requireYearAdminForApunteIdMock.mockResolvedValue({
+      subjectSlug: 'calculo',
+      yearSlug: 'primer-anio',
+      yearId: 'year-1',
+      admin: { id: 'admin-1' },
+    })
+    prismaMock.apunte.findUnique.mockResolvedValue({
+      slug: 'resumen-actual',
+      subjectId: 'subject-1',
+      createdByUserId: 'admin-1',
+      recursos: [
+        {
+          storageKey: 'apuntes/primer-anio/calculo/apunte-1/old.html',
+          mimeType: 'text/html; charset=utf-8',
+          sizeBytes: 120,
+        },
+      ],
+    })
+    const formData = makeFormData({
+      apunteId: 'apunte-1',
+      titulo: 'Resumen actualizado',
+      descripcionHtml: '<p>Más claro</p>',
+      recursosJson: JSON.stringify([
+        {
+          tipo: 'HTML',
+          localId: 'recurso-html-1',
+          url: '',
+          orden: 0,
+          nombre: 'Interactivo nuevo',
+        },
+      ]),
+    })
+    formData.set(
+      'htmlFile:recurso-html-1',
+      new File(['<!doctype html><html><body>Nuevo</body></html>'], 'nuevo.html', {
+        type: 'text/html',
+      }),
+    )
+
+    const { updateApunteAction } = await import('./actions')
+    const result = await updateApunteAction({ ok: false, message: '' }, formData)
+
+    expect(result).toEqual({ ok: true, message: 'Apunte actualizado correctamente.' })
+    expect(uploadApunteHtmlMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        apunteId: 'apunte-1',
+        yearSlug: 'primer-anio',
+        subjectSlug: 'calculo',
+      }),
+    )
+    expect(deleteApunteHtmlMock).toHaveBeenCalledWith([
+      'apuntes/primer-anio/calculo/apunte-1/old.html',
+    ])
+    expect(recordAuditMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        yearId: 'year-1',
+        yearSlug: 'primer-anio',
+      }),
+    )
   })
 
   it('revalida latest-apuntes al eliminar un apunte', async () => {

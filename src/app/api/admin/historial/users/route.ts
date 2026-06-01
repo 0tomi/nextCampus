@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { requireGeneralAdmin } from '@/lib/auth'
+import { requireAuditViewer } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { userHasScopedAuditWhere } from '@/lib/audit-history-scope'
 
 const querySchema = z.object({
   q: z.string().trim().max(120).default(''),
 })
 
 export async function GET(request: Request) {
-  await requireGeneralAdmin()
+  const admin = await requireAuditViewer()
 
   const url = new URL(request.url)
   const parsed = querySchema.safeParse({ q: url.searchParams.get('q') ?? '' })
@@ -18,7 +19,10 @@ export async function GET(request: Request) {
 
   const q = parsed.data.q
   const users = await prisma.userAccount.findMany({
-    where: q ? { email: { contains: q, mode: 'insensitive' } } : {},
+    where: {
+      ...userHasScopedAuditWhere(admin),
+      ...(q ? { email: { contains: q, mode: 'insensitive' as const } } : {}),
+    },
     orderBy: { email: 'asc' },
     take: 12,
     select: { id: true, email: true },

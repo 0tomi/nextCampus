@@ -36,6 +36,10 @@ type HomeGridYear = {
   id: string
   slug: string
   nombre: string
+  descripcion?: string | null
+  driveUrl?: string | null
+  playlistUrl?: string | null
+  playlistEnabled?: boolean
   subjects: HomeGridSubject[]
 }
 
@@ -258,6 +262,10 @@ export function HomeYearsGrid({ initialPrefs, years }: HomeYearsGridProps) {
                     id: year.id,
                     slug: year.slug,
                     nombre: year.nombre,
+                    descripcion: year.descripcion,
+                    driveUrl: year.driveUrl,
+                    playlistUrl: year.playlistUrl,
+                    playlistEnabled: year.playlistEnabled,
                     orden: originalIndex + 1,
                     subjects: year.subjects.map((s) => ({
                       id: s.id,
@@ -369,6 +377,10 @@ function HomeYearCardSection({
                 id: year.id,
                 slug: year.slug,
                 nombre: year.nombre,
+                descripcion: year.descripcion,
+                driveUrl: year.driveUrl,
+                playlistUrl: year.playlistUrl,
+                playlistEnabled: year.playlistEnabled,
                 orden: originalIndex + 1,
                 subjects: year.subjects.map((s) => ({
                   id: s.id,
