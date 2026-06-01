@@ -54,6 +54,25 @@ interface RecursoDraft {
   error?: string
 }
 
+/** Forma serializada que viaja en el input oculto recursosJson. */
+type SerializedRecurso =
+  | {
+      tipo: 'HTML'
+      localId: string
+      url: string
+      orden: number
+      nombre?: string
+      storageKey?: string
+      mimeType?: string
+      sizeBytes?: number
+    }
+  | {
+      tipo: RecursoTipo
+      url: string
+      orden: number
+      nombre?: string
+    }
+
 interface ApunteModalProps {
   open: boolean
   onClose: () => void
@@ -461,7 +480,7 @@ export function ApunteModal({
 
   // Serialize recursos for the hidden input
   const recursosJson = JSON.stringify(
-    recursos.flatMap((r, idx) => {
+    recursos.flatMap<SerializedRecurso>((r, idx) => {
       if (!(r.kind === 'HTML' ? r.tipo === 'HTML' : r.url.trim() && r.tipo)) return []
 
       const nombre = r.nombre.trim()
