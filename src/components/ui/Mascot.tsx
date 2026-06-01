@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
 import { cn } from '@/lib/utils'
 
 interface MascotProps {
@@ -18,167 +18,42 @@ const GLOW_COLORS = [
   '#ec4899', // Rose
 ]
 
-/**
- * Campito mantiene los libros estáticos y anima solo al búho al hacer click.
- */
-export function Mascot({
-  size = 150,
-  className = '',
-  alt = 'Mascota del Campus Virtual',
-}: MascotProps) {
-  const svgId = useId().replace(/:/g, '')
-  const [isHopping, setIsHopping] = useState(false)
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
-  const [glowColor, setGlowColor] = useState('')
-  const [showGlow, setShowGlow] = useState(false)
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)'
 
-  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const glowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+function randomGlowColor() {
+  return GLOW_COLORS[Math.floor(Math.random() * GLOW_COLORS.length)]
+}
 
-  const bodyGradientId = `${svgId}-body-gradient`
-  const bellyGradientId = `${svgId}-belly-gradient`
-  const capBoardGradientId = `${svgId}-cap-board-gradient`
-  const beakGradientId = `${svgId}-beak-gradient`
-  const softShadowId = `${svgId}-soft-shadow`
+function subscribeToReducedMotion(onStoreChange: () => void) {
+  const mediaQuery = window.matchMedia(REDUCED_MOTION_QUERY)
+  mediaQuery.addEventListener('change', onStoreChange)
+  return () => mediaQuery.removeEventListener('change', onStoreChange)
+}
 
-  useEffect(() => {
-    // Set initial random color on client mount to avoid hydration mismatch
-    const initialColor = GLOW_COLORS[Math.floor(Math.random() * GLOW_COLORS.length)]
-    const colorTimer = window.setTimeout(() => setGlowColor(initialColor), 0)
+function getReducedMotionSnapshot() {
+  return window.matchMedia(REDUCED_MOTION_QUERY).matches
+}
 
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+function getReducedMotionServerSnapshot() {
+  return false
+}
 
-    const syncPreference = () => {
-      setPrefersReducedMotion(mediaQuery.matches)
-    }
 
-    syncPreference()
-    mediaQuery.addEventListener('change', syncPreference)
+type TimerRef = { current: ReturnType<typeof setTimeout> | null }
 
-    return () => {
-      mediaQuery.removeEventListener('change', syncPreference)
-      window.clearTimeout(colorTimer)
+function clearMascotTimers(resetTimerRef: TimerRef, glowTimerRef: TimerRef) {
+  const resetTimer = resetTimerRef.current
+  const glowTimer = glowTimerRef.current
+  if (resetTimer) clearTimeout(resetTimer)
+  if (glowTimer) clearTimeout(glowTimer)
+}
 
-      if (resetTimerRef.current) {
-        clearTimeout(resetTimerRef.current)
-      }
-      if (glowTimerRef.current) {
-        clearTimeout(glowTimerRef.current)
-      }
-    }
-  }, [])
 
-  const triggerHop = () => {
-    // Vibrate device on mobile
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      try {
-        navigator.vibrate(15)
-      } catch {
-        // Ignorar errores de vibración
-      }
-    }
-
-    // Set random glow color
-    const randomColor = GLOW_COLORS[Math.floor(Math.random() * GLOW_COLORS.length)]
-    setGlowColor(randomColor)
-    setShowGlow(true)
-
-    if (glowTimerRef.current) {
-      clearTimeout(glowTimerRef.current)
-    }
-    glowTimerRef.current = setTimeout(() => {
-      setShowGlow(false)
-    }, 800)
-
-    if (prefersReducedMotion) {
-      return
-    }
-
-    if (resetTimerRef.current) {
-      clearTimeout(resetTimerRef.current)
-    }
-
-    setIsHopping(false)
-
-    requestAnimationFrame(() => {
-      setIsHopping(true)
-
-      resetTimerRef.current = setTimeout(() => {
-        setIsHopping(false)
-      }, 620)
-    })
-  }
-
-  const baseColor = glowColor || '#f97316'
-
-  return (
-    <button
-      type="button"
-      onClick={triggerHop}
-      className={`group relative flex cursor-pointer items-center justify-center select-none rounded-full bg-transparent p-0 ${className}`}
-      aria-label={alt}
-      title="Campito"
-    >
-      <div
-        className={cn(
-          'absolute pointer-events-none rounded-full z-0 transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]'
-        )}
-        style={{
-          background: `radial-gradient(circle, ${baseColor} 0%, ${baseColor}00 70%)`,
-          width: `${size * 0.9}px`,
-          height: `${size * 0.9}px`,
-          opacity: showGlow ? 0.595 : 0,
-          transform: showGlow ? 'scale(1.1)' : 'scale(0)',
-          willChange: showGlow ? 'transform, opacity' : 'auto',
-        }}
-      />
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 400 400"
-        width={size}
-        height={size}
-        preserveAspectRatio="xMidYMid meet"
-        aria-hidden="true"
-        className="overflow-visible drop-shadow-[0_8px_16px_rgba(249,115,22,0.1)] relative z-10"
-      >
-        <defs>
-          <linearGradient id={bodyGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#1E5A8F" />
-            <stop offset="100%" stopColor="#002D5A" />
-          </linearGradient>
-
-          <linearGradient id={bellyGradientId} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#F8FAFC" />
-            <stop offset="100%" stopColor="#E2E8F0" />
-          </linearGradient>
-
-          <linearGradient id={capBoardGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#3F3F46" />
-            <stop offset="100%" stopColor="#111827" />
-          </linearGradient>
-
-          <linearGradient id={beakGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#EF4444" />
-            <stop offset="100%" stopColor="#B91C1C" />
-          </linearGradient>
-
-          <filter id={softShadowId} x="-10%" y="-10%" width="120%" height="120%">
-            <feDropShadow
-              dx="0"
-              dy="8"
-              stdDeviation="5"
-              floodColor="#000000"
-              floodOpacity="0.15"
-            />
-          </filter>
-        </defs>
-
-        <style>{`
+const MASCOT_ANIMATION_CSS = `
           .floating-mascot {
             transform-box: fill-box;
             transform-origin: center bottom;
             animation: mascot-breath 4.2s infinite ease-in-out;
-            will-change: transform;
           }
 
           .floating-mascot.is-hopping {
@@ -341,7 +216,183 @@ export function Mascot({
               animation: none !important;
             }
           }
-        `}</style>
+`
+
+/**
+ * Campito mantiene los libros estáticos y anima solo al búho al hacer click.
+ */
+export function Mascot({
+  size = 150,
+  className = '',
+  alt = 'Mascota del Campus Virtual',
+}: MascotProps) {
+  const svgId = useId().replace(/:/g, '')
+  const [isHopping, setIsHopping] = useState(false)
+  const prefersReducedMotion = useSyncExternalStore(
+    subscribeToReducedMotion,
+    getReducedMotionSnapshot,
+    getReducedMotionServerSnapshot,
+  )
+  const [glowColor, setGlowColor] = useState('')
+  const [showGlow, setShowGlow] = useState(false)
+
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const glowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const bodyGradientId = `${svgId}-body-gradient`
+  const bellyGradientId = `${svgId}-belly-gradient`
+  const capBoardGradientId = `${svgId}-cap-board-gradient`
+  const beakGradientId = `${svgId}-beak-gradient`
+  const softShadowId = `${svgId}-soft-shadow`
+
+  useEffect(() => {
+    const initialColor = randomGlowColor()
+    const colorTimer = window.setTimeout(() => setGlowColor(initialColor), 0)
+
+    return () => {
+      window.clearTimeout(colorTimer)
+      clearMascotTimers(resetTimerRef, glowTimerRef)
+    }
+  }, [])
+
+
+  const triggerHop = () => {
+    // Vibrate device on mobile
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try {
+        navigator.vibrate(15)
+      } catch {
+        // Ignorar errores de vibración
+      }
+    }
+
+    // Set random glow color
+    const randomColor = randomGlowColor()
+    setGlowColor(randomColor)
+    setShowGlow(true)
+
+    if (glowTimerRef.current) {
+      clearTimeout(glowTimerRef.current)
+    }
+    glowTimerRef.current = setTimeout(() => {
+      setShowGlow(false)
+    }, 800)
+
+    if (prefersReducedMotion) {
+      return
+    }
+
+    if (resetTimerRef.current) {
+      clearTimeout(resetTimerRef.current)
+    }
+
+    setIsHopping(false)
+
+    requestAnimationFrame(() => {
+      setIsHopping(true)
+
+      resetTimerRef.current = setTimeout(() => {
+        setIsHopping(false)
+      }, 620)
+    })
+  }
+
+  const baseColor = glowColor || '#f97316'
+
+  return (
+    <button
+      type="button"
+      onClick={triggerHop}
+      className={`group relative flex cursor-pointer items-center justify-center select-none rounded-full bg-transparent p-0 ${className}`}
+      aria-label={alt}
+      title="Campito"
+    >
+      <div
+        className={cn(
+          'absolute pointer-events-none rounded-full z-0 transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]'
+        )}
+        style={{
+          background: `radial-gradient(circle, ${baseColor} 0%, ${baseColor}00 70%)`,
+          width: `${size * 0.9}px`,
+          height: `${size * 0.9}px`,
+          opacity: showGlow ? 0.595 : 0,
+          transform: showGlow ? 'scale(1.1)' : 'scale(0)',
+        }}
+      />
+      <MascotSvg
+        bellyGradientId={bellyGradientId}
+        beakGradientId={beakGradientId}
+        bodyGradientId={bodyGradientId}
+        capBoardGradientId={capBoardGradientId}
+        isHopping={isHopping}
+        size={size}
+        softShadowId={softShadowId}
+      />
+    </button>
+  )
+}
+
+
+function MascotSvg({
+  bellyGradientId,
+  beakGradientId,
+  bodyGradientId,
+  capBoardGradientId,
+  isHopping,
+  size,
+  softShadowId,
+}: {
+  bellyGradientId: string
+  beakGradientId: string
+  bodyGradientId: string
+  capBoardGradientId: string
+  isHopping: boolean
+  size: number
+  softShadowId: string
+}) {
+  return (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 400 400"
+        width={size}
+        height={size}
+        preserveAspectRatio="xMidYMid meet"
+        aria-hidden="true"
+        className="overflow-visible drop-shadow-[0_8px_16px_rgba(249,115,22,0.1)] relative z-10"
+      >
+        <defs>
+          <linearGradient id={bodyGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#1E5A8F" />
+            <stop offset="100%" stopColor="#002D5A" />
+          </linearGradient>
+
+          <linearGradient id={bellyGradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#F8FAFC" />
+            <stop offset="100%" stopColor="#E2E8F0" />
+          </linearGradient>
+
+          <linearGradient id={capBoardGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#3F3F46" />
+            <stop offset="100%" stopColor="#111827" />
+          </linearGradient>
+
+          <linearGradient id={beakGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#EF4444" />
+            <stop offset="100%" stopColor="#B91C1C" />
+          </linearGradient>
+
+          <filter id={softShadowId} x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow
+              dx="0"
+              dy="8"
+              stdDeviation="5"
+              floodColor="#000000"
+              floodOpacity="0.15"
+            />
+          </filter>
+        </defs>
+
+        <style>{MASCOT_ANIMATION_CSS}</style>
 
         <ellipse cx="200" cy="396" rx="135" ry="4" fill="#000000" opacity="0.25" />
 
@@ -470,7 +521,6 @@ export function Mascot({
           <path d="M 200 85 Q 265 92 280 120" fill="none" stroke="#EF4444" strokeWidth="3" strokeLinecap="round" />
           <path className="tassel-sway" d="M 280 120 L 275 145 C 275 150, 285 150, 285 145 Z" fill="#B91C1C" />
         </g>
-      </svg>
-    </button>
+    </svg>
   )
 }
