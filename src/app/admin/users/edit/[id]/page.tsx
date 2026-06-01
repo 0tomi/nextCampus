@@ -13,8 +13,7 @@ interface EditAdminUserPageProps {
 }
 
 export default async function EditAdminUserPage({ params }: EditAdminUserPageProps) {
-  await requireGeneralAdmin()
-  const { id } = await params
+  const [, { id }] = await Promise.all([requireGeneralAdmin(), params])
 
   const [years, user] = await Promise.all([
     prisma.academicYear.findMany({

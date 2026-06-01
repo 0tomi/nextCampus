@@ -23,8 +23,7 @@ function readParamList(value: string | string[] | undefined): string[] {
 }
 
 export default async function HistorialPage({ searchParams }: PageProps) {
-  const admin = await requireAuditViewer()
-  const resolved = await searchParams
+  const [admin, resolved] = await Promise.all([requireAuditViewer(), searchParams])
   const selectedUserIds = readParamList(resolved.userId)
   const selectedActions = readParamList(resolved.action)
   const scopeWhere = auditLogScopeWhere(admin)

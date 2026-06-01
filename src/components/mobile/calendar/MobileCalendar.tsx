@@ -29,6 +29,11 @@ function sameDay(a: Date, b: Date): boolean {
   )
 }
 
+// Orden por día y, dentro del día, por hora (los sin hora primero).
+function byFechaHora(a: MobileCalendarEvent, b: MobileCalendarEvent): number {
+  return a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? '')
+}
+
 export interface MobileCalendarEvent {
   id: string
   fecha: string
@@ -148,17 +153,13 @@ export function MobileCalendar({
 
   const today = new Date()
 
-  // Orden por día y, dentro del día, por hora (los sin hora primero).
-  const byFechaHora = (a: MobileCalendarEvent, b: MobileCalendarEvent) =>
-    a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? '')
-
   const selectedEvents = selected
     ? (events ?? [])
         .filter((e) => sameDay(eventDateToLocal(e.fecha), selected))
-        .sort(byFechaHora)
+        .toSorted(byFechaHora)
     : []
 
-  const monthEventsSorted = [...monthEvents].sort(byFechaHora)
+  const monthEventsSorted = monthEvents.toSorted(byFechaHora)
 
   const goPrev = () => {
     const d = new Date(cursor)

@@ -83,8 +83,9 @@ export function QuizRunner({
 
   const availableUnits = useMemo(() => {
     const unitsMap = new Map<string, number>()
+    const selectedSet = new Set(selectedBancos)
     for (const b of bancos) {
-      if (!selectedBancos.includes(b.id)) continue
+      if (!selectedSet.has(b.id)) continue
         b.unidades?.forEach((u) => {
           const current = unitsMap.get(u.nombre) || 0
           unitsMap.set(u.nombre, current + u.totalPreguntas)
@@ -1073,7 +1074,7 @@ function UnitBreakdown({ resultados }: { resultados: Resultado[] }) {
               </div>
               {flojo && (
                 <p className="mt-2 text-xs leading-5 text-rose-300/80">
-                  Estás flojo en {u.name} — te conviene repasar este tema.
+                  Estás flojo en {u.name}: te conviene repasar este tema.
                 </p>
               )}
             </div>

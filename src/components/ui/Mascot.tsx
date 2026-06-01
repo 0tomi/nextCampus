@@ -129,7 +129,7 @@ export function Mascot({
           height: `${size * 0.9}px`,
           opacity: showGlow ? 0.595 : 0,
           transform: showGlow ? 'scale(1.1)' : 'scale(0)',
-          willChange: 'transform, opacity',
+          willChange: showGlow ? 'transform, opacity' : 'auto',
         }}
       />
       <svg
