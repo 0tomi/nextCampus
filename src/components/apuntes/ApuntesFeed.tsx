@@ -128,6 +128,16 @@ export function ApuntesFeed({
     void loadPage({ reset: true })
   }, [loadPage, selectedIds])
 
+  // Recarga la lista cuando se crea, edita o elimina un apunte en cualquier
+  // parte de la pantalla, para que el cambio aparezca al instante sin recargar.
+  useEffect(() => {
+    const handleApuntesChanged = () => {
+      void loadPage({ reset: true })
+    }
+    window.addEventListener('apuntes-changed', handleApuntesChanged)
+    return () => window.removeEventListener('apuntes-changed', handleApuntesChanged)
+  }, [loadPage])
+
   useEffect(() => {
     if (!focusApunteSlug) return
     const handle = window.requestAnimationFrame(() => {
