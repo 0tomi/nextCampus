@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { Search, X } from 'lucide-react'
 import { renderAuditEntry, timeAgo } from '@/lib/audit-renderer'
 import type { AuditDetail } from '@/lib/audit-types'
@@ -39,6 +39,105 @@ interface HistorialResponse {
   nextCursor: string | null
 }
 
+interface HistorialState {
+  items: HistorialEntry[]
+  hasMore: boolean
+  nextCursor: string | null
+  selectedUsers: HistorialUserOption[]
+  selectedActions: string[]
+  userQuery: string
+  userOptions: HistorialUserOption[]
+  loading: boolean
+  searchingUsers: boolean
+  error: string
+  showDropdown: boolean
+}
+
+type HistorialAction =
+  | { type: 'page-requested' }
+  | { type: 'page-loaded'; page: HistorialResponse; reset: boolean }
+  | { type: 'page-failed'; message: string }
+  | { type: 'user-search-requested' }
+  | { type: 'user-search-loaded'; users: HistorialUserOption[] }
+  | { type: 'user-search-failed' }
+  | { type: 'set-user-query'; value: string }
+  | { type: 'set-dropdown-open'; open: boolean }
+  | { type: 'add-user'; user: HistorialUserOption }
+  | { type: 'remove-user'; userId: string }
+  | { type: 'toggle-action'; action: string }
+
+function historialReducer(state: HistorialState, action: HistorialAction): HistorialState {
+  switch (action.type) {
+    case 'page-requested':
+      return { ...state, loading: true, error: '' }
+    case 'page-loaded':
+      return {
+        ...state,
+        items: action.reset ? action.page.items : [...state.items, ...action.page.items],
+        hasMore: action.page.hasMore,
+        nextCursor: action.page.nextCursor,
+        loading: false,
+      }
+    case 'page-failed':
+      return { ...state, error: action.message, loading: false }
+    case 'user-search-requested':
+      return { ...state, searchingUsers: true }
+    case 'user-search-loaded':
+      return { ...state, userOptions: action.users, searchingUsers: false }
+    case 'user-search-failed':
+      return { ...state, userOptions: [], searchingUsers: false }
+    case 'set-user-query':
+      return { ...state, userQuery: action.value, showDropdown: true }
+    case 'set-dropdown-open':
+      return { ...state, showDropdown: action.open }
+    case 'add-user':
+      if (state.selectedUsers.some((selected) => selected.id === action.user.id)) return state
+      return {
+        ...state,
+        selectedUsers: [...state.selectedUsers, action.user],
+        showDropdown: false,
+        userQuery: '',
+      }
+    case 'remove-user':
+      return {
+        ...state,
+        selectedUsers: state.selectedUsers.filter((user) => user.id !== action.userId),
+      }
+    case 'toggle-action':
+      return {
+        ...state,
+        selectedActions: state.selectedActions.includes(action.action)
+          ? state.selectedActions.filter((value) => value !== action.action)
+          : [...state.selectedActions, action.action],
+      }
+  }
+}
+
+function createInitialHistorialState({
+  entries,
+  initialHasMore,
+  initialNextCursor,
+  initialSelectedActions,
+  initialSelectedUsers,
+}: Pick<
+  HistorialListProps,
+  'entries' | 'initialHasMore' | 'initialNextCursor' | 'initialSelectedActions' | 'initialSelectedUsers'
+>): HistorialState {
+  return {
+    items: entries,
+    hasMore: initialHasMore,
+    nextCursor: initialNextCursor,
+    selectedUsers: initialSelectedUsers,
+    selectedActions: initialSelectedActions,
+    userQuery: '',
+    userOptions: [],
+    loading: false,
+    searchingUsers: false,
+    error: '',
+    showDropdown: false,
+  }
+}
+
 const ABSOLUTE_FORMATTER = new Intl.DateTimeFormat('es-AR', {
   dateStyle: 'medium',
   timeStyle: 'short',
@@ -61,111 +160,107 @@ export function HistorialList({
   initialSelectedActions,
   actionOptions,
 }: HistorialListProps) {
-  const [items, setItems] = useState(entries)
-  const [hasMore, setHasMore] = useState(initialHasMore)
-  const [nextCursor, setNextCursor] = useState(initialNextCursor)
-  const [selectedUsers, setSelectedUsers] = useState(initialSelectedUsers)
-  const [selectedActions, setSelectedActions] = useState(initialSelectedActions)
-  const [userQuery, setUserQuery] = useState('')
-  const [userOptions, setUserOptions] = useState<HistorialUserOption[]>([])
-  const [loading, setLoading] = useState(false)
-  const [searchingUsers, setSearchingUsers] = useState(false)
-  const [error, setError] = useState('')
+  const [state, dispatch] = useReducer(
+    historialReducer,
+    {
+      entries,
+      initialHasMore,
+      initialNextCursor,
+      initialSelectedActions,
+      initialSelectedUsers,
+    },
+    createInitialHistorialState,
+  )
   const sentinelRef = useRef<HTMLDivElement | null>(null)
   const firstRunRef = useRef(true)
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const [showDropdown, setShowDropdown] = useState(false)
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setShowDropdown(false)
+        dispatch({ type: 'set-dropdown-open', open: false })
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const selectedUserIds = useMemo(() => selectedUsers.map((user) => user.id), [selectedUsers])
+  const selectedUserIds = useMemo(() => state.selectedUsers.map((user) => user.id), [state.selectedUsers])
 
   const loadPage = useCallback(async ({ reset, cursor }: { reset: boolean; cursor?: string | null }) => {
-    setLoading(true)
-    setError('')
+    dispatch({ type: 'page-requested' })
     try {
       const params = new URLSearchParams()
       selectedUserIds.forEach((id) => params.append('userId', id))
-      selectedActions.forEach((action) => params.append('action', action))
+      state.selectedActions.forEach((action) => params.append('action', action))
       if (cursor) params.set('cursor', cursor)
 
       const response = await fetch(`/api/admin/historial?${params.toString()}`)
       if (!response.ok) throw new Error('No se pudo cargar el historial.')
       const page = (await response.json()) as HistorialResponse
-      setItems((prev) => (reset ? page.items : [...prev, ...page.items]))
-      setHasMore(page.hasMore)
-      setNextCursor(page.nextCursor)
+      dispatch({ type: 'page-loaded', page, reset })
     } catch {
-      setError('No pudimos cargar más movimientos. Probá de nuevo en unos segundos.')
-    } finally {
-      setLoading(false)
+      dispatch({
+        type: 'page-failed',
+        message: 'No pudimos cargar más movimientos. Probá de nuevo en unos segundos.',
+      })
     }
-  }, [selectedActions, selectedUserIds])
+  }, [state.selectedActions, selectedUserIds])
 
   useEffect(() => {
     if (firstRunRef.current) {
       firstRunRef.current = false
       return
     }
-    updateUrl(selectedUsers, selectedActions)
+    updateUrl(state.selectedUsers, state.selectedActions)
     void loadPage({ reset: true })
-  }, [loadPage, selectedActions, selectedUsers])
+  }, [loadPage, state.selectedActions, state.selectedUsers])
 
   useEffect(() => {
     const handle = window.setTimeout(async () => {
-      setSearchingUsers(true)
+      dispatch({ type: 'user-search-requested' })
       try {
         const params = new URLSearchParams()
-        if (userQuery.trim()) params.set('q', userQuery.trim())
+        if (state.userQuery.trim()) params.set('q', state.userQuery.trim())
         const response = await fetch(`/api/admin/historial/users?${params.toString()}`)
         if (!response.ok) throw new Error('No se pudieron buscar usuarios.')
         const data = (await response.json()) as { users: HistorialUserOption[] }
-        setUserOptions(data.users.filter((user) => !selectedUserIds.includes(user.id)))
+        dispatch({
+          type: 'user-search-loaded',
+          users: data.users.filter((user) => !selectedUserIds.includes(user.id)),
+        })
       } catch {
-        setUserOptions([])
-      } finally {
-        setSearchingUsers(false)
+        dispatch({ type: 'user-search-failed' })
       }
     }, 250)
 
     return () => window.clearTimeout(handle)
-  }, [selectedUserIds, userQuery])
+  }, [selectedUserIds, state.userQuery])
 
   useEffect(() => {
     const sentinel = sentinelRef.current
-    if (!sentinel || !hasMore || loading) return
+    if (!sentinel || !state.hasMore || state.loading) return
 
     const observer = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) {
-        void loadPage({ reset: false, cursor: nextCursor })
+        void loadPage({ reset: false, cursor: state.nextCursor })
       }
     }, { rootMargin: '360px 0px' })
 
     observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [hasMore, loadPage, loading, nextCursor])
+  }, [state.hasMore, loadPage, state.loading, state.nextCursor])
 
   const toggleAction = (action: string) => {
-    setSelectedActions((prev) =>
-      prev.includes(action) ? prev.filter((value) => value !== action) : [...prev, action],
-    )
+    dispatch({ type: 'toggle-action', action })
   }
 
   const removeUser = (userId: string) => {
-    setSelectedUsers((prev) => prev.filter((user) => user.id !== userId))
+    dispatch({ type: 'remove-user', userId })
   }
 
   const addUser = (user: HistorialUserOption) => {
-    setSelectedUsers((prev) => prev.some((selected) => selected.id === user.id) ? prev : [...prev, user])
-    setUserQuery('')
+    dispatch({ type: 'add-user', user })
   }
 
   return (
@@ -181,9 +276,9 @@ export function HistorialList({
             </p>
           </div>
           <p className="text-xs font-semibold text-white/30">
-            {selectedUsers.length + selectedActions.length === 0
+            {state.selectedUsers.length + state.selectedActions.length === 0
               ? 'Mostrando todo'
-              : `${selectedUsers.length + selectedActions.length} filtro${selectedUsers.length + selectedActions.length === 1 ? '' : 's'} activo${selectedUsers.length + selectedActions.length === 1 ? '' : 's'}`}
+              : `${state.selectedUsers.length + state.selectedActions.length} filtro${state.selectedUsers.length + state.selectedActions.length === 1 ? '' : 's'} activo${state.selectedUsers.length + state.selectedActions.length === 1 ? '' : 's'}`}
           </p>
         </div>
 
@@ -199,33 +294,30 @@ export function HistorialList({
                 <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-white/35" />
                 <input
                   id="historial-user-search"
-                  value={userQuery}
-                  onFocus={() => setShowDropdown(true)}
-                  onChange={(event) => {
-                    setUserQuery(event.target.value)
-                    setShowDropdown(true)
-                  }}
+                  value={state.userQuery}
+                  onFocus={() => dispatch({ type: 'set-dropdown-open', open: true })}
+                  onChange={(event) => dispatch({ type: 'set-user-query', value: event.target.value })}
                   placeholder="Buscar por correo"
                   className="h-10 w-full rounded-lg border border-white/10 bg-surface-3 py-2 pl-10 pr-3 text-sm text-white outline-none transition-all placeholder:text-white/30 focus:border-primary/45 focus:ring-1 focus:ring-primary/20"
                 />
               </div>
 
               {/* Floating suggestions dropdown */}
-              {showDropdown && (
+              {state.showDropdown && (
                 <div className="absolute left-0 right-0 z-20 mt-1.5 max-h-60 overflow-y-auto rounded-lg border border-white/8 bg-surface-2 p-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-md animate-in">
-                  {searchingUsers && (
+                  {state.searchingUsers && (
                     <p className="px-3 py-2 text-xs text-white/40">Buscando…</p>
                   )}
-                  {!searchingUsers && userOptions.length === 0 && (
+                  {!state.searchingUsers && state.userOptions.length === 0 && (
                     <p className="px-3 py-2 text-xs text-white/30">No hay correos para mostrar.</p>
                   )}
-                  {!searchingUsers && userOptions.map((user) => (
+                  {!state.searchingUsers && state.userOptions.map((user) => (
                     <button
                       key={user.id}
                       type="button"
                       onClick={() => {
                         addUser(user)
-                        setShowDropdown(false)
+                        dispatch({ type: 'set-dropdown-open', open: false })
                       }}
                       className="block w-full cursor-pointer rounded-md px-3 py-2 text-left text-xs font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white"
                     >
@@ -237,9 +329,9 @@ export function HistorialList({
             </div>
 
             {/* Selected User Pills */}
-            {selectedUsers.length > 0 && (
+            {state.selectedUsers.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5 animate-in">
-                {selectedUsers.map((user) => (
+                {state.selectedUsers.map((user) => (
                   <button
                     key={user.id}
                     type="button"
@@ -261,7 +353,7 @@ export function HistorialList({
             </span>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {actionOptions.map((option) => {
-                const active = selectedActions.includes(option.value)
+                const active = state.selectedActions.includes(option.value)
                 return (
                   <button
                     key={option.value}
@@ -283,23 +375,23 @@ export function HistorialList({
         </div>
       </section>
 
-      {items.length === 0 && !loading ? (
+      {state.items.length === 0 && !state.loading ? (
         <div className="rounded-lg border border-dashed border-white/10 bg-surface-1 px-6 py-16 text-center">
           <p className="text-sm font-semibold text-white/70">No hay movimientos con esos filtros.</p>
           <p className="mt-2 text-xs text-white/45">Probá sacar algún filtro para ampliar la búsqueda.</p>
         </div>
       ) : (
         <ul className="space-y-3">
-          {items.map((entry) => (
+          {state.items.map((entry) => (
             <HistorialRow key={entry.id} entry={entry} />
           ))}
         </ul>
       )}
 
       <div ref={sentinelRef} className="h-1" />
-      {loading ? <p className="py-3 text-center text-xs font-semibold text-white/45">Cargando más movimientos…</p> : null}
-      {error ? <p className="py-3 text-center text-xs font-semibold text-rose-300">{error}</p> : null}
-      {!hasMore && items.length > 0 ? (
+      {state.loading ? <p className="py-3 text-center text-xs font-semibold text-white/45">Cargando más movimientos…</p> : null}
+      {state.error ? <p className="py-3 text-center text-xs font-semibold text-rose-300">{state.error}</p> : null}
+      {!state.hasMore && state.items.length > 0 ? (
         <p className="py-3 text-center text-xs font-semibold text-white/35">Ya viste todos los movimientos disponibles.</p>
       ) : null}
     </div>
