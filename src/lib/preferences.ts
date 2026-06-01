@@ -34,6 +34,19 @@ function isValidPreferences(value: unknown): value is Record<string, unknown> {
   )
 }
 
+const SLUG_MIGRATION_MAP: Record<string, string> = {
+  'anio-1': 'primero',
+  'anio-2': 'segundo',
+  'anio-3': 'tercero',
+  'anio-4': 'cuarto',
+  'anio-5': 'quinto',
+  'anio-6': 'sexto',
+  'anio-7': 'septimo',
+  'anio-8': 'octavo',
+  'anio-9': 'noveno',
+  'anio-10': 'decimo',
+}
+
 function parsePreferences(raw: string | null): UserPreferences | null {
   if (raw === null) return null
 
@@ -42,7 +55,9 @@ function parsePreferences(raw: string | null): UserPreferences | null {
     if (!isValidPreferences(parsed)) return null
 
     return {
-      hiddenYears: parsed.hiddenYears as string[],
+      hiddenYears: (parsed.hiddenYears as string[]).map(
+        (slug) => SLUG_MIGRATION_MAP[slug] || slug
+      ),
       hiddenSubjects: parsed.hiddenSubjects as string[],
       hiddenCommissions: Array.isArray(parsed.hiddenCommissions)
         ? (parsed.hiddenCommissions as unknown[]).filter((v): v is string => typeof v === 'string')
