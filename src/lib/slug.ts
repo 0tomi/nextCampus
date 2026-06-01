@@ -77,10 +77,32 @@ export function uniqueSlug(base: string, taken: ReadonlySet<string>): string {
 }
 
 /**
+ * Slugs ordinales para años académicos.
+ * El array es 0-indexed internamente; `yearSlugFromNumber(1)` devuelve `'primero'`.
+ *
+ * ⚠️  CUIDADO: estos valores son parte de las URLs públicas, de los paths en
+ *    Supabase Storage (quizzes/, apuntes/) y del historial de auditoría.
+ *    Cambiarlos requiere una migración de datos en DB + Storage y rompe
+ *    cualquier link compartido. AVISÁ al equipo antes de tocar esto.
+ */
+const ORDINAL_YEAR_SLUGS = [
+  'primero',
+  'segundo',
+  'tercero',
+  'cuarto',
+  'quinto',
+  'sexto',
+  'septimo',
+  'octavo',
+  'noveno',
+  'decimo',
+] as const
+
+/**
  * Devuelve el slug canónico de un año académico a partir de su número.
  * Single source of truth: si la fórmula del slug cambia, este es el único lugar
  * que hay que tocar (seed, mapa y demás consumidores la importan).
  */
 export function yearSlugFromNumber(n: number): string {
-  return `anio-${n}`
+  return ORDINAL_YEAR_SLUGS[n - 1] ?? `anio-${n}`
 }

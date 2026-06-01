@@ -17,7 +17,7 @@ import {
   requireYearAdminForYearId,
 } from '@/lib/auth'
 import { sanitizeRichHtml } from '@/lib/sanitize'
-import { ensureUniqueSlug, slugify, uniqueSlug } from '@/lib/slug'
+import { ensureUniqueSlug, slugify, uniqueSlug, yearSlugFromNumber } from '@/lib/slug'
 import {
   uploadQuizBank,
   uploadApunteHtml,
@@ -1259,7 +1259,7 @@ export async function createYearAction(
     return { ok: false, message: 'No existe una carrera configurada.' }
   }
 
-  const base = slugify(nombre)
+  const base = yearSlugFromNumber(orden)
   if (isReservedYearSlug(base)) {
     return {
       ok: false,
@@ -1343,7 +1343,7 @@ export async function updateYearAction(
 
   const oldSlug = year.slug
 
-  const base = slugify(nombre)
+  const base = yearSlugFromNumber(orden)
   if (isReservedYearSlug(base)) {
     return {
       ok: false,
