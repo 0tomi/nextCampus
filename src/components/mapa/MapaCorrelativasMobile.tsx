@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell';
 import { Modal } from '@/components/ui/Modal';
+import { AlertDialog } from '@/components/ui/AlertDialog';
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
 import { calculateSubjectStatuses } from '@/lib/domain/mapa/unlockLogic';
 import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
@@ -106,6 +107,7 @@ export function MapaCorrelativasMobile({
   const [yearFilter, setYearFilter] = useState<YearFilter>('ALL');
   const [mode, setMode] = useState<MobileMapaMode>(initialMode);
   const [detailSubjectSlug, setDetailSubjectSlug] = useState<string | null>(null);
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const isHydrated = useSyncExternalStore(
     () => () => undefined,
     () => true,
@@ -157,11 +159,10 @@ export function MapaCorrelativasMobile({
     setDetailSubjectSlug(subject.slug);
   };
 
-  const handleReset = () => {
-    if (window.confirm('¿Querés reiniciar el avance marcado?')) {
-      saveProgress([]);
-      setSelectedSubjectSlug(subjectsData[0]?.slug ?? '');
-    }
+  const handleConfirmReset = () => {
+    setConfirmResetOpen(false);
+    saveProgress([]);
+    setSelectedSubjectSlug(subjectsData[0]?.slug ?? '');
   };
 
   const suggestedYearToComplete = useMemo(() => {
@@ -639,7 +640,7 @@ export function MapaCorrelativasMobile({
 
                 <button
                   type="button"
-                  onClick={handleReset}
+                  onClick={() => setConfirmResetOpen(true)}
                   disabled={completed.length === 0}
                   className="flex min-h-12 cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 text-left transition hover:bg-white/8 disabled:cursor-not-allowed disabled:opacity-40"
                 >
@@ -667,6 +668,16 @@ export function MapaCorrelativasMobile({
         canOpen={detailSubject ? availableSlugs.size === 0 || availableSlugs.has(detailSubject.slug) : false}
         onClose={() => setDetailSubjectSlug(null)}
         onToggle={handleToggleSubject}
+      />
+
+      <AlertDialog
+        open={confirmResetOpen}
+        onClose={() => setConfirmResetOpen(false)}
+        onConfirm={handleConfirmReset}
+        title="Reiniciar el progreso del mapa"
+        description="Se va a borrar todo el avance que marcaste en el mapa de correlativas. Esta acción no se puede deshacer."
+        confirmText="Reiniciar"
+        variant="destructive"
       />
     </MobileShell>
   );

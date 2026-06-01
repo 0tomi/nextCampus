@@ -3,10 +3,12 @@
 import { useState, useTransition, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { CalendarDays, Clock, ExternalLink, Pencil, Trash2 } from 'lucide-react'
 import { EventModal } from '@/components/admin/EventModal'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { Sheet } from '@/components/ui/Sheet'
+import { AlertDialog } from '@/components/ui/AlertDialog'
 import { deleteEvento } from '@/app/admin/actions'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { getEventTone } from '@/components/mobile/shared/tokens'
@@ -56,6 +58,7 @@ export function MobileEventDetailSheet({
 }: MobileEventDetailSheetProps) {
   const router = useRouter()
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [isDeleting, startDeleteTransition] = useTransition()
 
   const effectiveYearId = event?.yearId ?? yearId
@@ -72,17 +75,21 @@ export function MobileEventDetailSheet({
       })
     : null
 
-  const handleDelete = () => {
+  const handleConfirmDelete = () => {
     if (!event?.id) return
-    const confirmed = window.confirm('¿Eliminar este evento?')
-    if (!confirmed) return
-
+    setConfirmDeleteOpen(false)
     startDeleteTransition(async () => {
-      const formData = new FormData()
-      formData.append('id', event.id)
-      await deleteEvento(formData)
-      onClose()
-      router.refresh()
+      try {
+        const formData = new FormData()
+        formData.append('id', event.id)
+        await deleteEvento(formData)
+        onClose()
+        router.refresh()
+        toast.success('Evento eliminado')
+      } catch (err) {
+        console.error(err)
+        toast.error('No pudimos eliminar el evento. Probá de nuevo.')
+      }
     })
   }
 
@@ -174,7 +181,7 @@ export function MobileEventDetailSheet({
                   <button
                     type="button"
                     disabled={isDeleting}
-                    onClick={handleDelete}
+                    onClick={() => setConfirmDeleteOpen(true)}
                     className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/10 text-sm font-bold text-rose-300 transition-colors hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -186,6 +193,16 @@ export function MobileEventDetailSheet({
           </div>
         ) : null}
       </Sheet>
+
+      <AlertDialog
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar evento"
+        description="Esta acción no se puede deshacer. El evento se va a quitar del calendario para siempre."
+        confirmText="Eliminar"
+        variant="destructive"
+      />
 
       {event && canShowAdminActions ? (
         <EventModal

@@ -23,6 +23,7 @@ import { readMapaProgress, writeMapaProgress } from '@/lib/mapaProgress';
 import { cn } from '@/lib/utils';
 import { yearSlugFromNumber } from '@/lib/slug';
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes';
+import { AlertDialog } from '@/components/ui/AlertDialog';
 
 type StatusFilter = 'ALL' | SubjectStatus;
 
@@ -70,6 +71,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [selectedSubjectSlug, setSelectedSubjectSlug] = useState(subjectsData[0]?.slug ?? '');
   const [isHydrated, setIsHydrated] = useState(false);
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -112,11 +114,10 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
     saveProgress(Array.from(new Set([...completed, subject.slug])));
   };
 
-  const handleReset = () => {
-    if (window.confirm('¿Reiniciar el progreso del mapa?')) {
-      saveProgress([]);
-      setSelectedSubjectSlug(subjectsData[0]?.slug ?? '');
-    }
+  const handleConfirmReset = () => {
+    setConfirmResetOpen(false);
+    saveProgress([]);
+    setSelectedSubjectSlug(subjectsData[0]?.slug ?? '');
   };
 
   const handleAutocompleteYear = (year: number) => {
@@ -422,7 +423,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
                 ) : null}
                 <button
                   type="button"
-                  onClick={handleReset}
+                  onClick={() => setConfirmResetOpen(true)}
                   disabled={completed.length === 0}
                   className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-red-300/20 bg-red-400/8 px-3 py-2 text-xs font-bold text-red-100 transition hover:bg-red-400/14 disabled:cursor-not-allowed disabled:opacity-35"
                 >
@@ -622,6 +623,15 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
         })}
       </section>
 
+      <AlertDialog
+        open={confirmResetOpen}
+        onClose={() => setConfirmResetOpen(false)}
+        onConfirm={handleConfirmReset}
+        title="Reiniciar el progreso del mapa"
+        description="Se va a borrar todo el avance que marcaste en el mapa de correlativas. Esta acción no se puede deshacer."
+        confirmText="Reiniciar"
+        variant="destructive"
+      />
     </div>
   );
 }
