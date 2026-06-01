@@ -28,6 +28,7 @@ export async function GET(request: Request) {
       nombre: b.nombre,
       totalPreguntas: b.totalPreguntas,
       subidoEl: b.subidoEl,
+      subidoPorId: b.subidoPorId ?? null,
     })),
   })
 }

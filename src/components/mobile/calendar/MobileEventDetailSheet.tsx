@@ -169,7 +169,7 @@ export function MobileEventDetailSheet({
             )}
 
             {canShowAdminActions ? (
-              <AdminControls yearId={effectiveYearId} noWrapper>
+              <AdminControls yearId={effectiveYearId} ownerUserId={event.createdByUserId} noWrapper>
                 <div className="grid grid-cols-2 gap-2 border-t border-white/6 pt-5">
                   <button
                     type="button"

@@ -83,7 +83,7 @@ function QuestionBankCard({
       </div>
 
       <div className="relative flex items-center gap-2 z-10">
-        <AdminControls yearId={yearId} noWrapper>
+        <AdminControls yearId={yearId} ownerUserId={banco.subidoPorId} noWrapper>
           <form action={deleteQuizBankAction} className="flex">
             <input type="hidden" name="subjectSlug" value={subjectSlug} />
             <input type="hidden" name="bankId" value={banco.id} />

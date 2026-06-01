@@ -44,6 +44,7 @@ interface YearCalendarEvent {
   commissionId?: string | null
   commissionSlug?: string | null
   commissionNombre?: string | null
+  createdByUserId?: string | null
   apuntes?: RelatedApunteLink[]
 }
 
@@ -181,6 +182,7 @@ export function YearCalendarView({
                 commissionId: event.commissionId ?? null,
                 commissionSlug: event.commissionSlug ?? null,
                 commissionNombre: event.commissionNombre ?? null,
+                createdByUserId: event.createdByUserId ?? null,
                 apuntes: event.apuntes,
               }))}
               accent={tone}

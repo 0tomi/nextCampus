@@ -353,6 +353,7 @@ export function SubjectRoutePage({
             commissionId: evento.commissionId,
             commissionSlug: evento.commission?.slug ?? null,
             commissionNombre: evento.commission?.nombre ?? null,
+            createdByUserId: evento.createdByUserId,
           }))}
           activeCommissionName={activeCommission?.nombre}
           tiposEvento={tiposEvento}

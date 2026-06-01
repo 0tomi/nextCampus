@@ -56,6 +56,7 @@ export default async function QuizPage({
       nombre: b.nombre,
       totalPreguntas: b.totalPreguntas,
       unidades,
+      subidoPorId: b.subidoPorId ?? null,
     }
   })
 

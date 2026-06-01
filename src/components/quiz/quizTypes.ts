@@ -11,6 +11,8 @@ export interface BancoInfo {
   nombre: string
   totalPreguntas: number
   unidades?: UnidadInfo[]
+  /** Autor del banco, para gatear el borrado por propiedad. */
+  subidoPorId?: string | null
 }
 
 export interface PublicQuestion {
