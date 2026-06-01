@@ -200,32 +200,38 @@ export function SubjectEventsSection({
             </DarkCard>
           ) : (
             visibleEvents.map((evento) => (
-              <button
+              <DarkCard
                 key={evento.id}
-                type="button"
-                onClick={() => {
-                  setSelectedEvent({
-                    id: evento.id,
-                    titulo: evento.titulo,
-                    fecha: evento.fecha,
-                    hora: evento.hora,
-                    tipo: evento.tipoEvento.nombre,
-                    tipoId: evento.tipoEventoId,
-                    materiaNombre: subject.nombre,
-                    descripcionHtml: evento.descripcionHtml,
-                    tituloOriginal: evento.titulo,
-                    subjectSlug: subject.slug,
-                    subjectId: subject.id,
-                    commissionId: evento.commissionId,
-                    commissionSlug: evento.commissionSlug,
-                    commissionNombre: evento.commissionNombre,
-                    apuntes: evento.apuntes,
-                  })
-                  setSheetOpen(true)
-                }}
-                className="w-full text-left cursor-pointer group focus:outline-none block"
+                className="group relative p-5 transition-colors hover:border-white/14 focus-within:border-white/20"
               >
-                <DarkCard className="p-5 transition-colors group-hover:border-white/14 group-focus-visible:border-white/20">
+                {/* Área clickeable que cubre toda la tarjeta. Va por detrás del
+                    contenido para no envolver botones ni enlaces (HTML inválido). */}
+                <button
+                  type="button"
+                  aria-label={`Ver detalles de ${evento.titulo}`}
+                  onClick={() => {
+                    setSelectedEvent({
+                      id: evento.id,
+                      titulo: evento.titulo,
+                      fecha: evento.fecha,
+                      hora: evento.hora,
+                      tipo: evento.tipoEvento.nombre,
+                      tipoId: evento.tipoEventoId,
+                      materiaNombre: subject.nombre,
+                      descripcionHtml: evento.descripcionHtml,
+                      tituloOriginal: evento.titulo,
+                      subjectSlug: subject.slug,
+                      subjectId: subject.id,
+                      commissionId: evento.commissionId,
+                      commissionSlug: evento.commissionSlug,
+                      commissionNombre: evento.commissionNombre,
+                      apuntes: evento.apuntes,
+                    })
+                    setSheetOpen(true)
+                  }}
+                  className="absolute inset-0 z-0 cursor-pointer rounded-[inherit] focus:outline-none"
+                />
+                <div className="pointer-events-none relative z-10">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
@@ -243,7 +249,7 @@ export function SubjectEventsSection({
                       <h3 className="mt-2 text-lg font-black tracking-tight text-white transition-colors group-hover:text-red-400">
                         {evento.titulo}
                       </h3>
-                      <RelatedApunteLinks apuntes={evento.apuntes} className="mt-2" />
+                      <RelatedApunteLinks apuntes={evento.apuntes} className="pointer-events-auto mt-2" />
                     </div>
                     <div className="flex items-center gap-2">
                       <span
@@ -251,7 +257,7 @@ export function SubjectEventsSection({
                       >
                         {formatEventDateTime(evento.fecha, evento.hora)}
                       </span>
-                      <div onClick={(e) => e.stopPropagation()}>
+                      <div className="pointer-events-auto">
                         <DeleteEventoButton
                           eventoId={evento.id}
                           subjectSlug={subject.slug}
@@ -263,14 +269,14 @@ export function SubjectEventsSection({
 
                   {evento.descripcionHtml ? (
                     <div
-                      className="mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white text-left"
+                      className="pointer-events-auto mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
                       dangerouslySetInnerHTML={{
                         __html: sanitizeRichHtml(evento.descripcionHtml ?? ''),
                       }}
                     />
                   ) : null}
-                </DarkCard>
-              </button>
+                </div>
+              </DarkCard>
             ))
           )}
         </div>

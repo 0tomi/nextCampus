@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { AdminControls } from './AdminControls'
 import { SubjectModal } from './SubjectModal'
@@ -201,7 +201,6 @@ export function SubjectPageAdminOverlay({
         open={newApunteOpen}
         onClose={() => setNewApunteOpen(false)}
         subjectId={subject.id}
-        subjectSlug={subject.slug}
         categoriasDisponibles={subject.categoriasDisponibles}
       />
 
@@ -212,7 +211,6 @@ export function SubjectPageAdminOverlay({
           open={true}
           onClose={() => setEditingApunte(null)}
           subjectId={subject.id}
-          subjectSlug={subject.slug}
           apunte={editingApunte}
           categoriasDisponibles={subject.categoriasDisponibles}
         />
@@ -277,19 +275,28 @@ export function DeleteApunteButton({
   yearId,
   yearSlug,
 }: DeleteApunteButtonProps) {
+  const [pending, startTransition] = useTransition()
+
   return (
     <AdminControls yearId={yearId} yearSlug={yearSlug}>
-      <form action={deleteApunteAction}>
-        <input type="hidden" name="id" value={apunteId} />
-        <input type="hidden" name="subjectSlug" value={subjectSlug} />
-        <button
-          type="submit"
-          title="Eliminar apunte"
-          className="inline-flex h-7 w-7 items-center justify-center rounded text-rose-400/60 transition-colors hover:bg-rose-500/10 hover:text-rose-300 cursor-pointer"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
-      </form>
+      <button
+        type="button"
+        title="Eliminar apunte"
+        disabled={pending}
+        onClick={() => {
+          startTransition(async () => {
+            const formData = new FormData()
+            formData.append('id', apunteId)
+            formData.append('subjectSlug', subjectSlug)
+            await deleteApunteAction(formData)
+            // Avisa al feed para que el apunte desaparezca al instante.
+            window.dispatchEvent(new CustomEvent('apuntes-changed'))
+          })
+        }}
+        className="inline-flex h-7 w-7 items-center justify-center rounded text-rose-400/60 transition-colors hover:bg-rose-500/10 hover:text-rose-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
     </AdminControls>
   )
 }

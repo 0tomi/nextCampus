@@ -507,7 +507,6 @@ function EventModalContent({
           open={newApunteOpen}
           onClose={() => setNewApunteOpen(false)}
           subjectId={activeSubjectId}
-          subjectSlug={activeSubjectSlug}
           categoriasDisponibles={activeCategorias}
           onCreated={(apunte) => {
             setSelectedApuntes((prev) =>

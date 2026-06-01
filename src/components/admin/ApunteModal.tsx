@@ -57,7 +57,6 @@ interface ApunteModalProps {
   open: boolean
   onClose: () => void
   subjectId: string
-  subjectSlug: string
   apunte?: ApunteFull
   categoriasDisponibles: Array<{ id: string; nombre: string }>
   onSuccess?: () => void
@@ -151,7 +150,6 @@ export function ApunteModal({
   open,
   onClose,
   subjectId,
-  subjectSlug,
   apunte,
   categoriasDisponibles,
   onSuccess,
@@ -188,6 +186,8 @@ export function ApunteModal({
   useEffect(() => {
     if (state.ok) {
       if (state.apunte) onCreated?.(state.apunte)
+      // Avisa al feed de apuntes para que se actualice al instante.
+      window.dispatchEvent(new CustomEvent('apuntes-changed'))
       onSuccess?.()
       onClose()
     }
