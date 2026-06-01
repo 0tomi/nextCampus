@@ -30,6 +30,9 @@ model AcademicYear {
   slug             String               @unique
   nombre           String
   descripcion      String               @default("")
+  driveUrl         String?
+  playlistUrl      String?
+  playlistEnabled  Boolean              @default(false)
   orden            Int
   subjects         Subject[]
   adminPermissions UserYearPermission[]
@@ -271,11 +274,15 @@ model AuditLog {
   action     String
   entityType String?
   entityId   String?
+  yearId     String?
+  yearSlug   String?
   detail     Json
   createdAt  DateTime    @default(now())
 
   @@index([userId])
   @@index([action])
+  @@index([yearId, createdAt, id])
+  @@index([yearSlug])
   @@index([createdAt])
   @@index([createdAt, id])
   @@index([userId, createdAt, id])

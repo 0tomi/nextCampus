@@ -126,6 +126,63 @@ body {
   }
 }
 
+/* Sheet de detalles: el fondo aparece con fade y el panel entra deslizándose
+   (desde abajo en mobile, desde la derecha en escritorio). */
+.sheet-overlay {
+  animation: sheetOverlayIn 0.25s ease-out;
+}
+
+.sheet-panel {
+  animation: sheetPanelUp 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 640px) {
+  .sheet-panel {
+    animation-name: sheetPanelRight;
+  }
+}
+
+@keyframes sheetOverlayIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheetPanelUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheetPanelRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-overlay,
+  .sheet-panel {
+    animation: none;
+  }
+}
+
 .stagger-children > * {
   animation: slideUp 0.4s ease-out backwards;
 }

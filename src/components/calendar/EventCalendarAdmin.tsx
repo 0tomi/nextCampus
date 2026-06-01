@@ -9,6 +9,7 @@ import { EventCalendar, type EventCalendarEvent } from './EventCalendar'
 import { EventModal } from '@/components/admin/EventModal'
 import { useAdminAccess } from '@/components/admin/adminAccess'
 import { Sheet } from '@/components/ui/Sheet'
+import { AlertDialog } from '@/components/ui/AlertDialog'
 import { updateEventoFechaAction, deleteEvento } from '@/app/admin/actions'
 import { cn, formatEventDateTime } from '@/lib/utils'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
@@ -89,6 +90,7 @@ export function EventCalendarAdmin({
   const [isDeleting, startTransition] = useTransition()
   const [eventModalOpen, setEventModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [initialDate, setInitialDate] = useState<string | undefined>()
 
   const [localSelectedEvent, setLocalSelectedEvent] = useState<EventCalendarEvent | null>(null)
@@ -127,24 +129,23 @@ export function EventCalendarAdmin({
     setActiveSheetOpen(true)
   }, [setActiveSelectedEvent, setActiveSheetOpen])
 
-  const handleDelete = useCallback(() => {
+  const handleConfirmDelete = useCallback(() => {
     if (!activeSelectedEvent?.id) return
-    if (window.confirm('¿Estás seguro de que querés eliminar este evento?')) {
-      startTransition(async () => {
-        try {
-          const formData = new FormData()
-          formData.append('id', activeSelectedEvent.id!)
-          await deleteEvento(formData)
-          setActiveSheetOpen(false)
-          setActiveSelectedEvent(null)
-          router.refresh()
-          toast.success('Evento eliminado')
-        } catch (err) {
-          console.error(err)
-          toast.error('No pudimos eliminar el evento. Probá de nuevo.')
-        }
-      })
-    }
+    setConfirmDeleteOpen(false)
+    startTransition(async () => {
+      try {
+        const formData = new FormData()
+        formData.append('id', activeSelectedEvent.id!)
+        await deleteEvento(formData)
+        setActiveSheetOpen(false)
+        setActiveSelectedEvent(null)
+        router.refresh()
+        toast.success('Evento eliminado')
+      } catch (err) {
+        console.error(err)
+        toast.error('No pudimos eliminar el evento. Probá de nuevo.')
+      }
+    })
   }, [activeSelectedEvent, router, setActiveSheetOpen, setActiveSelectedEvent])
 
   const subjectHref = activeSelectedEvent?.subjectSlug && yearSlug
@@ -296,7 +297,7 @@ export function EventCalendarAdmin({
                 <button
                   type="button"
                   disabled={isDeleting}
-                  onClick={handleDelete}
+                  onClick={() => setConfirmDeleteOpen(true)}
                   className="inline-flex items-center gap-2 rounded border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-400 shadow-lg transition-colors hover:bg-rose-500/20 hover:text-rose-300 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -307,6 +308,16 @@ export function EventCalendarAdmin({
           </div>
         )}
       </Sheet>
+
+      <AlertDialog
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar evento"
+        description="Esta acción no se puede deshacer. El evento se va a quitar del calendario para siempre."
+        confirmText="Eliminar"
+        variant="destructive"
+      />
 
       {canEdit && (
         <EventModal

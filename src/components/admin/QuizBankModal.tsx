@@ -25,6 +25,8 @@ Tipos de pregunta que podés usar (solo estos tres):
 
 Para preguntas sobre código o salida de comandos, usá "single" o "multiple" e incluí el fragmento dentro del texto del enunciado (se muestra como texto plano, sin imágenes). Mantené esos fragmentos cortos.
 
+Para evaluar si el estudiante sabe relacionar conceptos (término con su definición, comando con su acción, categoría con su ejemplo), NO uses tablas ni columnas: reformulá como "single" o "multiple". Por ejemplo: "¿Cuál de los siguientes pares concepto–definición es correcto?" con un par correcto y varios cruzados como distractores, o un "multiple" donde se marquen todos los emparejamientos válidos.
+
 Principios que no se negocian:
 - Una sola respuesta inequívoca (o exactamente el conjunto que pedís en "multiple"). Si dudás entre dos opciones como correctas, la pregunta está mal redactada.
 - Usá los términos exactos del material. Si dice "exclusión mutua", no escribas "acceso excluyente".
@@ -68,7 +70,7 @@ El formato del JSON que debés devolver tiene que seguir EXACTAMENTE esta estruc
         },
         {
           "type": "multiple",
-          "question": "¿Cuáles de los siguientes son características del concepto Y? (puede haber más de una correcta)",
+          "question": "¿Cuáles de los siguientes son características del concepto Y? (Seleccioná 2 opciones)",
           "options": ["Característica A", "Característica B", "Característica C", "Característica D"],
           "answer": [0, 2],
           "explanation": "A y C son correctas porque... B y D son incorrectas porque..."

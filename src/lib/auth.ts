@@ -23,6 +23,7 @@ export type UserStatus = (typeof USER_STATUSES)[keyof typeof USER_STATUSES]
 export interface AdminCapabilities {
   canManageAllYears: boolean
   canCreateUsers: boolean
+  canViewAuditHistory: boolean
   canManageAcademicStructure: boolean
   canManageAnyContribution: boolean
   canCreateContributions: boolean
@@ -102,6 +103,7 @@ export function buildAdminCapabilities(role: UserRole): AdminCapabilities {
   return {
     canManageAllYears: isAdmin,
     canCreateUsers: isAdmin,
+    canViewAuditHistory: isAdmin || isSupervisor,
     canManageAcademicStructure: isAdmin || isSupervisor,
     canManageAnyContribution: isAdmin || isSupervisor,
     canCreateContributions: true,
@@ -265,6 +267,14 @@ export async function requireAcademicManager(): Promise<AdminUser> {
   return admin
 }
 
+export async function requireAuditViewer(): Promise<AdminUser> {
+  const admin = await requireAnyAdmin()
+  if (!admin.canViewAuditHistory) {
+    redirect('/admin/login')
+  }
+  return admin
+}
+
 // Shape pensada para hidratar el client provider del admin: lo que el
 // cliente necesita para evaluar hasAdminAccess() sin volver a pegarle al
 // server. Idéntico al payload de /api/admin/me, pero resuelto en el render.
@@ -276,6 +286,7 @@ export interface AdminClientUser {
   yearSlugs: string[]
   canManageAllYears: boolean
   canCreateUsers: boolean
+  canViewAuditHistory: boolean
   canManageAcademicStructure: boolean
   canManageAnyContribution: boolean
   canCreateContributions: boolean
@@ -299,6 +310,7 @@ export async function getAdminClientSession(): Promise<AdminClientSession> {
       yearSlugs: admin.yearSlugs,
       canManageAllYears: admin.canManageAllYears,
       canCreateUsers: admin.canCreateUsers,
+      canViewAuditHistory: admin.canViewAuditHistory,
       canManageAcademicStructure: admin.canManageAcademicStructure,
       canManageAnyContribution: admin.canManageAnyContribution,
       canCreateContributions: admin.canCreateContributions,

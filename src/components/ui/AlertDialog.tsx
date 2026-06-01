@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
 interface AlertDialogProps {
@@ -25,6 +26,11 @@ export function AlertDialog({
   variant = 'default',
 }: AlertDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Lock scroll while open
   useEffect(() => {
@@ -82,11 +88,11 @@ export function AlertDialog({
     return () => document.removeEventListener('keydown', trapFocus)
   }, [open])
 
-  if (!open) return null
+  if (!open || !mounted) return null
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm"
       role="presentation"
     >
       <div
@@ -134,6 +140,7 @@ export function AlertDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
