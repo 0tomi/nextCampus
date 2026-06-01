@@ -252,9 +252,7 @@ export function SubjectEventsSection({
                       <RelatedApunteLinks apuntes={evento.apuntes} className="pointer-events-auto mt-2" />
                     </div>
                     <div className="flex items-center gap-2">
-                      <span
-                        className={`inline-flex border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${chipClassName}`}
-                      >
+                      <span className="inline-flex border border-white/10 bg-surface-1 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/72">
                         {formatEventDateTime(evento.fecha, evento.hora)}
                       </span>
                       <div className="pointer-events-auto">
