@@ -179,143 +179,19 @@ export function EventCalendarAdmin({
         onEventClick={handleEventClick}
       />
 
-      <Sheet
+      <EventDetailSheet
+        event={activeSelectedEvent ?? null}
         open={!!activeSheetOpen}
+        subjectHref={subjectHref}
+        canEdit={canEditSelectedEvent}
+        isDeleting={isDeleting}
         onClose={() => {
           setActiveSheetOpen(false)
           setActiveSelectedEvent(null)
         }}
-        title="Detalles del evento"
-      >
-        {activeSelectedEvent && (
-          <div className="space-y-6">
-            {/* Header info */}
-            <div>
-              <span
-                className={cn(
-                  'inline-flex border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] rounded-none mb-3',
-                  activeSelectedEvent.tipo?.toLowerCase() === 'examen' ||
-                    activeSelectedEvent.tipo?.toLowerCase() === 'parcial' ||
-                    activeSelectedEvent.tipo?.toLowerCase() === 'final' ||
-                    activeSelectedEvent.tipo?.toLowerCase() === 'recuperatorio'
-                    ? 'border-red-500/20 bg-red-500/10 text-red-400'
-                    : activeSelectedEvent.tipo?.toLowerCase() === 'trabajo-practico' ||
-                      activeSelectedEvent.tipo?.toLowerCase() === 'tp'
-                    ? 'border-yellow-500/20 bg-yellow-500/10 text-yellow-400'
-                    : activeSelectedEvent.tipo?.toLowerCase() === 'entrega'
-                    ? 'border-cyan-500/20 bg-cyan-500/10 text-cyan-400'
-                    : activeSelectedEvent.tipo?.toLowerCase() === 'exposicion'
-                    ? 'border-orange-500/20 bg-orange-500/10 text-orange-400'
-                    : activeSelectedEvent.tipo?.toLowerCase() === 'clase'
-                    ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
-                    : 'border-violet-500/20 bg-violet-500/10 text-violet-400',
-                )}
-              >
-                {activeSelectedEvent.tipo}
-              </span>
-              <h3 className="text-2xl font-black tracking-tight text-white font-display leading-tight">
-                {activeSelectedEvent.tituloOriginal ??
-                  activeSelectedEvent.title ??
-                  activeSelectedEvent.titulo}
-              </h3>
-            </div>
-
-            {/* Detalles */}
-            <div className="space-y-4 border-t border-white/6 pt-5">
-              {activeSelectedEvent.materiaNombre && (
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-white/30">
-                    Materia
-                  </span>
-                  {subjectHref ? (
-                    <Link
-                      href={subjectHref}
-                      className="text-sm font-bold text-white transition-colors hover:text-red-400 hover:underline cursor-pointer"
-                    >
-                      {activeSelectedEvent.materiaNombre}
-                    </Link>
-                  ) : (
-                    <span className="text-sm font-bold text-white">
-                      {activeSelectedEvent.materiaNombre}
-                    </span>
-                  )}
-                </div>
-              )}
-
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/30">
-                  Fecha y Horario
-                </span>
-                <span className="text-sm font-medium text-white/80">
-                  {formatSelectedEventDate(activeSelectedEvent)}
-                </span>
-              </div>
-
-              {activeSelectedEvent.commissionNombre ? (
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-white/30">
-                    Comisión
-                  </span>
-                  <span className="text-sm font-medium text-white/80">
-                    {activeSelectedEvent.commissionNombre}
-                  </span>
-                </div>
-              ) : null}
-
-              {activeSelectedEvent.apuntes && activeSelectedEvent.apuntes.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-white/30">
-                    Apuntes relacionados
-                  </span>
-                  <RelatedApunteLinks apuntes={activeSelectedEvent.apuntes} limit={activeSelectedEvent.apuntes.length} />
-                </div>
-              ) : null}
-            </div>
-
-            {/* Descripcion */}
-            {activeSelectedEvent.descripcionHtml ? (
-              <div className="space-y-2 border-t border-white/6 pt-5">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/30 block mb-2">
-                  Descripción
-                </span>
-                <SafeHtml
-                  className="text-sm leading-7 text-white/70 [&_a]:text-red-400 [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
-                  html={activeSelectedEvent.descripcionHtml}
-                />
-              </div>
-            ) : (
-              <div className="border-t border-white/6 pt-5">
-                <p className="text-sm text-white/30 italic">
-                  Sin descripción detallada.
-                </p>
-              </div>
-            )}
-
-            {/* Admin Actions */}
-            {canEditSelectedEvent && (
-              <div className="flex items-center gap-2 border-t border-white/6 pt-5">
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(true)}
-                  className="inline-flex items-center gap-2 rounded border border-white/10 bg-surface-1 px-3 py-2 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
-                >
-                  <Pencil className="size-3.5" />
-                  Editar evento
-                </button>
-                <button
-                  type="button"
-                  disabled={isDeleting}
-                  onClick={() => setConfirmDeleteOpen(true)}
-                  className="inline-flex items-center gap-2 rounded border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-400 shadow-lg transition-colors hover:bg-rose-500/20 hover:text-rose-300 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                >
-                  <Trash2 className="size-3.5" />
-                  {isDeleting ? 'Eliminando...' : 'Eliminar evento'}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </Sheet>
+        onEdit={() => setIsEditModalOpen(true)}
+        onDelete={() => setConfirmDeleteOpen(true)}
+      />
 
       <AlertDialog
         open={confirmDeleteOpen}
@@ -327,44 +203,295 @@ export function EventCalendarAdmin({
         variant="destructive"
       />
 
-      {canEdit && (
-        <EventModal
-          key={initialDate || 'default'}
-          open={eventModalOpen}
-          onClose={() => {
-            setEventModalOpen(false)
-            setInitialDate(undefined)
-          }}
-          agendaId={agendaId}
-          subjectId={subjectId}
-          subjectSlug={subjectSlug}
-          tiposEvento={tiposEvento}
-          initialDate={initialDate}
-          subjects={subjects}
-          commissions={commissions}
-          categoriasDisponibles={categoriasDisponibles}
-        />
-      )}
+      <CreateEventModal
+        canEdit={canEdit}
+        open={eventModalOpen}
+        agendaId={agendaId}
+        categoriasDisponibles={categoriasDisponibles}
+        commissions={commissions}
+        initialDate={initialDate}
+        subjectId={subjectId}
+        subjectSlug={subjectSlug}
+        subjects={subjects}
+        tiposEvento={tiposEvento}
+        onClose={() => {
+          setEventModalOpen(false)
+          setInitialDate(undefined)
+        }}
+      />
 
-      {canEditSelectedEvent && activeSelectedEvent && (
-        <EventModal
-          key={`edit-${activeSelectedEvent.id}`}
-          open={isEditModalOpen}
-          onClose={() => {
-            setIsEditModalOpen(false)
-            setActiveSheetOpen(false)
-            setActiveSelectedEvent(null)
-          }}
-          agendaId={agendaId}
-          subjectId={activeSelectedEvent.subjectId ?? subjectId}
-          subjectSlug={subjectSlug}
-          tiposEvento={tiposEvento}
-          subjects={subjects}
-          commissions={commissions}
-          eventToEdit={activeSelectedEvent}
-          categoriasDisponibles={categoriasDisponibles}
-        />
-      )}
+      <EditEventModal
+        canEdit={canEditSelectedEvent}
+        event={activeSelectedEvent ?? null}
+        open={isEditModalOpen}
+        agendaId={agendaId}
+        categoriasDisponibles={categoriasDisponibles}
+        commissions={commissions}
+        fallbackSubjectId={subjectId}
+        subjectSlug={subjectSlug}
+        subjects={subjects}
+        tiposEvento={tiposEvento}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setActiveSheetOpen(false)
+          setActiveSelectedEvent(null)
+        }}
+      />
     </>
+  )
+}
+
+
+function getEventToneClass(tipo?: string | null) {
+  const normalized = tipo?.toLowerCase()
+  if (
+    normalized === 'examen' ||
+    normalized === 'parcial' ||
+    normalized === 'final' ||
+    normalized === 'recuperatorio'
+  ) {
+    return 'border-red-500/20 bg-red-500/10 text-red-400'
+  }
+  if (normalized === 'trabajo-practico' || normalized === 'tp') {
+    return 'border-yellow-500/20 bg-yellow-500/10 text-yellow-400'
+  }
+  if (normalized === 'entrega') return 'border-cyan-500/20 bg-cyan-500/10 text-cyan-400'
+  if (normalized === 'exposicion') return 'border-orange-500/20 bg-orange-500/10 text-orange-400'
+  if (normalized === 'clase') return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+  return 'border-violet-500/20 bg-violet-500/10 text-violet-400'
+}
+
+function EventDetailSheet({
+  canEdit,
+  event,
+  isDeleting,
+  open,
+  subjectHref,
+  onClose,
+  onDelete,
+  onEdit,
+}: {
+  canEdit: boolean
+  event: EventCalendarEvent | null
+  isDeleting: boolean
+  open: boolean
+  subjectHref: string | null
+  onClose: () => void
+  onDelete: () => void
+  onEdit: () => void
+}) {
+  return (
+    <Sheet open={open} onClose={onClose} title="Detalles del evento">
+      {event ? (
+        <EventDetailContent
+          canEdit={canEdit}
+          event={event}
+          isDeleting={isDeleting}
+          subjectHref={subjectHref}
+          onDelete={onDelete}
+          onEdit={onEdit}
+        />
+      ) : null}
+    </Sheet>
+  )
+}
+
+function EventDetailContent({
+  canEdit,
+  event,
+  isDeleting,
+  subjectHref,
+  onDelete,
+  onEdit,
+}: {
+  canEdit: boolean
+  event: EventCalendarEvent
+  isDeleting: boolean
+  subjectHref: string | null
+  onDelete: () => void
+  onEdit: () => void
+}) {
+  return (
+    <div className="space-y-6">
+      <EventDetailHeader event={event} />
+      <EventDetailsList event={event} subjectHref={subjectHref} />
+      <EventDescription event={event} />
+      {canEdit ? <EventAdminActions isDeleting={isDeleting} onDelete={onDelete} onEdit={onEdit} /> : null}
+    </div>
+  )
+}
+
+function EventDetailHeader({ event }: { event: EventCalendarEvent }) {
+  return (
+    <div>
+      <span
+        className={cn(
+          'mb-3 inline-flex rounded-none border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
+          getEventToneClass(event.tipo),
+        )}
+      >
+        {event.tipo}
+      </span>
+      <h3 className="font-display text-2xl font-black leading-tight tracking-tight text-white">
+        {event.tituloOriginal ?? event.title ?? event.titulo}
+      </h3>
+    </div>
+  )
+}
+
+function EventDetailsList({ event, subjectHref }: { event: EventCalendarEvent; subjectHref: string | null }) {
+  return (
+    <div className="space-y-4 border-t border-white/6 pt-5">
+      {event.materiaNombre ? <EventSubjectDetail event={event} subjectHref={subjectHref} /> : null}
+      <EventMetaDetail label="Fecha y Horario" value={formatSelectedEventDate(event)} />
+      {event.commissionNombre ? <EventMetaDetail label="Comisión" value={event.commissionNombre} /> : null}
+      {event.apuntes && event.apuntes.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-white/30">
+            Apuntes relacionados
+          </span>
+          <RelatedApunteLinks apuntes={event.apuntes} limit={event.apuntes.length} />
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function EventSubjectDetail({ event, subjectHref }: { event: EventCalendarEvent; subjectHref: string | null }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-white/30">Materia</span>
+      {subjectHref ? (
+        <Link href={subjectHref} className="cursor-pointer text-sm font-bold text-white transition-colors hover:text-red-400 hover:underline">
+          {event.materiaNombre}
+        </Link>
+      ) : (
+        <span className="text-sm font-bold text-white">{event.materiaNombre}</span>
+      )}
+    </div>
+  )
+}
+
+function EventMetaDetail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-white/30">{label}</span>
+      <span className="text-sm font-medium text-white/80">{value}</span>
+    </div>
+  )
+}
+
+function EventDescription({ event }: { event: EventCalendarEvent }) {
+  if (!event.descripcionHtml) {
+    return (
+      <div className="border-t border-white/6 pt-5">
+        <p className="text-sm text-white/30 italic">Sin descripción detallada.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-2 border-t border-white/6 pt-5">
+      <span className="mb-2 block text-[10px] font-semibold uppercase tracking-wider text-white/30">
+        Descripción
+      </span>
+      <SafeHtml
+        className="text-sm leading-7 text-white/70 [&_a]:text-red-400 [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
+        html={event.descripcionHtml}
+      />
+    </div>
+  )
+}
+
+function EventAdminActions({
+  isDeleting,
+  onDelete,
+  onEdit,
+}: {
+  isDeleting: boolean
+  onDelete: () => void
+  onEdit: () => void
+}) {
+  return (
+    <div className="flex items-center gap-2 border-t border-white/6 pt-5">
+      <button
+        type="button"
+        onClick={onEdit}
+        className="inline-flex cursor-pointer items-center gap-2 rounded border border-white/10 bg-surface-1 px-3 py-2 text-xs font-semibold text-white/70 shadow-lg transition-colors hover:bg-white/10 hover:text-white"
+      >
+        <Pencil className="size-3.5" />
+        Editar evento
+      </button>
+      <button
+        type="button"
+        disabled={isDeleting}
+        onClick={onDelete}
+        className="inline-flex cursor-pointer items-center gap-2 rounded border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-400 shadow-lg transition-colors hover:bg-rose-500/20 hover:text-rose-300 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <Trash2 className="size-3.5" />
+        {isDeleting ? 'Eliminando...' : 'Eliminar evento'}
+      </button>
+    </div>
+  )
+}
+
+type EventModalSharedProps = Pick<
+  EventCalendarAdminProps,
+  'agendaId' | 'categoriasDisponibles' | 'commissions' | 'subjectSlug' | 'subjects' | 'tiposEvento'
+>
+
+function CreateEventModal({
+  canEdit,
+  initialDate,
+  open,
+  subjectId,
+  onClose,
+  ...modalProps
+}: EventModalSharedProps & {
+  canEdit: boolean
+  initialDate?: string
+  open: boolean
+  subjectId: string
+  onClose: () => void
+}) {
+  if (!canEdit) return null
+
+  return (
+    <EventModal
+      key={initialDate || 'default'}
+      open={open}
+      onClose={onClose}
+      subjectId={subjectId}
+      initialDate={initialDate}
+      {...modalProps}
+    />
+  )
+}
+
+function EditEventModal({
+  canEdit,
+  event,
+  fallbackSubjectId,
+  open,
+  onClose,
+  ...modalProps
+}: EventModalSharedProps & {
+  canEdit: boolean
+  event: EventCalendarEvent | null
+  fallbackSubjectId: string
+  open: boolean
+  onClose: () => void
+}) {
+  if (!canEdit || !event) return null
+
+  return (
+    <EventModal
+      key={`edit-${event.id}`}
+      open={open}
+      onClose={onClose}
+      subjectId={event.subjectId ?? fallbackSubjectId}
+      eventToEdit={event}
+      {...modalProps}
+    />
   )
 }
