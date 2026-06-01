@@ -32,20 +32,7 @@ const nextConfig: NextConfig = {
     root: __dirname,
   },
   async headers() {
-    return [
-      { source: '/:path*', headers: securityHeaders },
-      {
-        // La skill para generar bancos con IA se descarga como archivo.
-        source: '/resources/banco-preguntas-examen.skill',
-        headers: [
-          {
-            key: 'Content-Disposition',
-            value: 'attachment; filename="banco-preguntas-examen.skill"',
-          },
-          { key: 'Content-Type', value: 'application/octet-stream' },
-        ],
-      },
-    ]
+    return [{ source: '/:path*', headers: securityHeaders }]
   },
 }
 

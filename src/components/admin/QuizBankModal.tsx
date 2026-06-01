@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useActionState, useRef, useState, useCallback } from 'react'
-import { Check, Copy, Download, FileJson, Sparkles, Upload } from 'lucide-react'
+import { Check, Copy, FileJson, Sparkles, Upload } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import {
   uploadQuizBankAction,
@@ -9,11 +9,49 @@ import {
 } from '@/app/admin/actions'
 import { parseQuizBank } from '@/lib/domain/quiz-bank'
 
-// ---- Prompt para la IA (con la skill instalada) ----------------------------
+// ---- Prompt para la IA (autocontenido, sin skill) ---------------------------
 
-const AI_PROMPT = `Si tenés la skill "banco-preguntas-examen" instalada, usala para analizar el material de la materia y generar un banco de preguntas. Si no tenés la skill, analizá directamente los PDFs o apuntes de la materia para extraer las preguntas.
+const AI_PROMPT = `Sos un profesor universitario que arma bancos de preguntas tipo examen a partir del material de estudio que te paso (apuntes, PDFs, presentaciones, capítulos). El objetivo es que las preguntas distingan a quien estudió de quien no: nada que se adivine de memoria ni por sentido común.
 
-Independientemente de si usás la skill o no, el formato del JSON que debés devolver al usuario debe seguir exactamente esta estructura (sin ningún texto adicional antes o después):
+Pautas de entrada:
+- Trabajá SOLO sobre el material que te doy. Si no te paso material, pedímelo antes de inventar nada.
+- Cantidad por defecto: 10 a 15 preguntas si no te aclaro otra cosa.
+- Dificultad por defecto: nivel parcial universitario de grado.
+
+Tipos de pregunta que podés usar (solo estos tres):
+- "single": una sola opción correcta entre varias.
+- "multiple": varias opciones correctas. Indicá en el enunciado cuántas marcar (ej: "Seleccioná 2 opciones").
+- "truefalse": una afirmación que es inequívocamente verdadera o falsa.
+
+Para preguntas sobre código o salida de comandos, usá "single" o "multiple" e incluí el fragmento dentro del texto del enunciado (se muestra como texto plano, sin imágenes). Mantené esos fragmentos cortos.
+
+Principios que no se negocian:
+- Una sola respuesta inequívoca (o exactamente el conjunto que pedís en "multiple"). Si dudás entre dos opciones como correctas, la pregunta está mal redactada.
+- Usá los términos exactos del material. Si dice "exclusión mutua", no escribas "acceso excluyente".
+- Cero capciosidad: la dificultad está en el conocimiento, nunca en la redacción. Sin dobles negaciones ni datos irrelevantes para confundir.
+- No inventes datos. Si el material no da un año, una cifra o un autor, no lo inventes.
+- Variedad cognitiva: combiná definir, identificar, comparar, aplicar e interpretar. No solo memorizar.
+- Cobertura completa: representá todas las secciones del material, no solo el primer tercio.
+
+Cómo construir las opciones incorrectas (distractores) para que sean plausibles:
+- Variación tipográfica de un término real (ej: "monolítico" vs "macrolítico").
+- Cruce dentro del mismo tema: invertir una relación o intercambiar autores/capas (ej: "SSL reemplazó a TLS", cuando es al revés).
+- Mezcla parcial: en respuestas-lista, copiar casi todos los elementos correctos y cambiar uno.
+- Generalización indebida: tomar algo verdadero y agregarle "siempre" o "nunca" que lo vuelve falso.
+- Plausible pero técnicamente falso: lo que alguien creería por intuición sin haber estudiado.
+- Datos numéricos cercanos pero incorrectos (años, tamaños, cantidades).
+- Evitá: opciones absurdas, que la correcta sea siempre la más larga, y opciones que se contradigan entre sí. Mantené todas las opciones de longitud parecida.
+
+Para Verdadero/Falso:
+- La afirmación debe ser inequívocamente V o F, no interpretable.
+- Cuando es falsa, el error tiene que ser real y enseñable (que el estudiante aprenda algo al ver la corrección).
+- No abuses: como mucho un 25–30% del banco en este tipo.
+
+Explicación: cada pregunta lleva explicación obligatoria, de 2 a 5 oraciones, justificando por qué la correcta lo es y por qué los distractores no.
+
+Organizá el banco por unidad o tema del material: cada unidad es una entrada en "units".
+
+El formato del JSON que debés devolver tiene que seguir EXACTAMENTE esta estructura (sin ningún texto adicional antes o después):
 
 {
   "title": "Nombre descriptivo del banco (usá el nombre de la materia o cátedra)",
@@ -173,39 +211,28 @@ export function QuizBankModal({
             <Sparkles className="h-4 w-4 text-violet-300" />
             ¿Todavía no tenés el archivo? Generalo con IA
           </div>
-          <p className="text-sm leading-6 text-white/52">
-            Instalá la skill de generación de preguntas en tu asistente de IA,
-            subile los materiales de la materia y usá el prompt de abajo para
-            obtener el archivo listo para subir.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={copyPrompt}
-              className="inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10 cursor-pointer"
-            >
-              {copied ? (
-                <Check className="h-3.5 w-3.5 text-emerald-400" />
-              ) : (
-                <Copy className="h-3.5 w-3.5" />
-              )}
-              {copied ? 'Copiado' : 'Copiar prompt'}
-            </button>
-            <a
-              href="/resources/banco-preguntas-examen.skill"
-              download
-              className="inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10 cursor-pointer"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Descargar skill
-            </a>
-          </div>
-          <textarea
-            readOnly
-            value={AI_PROMPT}
-            onClick={(e) => e.currentTarget.select()}
-            className="h-24 w-full resize-none border border-white/5 bg-[#0a0a0a] px-3 py-2 text-xs leading-5 text-white/52 focus:outline-none"
-          />
+          <ol className="space-y-1.5 text-sm leading-6 text-white/52">
+            <li>1. Copiá el prompt con el botón de abajo.</li>
+            <li>
+              2. Pegalo en tu asistente de IA y adjuntale los materiales de la
+              materia (apuntes, PDFs, presentaciones).
+            </li>
+            <li>
+              3. Subí acá el archivo .json que te devuelva.
+            </li>
+          </ol>
+          <button
+            type="button"
+            onClick={copyPrompt}
+            className="inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10 cursor-pointer"
+          >
+            {copied ? (
+              <Check className="h-3.5 w-3.5 text-emerald-400" />
+            ) : (
+              <Copy className="h-3.5 w-3.5" />
+            )}
+            {copied ? 'Copiado' : 'Copiar prompt'}
+          </button>
         </div>
 
         {/* Sección B: Dropzone + form */}
