@@ -31,6 +31,8 @@ export function useQuizKeyboardShortcuts({
   useEffect(() => {
     if (!enabled || !pregunta) return
 
+    const currentPregunta = pregunta
+
     function handleQuizShortcut(event: KeyboardEvent) {
       if (event.key === 'ArrowLeft' && index > 0) {
         onPrevious()
@@ -50,24 +52,24 @@ export function useQuizKeyboardShortcuts({
 
       if (resultado) return
 
-      if (pregunta.type === 'truefalse') {
+      if (currentPregunta.type === 'truefalse') {
         if (event.key.toLowerCase() === 'v') onAnswer(true)
         if (event.key.toLowerCase() === 'f') onAnswer(false)
         return
       }
 
       const optionNumber = Number(event.key)
-      if (!Number.isInteger(optionNumber) || optionNumber < 1 || !pregunta.options || optionNumber > pregunta.options.length) {
+      if (!Number.isInteger(optionNumber) || optionNumber < 1 || !currentPregunta.options || optionNumber > currentPregunta.options.length) {
         return
       }
 
       const optionIndex = optionNumber - 1
-      if (pregunta.type === 'single') {
+      if (currentPregunta.type === 'single') {
         onAnswer(optionIndex)
         return
       }
 
-      const current = Array.isArray(answers[pregunta.id]) ? (answers[pregunta.id] as number[]) : []
+      const current = Array.isArray(answers[currentPregunta.id]) ? (answers[currentPregunta.id] as number[]) : []
       onAnswer(current.includes(optionIndex) ? current.filter((item) => item !== optionIndex) : [...current, optionIndex])
     }
 
