@@ -96,7 +96,6 @@ export function MapaCorrelativas({ availableSubjectSlugs = EMPTY_AVAILABLE_SUBJE
   const selectedStatus = selectedSubject ? subjectStatuses[selectedSubject.slug] : 'UNLOCKED';
   const selectedMissing = selectedSubject ? getMissingCorrelatives(selectedSubject, completed) : [];
   const selectedUnlocks = selectedSubject ? getUnlocks(selectedSubject.slug) : [];
-  const completedCount = completed.length;
   const suggestedSubjects = subjectsData
     .filter((subject) => subjectStatuses[subject.slug] === 'UNLOCKED')
     .sort((a, b) => getUnlocks(b.slug).length - getUnlocks(a.slug).length)
