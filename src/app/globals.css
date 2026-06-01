@@ -126,60 +126,94 @@ body {
   }
 }
 
-/* Sheet de detalles: el fondo aparece con fade y el panel entra deslizándose
-   (desde abajo en mobile, desde la derecha en escritorio). */
-.sheet-overlay {
-  animation: sheetOverlayIn 0.25s ease-out;
+/* Animaciones para el panel lateral (Sheet) usando estándar CSS moderna de top-layer */
+.sheet-dialog {
+  display: none;
+  opacity: 0;
+  transform: translateX(100%);
+  transition:
+    display 0.3s allow-discrete,
+    overlay 0.3s allow-discrete,
+    opacity 0.3s ease-out,
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.sheet-panel {
-  animation: sheetPanelUp 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+.sheet-dialog[open] {
+  display: flex;
+  opacity: 1;
+  transform: translateX(0);
 }
 
-@media (min-width: 640px) {
-  .sheet-panel {
-    animation-name: sheetPanelRight;
-  }
-}
-
-@keyframes sheetOverlayIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes sheetPanelUp {
-  from {
-    opacity: 0;
-    transform: translateY(100%);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes sheetPanelRight {
-  from {
+@starting-style {
+  .sheet-dialog[open] {
     opacity: 0;
     transform: translateX(100%);
   }
+}
 
-  to {
-    opacity: 1;
-    transform: translateX(0);
+@media (max-width: 639px) {
+  .sheet-dialog {
+    transform: translateY(100%);
+  }
+
+  .sheet-dialog[open] {
+    transform: translateY(0);
+  }
+
+  @starting-style {
+    .sheet-dialog[open] {
+      transform: translateY(100%);
+    }
   }
 }
 
+/* Transiciones del fondo (backdrop) */
+.sheet-dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(0px);
+  transition:
+    display 0.3s allow-discrete,
+    overlay 0.3s allow-discrete,
+    background-color 0.3s ease-out,
+    backdrop-filter 0.3s ease-out;
+}
+
+.sheet-dialog[open]::backdrop {
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+@starting-style {
+  .sheet-dialog[open]::backdrop {
+    background-color: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0px);
+  }
+}
+
+/* Soporte para preferencias de movimiento reducido */
 @media (prefers-reduced-motion: reduce) {
-  .sheet-overlay,
-  .sheet-panel {
-    animation: none;
+  .sheet-dialog,
+  .sheet-dialog[open] {
+    transform: none !important;
+    transition-duration: 0.1s;
+  }
+
+  @starting-style {
+    .sheet-dialog[open] {
+      transform: none !important;
+    }
+  }
+
+  .sheet-dialog::backdrop,
+  .sheet-dialog[open]::backdrop {
+    transition-duration: 0.1s;
+    backdrop-filter: none !important;
+  }
+  
+  @starting-style {
+    .sheet-dialog[open]::backdrop {
+      backdrop-filter: none !important;
+    }
   }
 }
 
