@@ -1,7 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -19,9 +19,10 @@ import {
   X,
 } from 'lucide-react';
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
-import { calculateSubjectStatuses } from '@/lib/domain/mapa/unlockLogic';
-import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
-import { readMapaProgress, writeMapaProgress } from '@/lib/mapaProgress';
+import { VISUAL_STATUS_ACCENTS as STATUS_ACCENTS, VISUAL_STATUS_LABELS as STATUS_COPY, VISUAL_STATUS_STYLES as STATUS_STYLES, YEAR_LABELS } from '@/lib/domain/mapa/mapaConstants';
+import { getMissingCorrelatives, getSubjectName, getUnlocks } from '@/lib/domain/mapa/subjectQueries';
+import type { SubjectNode } from '@/lib/domain/mapa/types';
+import { useMapaProgress } from '@/hooks/useMapaProgress';
 import { cn } from '@/lib/utils';
 import { yearSlugFromNumber } from '@/lib/slug';
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes';
@@ -47,55 +48,8 @@ const MIN_SCALE = 0.38;
 const MAX_SCALE = 1.36;
 const INITIAL_CAMERA: Camera = { x: -40, y: -50, scale: 0.58 };
 
-const STATUS_COPY: Record<SubjectStatus, string> = {
-  COMPLETED: 'Completada',
-  UNLOCKED: 'Disponible',
-  LOCKED: 'En espera',
-};
-
-const STATUS_STYLES: Record<SubjectStatus, string> = {
-  COMPLETED: 'border-emerald-200/52 bg-emerald-300/16 text-emerald-50 shadow-[0_0_42px_rgba(52,211,153,0.22)]',
-  UNLOCKED: 'border-amber-200/52 bg-amber-300/14 text-amber-50 shadow-[0_0_42px_rgba(251,191,36,0.18)]',
-  LOCKED: 'border-white/12 bg-black/44 text-white/54 shadow-none',
-};
-
-const STATUS_ACCENTS: Record<SubjectStatus, string> = {
-  COMPLETED: '#6ee7b7',
-  UNLOCKED: '#fde68a',
-  LOCKED: '#64748b',
-};
-
-const YEAR_LABELS: Record<number, string> = {
-  1: 'Primer año',
-  2: 'Segundo año',
-  3: 'Tercer año',
-  4: 'Cuarto año',
-  5: 'Quinto año',
-};
-
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
-}
-
-function getUnlocks(slug: string) {
-  return subjectsData.filter((subject) => subject.correlativas.includes(slug));
-}
-
-function getSubjectName(slug: string) {
-  return subjectsData.find((subject) => subject.slug === slug)?.nombre ?? 'Materia';
-}
-
-function removeSubjectAndDependents(slugToRemove: string, currentCompleted: string[]): string[] {
-  let nextCompleted = currentCompleted.filter((slug) => slug !== slugToRemove);
-  const dependents = subjectsData.filter(
-    (subject) => subject.correlativas.includes(slugToRemove) && nextCompleted.includes(subject.slug),
-  );
-
-  for (const dependent of dependents) {
-    nextCompleted = removeSubjectAndDependents(dependent.slug, nextCompleted);
-  }
-
-  return nextCompleted;
 }
 
 function getNodePosition(subject: SubjectNode) {
@@ -126,31 +80,23 @@ function createPath(from: SubjectNode, to: SubjectNode) {
   return `M ${sx} ${sy} C ${sx + curve} ${sy}, ${ex - curve} ${ey}, ${ex} ${ey}`;
 }
 
-export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisualCorrelativasProps) {
+const EMPTY_AVAILABLE_SUBJECT_SLUGS: string[] = [];
+
+export function MapaVisualCorrelativas({ availableSubjectSlugs = EMPTY_AVAILABLE_SUBJECT_SLUGS }: MapaVisualCorrelativasProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number; camera: Camera } | null>(null);
-  const [completed, setCompleted] = useState<string[]>([]);
   const [selectedSlug, setSelectedSlug] = useState(subjectsData[0]?.slug ?? '');
   const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
-  const [isHydrated, setIsHydrated] = useState(false);
   const [camera, setCamera] = useState<Camera>(INITIAL_CAMERA);
   const [isDragging, setIsDragging] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCompleted(readMapaProgress());
-    setIsHydrated(true);
-  }, []);
-
+  const { completed, isHydrated, subjectStatuses, toggleSubject } = useMapaProgress();
   const availableSlugs = useMemo(() => new Set(availableSubjectSlugs), [availableSubjectSlugs]);
-  const subjectStatuses = useMemo(() => calculateSubjectStatuses(completed), [completed]);
   const selectedSubject = subjectsData.find((subject) => subject.slug === selectedSlug) ?? subjectsData[0];
   const selectedStatus = selectedSubject ? subjectStatuses[selectedSubject.slug] : 'UNLOCKED';
   const selectedUnlocks = selectedSubject ? getUnlocks(selectedSubject.slug) : [];
-  const selectedMissing = selectedSubject
-    ? selectedSubject.correlativas.filter((slug) => !completed.includes(slug))
-    : [];
+  const selectedMissing = selectedSubject ? getMissingCorrelatives(selectedSubject, completed) : [];
   const activeSlug = hoveredSlug ?? selectedSlug;
   const activeSubject = subjectsData.find((subject) => subject.slug === activeSlug);
   const activeChain = new Set<string>([
@@ -171,11 +117,6 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
   );
   const worldHeight = Math.max(...subjectsData.map((subject) => getNodePosition(subject).y)) + NODE_HEIGHT + 140;
 
-  const saveProgress = (nextCompleted: string[]) => {
-    setCompleted(nextCompleted);
-    writeMapaProgress(nextCompleted);
-  };
-
   const handleToggleSubject = (subject: SubjectNode) => {
     const currentStatus = subjectStatuses[subject.slug];
     setSelectedSlug(subject.slug);
@@ -183,11 +124,11 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = [] }: MapaVisua
     if (currentStatus === 'LOCKED') return;
 
     if (currentStatus === 'COMPLETED') {
-      saveProgress(removeSubjectAndDependents(subject.slug, completed));
+      toggleSubject(subject);
       return;
     }
 
-    saveProgress(Array.from(new Set([...completed, subject.slug])));
+    toggleSubject(subject);
   };
 
   const getBoundedPosition = (x: number, y: number, scale: number, width: number, height: number) => {

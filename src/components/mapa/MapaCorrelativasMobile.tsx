@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useSyncExternalStore } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -21,9 +21,11 @@ import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/she
 import { Modal } from '@/components/ui/Modal';
 import { AlertDialog } from '@/components/ui/AlertDialog';
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
-import { calculateSubjectStatuses } from '@/lib/domain/mapa/unlockLogic';
+import { MAPA_YEARS, MOBILE_STATUS_BADGE as STATUS_BADGE, MOBILE_STATUS_CARD as STATUS_CARD, MOBILE_STATUS_LABELS as STATUS_LABELS, YEAR_LABELS, YEAR_SHORT_LABELS } from '@/lib/domain/mapa/mapaConstants';
+import { getMissingCorrelatives, getSubjectName, getUnlocks } from '@/lib/domain/mapa/subjectQueries';
 import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
-import { readMapaProgress, writeMapaProgress } from '@/lib/mapaProgress';
+import { useMapaProgress } from '@/hooks/useMapaProgress';
+import { useSuggestedYear } from '@/hooks/useSuggestedYear';
 import { yearSlugFromNumber } from '@/lib/slug';
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes';
 import { cn } from '@/lib/utils';
@@ -39,68 +41,14 @@ type MapaCorrelativasMobileProps = {
   initialMode?: MobileMapaMode;
 };
 
-const YEAR_LABELS: Record<1 | 2 | 3 | 4 | 5, string> = {
-  1: 'Primer año',
-  2: 'Segundo año',
-  3: 'Tercer año',
-  4: 'Cuarto año',
-  5: 'Quinto año',
-};
-
-const YEAR_SHORT_LABELS: Record<1 | 2 | 3 | 4 | 5, string> = {
-  1: '1ro',
-  2: '2do',
-  3: '3ro',
-  4: '4to',
-  5: '5to',
-};
-
-const STATUS_LABELS: Record<SubjectStatus, string> = {
-  COMPLETED: 'Marcada',
-  UNLOCKED: 'Lista para cursar',
-  LOCKED: 'Todavía no',
-};
-
-const STATUS_BADGE: Record<SubjectStatus, string> = {
-  COMPLETED: 'border-emerald-300/25 bg-emerald-400/12 text-emerald-50',
-  UNLOCKED: 'border-amber-300/25 bg-amber-300/12 text-amber-50',
-  LOCKED: 'border-white/10 bg-white/6 text-white/48',
-};
-
-const STATUS_CARD: Record<SubjectStatus, string> = {
-  COMPLETED: 'border-emerald-300/18 bg-emerald-400/8',
-  UNLOCKED: 'border-amber-300/18 bg-amber-300/8',
-  LOCKED: 'border-white/10 bg-white/5',
-};
-
-function getUnlocks(slug: string) {
-  return subjectsData.filter((subject) => subject.correlativas.includes(slug));
-}
-
-function getSubjectName(slug: string) {
-  return subjectsData.find((subject) => subject.slug === slug)?.nombre ?? 'Materia';
-}
-
-function removeSubjectAndDependents(slugToRemove: string, currentCompleted: string[]): string[] {
-  let nextCompleted = currentCompleted.filter((slug) => slug !== slugToRemove);
-  const dependents = subjectsData.filter(
-    (subject) => subject.correlativas.includes(slugToRemove) && nextCompleted.includes(subject.slug),
-  );
-
-  for (const dependent of dependents) {
-    nextCompleted = removeSubjectAndDependents(dependent.slug, nextCompleted);
-  }
-
-  return nextCompleted;
-}
+const EMPTY_AVAILABLE_SUBJECT_SLUGS: string[] = [];
 
 export function MapaCorrelativasMobile({
   careerName,
   drawerYears,
-  availableSubjectSlugs = [],
+  availableSubjectSlugs = EMPTY_AVAILABLE_SUBJECT_SLUGS,
   initialMode = 'plan',
 }: MapaCorrelativasMobileProps) {
-  const [completed, setCompleted] = useState<string[]>(() => readMapaProgress());
   const [selectedSubjectSlug, setSelectedSubjectSlug] = useState(subjectsData[0]?.slug ?? '');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
@@ -108,19 +56,20 @@ export function MapaCorrelativasMobile({
   const [mode, setMode] = useState<MobileMapaMode>(initialMode);
   const [detailSubjectSlug, setDetailSubjectSlug] = useState<string | null>(null);
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
-  const isHydrated = useSyncExternalStore(
-    () => () => undefined,
-    () => true,
-    () => false,
-  );
+  const {
+    completed,
+    completedCount,
+    isHydrated,
+    lockedCount,
+    progressPercentage,
+    subjectStatuses,
+    toggleSubject,
+    autocompleteYear,
+    reset,
+    unlockedCount,
+  } = useMapaProgress();
 
   const availableSlugs = useMemo(() => new Set(availableSubjectSlugs), [availableSubjectSlugs]);
-  const subjectStatuses = useMemo(() => calculateSubjectStatuses(completed), [completed]);
-
-  const saveProgress = (nextCompleted: string[]) => {
-    setCompleted(nextCompleted);
-    writeMapaProgress(nextCompleted);
-  };
 
   const selectedSubject =
     subjectsData.find((subject) => subject.slug === selectedSubjectSlug) ??
@@ -128,16 +77,9 @@ export function MapaCorrelativasMobile({
     subjectsData[0];
   const selectedStatus = selectedSubject ? subjectStatuses[selectedSubject.slug] : 'UNLOCKED';
   const selectedUnlocks = selectedSubject ? getUnlocks(selectedSubject.slug) : [];
-  const completedCount = completed.length;
-  const totalSubjects = subjectsData.length;
-  const unlockedCount = Object.values(subjectStatuses).filter((status) => status === 'UNLOCKED').length;
-  const lockedCount = totalSubjects - completedCount - unlockedCount;
-  const progressPercentage = Math.round((completedCount / totalSubjects) * 100);
   const detailSubject = subjectsData.find((subject) => subject.slug === detailSubjectSlug) ?? null;
   const detailStatus = detailSubject ? subjectStatuses[detailSubject.slug] : null;
-  const detailMissing = detailSubject
-    ? detailSubject.correlativas.filter((slug) => !completed.includes(slug))
-    : [];
+  const detailMissing = detailSubject ? getMissingCorrelatives(detailSubject, completed) : [];
   const detailUnlocks = detailSubject ? getUnlocks(detailSubject.slug) : [];
 
   const handleToggleSubject = (subject: SubjectNode) => {
@@ -147,11 +89,11 @@ export function MapaCorrelativasMobile({
     if (currentStatus === 'LOCKED') return;
 
     if (currentStatus === 'COMPLETED') {
-      saveProgress(removeSubjectAndDependents(subject.slug, completed));
+      toggleSubject(subject);
       return;
     }
 
-    saveProgress(Array.from(new Set([...completed, subject.slug])));
+    toggleSubject(subject);
   };
 
   const openSubjectDetail = (subject: SubjectNode) => {
@@ -161,28 +103,14 @@ export function MapaCorrelativasMobile({
 
   const handleConfirmReset = () => {
     setConfirmResetOpen(false);
-    saveProgress([]);
+    reset();
     setSelectedSubjectSlug(subjectsData[0]?.slug ?? '');
   };
 
-  const suggestedYearToComplete = useMemo(() => {
-    for (let year = 1 as const; year <= 5; year += 1) {
-      const yearSubjects = subjectsData.filter((subject) => subject.year === year);
-      const yearIsCompleted = yearSubjects.every((subject) => completed.includes(subject.slug));
-
-      if (!yearIsCompleted) {
-        return year > 1 ? (year as 2 | 3 | 4 | 5) : null;
-      }
-    }
-
-    return null;
-  }, [completed]);
+  const suggestedYearToComplete = useSuggestedYear(completed);
 
   const handleAutocompleteYear = (year: 2 | 3 | 4 | 5) => {
-    const yearSlugs = subjectsData
-      .filter((subject) => subject.year === year)
-      .map((subject) => subject.slug);
-    saveProgress(Array.from(new Set([...completed, ...yearSlugs])));
+    autocompleteYear(year);
   };
 
   const filteredSubjects = useMemo(() => {
@@ -211,7 +139,7 @@ export function MapaCorrelativasMobile({
 
   const yearSummaries = useMemo(
     () =>
-      ([1, 2, 3, 4, 5] as const).map((year) => {
+      MAPA_YEARS.map((year) => {
         const subjects = subjectsData.filter((subject) => subject.year === year);
         const done = subjects.filter((subject) => subjectStatuses[subject.slug] === 'COMPLETED').length;
         const ready = subjects.filter((subject) => subjectStatuses[subject.slug] === 'UNLOCKED').length;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -17,9 +17,11 @@ import {
   Unlock,
 } from 'lucide-react';
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
-import { calculateSubjectStatuses } from '@/lib/domain/mapa/unlockLogic';
+import { DESKTOP_STATUS_LABELS as STATUS_LABELS, MAPA_YEARS, YEAR_ACTION_LABELS, YEAR_LABELS as YEAR_NAMES } from '@/lib/domain/mapa/mapaConstants';
+import { getMissingCorrelatives, getSubjectName, getUnlocks } from '@/lib/domain/mapa/subjectQueries';
 import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
-import { readMapaProgress, writeMapaProgress } from '@/lib/mapaProgress';
+import { useMapaProgress } from '@/hooks/useMapaProgress';
+import { useSuggestedYear } from '@/hooks/useSuggestedYear';
 import { cn } from '@/lib/utils';
 import { yearSlugFromNumber } from '@/lib/slug';
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes';
@@ -31,74 +33,26 @@ type MapaCorrelativasProps = {
   availableSubjectSlugs?: string[];
 };
 
-const YEAR_NAMES: Record<number, string> = {
-  1: 'Primer año',
-  2: 'Segundo año',
-  3: 'Tercer año',
-  4: 'Cuarto año',
-  5: 'Quinto año',
-};
+const EMPTY_AVAILABLE_SUBJECT_SLUGS: string[] = [];
 
-const YEAR_ACTION_LABELS: Record<number, string> = {
-  1: '1er año',
-  2: '2do año',
-  3: '3er año',
-  4: '4to año',
-  5: '5to año',
-};
-
-const STATUS_LABELS: Record<SubjectStatus, string> = {
-  COMPLETED: 'Marcada',
-  UNLOCKED: 'Disponible',
-  LOCKED: 'En espera',
-};
-
-function getSubjectName(slug: string) {
-  return subjectsData.find((subject) => subject.slug === slug)?.nombre ?? 'Materia';
-}
-
-function getUnlocks(slug: string) {
-  return subjectsData.filter((subject) => subject.correlativas.includes(slug));
-}
-
-function getMissingCorrelatives(subject: SubjectNode, completed: string[]) {
-  return subject.correlativas.filter((slug) => !completed.includes(slug));
-}
-
-export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativasProps) {
-  const [completed, setCompleted] = useState<string[]>([]);
+export function MapaCorrelativas({ availableSubjectSlugs = EMPTY_AVAILABLE_SUBJECT_SLUGS }: MapaCorrelativasProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [selectedSubjectSlug, setSelectedSubjectSlug] = useState(subjectsData[0]?.slug ?? '');
-  const [isHydrated, setIsHydrated] = useState(false);
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCompleted(readMapaProgress());
-    setIsHydrated(true);
-  }, []);
+  const {
+    completed,
+    completedCount,
+    isHydrated,
+    progressPercentage,
+    subjectStatuses,
+    toggleSubject,
+    autocompleteYear,
+    reset,
+    unlockedCount,
+  } = useMapaProgress();
 
   const availableSlugs = useMemo(() => new Set(availableSubjectSlugs), [availableSubjectSlugs]);
-  const subjectStatuses = useMemo(() => calculateSubjectStatuses(completed), [completed]);
-
-  const saveProgress = (newCompleted: string[]) => {
-    setCompleted(newCompleted);
-    writeMapaProgress(newCompleted);
-  };
-
-  const removeSubjectAndDependents = (slugToRemove: string, currentCompleted: string[]): string[] => {
-    let nextCompleted = currentCompleted.filter((slug) => slug !== slugToRemove);
-    const dependents = subjectsData.filter(
-      (subject) => subject.correlativas.includes(slugToRemove) && nextCompleted.includes(subject.slug),
-    );
-
-    for (const dependent of dependents) {
-      nextCompleted = removeSubjectAndDependents(dependent.slug, nextCompleted);
-    }
-
-    return nextCompleted;
-  };
 
   const handleToggleSubject = (subject: SubjectNode) => {
     const currentStatus = subjectStatuses[subject.slug];
@@ -107,24 +61,21 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
     if (currentStatus === 'LOCKED') return;
 
     if (currentStatus === 'COMPLETED') {
-      saveProgress(removeSubjectAndDependents(subject.slug, completed));
+      toggleSubject(subject);
       return;
     }
 
-    saveProgress(Array.from(new Set([...completed, subject.slug])));
+    toggleSubject(subject);
   };
 
   const handleConfirmReset = () => {
     setConfirmResetOpen(false);
-    saveProgress([]);
+    reset();
     setSelectedSubjectSlug(subjectsData[0]?.slug ?? '');
   };
 
   const handleAutocompleteYear = (year: number) => {
-    const yearSlugs = subjectsData.flatMap((subject) =>
-      subject.year === year ? [subject.slug] : [],
-    );
-    saveProgress(Array.from(new Set([...completed, ...yearSlugs])));
+    autocompleteYear(year);
   };
 
   const filteredSubjects = useMemo(() => {
@@ -146,9 +97,6 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
   const selectedMissing = selectedSubject ? getMissingCorrelatives(selectedSubject, completed) : [];
   const selectedUnlocks = selectedSubject ? getUnlocks(selectedSubject.slug) : [];
   const completedCount = completed.length;
-  const totalSubjects = subjectsData.length;
-  const unlockedCount = Object.values(subjectStatuses).filter((status) => status === 'UNLOCKED').length;
-  const progressPercentage = Math.round((completedCount / totalSubjects) * 100);
   const suggestedSubjects = subjectsData
     .filter((subject) => subjectStatuses[subject.slug] === 'UNLOCKED')
     .sort((a, b) => getUnlocks(b.slug).length - getUnlocks(a.slug).length)
@@ -157,18 +105,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
     .map((slug) => subjectsData.find((subject) => subject.slug === slug))
     .filter((subject): subject is SubjectNode => Boolean(subject));
   const selectedDirectUnlocks = selectedUnlocks.slice(0, 4);
-  const suggestedYearToComplete = useMemo(() => {
-    for (let year = 1; year <= 5; year += 1) {
-      const yearSubjects = subjectsData.filter((subject) => subject.year === year);
-      const yearIsCompleted = yearSubjects.every((subject) => completed.includes(subject.slug));
-
-      if (!yearIsCompleted) {
-        return year > 1 ? year : null;
-      }
-    }
-
-    return null;
-  }, [completed]);
+  const suggestedYearToComplete = useSuggestedYear(completed);
 
   if (!isHydrated) {
     return (
@@ -480,7 +417,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = [] }: MapaCorrelativa
       </section>
 
       <section className="grid gap-4 xl:grid-cols-5">
-        {[1, 2, 3, 4, 5].map((year) => {
+        {MAPA_YEARS.map((year) => {
           const yearSubjects = filteredSubjects.filter((subject) => subject.year === year);
 
           return (

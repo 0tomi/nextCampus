@@ -1,41 +1,18 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, BookOpen, CheckCircle2 } from 'lucide-react';
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
-import { calculateSubjectStatuses } from '@/lib/domain/mapa/unlockLogic';
 import type { SubjectNode } from '@/lib/domain/mapa/types';
 import { yearSlugFromNumber } from '@/lib/slug';
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes';
-import {
-  MAPA_PROGRESS_UPDATED_EVENT,
-  readMapaProgress,
-} from '@/lib/mapaProgress';
+import { useMapaProgress } from '@/hooks/useMapaProgress';
 
 export function MapaSidebar() {
   const router = useRouter();
-  const [completed, setCompleted] = useState<string[]>([]);
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
-    const syncProgress = () => {
-      setCompleted(readMapaProgress());
-      setIsHydrated(true);
-    };
-
-    syncProgress();
-    window.addEventListener('storage', syncProgress);
-    window.addEventListener(MAPA_PROGRESS_UPDATED_EVENT, syncProgress);
-
-    return () => {
-      window.removeEventListener('storage', syncProgress);
-      window.removeEventListener(MAPA_PROGRESS_UPDATED_EVENT, syncProgress);
-    };
-  }, []);
-
-  const subjectStatuses = useMemo(() => calculateSubjectStatuses(completed), [completed]);
+  const { isHydrated, subjectStatuses } = useMapaProgress();
 
   const readySubjects = useMemo(
     () =>
