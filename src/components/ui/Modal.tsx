@@ -58,7 +58,7 @@ export function Modal({
       dialog.removeEventListener('click', closeFromBackdrop)
       if (dialog.open) dialog.close()
     }
-  }, [open])
+  }, [open, mounted])
 
   // Lock scroll while open. Native <dialog> owns focus trapping and Escape.
   useEffect(() => {
