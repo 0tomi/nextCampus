@@ -68,7 +68,13 @@ También: regla `prefer-useReducer` documentada en `AGENTS.md` + `CLAUDE.md` (cr
 
 ## 5. Pendiente (hallazgos genuinos por resolver)
 
-_(se actualiza a medida que avanzan los batches)_
+> **Corte de sesión** — baseline en verde (tsc + lint + 171 tests), árbol limpio.
+> **Próximo paso concreto**: aplicar el mismo reducer de paginación de `ApuntesFeed`
+> a `HistorialList.tsx` (cluster `items/hasMore/nextCursor/loading/error` → `useReducer`;
+> filtros `selectedUsers/selectedActions/userQuery/userOptions/searchingUsers/showDropdown`
+> quedan en `useState`). El archivo ya fue leído; falta solo escribir el reducer.
+> De paso aclara: `no-derived-useState:64` (seed `useState(entries)`) es estado inicial
+> intencional que diverge al paginar, NO estado derivado a sincronizar → FP.
 
 - `prefer-useReducer` → `HistorialList` (cluster de paginación, win genuino igual que ApuntesFeed)
 - `prefer-tag-over-role` (4 genuinos: CommissionSelectField:34, MapaCorrelativas:514, MapaCorrelativasMobile:818, AgendaCard:60) — `role` en div → tag semántico
