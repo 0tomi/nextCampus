@@ -119,7 +119,7 @@ export function Sheet({
         aria-modal="true"
         aria-labelledby={titleId}
         className={cn(
-          'relative h-auto max-h-[92vh] sm:h-full w-full max-w-md border-t sm:border-t-0 border-l-0 sm:border-l border-white/8 bg-surface-1 shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col justify-between rounded-t-2xl sm:rounded-none transition-transform duration-300 ease-out animate-in slide-in-from-bottom sm:slide-in-from-right',
+          'relative h-auto max-h-[92vh] sm:h-full sm:max-h-none w-full max-w-md border-t sm:border-t-0 border-l-0 sm:border-l border-white/8 bg-surface-1 shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col justify-between rounded-t-2xl sm:rounded-none transition-transform duration-300 ease-out animate-in slide-in-from-bottom sm:slide-in-from-right',
           className,
         )}
       >
