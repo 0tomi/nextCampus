@@ -17,7 +17,7 @@ import {
   Unlock,
 } from 'lucide-react';
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
-import { DESKTOP_STATUS_LABELS as STATUS_LABELS, MAPA_YEARS, YEAR_ACTION_LABELS, YEAR_LABELS as YEAR_NAMES } from '@/lib/domain/mapa/mapaConstants';
+import { DESKTOP_STATUS_LABELS as STATUS_LABELS, MAPA_YEARS, YEAR_ACTION_LABELS, YEAR_LABELS as YEAR_NAMES, type MapaYear } from '@/lib/domain/mapa/mapaConstants';
 import { getMissingCorrelatives, getSubjectName, getUnlocks } from '@/lib/domain/mapa/subjectQueries';
 import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
 import { useMapaProgress } from '@/hooks/useMapaProgress';
@@ -376,7 +376,7 @@ export function MapaCorrelativas({ availableSubjectSlugs = EMPTY_AVAILABLE_SUBJE
               <div className="mt-4 rounded-md border border-emerald-300/14 bg-emerald-400/6 px-3 py-2">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-100/60">Sugerencia</p>
                 <p className="mt-1 text-xs leading-5 text-emerald-50/90">
-                  Ya dejaste listo {YEAR_NAMES[suggestedYearToComplete - 1].toLowerCase()}. Si querés avanzar más rápido,
+                  Ya dejaste listo {YEAR_NAMES[(suggestedYearToComplete - 1) as MapaYear].toLowerCase()}. Si querés avanzar más rápido,
                   podés marcar {YEAR_NAMES[suggestedYearToComplete].toLowerCase()} completo.
                 </p>
               </div>
