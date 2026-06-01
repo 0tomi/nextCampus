@@ -67,7 +67,11 @@ export function Sheet({
     }
   }, [open])
 
-  if (!open || !mounted) return null
+  // Mantener el <dialog> montado mientras el componente viva (no desmontar al
+  // cerrar) para que la animación de SALIDA tenga un nodo sobre el cual correr.
+  // El estado abierto/cerrado lo maneja el atributo [open] (showModal/close) +
+  // CSS con @starting-style y allow-discrete.
+  if (!mounted) return null
 
 
   return createPortal(
@@ -75,7 +79,7 @@ export function Sheet({
       ref={sheetRef}
       aria-labelledby={titleId}
       className={cn(
-        'fixed inset-x-0 bottom-0 top-auto m-0 ml-auto flex h-auto max-h-[92vh] w-full max-w-md flex-col justify-between rounded-t-2xl border-l-0 border-t border-white/8 bg-surface-1 p-0 text-white shadow-[0_0_50px_rgba(0,0,0,0.8)] backdrop:bg-black/70 backdrop:backdrop-blur-sm sm:inset-y-0 sm:left-auto sm:right-0 sm:h-full sm:max-h-none sm:rounded-none sm:border-l sm:border-t-0',
+        'sheet-dialog fixed inset-x-0 bottom-0 top-auto m-0 ml-auto flex h-auto max-h-[92vh] w-full max-w-md flex-col justify-between rounded-t-2xl border-l-0 border-t border-white/8 bg-surface-1 p-0 text-white shadow-[0_0_50px_rgba(0,0,0,0.8)] backdrop:bg-black/70 backdrop:backdrop-blur-sm sm:inset-y-0 sm:left-auto sm:right-0 sm:h-full sm:max-h-none sm:rounded-none sm:border-l sm:border-t-0',
         className,
       )}
     >
