@@ -9,10 +9,10 @@ export type MapaCamera = {
 
 export const MAPA_NODE_WIDTH = 326;
 export const MAPA_NODE_HEIGHT = 138;
-export const MAPA_YEAR_GAP = 580;
-export const MAPA_ROW_GAP = 182;
+const MAPA_YEAR_GAP = 580;
+const MAPA_ROW_GAP = 182;
 export const MAPA_START_X = 130;
-export const MAPA_START_Y = 220;
+const MAPA_START_Y = 220;
 export const MAPA_WORLD_WIDTH = 3120;
 export const MAPA_MIN_SCALE = 0.38;
 export const MAPA_MAX_SCALE = 1.36;

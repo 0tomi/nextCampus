@@ -1,17 +1,24 @@
 'use client'
 
-import { useEffect, useActionState, useState, useCallback, useRef, useMemo } from 'react'
-import Image from 'next/image'
+import { useEffect, useActionState, useState, useCallback, useMemo } from 'react'
 import { Modal } from '@/components/ui/Modal'
-import { Plus, Trash2, AlertCircle, CirclePlay, ChevronUp, ChevronDown, FileCode2, Info } from 'lucide-react'
+import { CollapsibleFormSection } from '@/components/ui/CollapsibleFormSection'
+import { Plus } from 'lucide-react'
 import {
   createApunteAction,
   updateApunteAction,
   type ApunteActionState,
 } from '@/app/admin/actions'
-import { detectarRecurso, type RecursoTipo } from '@/lib/recursos'
-import { inferirCategoriasDeApunte } from '@/lib/apunte-categorias'
 import { RichTextEditor } from './RichTextEditor'
+import { RecursoRow } from '@/components/admin/apunte/RecursoRow'
+import { useAutoApunteCategories } from '@/hooks/useAutoApunteCategories'
+import { useApunteRecursos } from '@/hooks/useApunteRecursos'
+import {
+  getApunteFormValidationError,
+  serializeRecursos,
+  type RecursoDraft,
+  type RecursoDraftKind,
+} from '@/lib/domain/apuntes/apunteForm'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -37,42 +44,6 @@ export type ApunteFull = {
   }>
 }
 
-type RecursoDraftKind = 'LINK' | 'HTML'
-
-interface RecursoDraft {
-  /** Local key — nunca se manda al server */
-  localId: string
-  kind: RecursoDraftKind
-  url: string
-  tipo: RecursoTipo | null
-  nombre: string
-  storageKey?: string | null
-  mimeType?: string | null
-  sizeBytes?: number | null
-  fileName?: string
-  replacingStorage?: boolean
-  error?: string
-}
-
-/** Forma serializada que viaja en el input oculto recursosJson. */
-type SerializedRecurso =
-  | {
-      tipo: 'HTML'
-      localId: string
-      url: string
-      orden: number
-      nombre?: string
-      storageKey?: string
-      mimeType?: string
-      sizeBytes?: number
-    }
-  | {
-      tipo: RecursoTipo
-      url: string
-      orden: number
-      nombre?: string
-    }
-
 interface ApunteModalProps {
   open: boolean
   onClose: () => void
@@ -88,79 +59,6 @@ interface ApunteModalProps {
 // ---------------------------------------------------------------------------
 
 const emptyState: ApunteActionState = { ok: false, message: '' }
-
-function makeDraft(
-  url: string,
-  tipo: RecursoTipo | null,
-  nombre: string = '',
-  extra?: Partial<RecursoDraft>,
-): RecursoDraft {
-  return {
-    localId: crypto.randomUUID(),
-    kind: tipo === 'HTML' ? 'HTML' : 'LINK',
-    url,
-    tipo,
-    nombre,
-    ...extra,
-  }
-}
-
-const INTERACTIVE_NOTE_FILE_RE = /\.(html?|jsx|tsx)$/i
-
-function detectTipo(url: string): RecursoTipo | null {
-  if (!url.trim()) return null
-  return detectarRecurso(url)?.tipo ?? null
-}
-
-function CollapsibleFormSection({
-  title,
-  hint,
-  open,
-  onToggle,
-  children,
-}: {
-  title: string
-  hint: string
-  open: boolean
-  onToggle: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <section className="space-y-1">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="group flex w-full cursor-pointer items-center justify-between gap-4 py-1 text-left transition-colors"
-        aria-expanded={open}
-      >
-        <span>
-          <span className="block text-xs font-semibold uppercase tracking-widest text-white/40 transition-colors group-hover:text-white/60">
-            {title}
-          </span>
-          <span className="mt-1 block text-[11px] leading-4 text-white/30">
-            {hint}
-          </span>
-        </span>
-        <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/35 transition-colors group-hover:border-white/20 group-hover:text-white">
-          <ChevronDown
-            className={`size-4 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
-          />
-        </span>
-      </button>
-      <div
-        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${
-          open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-        }`}
-      >
-        <div className="overflow-hidden">
-          <div className="pt-2">
-            {children}
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
 
 // ---------------------------------------------------------------------------
 // ApunteModal
@@ -182,256 +80,49 @@ export function ApunteModal({
 
   const [titulo, setTitulo] = useState(apunte?.titulo ?? '')
   const [descriptionOpen, setDescriptionOpen] = useState(false)
-  const [recursos, setRecursos] = useState<RecursoDraft[]>(() =>
-    apunte
-      ? apunte.recursos.map((r) =>
-          makeDraft(r.url, r.tipo, r.nombre ?? '', {
-            storageKey: r.storageKey,
-            mimeType: r.mimeType,
-            sizeBytes: r.sizeBytes,
-            replacingStorage: false,
-          }),
-        )
-      : [],
+  const {
+    recursos,
+    addRecurso,
+    cancelHtmlReplace,
+    handleHtmlFileChange,
+    handleKindChange,
+    handleNombreChange,
+    handleUrlBlur,
+    handleUrlChange,
+    moveDown,
+    moveUp,
+    removeRecurso,
+    startHtmlReplace,
+  } = useApunteRecursos(apunte?.recursos)
+  const initialCategoriaIds = useMemo(
+    () => apunte?.categorias?.map((categoria) => categoria.id).filter(Boolean) ?? [],
+    [apunte?.categorias],
   )
-  const fallbackCategoriaId = categoriasDisponibles.find((categoria) => categoria.nombre === 'Otro')?.id ?? categoriasDisponibles[0]?.id ?? ''
-  const [selectedCategoriaIds, setSelectedCategoriaIds] = useState<string[]>(() =>
-    apunte?.categorias?.map((categoria) => categoria.id).filter(Boolean) ?? [],
-  )
-  const [dismissedAutoCategoriaIds, setDismissedAutoCategoriaIds] = useState<Set<string>>(() => new Set())
-  const autoSelectedCategoriaIdsRef = useRef<Set<string>>(new Set())
-  const [highlightCategoriaIds, setHighlightCategoriaIds] = useState<Set<string>>(() => new Set())
+  const {
+    highlightCategoriaIds,
+    inferredCategoriaIds,
+    selectedCategoriaIds,
+    submitCategoriaIds,
+    toggleCategoria,
+  } = useAutoApunteCategories({
+    categoriasDisponibles,
+    initialCategoriaIds,
+    recursos,
+  })
+
   const [validationError, setValidationError] = useState('')
 
-  // Close modal on success
   useEffect(() => {
     if (state.ok) {
       if (state.apunte) onCreated?.(state.apunte)
-      // Avisa al feed de apuntes para que se actualice al instante.
       window.dispatchEvent(new CustomEvent('apuntes-changed'))
       onSuccess?.()
       onClose()
     }
   }, [state.apunte, state.ok, onClose, onCreated, onSuccess])
 
-  const inferredCategoriaIds = useMemo(() => {
-    const inferredNames = inferirCategoriasDeApunte(
-      recursos.map((recurso) => ({
-        tipo: recurso.tipo,
-        url: recurso.url,
-        nombre: recurso.nombre,
-        fileName: recurso.fileName,
-      })),
-    )
-    const ids = inferredNames
-      .map((nombre) => categoriasDisponibles.find((categoria) => categoria.nombre === nombre)?.id)
-      .filter((id): id is string => Boolean(id))
-    return new Set(ids)
-  }, [categoriasDisponibles, recursos])
-
-  useEffect(() => {
-    const handle = window.setTimeout(() => {
-      setDismissedAutoCategoriaIds((prev) => {
-        const next = new Set([...prev].filter((id) => inferredCategoriaIds.has(id)))
-        return next.size === prev.size ? prev : next
-      })
-
-      setSelectedCategoriaIds((prev) => {
-        const next = new Set(prev)
-        const addedAutomatically: string[] = []
-        const removedAutomatically: string[] = []
-
-        for (const id of autoSelectedCategoriaIdsRef.current) {
-          if (!inferredCategoriaIds.has(id)) {
-            next.delete(id)
-            removedAutomatically.push(id)
-          }
-        }
-
-        for (const id of inferredCategoriaIds) {
-          if (!dismissedAutoCategoriaIds.has(id) && !next.has(id)) {
-            next.add(id)
-            addedAutomatically.push(id)
-          }
-        }
-
-        removedAutomatically.forEach((id) => autoSelectedCategoriaIdsRef.current.delete(id))
-        addedAutomatically.forEach((id) => autoSelectedCategoriaIdsRef.current.add(id))
-
-        if (addedAutomatically.length > 0) {
-          setHighlightCategoriaIds(new Set(addedAutomatically))
-          window.setTimeout(() => setHighlightCategoriaIds(new Set()), 900)
-        }
-        const asArray = [...next]
-        return asArray.length === prev.length && asArray.every((id, idx) => id === prev[idx]) ? prev : asArray
-      })
-    }, 0)
-
-    return () => window.clearTimeout(handle)
-  }, [dismissedAutoCategoriaIds, inferredCategoriaIds])
-
-  const submitCategoriaIds = useMemo(() => {
-    if (selectedCategoriaIds.length > 0) return selectedCategoriaIds
-
-    const inferredNotDismissed = [...inferredCategoriaIds].filter((id) => !dismissedAutoCategoriaIds.has(id))
-    if (inferredNotDismissed.length > 0) return inferredNotDismissed
-    if (inferredCategoriaIds.size > 0) return []
-
-    return fallbackCategoriaId ? [fallbackCategoriaId] : []
-  }, [dismissedAutoCategoriaIds, fallbackCategoriaId, inferredCategoriaIds, selectedCategoriaIds])
-
-  const toggleCategoria = useCallback((categoriaId: string) => {
-    setSelectedCategoriaIds((prev) => {
-      if (prev.includes(categoriaId)) {
-        if (prev.length === 1) return prev
-        autoSelectedCategoriaIdsRef.current.delete(categoriaId)
-        if (inferredCategoriaIds.has(categoriaId)) {
-          setDismissedAutoCategoriaIds((dismissed) => new Set(dismissed).add(categoriaId))
-        }
-        return prev.filter((id) => id !== categoriaId)
-      }
-      setDismissedAutoCategoriaIds((dismissed) => {
-        const next = new Set(dismissed)
-        next.delete(categoriaId)
-        return next
-      })
-      autoSelectedCategoriaIdsRef.current.delete(categoriaId)
-      return [...prev, categoriaId]
-    })
-  }, [inferredCategoriaIds])
-
-  // -------------------------------------------------------------------------
-  // Recurso handlers
-  // -------------------------------------------------------------------------
-
   const handleTituloChange = useCallback((value: string) => {
     setTitulo(value)
-  }, [])
-
-  const addRecurso = useCallback(() => {
-    setRecursos((prev) => [...prev, makeDraft('', null)])
-  }, [])
-
-  const handleKindChange = useCallback((localId: string, kind: RecursoDraftKind) => {
-    setRecursos((prev) =>
-      prev.map((r) =>
-        r.localId === localId
-          ? {
-              ...r,
-              kind,
-              tipo: kind === 'HTML' ? 'HTML' : detectTipo(r.url),
-              error: undefined,
-            }
-          : r,
-      ),
-    )
-  }, [])
-
-  const removeRecurso = useCallback((localId: string) => {
-    setRecursos((prev) => prev.filter((r) => r.localId !== localId))
-  }, [])
-
-  const moveUp = useCallback((index: number) => {
-    if (index === 0) return
-    setRecursos((prev) => {
-      const next = [...prev]
-      ;[next[index - 1], next[index]] = [next[index], next[index - 1]]
-      return next
-    })
-  }, [])
-
-  const moveDown = useCallback((index: number) => {
-    setRecursos((prev) => {
-      if (index === prev.length - 1) return prev
-      const next = [...prev]
-      ;[next[index], next[index + 1]] = [next[index + 1], next[index]]
-      return next
-    })
-  }, [])
-
-  const handleUrlChange = useCallback(
-    (localId: string, value: string) => {
-      setRecursos((prev) =>
-        prev.map((r) =>
-          r.localId === localId
-            ? { ...r, url: value, tipo: null, error: undefined }
-            : r,
-        ),
-      )
-    },
-    [],
-  )
-
-  const handleNombreChange = useCallback(
-    (localId: string, value: string) => {
-      setRecursos((prev) =>
-        prev.map((r) =>
-          r.localId === localId ? { ...r, nombre: value } : r,
-        ),
-      )
-    },
-    [],
-  )
-
-  const handleHtmlFileChange = useCallback((localId: string, file: File | null) => {
-    setRecursos((prev) =>
-      prev.map((r) => {
-        if (r.localId !== localId) return r
-        if (!file) {
-          return { ...r, fileName: undefined, tipo: 'HTML', error: undefined }
-        }
-        const isInteractiveNote = INTERACTIVE_NOTE_FILE_RE.test(file.name)
-        return {
-          ...r,
-          tipo: 'HTML',
-          fileName: file.name,
-          error: isInteractiveNote ? undefined : 'Subí un archivo HTML, JSX o TSX',
-        }
-      }),
-    )
-  }, [])
-
-  const startHtmlReplace = useCallback((localId: string) => {
-    setRecursos((prev) =>
-      prev.map((r) =>
-        r.localId === localId
-          ? { ...r, replacingStorage: true, fileName: undefined, error: undefined }
-          : r,
-      ),
-    )
-  }, [])
-
-  const cancelHtmlReplace = useCallback((localId: string) => {
-    setRecursos((prev) =>
-      prev.map((r) =>
-        r.localId === localId
-          ? { ...r, replacingStorage: false, fileName: undefined, error: undefined }
-          : r,
-      ),
-    )
-  }, [])
-
-  const handleUrlBlur = useCallback((localId: string, value: string) => {
-    if (!value.trim()) {
-      setRecursos((prev) =>
-        prev.map((r) =>
-          r.localId === localId ? { ...r, tipo: null, error: undefined } : r,
-        ),
-      )
-      return
-    }
-    const tipo = detectTipo(value)
-    setRecursos((prev) =>
-      prev.map((r) =>
-        r.localId === localId
-          ? {
-              ...r,
-              tipo,
-              error: tipo ? undefined : 'Solo links de YouTube o Drive',
-            }
-          : r,
-      ),
-    )
   }, [])
 
   // -------------------------------------------------------------------------
@@ -439,72 +130,15 @@ export function ApunteModal({
   // -------------------------------------------------------------------------
 
   const handleSubmit = useCallback(
-    (e: React.FormEvent<HTMLFormElement>) => {
-      setValidationError('')
-
-      const invalid = recursos.filter((r) => r.url.trim() && !r.tipo)
-      if (invalid.length > 0) {
-        e.preventDefault()
-        setValidationError(
-          'Hay links inválidos. Revisá que sean de YouTube o Google Drive.',
-        )
-        return
-      }
-
-      const invalidHtml = recursos.find(
-        (r) => r.kind === 'HTML' && (!r.storageKey || r.replacingStorage) && !r.fileName,
-      )
-      if (invalidHtml) {
-        e.preventDefault()
-        setValidationError('Seleccioná un archivo para cada apunte interactivo.')
-        return
-      }
-
-      const htmlWithErrors = recursos.find((r) => r.kind === 'HTML' && r.error)
-      if (htmlWithErrors) {
-        e.preventDefault()
-        setValidationError('Revisá los apuntes interactivos antes de guardar.')
-        return
-      }
-
-      if (submitCategoriaIds.length === 0) {
-        e.preventDefault()
-        setValidationError('Elegí al menos una categoría.')
-        return
-      }
-
-      // Nothing to prevent — let the form action run
+    (event: React.FormEvent<HTMLFormElement>) => {
+      const errorMessage = getApunteFormValidationError(recursos, submitCategoriaIds)
+      setValidationError(errorMessage)
+      if (errorMessage) event.preventDefault()
     },
-    [recursos, submitCategoriaIds.length],
+    [recursos, submitCategoriaIds],
   )
 
-  // Serialize recursos for the hidden input
-  const recursosJson = JSON.stringify(
-    recursos.flatMap<SerializedRecurso>((r, idx) => {
-      if (!(r.kind === 'HTML' ? r.tipo === 'HTML' : r.url.trim() && r.tipo)) return []
-
-      const nombre = r.nombre.trim()
-      if (r.kind === 'HTML') {
-        return [{
-          tipo: 'HTML',
-          localId: r.localId,
-          url: '',
-          orden: idx,
-          ...(nombre.length > 0 ? { nombre } : {}),
-          ...(r.storageKey && !r.replacingStorage ? { storageKey: r.storageKey } : {}),
-          ...(r.mimeType ? { mimeType: r.mimeType } : {}),
-          ...(r.sizeBytes ? { sizeBytes: r.sizeBytes } : {}),
-        }]
-      }
-
-      return [{
-        url: r.url.trim(),
-        tipo: r.tipo!,
-        orden: idx,
-        ...(nombre.length > 0 ? { nombre } : {}),
-      }]
-    }),
-  )
+  const recursosJson = useMemo(() => serializeRecursos(recursos), [recursos])
 
   return (
     <Modal
@@ -527,25 +161,7 @@ export function ApunteModal({
         <input type="hidden" name="recursosJson" value={recursosJson} />
         <input type="hidden" name="categoriaIdsJson" value={JSON.stringify(submitCategoriaIds)} />
 
-        {/* Título */}
-        <div className="space-y-1">
-          <label
-            htmlFor="apunte-titulo"
-            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
-          >
-            Título
-          </label>
-          <input
-            id="apunte-titulo"
-            type="text"
-            name="titulo"
-            required
-            value={titulo}
-            onChange={(e) => handleTituloChange(e.target.value)}
-            placeholder="Ej: Resumen Unidad 3"
-            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
-          />
-        </div>
+        <ApunteTitleField value={titulo} onChange={handleTituloChange} />
 
         {/* Descripción — Rich Text */}
         <CollapsibleFormSection
@@ -561,450 +177,217 @@ export function ApunteModal({
           />
         </CollapsibleFormSection>
 
-        {/* Categorías */}
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
-            Categorías
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {categoriasDisponibles.map((categoria) => {
-              const active = selectedCategoriaIds.includes(categoria.id)
-              const automatic = inferredCategoriaIds.has(categoria.id)
-              const highlighted = highlightCategoriaIds.has(categoria.id)
-              return (
-                <button
-                  key={categoria.id}
-                  type="button"
-                  onClick={() => toggleCategoria(categoria.id)}
-                  className={[
-                    'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-bold transition-all duration-300',
-                    active
-                      ? 'border-cyan-300/50 bg-cyan-300/15 text-cyan-100'
-                      : 'border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.07] hover:text-white',
-                    highlighted ? 'scale-105 shadow-[0_0_22px_rgba(103,232,249,0.25)]' : '',
-                  ].join(' ')}
-                >
-                  {categoria.nombre}
-                  {automatic ? <span className="ml-1 text-[10px] text-cyan-100/60">auto</span> : null}
-                </button>
-              )
-            })}
-          </div>
-          <p className="text-[11px] leading-5 text-white/40">
-            Las sugerencias aparecen según los recursos agregados, pero podés ajustar las categorías a mano.
-          </p>
-        </div>
+        <ApunteCategoriesField
+          categoriasDisponibles={categoriasDisponibles}
+          highlightCategoriaIds={highlightCategoriaIds}
+          inferredCategoriaIds={inferredCategoriaIds}
+          selectedCategoriaIds={selectedCategoriaIds}
+          onToggleCategoria={toggleCategoria}
+        />
 
-        {/* Recursos */}
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
-            Recursos{' '}
-            <span className="font-normal normal-case tracking-normal text-white/30">
-              (links o HTML)
-            </span>
-          </p>
+        <ApunteResourcesField
+          recursos={recursos}
+          onAddRecurso={addRecurso}
+          onCancelHtmlReplace={cancelHtmlReplace}
+          onHtmlFileChange={handleHtmlFileChange}
+          onKindChange={handleKindChange}
+          onMoveDown={moveDown}
+          onMoveUp={moveUp}
+          onNombreChange={handleNombreChange}
+          onRemove={removeRecurso}
+          onStartHtmlReplace={startHtmlReplace}
+          onUrlBlur={handleUrlBlur}
+          onUrlChange={handleUrlChange}
+        />
 
-          {recursos.length > 0 && (
-            <div className="space-y-3">
-              {recursos.map((recurso, idx) => (
-                <RecursoRow
-                  key={recurso.localId}
-                  recurso={recurso}
-                  index={idx}
-                  total={recursos.length}
-                  onKindChange={handleKindChange}
-                  onUrlChange={handleUrlChange}
-                  onUrlBlur={handleUrlBlur}
-                  onHtmlFileChange={handleHtmlFileChange}
-                  onStartHtmlReplace={startHtmlReplace}
-                  onCancelHtmlReplace={cancelHtmlReplace}
-                  onNombreChange={handleNombreChange}
-                  onRemove={removeRecurso}
-                  onMoveUp={moveUp}
-                  onMoveDown={moveDown}
-                />
-              ))}
-            </div>
-          )}
+        <ApunteFormErrors actionMessage={state.ok ? '' : state.message} validationError={validationError} />
 
-          <button
-            type="button"
-            onClick={addRecurso}
-            className="inline-flex items-center gap-1.5 rounded border border-white/10 bg-surface-0 px-3 py-1.5 text-xs font-semibold text-white/60 transition-colors hover:bg-white/5 hover:text-white cursor-pointer"
-          >
-            <Plus className="size-3.5" />
-            Agregar recurso
-          </button>
-        </div>
-
-        {/* Errors */}
-        {validationError && (
-          <p className="rounded border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
-            {validationError}
-          </p>
-        )}
-        {state.message && !state.ok && (
-          <p className="rounded border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
-            {state.message}
-          </p>
-        )}
-
-        {/* Actions */}
-        <div className="flex justify-end gap-2 border-t border-white/5 pt-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white cursor-pointer"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded bg-white px-4 py-2 text-sm font-semibold text-black transition-opacity disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-          >
-            {pending
-              ? 'Guardando…'
-              : isEditMode
-                ? 'Guardar cambios'
-                : 'Crear apunte'}
-          </button>
-        </div>
+        <ApunteFormActions isEditMode={isEditMode} pending={pending} onClose={onClose} />
       </form>
     </Modal>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Prompt copiable para generar apuntes interactivos con IA.
-// Editá libremente este texto: es lo que se copia al tocar "Tocá acá".
-// ---------------------------------------------------------------------------
 
-const HTML_PROMPT = `Vas a recibir un material de estudio. Ese material NO es algo que tengas que comentar, resumir ni anotar: es únicamente el TEMARIO, es decir, la lista de temas y conceptos que tu apunte nuevo tiene que cubrir. Tratalo como materia prima.
-
-Dato más importante de todos: el estudiante que va a usar tu apunte JAMÁS va a ver el material original. Tu apunte lo reemplaza por completo. Si algo no está explicado dentro de tu apunte, para el estudiante simplemente no existe. Por eso no estás "mejorando" un texto: estás construyendo desde cero un apunte autocontenido y definitivo que enseña esos temas mejor de lo que cualquier texto plano podría.
-
-Tu tarea: identificá la idea general y cada concepto del temario, sin dejar ninguno afuera, y armá una clase didáctica, visual e interactiva que explique cada concepto de forma progresiva, construyéndolo paso a paso.
-
-== REGLAS PEDAGÓGICAS (el corazón del apunte) ==
-
-- Explicá desde cero. Cada concepto, ejemplo y fórmula debe explicarse desde sus fundamentos, como si el estudiante no supiera absolutamente nada del tema. No asumas que tiene otro material al lado: no lo tiene.
-
-- Prohibido comentar en vez de enseñar. Está terminantemente prohibido usar frases que solo tienen sentido teniendo el texto original al lado, como "como vimos", "según el apunte", "el texto menciona", "el ejemplo anterior", "recordemos que". Si una frase remite a un material externo, está mal: reescribila explicando la idea en su totalidad.
-
-- Ningún ejemplo sin su explicación. Cada ejemplo, caso o ejercicio que muestres tiene que venir acompañado de su explicación completa: qué representa, por qué es así, paso a paso, y qué tiene que observar el estudiante. Mostrar un ejemplo y seguir de largo no sirve.
-
-- No pases por encima. Si un concepto es importante, tomate el tiempo de desarrollarlo en profundidad. Preferí explicar bien lo central antes que mencionar muchas cosas superficialmente.
-
-- Formato presentación. Estructurá el apunte como una secuencia guiada donde cada idea se revela y se construye progresivamente. El estudiante debería poder avanzar y ver cómo la idea se va formando, no recibir todo de golpe como un muro de texto.
-
-== MANDATO VISUAL (no es decoración, es la forma de enseñar) ==
-
-- Lo abstracto se vuelve visual, siempre. Todo concepto abstracto, ecuación, algoritmo, estructura o proceso DEBE tener una representación visual interactiva o animada que lo modele. Si algo se puede mostrar en movimiento o manipular, no lo expliques solo con texto.
-
-- Fidelidad sobre adorno. Las animaciones y gráficos tienen que REPRESENTAR fielmente el mecanismo real de lo que se explica: cómo cambia una variable, cómo itera un algoritmo, cómo se deforma una curva, cómo fluyen los datos. Nunca pongas animaciones que solo decoran y no enseñan nada.
-
-- Ejemplos del tipo de interacción que se espera: sliders que recalculan una fórmula y su gráfico en vivo mientras el estudiante mueve los parámetros; un algoritmo que se ejecuta paso a paso resaltando en cada iteración qué elemento cambia y por qué; diagramas que se arman ante el ojo a medida que se explica cada parte; simulaciones manipulables; autoevaluaciones con feedback inmediato. Usá la expresividad de React y el navegador al máximo para que el estudiante APRENDA, no solo lea.
-
-== PRIORIDAD ==
-
-Profundidad sobre los conceptos centrales por encima de la exhaustividad superficial. Y por encima de todo: el apunte tiene que FUNCIONAR y renderizar de verdad. Un artefacto que corre y explica bien lo central vale más que uno gigantesco que se trunca o no abre. Si tenés que elegir, garantizá primero que funcione.
-
-== CONTRATO TÉCNICO (cumplir SIN EXCEPCIÓN) ==
-
-- Formato de entrega: Exportá todo como un ÚNICO archivo React, preferiblemente TSX, con un componente default listo para renderizarse. Incluí los estilos dentro del mismo componente o del mismo archivo.
-
-- Tono educativo: Explicado de forma sencilla sin perder rigor sobre la materia, sin dejar detalles afuera. Es un apunte para estudiar.
-
-- Diseño responsivo: El documento debe verse bien tanto en interfaz de Desktop como en una interfaz de Teléfono como lo es 9:16.
-
-- Dependencias y Expresividad: Debe ser un único archivo. La ÚNICA sentencia "import" permitida es la de React y sus hooks (import React, { useState, useEffect } from 'react'). NO uses "import" de ninguna otra librería, ni "import()" dinámico, ni "require()": el apunte se rechaza y no abre.
-
-- Cómo usar librerías externas (CDN): Para aprovechar librerías de gráficos, animación, diagramas o matemática NO las importás: las cargás en tiempo de ejecución inyectando una etiqueta <script> (y <link> para su CSS) que apunte a un build UMD/global, y después las usás desde el objeto window. El patrón correcto es: dentro de un useEffect, creás el <script> con document.createElement, le ponés el src del CDN, esperás su evento onload, y recién ahí leés la librería desde window (por ejemplo window.Chart, window.d3, window.gsap) y dibujás. IMPORTANTE: los scripts y estilos SOLO pueden cargarse desde estos tres hosts (cualquier otro dominio queda bloqueado y el apunte no carga): https://cdn.jsdelivr.net , https://unpkg.com y https://cdnjs.cloudflare.com . Solo sirven librerías con build de navegador (UMD/global); no uses librerías solo-ESM ni que dependan de React (como Recharts o Framer Motion), porque no se enganchan a esta instancia de React.
-
-- Librerías recomendadas (todas tienen build UMD/global y aligeran tu código en vez de dibujar todo a mano): KaTeX o MathJax para fórmulas matemáticas; Chart.js para gráficos de datos (barras, líneas, dispersión); D3 o Plotly para visualizaciones y gráficos científicos más ricos; p5.js para simulaciones, física y animaciones generativas sobre canvas; GSAP o anime.js para animar transiciones y revelar conceptos paso a paso; Mermaid para diagramas de flujo, árboles y secuencias. Elegí las que mejor representen cada tema; no estás obligado a usar todas. Cualquier otro recurso con build de navegador que mejore la comprensión es bienvenido, siempre que no requiera archivos locales.
-
-- Fórmulas matemáticas: Si el apunte presenta fórmulas matemáticas, presentar dichas ecuaciones utilizando algún motor compatible que renderice LaTeX (por ejemplo, cargando dinámicamente KaTeX o MathJax por CDN) para que el estudiante pueda interpretar el apunte fácilmente.
-
-- Enfoque de contenido (Directiva Crítica): NO incluir frases, referencias o directivas proveídas por el usuario dentro del apunte generado. El apunte debe estar redactado para el estudiante que quiere conocer la información sobre los temas que trata el propio recurso; no interesan los detalles técnicos que te pidió el usuario para generar dicho apunte.
-
-Debes devolverme un TSX que cumpla con estas características a rajatabla.`
-
-// ---------------------------------------------------------------------------
-// RecursoRow — individual resource row in the list
-// ---------------------------------------------------------------------------
-
-interface RecursoRowProps {
-  recurso: RecursoDraft
-  index: number
-  total: number
-  onKindChange: (localId: string, kind: RecursoDraftKind) => void
-  onUrlChange: (localId: string, value: string) => void
-  onUrlBlur: (localId: string, value: string) => void
-  onHtmlFileChange: (localId: string, file: File | null) => void
-  onStartHtmlReplace: (localId: string) => void
-  onCancelHtmlReplace: (localId: string) => void
-  onNombreChange: (localId: string, value: string) => void
-  onRemove: (localId: string) => void
-  onMoveUp: (index: number) => void
-  onMoveDown: (index: number) => void
+function ApunteTitleField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <div className="space-y-1">
+      <label htmlFor="apunte-titulo" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
+        Título
+      </label>
+      <input
+        id="apunte-titulo"
+        type="text"
+        name="titulo"
+        required
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="Ej: Resumen Unidad 3"
+        className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
+      />
+    </div>
+  )
 }
 
-function nombreFallbackHint(tipo: RecursoTipo | null): string | null {
-  if (tipo === 'HTML') return 'Se mostrará como vista interactiva'
-  if (tipo === 'DRIVE') return "Se mostrará como “Archivo de Drive”"
-  if (tipo === 'YOUTUBE') return "Se mostrará como “Video de YouTube”"
-  return null
+function ApunteCategoriesField({
+  categoriasDisponibles,
+  highlightCategoriaIds,
+  inferredCategoriaIds,
+  selectedCategoriaIds,
+  onToggleCategoria,
+}: {
+  categoriasDisponibles: Array<{ id: string; nombre: string }>
+  highlightCategoriaIds: Set<string>
+  inferredCategoriaIds: Set<string>
+  selectedCategoriaIds: string[]
+  onToggleCategoria: (categoriaId: string) => void
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold uppercase tracking-widest text-white/40">Categorías</p>
+      <div className="flex flex-wrap gap-2">
+        {categoriasDisponibles.map((categoria) => {
+          const active = selectedCategoriaIds.includes(categoria.id)
+          const automatic = inferredCategoriaIds.has(categoria.id)
+          const highlighted = highlightCategoriaIds.has(categoria.id)
+          return (
+            <button
+              key={categoria.id}
+              type="button"
+              onClick={() => onToggleCategoria(categoria.id)}
+              className={[
+                'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-bold transition-all duration-300',
+                active
+                  ? 'border-cyan-300/50 bg-cyan-300/15 text-cyan-100'
+                  : 'border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.07] hover:text-white',
+                highlighted ? 'scale-105 shadow-[0_0_22px_rgba(103,232,249,0.25)]' : '',
+              ].join(' ')}
+            >
+              {categoria.nombre}
+              {automatic ? <span className="ml-1 text-[10px] text-cyan-100/60">auto</span> : null}
+            </button>
+          )
+        })}
+      </div>
+      <p className="text-[11px] leading-5 text-white/40">
+        Las sugerencias aparecen según los recursos agregados, pero podés ajustar las categorías a mano.
+      </p>
+    </div>
+  )
 }
 
-function RecursoRow({
-  recurso,
-  index,
-  total,
-  onKindChange,
-  onUrlChange,
-  onUrlBlur,
-  onHtmlFileChange,
-  onStartHtmlReplace,
+function ApunteResourcesField({
+  recursos,
+  onAddRecurso,
   onCancelHtmlReplace,
+  onHtmlFileChange,
+  onKindChange,
+  onMoveDown,
+  onMoveUp,
   onNombreChange,
   onRemove,
-  onMoveUp,
-  onMoveDown,
-}: RecursoRowProps) {
-  const hint = nombreFallbackHint(recurso.tipo)
-  const showHint = recurso.nombre.trim().length === 0 && hint !== null
+  onStartHtmlReplace,
+  onUrlBlur,
+  onUrlChange,
+}: {
+  recursos: RecursoDraft[]
+  onAddRecurso: () => void
+  onCancelHtmlReplace: (localId: string) => void
+  onHtmlFileChange: (localId: string, file: File | null) => void
+  onKindChange: (localId: string, kind: RecursoDraftKind) => void
+  onMoveDown: (index: number) => void
+  onMoveUp: (index: number) => void
+  onNombreChange: (localId: string, value: string) => void
+  onRemove: (localId: string) => void
+  onStartHtmlReplace: (localId: string) => void
+  onUrlBlur: (localId: string, value: string) => void
+  onUrlChange: (localId: string, value: string) => void
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
+        Recursos <span className="font-normal normal-case tracking-normal text-white/30">(links o HTML)</span>
+      </p>
 
-  const [promptCopiado, setPromptCopiado] = useState(false)
-  const [infoAbierta, setInfoAbierta] = useState(false)
+      {recursos.length > 0 ? (
+        <div className="space-y-3">
+          {recursos.map((recurso, index) => (
+            <RecursoRow
+              key={recurso.localId}
+              recurso={recurso}
+              index={index}
+              total={recursos.length}
+              onKindChange={onKindChange}
+              onUrlChange={onUrlChange}
+              onUrlBlur={onUrlBlur}
+              onHtmlFileChange={onHtmlFileChange}
+              onStartHtmlReplace={onStartHtmlReplace}
+              onCancelHtmlReplace={onCancelHtmlReplace}
+              onNombreChange={onNombreChange}
+              onRemove={onRemove}
+              onMoveUp={onMoveUp}
+              onMoveDown={onMoveDown}
+            />
+          ))}
+        </div>
+      ) : null}
 
-  const toggleInfo = useCallback(() => {
-    setInfoAbierta((prev) => !prev)
-  }, [])
+      <button
+        type="button"
+        onClick={onAddRecurso}
+        className="inline-flex cursor-pointer items-center gap-1.5 rounded border border-white/10 bg-surface-0 px-3 py-1.5 text-xs font-semibold text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+      >
+        <Plus className="size-3.5" />
+        Agregar recurso
+      </button>
+    </div>
+  )
+}
 
-  const copiarPrompt = useCallback(() => {
-    navigator.clipboard
-      .writeText(HTML_PROMPT)
-      .then(() => {
-        setPromptCopiado(true)
-        setTimeout(() => setPromptCopiado(false), 2000)
-      })
-      .catch(() => {
-        /* clipboard no disponible — ignoramos silenciosamente */
-      })
-  }, [])
+function ApunteFormErrors({ actionMessage, validationError }: { actionMessage: string; validationError: string }) {
+  if (!validationError && !actionMessage) return null
 
   return (
-    <div className="rounded-lg border border-white/10 bg-surface-1/40 p-2.5">
-      <div className="mb-2 flex items-center gap-1 rounded border border-white/8 bg-surface-0 p-1">
-        <button
-          type="button"
-          onClick={() => onKindChange(recurso.localId, 'LINK')}
-          className={[
-            'flex-1 rounded px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
-            recurso.kind === 'LINK'
-              ? 'bg-white/10 text-white'
-              : 'text-white/45 hover:bg-white/5 hover:text-white/70',
-          ].join(' ')}
-        >
-          Link
-        </button>
-        <button
-          type="button"
-          onClick={() => onKindChange(recurso.localId, 'HTML')}
-          className={[
-            'flex-1 rounded px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
-            recurso.kind === 'HTML'
-              ? 'bg-white/10 text-white'
-              : 'text-white/45 hover:bg-white/5 hover:text-white/70',
-          ].join(' ')}
-        >
-          Apunte Interactivo
-        </button>
-        <button
-          type="button"
-          onClick={toggleInfo}
-          aria-label="¿Qué es este tipo de recurso?"
-          aria-expanded={infoAbierta}
-          className={[
-            'inline-flex size-6 shrink-0 items-center justify-center rounded transition-colors cursor-pointer',
-            infoAbierta ? 'text-cyan-300' : 'text-white/40 hover:text-white/80',
-          ].join(' ')}
-        >
-          <Info className="size-3.5" />
-        </button>
-      </div>
+    <div className="space-y-2">
+      {validationError ? (
+        <p className="rounded border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
+          {validationError}
+        </p>
+      ) : null}
+      {actionMessage ? (
+        <p className="rounded border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
+          {actionMessage}
+        </p>
+      ) : null}
+    </div>
+  )
+}
 
-      {/* Panel de info desplegable — muestra la info del tipo seleccionado */}
-      <div
-        className={[
-          'grid transition-all duration-300 ease-out',
-          infoAbierta
-            ? 'mb-2 grid-rows-[1fr] opacity-100'
-            : 'grid-rows-[0fr] opacity-0',
-        ].join(' ')}
+function ApunteFormActions({
+  isEditMode,
+  pending,
+  onClose,
+}: {
+  isEditMode: boolean
+  pending: boolean
+  onClose: () => void
+}) {
+  return (
+    <div className="flex justify-end gap-2 border-t border-white/5 pt-4">
+      <button
+        type="button"
+        onClick={onClose}
+        className="cursor-pointer rounded border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white"
       >
-        <div className="overflow-hidden">
-          <div className="rounded-lg border border-white/10 bg-surface-0 p-3 text-[12px] leading-relaxed text-white/70">
-            {recurso.kind === 'LINK' ? (
-              <p>
-                Al ser un proyecto gratuito, contamos con almacenamiento limitado.
-                Por eso preferimos que compartas un link hacia el recurso vía
-                Drive, o un video vía YouTube. Ambos recursos ofrecen una
-                previsualización una vez subido el apunte.
-              </p>
-            ) : (
-              <p>
-                Los apuntes interactivos permiten subir explicaciones mucho más
-                efectivas y súper útiles para estudiar. Este recurso está pensado
-                para que subas un archivo hecho con IA explicando algo sobre el
-                apunte, o el apunte en sí mismo.{' '}
-                <button
-                  type="button"
-                  onClick={copiarPrompt}
-                  className="cursor-pointer font-semibold text-cyan-300 underline decoration-dotted underline-offset-2 hover:text-cyan-200"
-                >
-                  {promptCopiado ? '¡Prompt copiado!' : 'Tocá acá'}
-                </button>{' '}
-                para copiar un prompt que podés usar para que tu IA favorita te
-                arme un apunte interactivo.
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        {recurso.kind === 'LINK' ? (
-          <div className="relative flex-1">
-            <input
-              type="url"
-              aria-label="Link del recurso"
-              value={recurso.url}
-              onChange={(e) => onUrlChange(recurso.localId, e.target.value)}
-              onBlur={(e) => onUrlBlur(recurso.localId, e.target.value)}
-              placeholder="https://youtube.com/watch?v=... o https://drive.google.com/..."
-              className={`w-full rounded border bg-surface-0 px-3 py-2 pr-9 text-sm text-white placeholder:text-white/30 focus:outline-none ${
-                recurso.error
-                  ? 'border-rose-400/50 focus:border-rose-400/70'
-                  : 'border-white/10 focus:border-white/20'
-              }`}
-            />
-            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2">
-              {recurso.tipo === 'YOUTUBE' && (
-                <CirclePlay className="size-4 text-red-400" />
-              )}
-              {recurso.tipo === 'DRIVE' && (
-                <Image
-                  src="/resources/google_drive_logo_icon_159334.png"
-                  alt="Drive"
-                  width={16}
-                  height={16}
-                  className="size-4"
-                />
-              )}
-              {recurso.error && (
-                <AlertCircle className="size-4 text-rose-400" />
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="flex-1">
-            {recurso.storageKey && !recurso.replacingStorage ? (
-              <div className="flex min-h-10 flex-wrap items-center justify-between gap-2 rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white/70">
-                <span className="inline-flex min-w-0 items-center gap-2">
-                  <FileCode2 className="size-4 shrink-0 text-cyan-300" />
-                  <span>Apunte interactivo cargado</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => onStartHtmlReplace(recurso.localId)}
-                  className="cursor-pointer rounded border border-cyan-300/25 bg-cyan-300/10 px-2.5 py-1 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/15"
-                >
-                  Reemplazar
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <input
-                  type="file"
-                  aria-label="Archivo del apunte interactivo"
-                  name={`htmlFile:${recurso.localId}`}
-                  accept=".html,.htm,.jsx,.tsx,text/html,text/javascript,application/javascript"
-                  onChange={(e) => onHtmlFileChange(recurso.localId, e.target.files?.[0] ?? null)}
-                  className={`w-full cursor-pointer rounded border bg-surface-0 px-3 py-2 text-sm text-white file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white hover:file:bg-white/15 ${
-                    recurso.error ? 'border-rose-400/50' : 'border-white/10'
-                  }`}
-                />
-                {recurso.storageKey && recurso.replacingStorage ? (
-                  <div className="flex flex-wrap items-center justify-between gap-2 rounded border border-cyan-300/15 bg-cyan-300/10 px-3 py-2 text-[11px] text-cyan-100/80">
-                    <span>El archivo actual se mantiene hasta que guardes el reemplazo.</span>
-                    <button
-                      type="button"
-                      onClick={() => onCancelHtmlReplace(recurso.localId)}
-                      className="cursor-pointer rounded border border-white/10 bg-white/[0.04] px-2.5 py-1 font-semibold text-white/75 transition-colors hover:bg-white/10 hover:text-white"
-                    >
-                      Cancelar reemplazo
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Reorder buttons */}
-        <div className="flex flex-col">
-          <button
-            type="button"
-            onClick={() => onMoveUp(index)}
-            disabled={index === 0}
-            title="Subir"
-            className="inline-flex h-5 w-6 items-center justify-center rounded-t border border-white/8 bg-surface-0 text-white/40 transition-colors enabled:hover:bg-white/5 enabled:hover:text-white disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
-          >
-            <ChevronUp className="size-3" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onMoveDown(index)}
-            disabled={index === total - 1}
-            title="Bajar"
-            className="inline-flex h-5 w-6 items-center justify-center rounded-b border-x border-b border-white/8 bg-surface-0 text-white/40 transition-colors enabled:hover:bg-white/5 enabled:hover:text-white disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
-          >
-            <ChevronDown className="size-3" />
-          </button>
-        </div>
-
-        {/* Remove */}
-        <button
-          type="button"
-          onClick={() => onRemove(recurso.localId)}
-          title="Eliminar recurso"
-          className="inline-flex size-8 items-center justify-center rounded text-rose-400/60 transition-colors hover:bg-rose-500/10 hover:text-rose-300 cursor-pointer"
-        >
-          <Trash2 className="size-3.5" />
-        </button>
-      </div>
-
-      {recurso.error && (
-        <p className="mt-1.5 text-[11px] text-rose-400">{recurso.error}</p>
-      )}
-
-      {/* Nombre del recurso */}
-      <div className="mt-2 space-y-1">
-        <input
-          type="text"
-          aria-label="Nombre del recurso"
-          value={recurso.nombre}
-          onChange={(e) => onNombreChange(recurso.localId, e.target.value)}
-          placeholder="Nombre del recurso (opcional)"
-          maxLength={120}
-          className="w-full rounded border border-white/10 bg-surface-0 px-3 py-1.5 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
-        />
-        {showHint && (
-          <p className="text-[11px] text-white/40">{hint}</p>
-        )}
-      </div>
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        disabled={pending}
+        className="cursor-pointer rounded bg-white px-4 py-2 text-sm font-semibold text-black transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {pending ? 'Guardando…' : isEditMode ? 'Guardar cambios' : 'Crear apunte'}
+      </button>
     </div>
   )
 }
