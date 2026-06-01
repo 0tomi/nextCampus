@@ -82,6 +82,7 @@ export function serializeRecursos(recursos: RecursoDraft[]): string {
         ]
       }
 
+      if (!recurso.tipo) return []
       return [
         {
           url: recurso.url.trim(),
