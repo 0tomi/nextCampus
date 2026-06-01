@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Pencil, Plus } from 'lucide-react'
 import { AdminControls } from '@/components/admin/AdminControls'
@@ -55,6 +55,49 @@ interface ApuntesFeedProps {
   variant?: 'desktop' | 'mobile'
 }
 
+// El estado de paginación (lista, cursor, "hay más", carga y error) cambia
+// siempre en bloque tras cada fetch, así que vive en un reducer: cada
+// transición es una sola acción atómica en lugar de cinco setState sueltos.
+interface FeedState {
+  items: ApunteFeedItem[]
+  hasMore: boolean
+  nextCursor: string | null
+  loading: boolean
+  error: string
+}
+
+type FeedAction =
+  | { type: 'load-start' }
+  | {
+      type: 'load-success'
+      reset: boolean
+      items: ApunteFeedItem[]
+      hasMore: boolean
+      nextCursor: string | null
+    }
+  | { type: 'load-error' }
+
+function feedReducer(state: FeedState, action: FeedAction): FeedState {
+  switch (action.type) {
+    case 'load-start':
+      return { ...state, loading: true, error: '' }
+    case 'load-success':
+      return {
+        items: action.reset ? action.items : [...state.items, ...action.items],
+        hasMore: action.hasMore,
+        nextCursor: action.nextCursor,
+        loading: false,
+        error: '',
+      }
+    case 'load-error':
+      return {
+        ...state,
+        loading: false,
+        error: 'No pudimos cargar más apuntes. Probá de nuevo en unos segundos.',
+      }
+  }
+}
+
 function getInitialSelectedIds(categorias: CategoriaItem[]): string[] {
   if (typeof window === 'undefined') return []
   const params = new URLSearchParams(window.location.search)
@@ -90,19 +133,20 @@ export function ApuntesFeed({
   variant = 'desktop',
 }: ApuntesFeedProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>(() => getInitialSelectedIds(categorias))
-  const [items, setItems] = useState<ApunteFeedItem[]>(initialItems)
-  const [hasMore, setHasMore] = useState(initialHasMore)
-  const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [{ items, hasMore, nextCursor, loading, error }, dispatch] = useReducer(feedReducer, {
+    items: initialItems,
+    hasMore: initialHasMore,
+    nextCursor: initialNextCursor,
+    loading: false,
+    error: '',
+  })
   const sentinelRef = useRef<HTMLDivElement | null>(null)
   const cardRefs = useRef<Map<string, HTMLDivElement | null>>(new Map())
   const firstRunRef = useRef(true)
 
   const loadPage = useCallback(
     async ({ reset, cursor }: { reset: boolean; cursor?: string | null }) => {
-      setLoading(true)
-      setError('')
+      dispatch({ type: 'load-start' })
       try {
         const params = new URLSearchParams({ subjectId })
         selectedIds.forEach((id) => params.append('categoria', id))
@@ -111,13 +155,15 @@ export function ApuntesFeed({
         const response = await fetch(`/api/apuntes?${params.toString()}`)
         if (!response.ok) throw new Error('No se pudieron cargar los apuntes.')
         const page = (await response.json()) as ApuntesPageResponse
-        setItems((prev) => (reset ? page.items : [...prev, ...page.items]))
-        setHasMore(page.hasMore)
-        setNextCursor(page.nextCursor)
+        dispatch({
+          type: 'load-success',
+          reset,
+          items: page.items,
+          hasMore: page.hasMore,
+          nextCursor: page.nextCursor,
+        })
       } catch {
-        setError('No pudimos cargar más apuntes. Probá de nuevo en unos segundos.')
-      } finally {
-        setLoading(false)
+        dispatch({ type: 'load-error' })
       }
     },
     [selectedIds, subjectId],

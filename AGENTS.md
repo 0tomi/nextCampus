@@ -21,6 +21,10 @@ Este proyecto tiene skills disponibles que DEBES usar para trabajar de forma int
 - Citas como estas en el frontend son intolerables: El calendario vive en un wrapper client-only y la página sigue siendo Server Component.
 - Los botones deben tener cursor pointer clickeable
 
+## React State rules
+- **`prefer-useReducer`**: cuando un componente tiene un grupo de estados que cambian SIEMPRE en bloque (ej: el flujo de un fetch — `items` / `cursor` / `hasMore` / `loading` / `error`, o una máquina de estados `config → running → done`), consolidálos en un `useReducer` en vez de múltiples `useState` sueltos. Cada transición pasa a ser una sola acción atómica, lo que elimina estados intermedios inconsistentes y centraliza la lógica.
+- El criterio es la **interdependencia**, no la cantidad. NO conviertas a `useReducer` inputs controlados independientes (ej: `email`, `password`) ni toggles de UI sin relación entre sí: ahí `useState` es lo correcto y un reducer sería sobreingeniería.
+
 ## Git Commit rules
 - Cada vez que se termine de implementar un feature, bugfix, refactor o configuración, es obligatorio hacer un commit con los cambios.
 - Los commits deben seguir estrictamente la especificación de **Conventional Commits** (ej: `feat(db): ...`, `fix(ui): ...`).
