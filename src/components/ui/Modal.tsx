@@ -1,13 +1,6 @@
 'use client'
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type MouseEvent,
-  type ReactNode,
-} from 'react'
+import { useEffect, useEffectEvent, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -32,7 +25,7 @@ export function Modal({
   className,
   contentClassName,
 }: ModalProps) {
-  const dialogRef = useRef<HTMLDivElement>(null)
+  const dialogRef = useRef<HTMLDialogElement>(null)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -40,7 +33,34 @@ export function Modal({
     return () => window.clearTimeout(handle)
   }, [])
 
-  // Lock scroll while open
+  const closeDialog = useEffectEvent(() => {
+    onClose()
+  })
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog || !open) return
+
+    const closeFromNativeEvent = (event: Event) => {
+      event.preventDefault()
+      closeDialog()
+    }
+    const closeFromBackdrop = (event: globalThis.MouseEvent) => {
+      if (event.target === dialog) closeDialog()
+    }
+
+    if (!dialog.open) dialog.showModal()
+    dialog.addEventListener('cancel', closeFromNativeEvent)
+    dialog.addEventListener('click', closeFromBackdrop)
+
+    return () => {
+      dialog.removeEventListener('cancel', closeFromNativeEvent)
+      dialog.removeEventListener('click', closeFromBackdrop)
+      if (dialog.open) dialog.close()
+    }
+  }, [open])
+
+  // Lock scroll while open. Native <dialog> owns focus trapping and Escape.
   useEffect(() => {
     if (!open) return
     const prev = document.body.style.overflow
@@ -50,107 +70,39 @@ export function Modal({
     }
   }, [open])
 
-  // Close on Escape
-  useEffect(() => {
-    if (!open) return
-    function handleKey(e: globalThis.KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handleKey)
-    return () => document.removeEventListener('keydown', handleKey)
-  }, [open, onClose])
-
-  // Focus trap: keep focus inside the dialog
-  useEffect(() => {
-    if (!open || !dialogRef.current) return
-    const el = dialogRef.current
-
-    const focusable = el.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    )
-    const first = focusable[0]
-    const last = focusable[focusable.length - 1]
-
-    first?.focus()
-
-    function trapFocus(e: globalThis.KeyboardEvent) {
-      if (e.key !== 'Tab') return
-      if (focusable.length === 0) {
-        e.preventDefault()
-        return
-      }
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault()
-          last?.focus()
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault()
-          first?.focus()
-        }
-      }
-    }
-
-    document.addEventListener('keydown', trapFocus)
-    return () => document.removeEventListener('keydown', trapFocus)
-  }, [open])
-
   if (!open || !mounted) return null
 
-  function handleOverlayClick(e: MouseEvent<HTMLDivElement>) {
-    if (e.target === e.currentTarget) onClose()
-  }
-
-  function handleOverlayKey(e: KeyboardEvent<HTMLDivElement>) {
-    if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-      onClose()
-    }
-  }
 
   return createPortal(
-    /* Overlay */
-    <div
-      className="fixed inset-0 z-50 flex justify-center overflow-y-auto bg-black/70 backdrop-blur-sm p-4 md:p-10"
-      onClick={handleOverlayClick}
-      onKeyDown={handleOverlayKey}
-      role="presentation"
+    <dialog
+      ref={dialogRef}
+      aria-labelledby={titleId}
+      className={cn(
+        'm-auto w-[calc(100%-2rem)] max-w-lg overflow-visible rounded-none border border-white/8 bg-surface-1 p-0 text-white shadow-[0_24px_64px_rgba(0,0,0,0.72)] backdrop:bg-black/70 backdrop:backdrop-blur-sm animate-in md:w-full',
+        className,
+      )}
     >
-      <div className="flex min-h-full w-full items-center justify-center">
-        {/* Dialog */}
-        <div
-          ref={dialogRef}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={titleId}
-          className={cn(
-            'relative w-full max-w-lg rounded-none border border-white/8 bg-surface-1 shadow-[0_24px_64px_rgba(0,0,0,0.72)] animate-in my-auto',
-            className,
-          )}
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-white/6 px-6 py-4">
+        <h2
+          id={titleId}
+          className="text-base font-black tracking-tight text-white"
         >
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-white/6 px-6 py-4">
-            <h2
-              id={titleId}
-              className="text-base font-black tracking-tight text-white"
-            >
-              {title}
-            </h2>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Cerrar"
-              className="inline-flex size-8 items-center justify-center text-white/46 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 cursor-pointer"
-            >
-              <X className="size-4" />
-            </button>
-          </div>
-
-          {/* Content */}
-          <div className={cn('px-6 py-5', contentClassName)}>{children}</div>
-        </div>
+          {title}
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Cerrar"
+          className="inline-flex size-8 items-center justify-center text-white/46 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 cursor-pointer"
+        >
+          <X className="size-4" />
+        </button>
       </div>
-    </div>,
+
+      {/* Content */}
+      <div className={cn('px-6 py-5', contentClassName)}>{children}</div>
+    </dialog>,
     document.body,
   )
 }

@@ -959,11 +959,6 @@ function MapaSubjectCard({
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onSelectSubject(subject.slug)}
-      onKeyDown={(event) => selectSubjectWithKeyboard(event, subject.slug, onSelectSubject)}
-      aria-label={`Ver detalles de ${subject.nombre}`}
       className={cn(
         'group relative flex min-h-[132px] w-full cursor-pointer flex-col justify-between rounded-md border p-3 text-left transition duration-200',
         isCompleted && 'border-emerald-300/35 bg-emerald-400/10 shadow-[0_0_18px_rgba(52,211,153,0.06)]',
@@ -974,6 +969,12 @@ function MapaSubjectCard({
         isUnlock && 'border-cyan-300/45 bg-cyan-400/8',
       )}
     >
+      <button
+        type="button"
+        aria-label={`Ver detalles de ${subject.nombre}`}
+        onClick={() => onSelectSubject(subject.slug)}
+        className="absolute inset-0 z-10 cursor-pointer rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200/70"
+      />
       <SubjectCardHeader status={status} subject={subject} />
       <SubjectCardFooter
         hasPage={hasPage}
@@ -987,19 +988,9 @@ function MapaSubjectCard({
   );
 }
 
-function selectSubjectWithKeyboard(
-  event: React.KeyboardEvent<HTMLDivElement>,
-  subjectSlug: string,
-  onSelectSubject: (slug: string) => void,
-) {
-  if (event.key !== 'Enter' && event.key !== ' ') return;
-  event.preventDefault();
-  onSelectSubject(subjectSlug);
-}
-
 function SubjectCardHeader({ status, subject }: { status: SubjectStatus; subject: SubjectNode }) {
   return (
-    <div className="space-y-2 pr-5">
+    <div className="relative z-20 space-y-2 pr-5">
       <div className="absolute right-3 top-3">
         {status === 'COMPLETED' ? <CheckCircle2 className="size-4 text-emerald-200" /> : null}
         {status === 'UNLOCKED' ? <Unlock className="size-4 text-amber-200/70" /> : null}
@@ -1034,7 +1025,7 @@ function SubjectCardFooter({
   subject: SubjectNode;
 }) {
   return (
-    <div className="mt-3 space-y-2 border-t border-white/8 pt-2">
+    <div className="relative z-20 mt-3 space-y-2 border-t border-white/8 pt-2">
       <SubjectCardStatusRow status={status} subject={subject} />
       <SubjectMissingLine missing={missing} />
       {status !== 'LOCKED' ? (

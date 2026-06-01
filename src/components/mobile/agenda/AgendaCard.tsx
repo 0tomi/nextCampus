@@ -40,7 +40,9 @@ export function AgendaCard({ fecha, hora, tipo, titulo, materia, apuntes, onClic
           {tipo}
         </span>
         <span className="text-sm font-bold leading-snug text-white">{titulo}</span>
-        <RelatedApunteLinks apuntes={apuntes} limit={1} />
+        <span className="relative z-20 pointer-events-auto">
+          <RelatedApunteLinks apuntes={apuntes} limit={1} />
+        </span>
         <span className="text-[11px] font-semibold text-white/45">
           {meta}
         </span>
@@ -49,25 +51,20 @@ export function AgendaCard({ fecha, hora, tipo, titulo, materia, apuntes, onClic
   )
 
   const baseClassName = cn(
-    'flex w-full items-stretch gap-3.5 rounded-[10px] border border-white/5 bg-[#1a1a1a] px-3.5 py-3 transition-colors hover:bg-[#1f1f1f] active:scale-[0.99]',
+    'relative flex w-full items-stretch gap-3.5 rounded-[10px] border border-white/5 bg-[#1a1a1a] px-3.5 py-3 transition-colors hover:bg-[#1f1f1f] active:scale-[0.99]',
     onClick ? 'cursor-pointer' : 'cursor-default',
     className,
   )
 
   if (onClick) {
     return (
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={onClick}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault()
-            onClick()
-          }
-        }}
-        className={baseClassName}
-      >
+      <div className={baseClassName}>
+        <button
+          type="button"
+          aria-label={`Abrir ${titulo}`}
+          onClick={onClick}
+          className="absolute inset-0 z-10 cursor-pointer rounded-[10px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70"
+        />
         {content}
       </div>
     )

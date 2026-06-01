@@ -1,78 +1,100 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useEffect, useEffectEvent, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { Download, Share, Plus, X, Smartphone } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useInstallPrompt } from './useInstallPrompt'
 
 function IosInstructionsSheet({ onClose }: { onClose: () => void }) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+
+  const closeDialog = useEffectEvent(() => {
+    onClose()
+  })
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+
+    const closeFromNativeEvent = (event: Event) => {
+      event.preventDefault()
+      closeDialog()
+    }
+    const closeFromBackdrop = (event: globalThis.MouseEvent) => {
+      if (event.target === dialog) closeDialog()
+    }
+
+    if (!dialog.open) dialog.showModal()
+    dialog.addEventListener('cancel', closeFromNativeEvent)
+    dialog.addEventListener('click', closeFromBackdrop)
+
+    return () => {
+      dialog.removeEventListener('cancel', closeFromNativeEvent)
+      dialog.removeEventListener('click', closeFromBackdrop)
+      if (dialog.open) dialog.close()
+    }
+  }, [])
+
+
   return (
-    <>
-      <div
-        aria-hidden
-        onClick={onClose}
-        className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm"
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Instalar en iPhone"
-        className="fixed inset-x-4 bottom-6 z-[110] mx-auto max-w-md rounded-xl border border-white/10 bg-surface-1 p-5 shadow-[0_24px_60px_rgba(0,0,0,0.6)] sm:inset-x-0"
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
-              Instalar en iPhone
-            </span>
-            <h3 className="text-lg font-bold text-white">
-              Agregala a tu pantalla de inicio
-            </h3>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-white/50 transition-colors hover:bg-white/5 hover:text-white"
-          >
-            <X size={16} strokeWidth={2} />
-          </button>
+    <dialog
+      ref={dialogRef}
+      aria-label="Instalar en iPhone"
+      className="fixed inset-x-4 bottom-6 top-auto z-[110] mx-auto max-w-md rounded-xl border border-white/10 bg-surface-1 p-5 text-white shadow-[0_24px_60px_rgba(0,0,0,0.6)] backdrop:bg-black/70 backdrop:backdrop-blur-sm sm:inset-x-0"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
+            Instalar en iPhone
+          </span>
+          <h3 className="text-lg font-bold text-white">
+            Agregala a tu pantalla de inicio
+          </h3>
         </div>
-
-        <ol className="mt-4 flex flex-col gap-3">
-          <li className="flex items-start gap-3">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
-              <Share size={15} strokeWidth={2} />
-            </span>
-            <div className="flex flex-col gap-0.5 pt-1">
-              <span className="text-[13px] font-semibold text-white">
-                Tocá el botón Compartir
-              </span>
-              <span className="text-[12px] text-white/55">
-                Está en la barra inferior de Safari.
-              </span>
-            </div>
-          </li>
-          <li className="flex items-start gap-3">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
-              <Plus size={15} strokeWidth={2} />
-            </span>
-            <div className="flex flex-col gap-0.5 pt-1">
-              <span className="text-[13px] font-semibold text-white">
-                Elegí “Añadir a pantalla de inicio”
-              </span>
-              <span className="text-[12px] text-white/55">
-                Confirmá el nombre y listo, ya la tenés.
-              </span>
-            </div>
-          </li>
-        </ol>
-
-        <p className="mt-4 text-[11px] text-white/40">
-          Funciona en Safari. Si estás en Chrome para iPhone, abrila primero en
-          Safari.
-        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Cerrar"
+          className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-white/50 transition-colors hover:bg-white/5 hover:text-white"
+        >
+          <X size={16} strokeWidth={2} />
+        </button>
       </div>
-    </>
+
+      <ol className="mt-4 flex flex-col gap-3">
+        <li className="flex items-start gap-3">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
+            <Share size={15} strokeWidth={2} />
+          </span>
+          <div className="flex flex-col gap-0.5 pt-1">
+            <span className="text-[13px] font-semibold text-white">
+              Tocá el botón Compartir
+            </span>
+            <span className="text-[12px] text-white/55">
+              Está en la barra inferior de Safari.
+            </span>
+          </div>
+        </li>
+        <li className="flex items-start gap-3">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
+            <Plus size={15} strokeWidth={2} />
+          </span>
+          <div className="flex flex-col gap-0.5 pt-1">
+            <span className="text-[13px] font-semibold text-white">
+              Elegí “Añadir a pantalla de inicio”
+            </span>
+            <span className="text-[12px] text-white/55">
+              Confirmá el nombre y listo, ya la tenés.
+            </span>
+          </div>
+        </li>
+      </ol>
+
+      <p className="mt-4 text-[11px] text-white/40">
+        Funciona en Safari. Si estás en Chrome para iPhone, abrila primero en
+        Safari.
+      </p>
+    </dialog>
   )
 }
 

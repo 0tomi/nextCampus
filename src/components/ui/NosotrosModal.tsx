@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useReducer, useRef } from 'react'
+import { useEffect, useEffectEvent, useReducer, useRef } from 'react'
 import { X, GraduationCap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -160,11 +160,10 @@ function useRankingData(open: boolean) {
 export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
   const { mounted, showRankingMobile, toggleRankingMobile, visible } = useNosotrosModalTransition(open)
   const { items: ranking, loading: rankingLoading } = useRankingData(open)
-  const dialogRef = useRef<HTMLDivElement>(null)
+  const dialogRef = useRef<HTMLDialogElement>(null)
 
   useBodyScrollLock(mounted)
-  useEscapeToClose(visible, onClose)
-  useFocusTrap(visible, dialogRef)
+  useNativeNosotrosDialog(mounted, dialogRef, onClose)
 
   if (!mounted) return null
 
@@ -177,16 +176,13 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
       onClick={onClose}
       role="presentation"
     >
-      <div
+      <dialog
         ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
         aria-labelledby="about-modal-title"
         className={cn(
-          'relative w-full max-w-4xl overflow-hidden rounded-2xl border border-white/8 bg-surface-1 shadow-[0_24px_64px_rgba(0,0,0,0.85)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          'relative m-0 w-full max-w-4xl overflow-hidden rounded-2xl border border-white/8 bg-surface-1 p-0 text-white shadow-[0_24px_64px_rgba(0,0,0,0.85)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] backdrop:bg-transparent',
           visible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-4 scale-95 opacity-0',
         )}
-        onClick={(event) => event.stopPropagation()}
       >
         <AboutModalGlow />
         <AboutModalHeader onClose={onClose} />
@@ -196,9 +192,43 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
           showRankingMobile={showRankingMobile}
           onToggleRankingMobile={toggleRankingMobile}
         />
-      </div>
+      </dialog>
     </div>
   )
+}
+
+
+function useNativeNosotrosDialog(
+  mounted: boolean,
+  dialogRef: React.RefObject<HTMLDialogElement | null>,
+  onClose: () => void,
+) {
+  const closeDialog = useEffectEvent(() => {
+    onClose()
+  })
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog || !mounted) return
+
+    const closeFromNativeEvent = (event: Event) => {
+      event.preventDefault()
+      closeDialog()
+    }
+    const stopDialogClick = (event: globalThis.MouseEvent) => {
+      event.stopPropagation()
+    }
+
+    if (!dialog.open) dialog.showModal()
+    dialog.addEventListener('cancel', closeFromNativeEvent)
+    dialog.addEventListener('click', stopDialogClick)
+
+    return () => {
+      dialog.removeEventListener('cancel', closeFromNativeEvent)
+      dialog.removeEventListener('click', stopDialogClick)
+      if (dialog.open) dialog.close()
+    }
+  }, [mounted])
 }
 
 function useBodyScrollLock(mounted: boolean) {

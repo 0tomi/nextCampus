@@ -25,13 +25,13 @@ export function CommissionSelectField({
   disabled = false,
 }: CommissionSelectFieldProps) {
   return (
-    <div className="space-y-2">
+    <fieldset className="space-y-2">
       {label ? (
-        <span className="block text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">
+        <legend className="block text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">
           {label}
-        </span>
+        </legend>
       ) : null}
-      <div id={id} className="flex flex-wrap gap-2" role="group" aria-label={label}>
+      <div id={id} className="flex flex-wrap gap-2" aria-label={label}>
         <button
           type="button"
           disabled={disabled}
@@ -70,7 +70,7 @@ export function CommissionSelectField({
         })}
       </div>
       {helperText ? <p className="text-xs leading-5 text-white/38">{helperText}</p> : null}
-    </div>
+    </fieldset>
   )
 }
 

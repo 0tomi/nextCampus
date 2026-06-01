@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   Menu,
@@ -347,40 +347,55 @@ function MobileDrawer({
   pathname,
   years,
 }: MobileDrawerProps) {
+  const drawerRef = useRef<HTMLDialogElement>(null)
+  const closeDrawer = useEffectEvent(() => {
+    onClose()
+  })
+
+  useEffect(() => {
+    const drawer = drawerRef.current
+    if (!drawer) return
+
+    const closeFromNativeEvent = (event: Event) => {
+      event.preventDefault()
+      closeDrawer()
+    }
+    const closeFromBackdrop = (event: globalThis.MouseEvent) => {
+      if (event.target === drawer) closeDrawer()
+    }
+
+    if (open && !drawer.open) drawer.showModal()
+    if (!open && drawer.open) drawer.close()
+
+    drawer.addEventListener('cancel', closeFromNativeEvent)
+    drawer.addEventListener('click', closeFromBackdrop)
+
+    return () => {
+      drawer.removeEventListener('cancel', closeFromNativeEvent)
+      drawer.removeEventListener('click', closeFromBackdrop)
+    }
+  }, [open])
+
   return (
-    <>
-      <button
-        type="button"
-        aria-label="Cerrar menú"
-        tabIndex={open ? 0 : -1}
-        onClick={onClose}
-        className={cn(
-          'fixed inset-0 z-[60] cursor-pointer bg-black/60 transition-opacity duration-[240ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
-          open ? 'opacity-100' : 'pointer-events-none opacity-0',
-        )}
+    <dialog
+      ref={drawerRef}
+      aria-label="Menú principal"
+      className={cn(
+        'fixed inset-y-0 left-0 z-[70] m-0 flex h-full w-[304px] max-h-none max-w-none flex-col border-r border-white/[0.06] bg-[#141414] p-0 text-white shadow-[24px_0_60px_rgba(0,0,0,0.5)] backdrop:bg-black/60',
+        'transition-transform duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
+        open ? 'translate-x-0' : '-translate-x-full',
+      )}
+    >
+      <DrawerHeader careerName={careerName} onClose={onClose} />
+      <DrawerNavigation
+        isSubjectsView={isSubjectsView}
+        pathname={pathname}
+        currentYearSlug={currentYearSlug}
+        years={years}
+        onClose={onClose}
       />
-      <aside
-        role="dialog"
-        aria-modal="true"
-        aria-label="Menú principal"
-        aria-hidden={!open}
-        className={cn(
-          'fixed inset-y-0 left-0 z-[70] flex w-[304px] flex-col border-r border-white/[0.06] bg-[#141414] shadow-[24px_0_60px_rgba(0,0,0,0.5)]',
-          'transition-transform duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
-          open ? 'translate-x-0' : '-translate-x-full',
-        )}
-      >
-        <DrawerHeader careerName={careerName} onClose={onClose} />
-        <DrawerNavigation
-          isSubjectsView={isSubjectsView}
-          pathname={pathname}
-          currentYearSlug={currentYearSlug}
-          years={years}
-          onClose={onClose}
-        />
-        <DrawerFooter pathname={pathname} onClose={onClose} />
-      </aside>
-    </>
+      <DrawerFooter pathname={pathname} onClose={onClose} />
+    </dialog>
   )
 }
 

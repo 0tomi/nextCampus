@@ -504,7 +504,7 @@ function RecommendedSubjectCard({ subject, selected, onOpen }: { subject: Subjec
           <Target className="size-4.5" />
         </span>
       </div>
-      <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/8 pt-3">
+      <div className="relative z-20 mt-4 flex items-center justify-between gap-2 border-t border-white/8 pt-3">
         <span className="text-[11px] font-bold text-white/56">Abre {unlockCount} materia{unlockCount === 1 ? '' : 's'}</span>
         <span className="inline-flex items-center gap-1 text-[11px] font-black text-white">
           Ver foco
@@ -908,22 +908,19 @@ function SubjectListCard({
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={onSelect}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onSelect();
-        }
-      }}
       className={cn(
-        'w-full cursor-pointer rounded-[24px] border p-4 text-left transition',
+        'relative w-full cursor-pointer rounded-[24px] border p-4 text-left transition',
         STATUS_CARD[status],
         selected ? 'border-cyan-300/34 ring-1 ring-cyan-300/26' : 'hover:border-white/18',
       )}
     >
-      <div className="flex items-start justify-between gap-3">
+      <button
+        type="button"
+        aria-label={`Ver detalles de ${subject.nombre}`}
+        onClick={onSelect}
+        className="absolute inset-0 z-10 cursor-pointer rounded-[24px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200/70"
+      />
+      <div className="relative z-20 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/38">
             {subject.codigo} · {YEAR_LABELS[subject.year as 1 | 2 | 3 | 4 | 5]}
@@ -937,18 +934,18 @@ function SubjectListCard({
       </div>
 
       {missing.length > 0 ? (
-        <p className="mt-3 line-clamp-2 text-[12px] leading-5 text-rose-100/72">
+        <p className="relative z-20 mt-3 line-clamp-2 text-[12px] leading-5 text-rose-100/72">
           Falta: {missing.map(getSubjectName).join(', ')}
         </p>
       ) : (
-        <p className="mt-3 text-[12px] leading-5 text-white/46">
+        <p className="relative z-20 mt-3 text-[12px] leading-5 text-white/46">
           {subject.correlativas.length === 0
             ? 'Sin requisitos previos.'
             : 'Ya reúne los requisitos principales para seguir.'}
         </p>
       )}
 
-      <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/8 pt-3">
+      <div className="relative z-20 mt-4 flex items-center justify-between gap-2 border-t border-white/8 pt-3">
         {canOpen ? (
           <Link
             href={buildSubjectHref({ yearSlug: yearSlugFromNumber(subject.year), subjectSlug: subject.slug })}
