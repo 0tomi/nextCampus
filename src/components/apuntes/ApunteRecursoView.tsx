@@ -148,13 +148,16 @@ function ApunteRecursoMedia({
   if (recurso.tipo === 'YOUTUBE') {
     const id = extraerYoutubeId(recurso.url)
     if (!id) return null
+    // Embed cross-origin (youtube-nocookie.com): allow-same-origin es seguro acá
+    // —la Same-Origin Policy impide que el player toque el DOM de la página— y el
+    // reproductor lo necesita para acceder a su propio storage.
     return (
       <iframe
         src={youtubeEmbedUrl(id)}
         className="aspect-video w-full rounded-md border border-white/10 bg-black/20"
         loading="lazy"
         allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        sandbox="allow-scripts allow-presentation allow-popups"
+        sandbox="allow-scripts allow-presentation allow-popups allow-same-origin"
         allowFullScreen
         title={titulo}
       />
