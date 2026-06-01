@@ -49,6 +49,7 @@ interface SubjectTabsProps {
   subjects?: readonly EventModalSubject[]
   commissions: readonly CommissionOption[]
   focusApunteSlug?: string
+  activeCommissionName?: string
 }
 
 const TABS: Array<{ key: TabKey; label: string; Icon: typeof CalendarDays }> = [
@@ -63,7 +64,7 @@ const HASH_MAP: Record<string, TabKey> = {
   '#apuntes': 'apuntes',
 }
 
-export function SubjectTabs({ subjectId, subjectSlug, subjectName, yearSlug, yearId, agendaId, events, apuntes, categorias, apuntesHasMore, apuntesNextCursor, tiposEvento, subjects, commissions, focusApunteSlug }: SubjectTabsProps) {
+export function SubjectTabs({ subjectId, subjectSlug, subjectName, yearSlug, yearId, agendaId, events, apuntes, categorias, apuntesHasMore, apuntesNextCursor, tiposEvento, subjects, commissions, focusApunteSlug, activeCommissionName }: SubjectTabsProps) {
   const [active, setActive] = useState<TabKey>(() => {
     if (focusApunteSlug) return 'apuntes'
     if (typeof window === 'undefined') return 'agenda'
@@ -120,6 +121,7 @@ export function SubjectTabs({ subjectId, subjectSlug, subjectName, yearSlug, yea
             tiposEvento={tiposEvento}
             subjects={subjects}
             commissions={commissions}
+            activeCommissionName={activeCommissionName}
           />
         )}
         {active === 'quiz' && <QuizTab subjectSlug={subjectSlug} subjectName={subjectName} yearSlug={yearSlug} yearId={yearId} />}

@@ -7,13 +7,9 @@ import { getYearColorClasses } from '@/lib/yearColors'
 import { CirclePlay, Pencil, Plus } from 'lucide-react'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { formatDescription } from '@/lib/text'
-import { CommissionSelectField } from '@/components/commissions/CommissionSelectField'
 import {
-  ALL_COMMISSIONS_VALUE,
   filterEventsByPreferredCommission,
-  normalizePreferredCommissionId,
   type CommissionOption,
-  writePreferredCommissionId,
 } from '@/lib/commission-preferences'
 import { usePreferredCommissionId } from '@/components/commissions/usePreferredCommission'
 import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
@@ -244,21 +240,6 @@ export function MobileSubject({
                 <span className="text-lg font-black text-white">{subject.apuntesTotal}</span>
               </div>
              </div>
-            {!activeCommissionName ? (
-              <div className="mt-4">
-                <CommissionSelectField
-                  id="mobile-subject-preferred-commission"
-                  label="Comisión"
-                  value={preferredCommissionId ?? ALL_COMMISSIONS_VALUE}
-                  commissions={commissions}
-                  onChange={(value) => {
-                    const nextCommissionId = normalizePreferredCommissionId(value)
-                    writePreferredCommissionId(subject.slug, nextCommissionId)
-                  }}
-                  helperText="Esta elección solo ajusta las fechas que ves en esta materia."
-                />
-              </div>
-            ) : null}
           </div>
         </section>
 
@@ -304,6 +285,7 @@ export function MobileSubject({
             categoriasDisponibles: subject.categoriasDisponibles,
           }]}
           commissions={commissions}
+          activeCommissionName={activeCommissionName}
         />
       </div>
     </MobileShell>
