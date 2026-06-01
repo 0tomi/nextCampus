@@ -10,7 +10,8 @@ function getSuggestedYearToComplete(completed: readonly string[]): Exclude<MapaY
     const yearIsCompleted = yearSubjects.every((subject) => completedSet.has(subject.slug));
 
     if (!yearIsCompleted) {
-      return year > 1 ? year : null;
+      if (year === 1) return null;
+      return year;
     }
   }
 
