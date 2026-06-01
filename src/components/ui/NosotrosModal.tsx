@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useReducer, useRef } from 'react'
 import { X, GraduationCap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -43,54 +43,109 @@ interface NosotrosModalProps {
   onClose: () => void
 }
 
-export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
-  const [mounted, setMounted] = useState(false)
-  const [visible, setVisible] = useState(false)
-  const [ranking, setRanking] = useState<RankingItem[]>([])
-  const [rankingLoading, setRankingLoading] = useState(false)
-  const [showRankingMobile, setShowRankingMobile] = useState(false)
-  const dialogRef = useRef<HTMLDivElement>(null)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+const RANKING_SKELETON_KEYS = ['ranking-skeleton-1', 'ranking-skeleton-2', 'ranking-skeleton-3', 'ranking-skeleton-4', 'ranking-skeleton-5']
 
-  // Handle mounting and open/close transitions
+type ModalTransitionState = {
+  mounted: boolean
+  visible: boolean
+  showRankingMobile: boolean
+}
+
+type ModalTransitionAction =
+  | { type: 'mounted' }
+  | { type: 'visible' }
+  | { type: 'closing' }
+  | { type: 'unmounted' }
+  | { type: 'toggle-mobile-ranking' }
+
+function modalTransitionReducer(state: ModalTransitionState, action: ModalTransitionAction): ModalTransitionState {
+  switch (action.type) {
+    case 'mounted':
+      return { ...state, mounted: true }
+    case 'visible':
+      return { ...state, visible: true }
+    case 'closing':
+      return { ...state, showRankingMobile: false, visible: false }
+    case 'unmounted':
+      return { ...state, mounted: false }
+    case 'toggle-mobile-ranking':
+      return { ...state, showRankingMobile: !state.showRankingMobile }
+  }
+}
+
+function useNosotrosModalTransition(open: boolean) {
+  const [state, dispatch] = useReducer(modalTransitionReducer, {
+    mounted: false,
+    showRankingMobile: false,
+    visible: false,
+  })
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   useEffect(() => {
     if (open) {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-      const mountTimer = setTimeout(() => {
-        setMounted(true)
-      }, 0)
-      // Use a brief timeout to ensure the browser repaints the initial scale-95 opacity-0 state
-      const timer = setTimeout(() => {
-        setVisible(true)
-      }, 20)
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+      const mountTimer = setTimeout(() => dispatch({ type: 'mounted' }), 0)
+      const visibleTimer = setTimeout(() => dispatch({ type: 'visible' }), 20)
       return () => {
         clearTimeout(mountTimer)
-        clearTimeout(timer)
+        clearTimeout(visibleTimer)
       }
-    } else {
-      const hideTimer = setTimeout(() => {
-        setVisible(false)
-        setShowRankingMobile(false)
-      }, 0)
-      timeoutRef.current = setTimeout(() => {
-        setMounted(false)
-      }, 300) // Match transition duration (300ms)
-      return () => clearTimeout(hideTimer)
     }
+
+    const hideTimer = setTimeout(() => dispatch({ type: 'closing' }), 0)
+    closeTimerRef.current = setTimeout(() => dispatch({ type: 'unmounted' }), 300)
+    return () => clearTimeout(hideTimer)
   }, [open])
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+    }
+  }, [])
+
+  return {
+    mounted: state.mounted,
+    showRankingMobile: state.showRankingMobile,
+    toggleRankingMobile: () => dispatch({ type: 'toggle-mobile-ranking' }),
+    visible: state.visible,
+  }
+}
+
+type RankingState = {
+  items: RankingItem[]
+  loading: boolean
+}
+
+type RankingAction =
+  | { type: 'loading' }
+  | { type: 'loaded'; items: RankingItem[] }
+  | { type: 'failed' }
+
+function rankingReducer(state: RankingState, action: RankingAction): RankingState {
+  switch (action.type) {
+    case 'loading':
+      return { ...state, loading: true }
+    case 'loaded':
+      return { items: action.items, loading: false }
+    case 'failed':
+      return { items: [], loading: false }
+  }
+}
+
+function useRankingData(open: boolean) {
+  const [state, dispatch] = useReducer(rankingReducer, { items: [], loading: false })
 
   useEffect(() => {
     if (!open) return
     const controller = new AbortController()
     const handle = window.setTimeout(() => {
-      setRankingLoading(true)
+      dispatch({ type: 'loading' })
       fetch('/api/ranking', { signal: controller.signal })
         .then((response) => (response.ok ? response.json() : { items: [] }))
-        .then((data: { items?: RankingItem[] }) => setRanking(data.items ?? []))
+        .then((data: { items?: RankingItem[] }) => dispatch({ type: 'loaded', items: data.items ?? [] }))
         .catch((error) => {
-          if ((error as Error).name !== 'AbortError') setRanking([])
+          if ((error as Error).name !== 'AbortError') dispatch({ type: 'failed' })
         })
-        .finally(() => setRankingLoading(false))
     }, 0)
 
     return () => {
@@ -99,75 +154,25 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
     }
   }, [open])
 
-  // Lock body scroll when open
-  useEffect(() => {
-    if (!mounted) return
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = prev
-    }
-  }, [mounted])
+  return state
+}
 
-  // Close on Escape key
-  useEffect(() => {
-    if (!visible) return
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handleKey)
-    return () => document.removeEventListener('keydown', handleKey)
-  }, [visible, onClose])
+export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
+  const { mounted, showRankingMobile, toggleRankingMobile, visible } = useNosotrosModalTransition(open)
+  const { items: ranking, loading: rankingLoading } = useRankingData(open)
+  const dialogRef = useRef<HTMLDivElement>(null)
 
-  // Focus trap inside the modal
-  useEffect(() => {
-    if (!visible || !dialogRef.current) return
-    const el = dialogRef.current
-
-    const focusable = el.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    )
-    const first = focusable[0]
-    const last = focusable[focusable.length - 1]
-
-    first?.focus()
-
-    function trapFocus(e: KeyboardEvent) {
-      if (e.key !== 'Tab') return
-      if (focusable.length === 0) {
-        e.preventDefault()
-        return
-      }
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault()
-          last?.focus()
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault()
-          first?.focus()
-        }
-      }
-    }
-
-    document.addEventListener('keydown', trapFocus)
-    return () => document.removeEventListener('keydown', trapFocus)
-  }, [visible])
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    }
-  }, [])
+  useBodyScrollLock(mounted)
+  useEscapeToClose(visible, onClose)
+  useFocusTrap(visible, dialogRef)
 
   if (!mounted) return null
 
   return (
     <div
       className={cn(
-        'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm transition-opacity duration-300 ease-out',
-        visible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        'fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm transition-opacity duration-300 ease-out',
+        visible ? 'opacity-100' : 'pointer-events-none opacity-0',
       )}
       onClick={onClose}
       role="presentation"
@@ -178,176 +183,265 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
         aria-modal="true"
         aria-labelledby="about-modal-title"
         className={cn(
-          'relative w-full max-w-4xl overflow-hidden border border-white/8 bg-surface-1 shadow-[0_24px_64px_rgba(0,0,0,0.85)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] rounded-2xl',
-          visible ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-4 opacity-0'
+          'relative w-full max-w-4xl overflow-hidden rounded-2xl border border-white/8 bg-surface-1 shadow-[0_24px_64px_rgba(0,0,0,0.85)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          visible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-4 scale-95 opacity-0',
         )}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
       >
-        {/* Glow Effects */}
-        <div className="pointer-events-none absolute -left-16 -top-16 size-36 rounded-full bg-amber-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute -right-16 -bottom-16 size-36 rounded-full bg-orange-500/10 blur-3xl" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/6 px-6 py-4 relative z-10">
-          <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 text-black">
-              <GraduationCap size={16} strokeWidth={2.5} />
-            </div>
-            <h2 id="about-modal-title" className="text-base font-black tracking-tight text-white font-display">
-              Sobre nosotros
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg text-white/45 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="grid gap-6 p-6 relative z-10 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.82fr)]">
-          <div className="space-y-5">
-            {/* Texto de arriba (info del campus) */}
-            <div className={cn(showRankingMobile ? "hidden" : "block", "lg:block space-y-5")}>
-              <p className="text-sm leading-relaxed text-white/70">
-                Somos estudiantes de la carrera de Licenciatura en Sistemas. Vimos que el campus no suple algunas
-                necesidades que tenemos, por lo que decidimos actuar implementando nuestra propia visión de un campus
-                universitario inteligente. En este campus podés encontrar diversas herramientas como un{' '}
-                <strong className="font-bold text-white">Calendario</strong> con eventos por materia,{' '}
-                <strong className="font-bold text-white">Quiz</strong> para autoevaluarse, y{' '}
-                <strong className="font-bold text-white">Apuntes interactivos</strong>.
-              </p>
-
-              <p className="text-sm leading-relaxed text-white/70">
-                Todo el código es libre y abierto. Podés encontrarlo y aportar en nuestro repositorio de GitHub.
-              </p>
-
-              <div className="pt-2">
-                <a
-                  href="https://github.com/0tomi/nextCampus"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-black transition-all hover:bg-white/90 active:scale-[0.98] cursor-pointer"
-                >
-                  <GithubIcon className="size-4" />
-                  Ver repositorio en GitHub
-                </a>
-              </div>
-            </div>
-
-            {/* Ranking de aportes en mobile (se muestra reemplazando al texto de arriba) */}
-            {showRankingMobile && (
-              <div className="lg:hidden animate-in space-y-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/30">
-                  Comunidad
-                </p>
-                <h3 className="font-display text-xl font-black tracking-tight text-white">
-                  Ranking de aportes
-                </h3>
-                <div className="divide-y divide-white/5">
-                  {rankingLoading ? (
-                    Array.from({ length: 5 }).map((_, index) => (
-                      <div key={index} className="h-12 animate-pulse bg-white/[0.05] py-3 first:pt-0" />
-                    ))
-                  ) : ranking.length > 0 ? (
-                    ranking.map((item) => (
-                      <div key={item.position} className="py-3 first:pt-0">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="min-w-0 truncate text-sm font-bold text-white">
-                            {item.position}. {item.nombreUsuario}
-                          </p>
-                        </div>
-                        <p className="mt-1 text-[11px] font-semibold text-white/45">
-                          {item.eventosCreados} eventos · {item.apuntesCreados} apuntes · {item.bancosPreguntasCreados} quiz
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="py-5 text-center text-sm leading-6 text-white/45">
-                      Todavía no hay aportes suficientes para armar el ranking.
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Developer contacts */}
-            <div className="space-y-2.5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/30">
-                Redes de los desarrolladores
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <a
-                  href="https://instagram.com/tomischl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-                >
-                  <InstagramIcon className="size-3.5" />
-                  @tomischl
-                </a>
-                <a
-                  href="https://instagram.com/tomygiorgi"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-                >
-                  <InstagramIcon className="size-3.5" />
-                  @tomygiorgi
-                </a>
-              </div>
-            </div>
-
-            {/* Botón de alternancia en mobile */}
-            <div className="lg:hidden pt-2">
-              <button
-                type="button"
-                onClick={() => setShowRankingMobile(!showRankingMobile)}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-white/10 active:scale-[0.98] cursor-pointer"
-              >
-                {showRankingMobile ? 'Sobre nosotros' : 'Contribuidores'}
-              </button>
-            </div>
-          </div>
-
-          {/* Sidebar de ranking en Desktop */}
-          <aside className="hidden lg:block lg:border-l lg:border-white/8 lg:pl-6">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/30">
-              Comunidad
-            </p>
-            <h3 className="mt-2 font-display text-xl font-black tracking-tight text-white">
-              Ranking de aportes
-            </h3>
-            <div className="mt-4 divide-y divide-white/5">
-              {rankingLoading ? (
-                Array.from({ length: 5 }).map((_, index) => (
-                  <div key={index} className="h-12 animate-pulse bg-white/[0.05] py-3 first:pt-0" />
-                ))
-              ) : ranking.length > 0 ? (
-                ranking.map((item) => (
-                  <div key={item.position} className="py-3 first:pt-0">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="min-w-0 truncate text-sm font-bold text-white">
-                        {item.position}. {item.nombreUsuario}
-                      </p>
-                    </div>
-                    <p className="mt-1 text-[11px] font-semibold text-white/45">
-                      {item.eventosCreados} eventos · {item.apuntesCreados} apuntes · {item.bancosPreguntasCreados} quiz
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <p className="py-5 text-center text-sm leading-6 text-white/45">
-                  Todavía no hay aportes suficientes para armar el ranking.
-                </p>
-              )}
-            </div>
-          </aside>
-        </div>
+        <AboutModalGlow />
+        <AboutModalHeader onClose={onClose} />
+        <AboutModalContent
+          ranking={ranking}
+          rankingLoading={rankingLoading}
+          showRankingMobile={showRankingMobile}
+          onToggleRankingMobile={toggleRankingMobile}
+        />
       </div>
+    </div>
+  )
+}
+
+function useBodyScrollLock(mounted: boolean) {
+  useEffect(() => {
+    if (!mounted) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [mounted])
+}
+
+function useEscapeToClose(visible: boolean, onClose: () => void) {
+  useEffect(() => {
+    if (!visible) return
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', closeOnEscape)
+    return () => document.removeEventListener('keydown', closeOnEscape)
+  }, [visible, onClose])
+}
+
+function useFocusTrap(visible: boolean, dialogRef: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    if (!visible || !dialogRef.current) return
+    const el = dialogRef.current
+    const focusable = el.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    )
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+
+    first?.focus()
+
+    function trapFocus(event: KeyboardEvent) {
+      if (event.key !== 'Tab') return
+      if (focusable.length === 0) {
+        event.preventDefault()
+        return
+      }
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last?.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first?.focus()
+      }
+    }
+
+    document.addEventListener('keydown', trapFocus)
+    return () => document.removeEventListener('keydown', trapFocus)
+  }, [visible, dialogRef])
+}
+
+function AboutModalGlow() {
+  return (
+    <>
+      <div className="pointer-events-none absolute top-[-4rem] left-[-4rem] size-36 rounded-full bg-amber-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute right-[-4rem] bottom-[-4rem] size-36 rounded-full bg-orange-500/10 blur-3xl" />
+    </>
+  )
+}
+
+function AboutModalHeader({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="relative z-10 flex items-center justify-between border-b border-white/6 px-6 py-4">
+      <div className="flex items-center gap-2">
+        <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 text-black">
+          <GraduationCap size={16} strokeWidth={2.5} />
+        </div>
+        <h2 id="about-modal-title" className="font-display text-base font-black tracking-tight text-white">
+          Sobre nosotros
+        </h2>
+      </div>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Cerrar"
+        className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg text-white/45 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+      >
+        <X className="size-4" />
+      </button>
+    </div>
+  )
+}
+
+function AboutModalContent({
+  ranking,
+  rankingLoading,
+  showRankingMobile,
+  onToggleRankingMobile,
+}: {
+  ranking: RankingItem[]
+  rankingLoading: boolean
+  showRankingMobile: boolean
+  onToggleRankingMobile: () => void
+}) {
+  return (
+    <div className="relative z-10 grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.82fr)]">
+      <div className="space-y-5">
+        <AboutText visibleOnMobile={!showRankingMobile} />
+        {showRankingMobile ? <MobileRankingPanel ranking={ranking} rankingLoading={rankingLoading} /> : null}
+        <DeveloperContacts />
+        <MobileRankingToggle showRankingMobile={showRankingMobile} onToggle={onToggleRankingMobile} />
+      </div>
+      <DesktopRankingPanel ranking={ranking} rankingLoading={rankingLoading} />
+    </div>
+  )
+}
+
+function AboutText({ visibleOnMobile }: { visibleOnMobile: boolean }) {
+  return (
+    <div className={cn(visibleOnMobile ? 'block' : 'hidden', 'space-y-5 lg:block')}>
+      <p className="text-sm leading-relaxed text-white/70">
+        Somos estudiantes de la carrera de Licenciatura en Sistemas. Vimos que el campus no suple algunas necesidades
+        que tenemos, por lo que decidimos actuar implementando nuestra propia visión de un campus universitario
+        inteligente. En este campus podés encontrar diversas herramientas como un{' '}
+        <strong className="font-bold text-white">Calendario</strong> con eventos por materia,{' '}
+        <strong className="font-bold text-white">Quiz</strong> para autoevaluarse, y{' '}
+        <strong className="font-bold text-white">Apuntes interactivos</strong>.
+      </p>
+      <p className="text-sm leading-relaxed text-white/70">
+        Todo el código es libre y abierto. Podés encontrarlo y aportar en nuestro repositorio de GitHub.
+      </p>
+      <div className="pt-2">
+        <a
+          href="https://github.com/0tomi/nextCampus"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-black transition-all hover:bg-white/90 active:scale-[0.98]"
+        >
+          <GithubIcon className="size-4" />
+          Ver repositorio en GitHub
+        </a>
+      </div>
+    </div>
+  )
+}
+
+function MobileRankingPanel({ ranking, rankingLoading }: { ranking: RankingItem[]; rankingLoading: boolean }) {
+  return (
+    <div className="animate-in space-y-4 lg:hidden">
+      <RankingHeader />
+      <RankingList ranking={ranking} rankingLoading={rankingLoading} />
+    </div>
+  )
+}
+
+function DesktopRankingPanel({ ranking, rankingLoading }: { ranking: RankingItem[]; rankingLoading: boolean }) {
+  return (
+    <aside className="hidden lg:block lg:border-l lg:border-white/8 lg:pl-6">
+      <RankingHeader />
+      <div className="mt-4">
+        <RankingList ranking={ranking} rankingLoading={rankingLoading} />
+      </div>
+    </aside>
+  )
+}
+
+function RankingHeader() {
+  return (
+    <>
+      <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/30">Comunidad</p>
+      <h3 className="mt-2 font-display text-xl font-black tracking-tight text-white">Ranking de aportes</h3>
+    </>
+  )
+}
+
+function RankingList({ ranking, rankingLoading }: { ranking: RankingItem[]; rankingLoading: boolean }) {
+  if (rankingLoading) {
+    return (
+      <div className="divide-y divide-white/5">
+        {RANKING_SKELETON_KEYS.map((key) => (
+          <div key={key} className="h-12 animate-pulse bg-white/[0.05] py-3 first:pt-0" />
+        ))}
+      </div>
+    )
+  }
+
+  if (ranking.length === 0) {
+    return (
+      <p className="py-5 text-center text-sm leading-6 text-white/45">
+        Todavía no hay aportes suficientes para armar el ranking.
+      </p>
+    )
+  }
+
+  return (
+    <div className="divide-y divide-white/5">
+      {ranking.map((item) => (
+        <div key={item.position} className="py-3 first:pt-0">
+          <div className="flex items-center justify-between gap-3">
+            <p className="min-w-0 truncate text-sm font-bold text-white">
+              {item.position}. {item.nombreUsuario}
+            </p>
+          </div>
+          <p className="mt-1 text-[11px] font-semibold text-white/45">
+            {item.eventosCreados} eventos · {item.apuntesCreados} apuntes · {item.bancosPreguntasCreados} quiz
+          </p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function DeveloperContacts() {
+  return (
+    <div className="space-y-2.5">
+      <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/30">Redes de los desarrolladores</p>
+      <div className="flex flex-wrap gap-2">
+        <DeveloperLink href="https://instagram.com/tomischl" label="@tomischl" />
+        <DeveloperLink href="https://instagram.com/tomygiorgi" label="@tomygiorgi" />
+      </div>
+    </div>
+  )
+}
+
+function DeveloperLink({ href, label }: { href: string; label: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+    >
+      <InstagramIcon className="size-3.5" />
+      {label}
+    </a>
+  )
+}
+
+function MobileRankingToggle({ showRankingMobile, onToggle }: { showRankingMobile: boolean; onToggle: () => void }) {
+  return (
+    <div className="pt-2 lg:hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-white/10 active:scale-[0.98]"
+      >
+        {showRankingMobile ? 'Sobre nosotros' : 'Contribuidores'}
+      </button>
     </div>
   )
 }

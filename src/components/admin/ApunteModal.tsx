@@ -95,7 +95,7 @@ export function ApunteModal({
     startHtmlReplace,
   } = useApunteRecursos(apunte?.recursos)
   const initialCategoriaIds = useMemo(
-    () => apunte?.categorias?.map((categoria) => categoria.id).filter(Boolean) ?? [],
+    () => apunte?.categorias?.flatMap((categoria) => (categoria.id ? [categoria.id] : [])) ?? [],
     [apunte?.categorias],
   )
   const {
