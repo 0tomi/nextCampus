@@ -1,7 +1,7 @@
 'use client';
 
-import type { CSSProperties } from 'react';
-import { useMemo, useRef, useState } from 'react';
+import type { CSSProperties, PointerEventHandler, RefObject, WheelEventHandler } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -19,10 +19,28 @@ import {
   X,
 } from 'lucide-react';
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
-import { VISUAL_STATUS_ACCENTS as STATUS_ACCENTS, VISUAL_STATUS_LABELS as STATUS_COPY, VISUAL_STATUS_STYLES as STATUS_STYLES, YEAR_LABELS } from '@/lib/domain/mapa/mapaConstants';
+import {
+  MAPA_YEARS,
+  VISUAL_STATUS_ACCENTS as STATUS_ACCENTS,
+  VISUAL_STATUS_LABELS as STATUS_COPY,
+  VISUAL_STATUS_STYLES as STATUS_STYLES,
+  YEAR_LABELS,
+} from '@/lib/domain/mapa/mapaConstants';
+import {
+  createPath,
+  getMapaVisualEdges,
+  getMapaWorldHeight,
+  getNodePosition,
+  MAPA_NODE_HEIGHT,
+  MAPA_NODE_WIDTH,
+  MAPA_START_X,
+  MAPA_WORLD_WIDTH,
+  type MapaCamera,
+} from '@/lib/domain/mapa/visualLayout';
 import { getMissingCorrelatives, getSubjectName, getUnlocks } from '@/lib/domain/mapa/subjectQueries';
-import type { SubjectNode } from '@/lib/domain/mapa/types';
+import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
 import { useMapaProgress } from '@/hooks/useMapaProgress';
+import { useMapaViewport } from '@/hooks/useMapaViewport';
 import { cn } from '@/lib/utils';
 import { yearSlugFromNumber } from '@/lib/slug';
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes';
@@ -31,68 +49,21 @@ type MapaVisualCorrelativasProps = {
   availableSubjectSlugs?: string[];
 };
 
-type Camera = {
-  x: number;
-  y: number;
-  scale: number;
-};
-
-const NODE_WIDTH = 326;
-const NODE_HEIGHT = 138;
-const YEAR_GAP = 580;
-const ROW_GAP = 182;
-const START_X = 130;
-const START_Y = 220;
-const WORLD_WIDTH = 3120;
-const MIN_SCALE = 0.38;
-const MAX_SCALE = 1.36;
-const INITIAL_CAMERA: Camera = { x: -40, y: -50, scale: 0.58 };
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
-}
-
-function getNodePosition(subject: SubjectNode) {
-  const subjectsInYear = subjectsData.filter((item) => item.year === subject.year);
-  const yearIndex = subject.year - 1;
-  const rowIndex = subjectsInYear.findIndex((item) => item.slug === subject.slug);
-  const columnDrift = subject.year % 2 === 0 ? 42 : 0;
-  const rowDrift = rowIndex % 2 === 0 ? 0 : 20;
-
-  return {
-    x: START_X + yearIndex * YEAR_GAP,
-    y: START_Y + rowIndex * ROW_GAP + columnDrift + rowDrift,
-  };
-}
-
-const ARROW_INSET = 18;
-
-function createPath(from: SubjectNode, to: SubjectNode) {
-  const start = getNodePosition(from);
-  const end = getNodePosition(to);
-  const sx = start.x + NODE_WIDTH;
-  const sy = start.y + NODE_HEIGHT / 2;
-  const ex = end.x - ARROW_INSET;
-  const ey = end.y + NODE_HEIGHT / 2;
-  const dx = ex - sx;
-  const curve = Math.max(100, dx * 0.48);
-
-  return `M ${sx} ${sy} C ${sx + curve} ${sy}, ${ex - curve} ${ey}, ${ex} ${ey}`;
-}
+type MapaVisualEdge = ReturnType<typeof getMapaVisualEdges>[number];
 
 const EMPTY_AVAILABLE_SUBJECT_SLUGS: string[] = [];
+const EMPTY_HIGHLIGHT_SLUGS: string[] = [];
 
 export function MapaVisualCorrelativas({ availableSubjectSlugs = EMPTY_AVAILABLE_SUBJECT_SLUGS }: MapaVisualCorrelativasProps) {
-  const viewportRef = useRef<HTMLDivElement | null>(null);
-  const dragRef = useRef<{ pointerId: number; startX: number; startY: number; camera: Camera } | null>(null);
   const [selectedSlug, setSelectedSlug] = useState(subjectsData[0]?.slug ?? '');
   const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
-  const [camera, setCamera] = useState<Camera>(INITIAL_CAMERA);
-  const [isDragging, setIsDragging] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
-
   const { completed, isHydrated, subjectStatuses, toggleSubject } = useMapaProgress();
   const availableSlugs = useMemo(() => new Set(availableSubjectSlugs), [availableSubjectSlugs]);
+  const allEdges = useMemo(() => getMapaVisualEdges(), []);
+  const worldHeight = useMemo(() => getMapaWorldHeight(), []);
+  const viewport = useMapaViewport(worldHeight);
+
   const selectedSubject = subjectsData.find((subject) => subject.slug === selectedSlug) ?? subjectsData[0];
   const selectedStatus = selectedSubject ? subjectStatuses[selectedSubject.slug] : 'UNLOCKED';
   const selectedUnlocks = selectedSubject ? getUnlocks(selectedSubject.slug) : [];
@@ -104,157 +75,19 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = EMPTY_AVAILABLE
     ...(activeSubject?.correlativas ?? []),
     ...getUnlocks(activeSlug).map((subject) => subject.slug),
   ]);
-  const allEdges = subjectsData.flatMap((subject) =>
-    subject.correlativas
-      .map((sourceSlug) => {
-        const source = subjectsData.find((item) => item.slug === sourceSlug);
 
-        if (!source) return null;
-
-        return { source, target: subject };
-      })
-      .filter((edge): edge is { source: SubjectNode; target: SubjectNode } => Boolean(edge)),
-  );
-  const worldHeight = Math.max(...subjectsData.map((subject) => getNodePosition(subject).y)) + NODE_HEIGHT + 140;
-
-  const handleToggleSubject = (subject: SubjectNode) => {
-    const currentStatus = subjectStatuses[subject.slug];
+  const selectSubject = (subject: SubjectNode) => {
     setSelectedSlug(subject.slug);
+    setIsPanelOpen(true);
+  };
 
-    if (currentStatus === 'LOCKED') return;
-
-    if (currentStatus === 'COMPLETED') {
-      toggleSubject(subject);
-      return;
-    }
-
+  const markSubjectProgress = (subject: SubjectNode) => {
+    setSelectedSlug(subject.slug);
     toggleSubject(subject);
   };
 
-  const getBoundedPosition = (x: number, y: number, scale: number, width: number, height: number) => {
-    const paddingX = Math.min(180, width / 3);
-    const paddingY = Math.min(180, height / 3);
-    const minX = paddingX - WORLD_WIDTH * scale;
-    const maxX = width - paddingX;
-    const minY = paddingY - worldHeight * scale;
-    const maxY = height - paddingY;
-
-    return {
-      x: clamp(x, minX, maxX),
-      y: clamp(y, minY, maxY),
-    };
-  };
-
-  const moveCameraToSubject = (subject: SubjectNode) => {
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-
-    const rect = viewport.getBoundingClientRect();
-    const position = getNodePosition(subject);
-    const scale = Math.max(camera.scale, 0.78);
-    const targetX = rect.width / 2 - (position.x + NODE_WIDTH / 2) * scale;
-    const targetY = rect.height / 2 - (position.y + NODE_HEIGHT / 2) * scale;
-
-    const bounded = getBoundedPosition(targetX, targetY, scale, rect.width, rect.height);
-
-    setCamera({
-      scale,
-      x: bounded.x,
-      y: bounded.y,
-    });
-  };
-
-  const zoomAt = (nextScale: number, originX?: number, originY?: number) => {
-    const viewport = viewportRef.current;
-    const rect = viewport?.getBoundingClientRect();
-    const targetScale = clamp(nextScale, MIN_SCALE, MAX_SCALE);
-    const anchorX = originX ?? (rect?.width ?? 0) / 2;
-    const anchorY = originY ?? (rect?.height ?? 0) / 2;
-
-    setCamera((current) => {
-      const worldX = (anchorX - current.x) / current.scale;
-      const worldY = (anchorY - current.y) / current.scale;
-
-      const targetX = anchorX - worldX * targetScale;
-      const targetY = anchorY - worldY * targetScale;
-
-      if (rect) {
-        const bounded = getBoundedPosition(targetX, targetY, targetScale, rect.width, rect.height);
-        return {
-          scale: targetScale,
-          x: bounded.x,
-          y: bounded.y,
-        };
-      }
-
-      return {
-        scale: targetScale,
-        x: targetX,
-        y: targetY,
-      };
-    });
-  };
-
-  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const rect = event.currentTarget.getBoundingClientRect();
-    const delta = event.deltaY > 0 ? -0.08 : 0.08;
-
-    zoomAt(camera.scale + delta, event.clientX - rect.left, event.clientY - rect.top);
-  };
-
-  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    const target = event.target as HTMLElement;
-
-    if (target.closest('[data-map-node], [data-map-control], a, button')) return;
-
-    dragRef.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      camera,
-    };
-    event.currentTarget.setPointerCapture(event.pointerId);
-    setIsDragging(true);
-  };
-
-  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    const drag = dragRef.current;
-
-    if (!drag || drag.pointerId !== event.pointerId) return;
-
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-    const rect = viewport.getBoundingClientRect();
-
-    const targetX = drag.camera.x + event.clientX - drag.startX;
-    const targetY = drag.camera.y + event.clientY - drag.startY;
-
-    const bounded = getBoundedPosition(targetX, targetY, drag.camera.scale, rect.width, rect.height);
-
-    setCamera({
-      ...drag.camera,
-      x: bounded.x,
-      y: bounded.y,
-    });
-  };
-
-  const stopDragging = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (dragRef.current?.pointerId === event.pointerId) {
-      dragRef.current = null;
-      setIsDragging(false);
-    }
-  };
-
   if (!isHydrated) {
-    return (
-      <div className="grid min-h-[calc(100vh-4rem)] place-items-center bg-surface-1">
-        <div className="text-center">
-          <Radar className="mx-auto size-9 animate-spin text-cyan-200" />
-          <p className="mt-4 text-xs font-black uppercase tracking-[0.2em] text-white/42">Abriendo recorrido</p>
-        </div>
-      </div>
-    );
+    return <MapaVisualLoading />;
   }
 
   return (
@@ -262,319 +95,394 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = EMPTY_AVAILABLE
       <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(45,212,191,0.15),transparent_34%,rgba(251,191,36,0.11)_72%,transparent)]" />
       <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.9)_1px,transparent_1px)] [background-size:46px_46px]" />
 
-      <div
-        ref={viewportRef}
-        className={cn(
-          'absolute inset-0 touch-none select-none overflow-hidden',
-          isDragging ? 'cursor-grabbing' : 'cursor-grab',
-        )}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={stopDragging}
-        onPointerCancel={stopDragging}
-        onWheel={handleWheel}
-      >
-        <div
-          className="absolute left-0 top-0"
-          style={{
-            width: WORLD_WIDTH,
-            height: worldHeight,
-            transform: `translate3d(${camera.x}px, ${camera.y}px, 0) scale(${camera.scale})`,
-            transformOrigin: '0 0',
-          }}
-        >
-          <svg
-            aria-hidden="true"
-            className="absolute inset-0 size-full"
-            viewBox={`0 0 ${WORLD_WIDTH} ${worldHeight}`}
-            preserveAspectRatio="none"
-          >
-            <defs>
-              <filter id="mapaVisualGlow" x="-40%" y="-40%" width="180%" height="180%">
-                <feGaussianBlur stdDeviation="4.5" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-              <marker
-                id="arrowActive"
-                viewBox="0 0 12 10"
-                refX="10"
-                refY="5"
-                markerWidth="10"
-                markerHeight="8"
-                orient="auto-start-reverse"
-              >
-                <path d="M 0 1 L 10 5 L 0 9 Z" fill="#67e8f9" />
-              </marker>
-              <marker
-                id="arrowComplete"
-                viewBox="0 0 12 10"
-                refX="10"
-                refY="5"
-                markerWidth="8"
-                markerHeight="6"
-                orient="auto-start-reverse"
-              >
-                <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="#6ee7b7" opacity="0.55" />
-              </marker>
-              <marker
-                id="arrowDefault"
-                viewBox="0 0 12 10"
-                refX="10"
-                refY="5"
-                markerWidth="7"
-                markerHeight="5"
-                orient="auto-start-reverse"
-              >
-                <path d="M 0 2 L 8 5 L 0 8 Z" fill="#ffffff" opacity="0.22" />
-              </marker>
-            </defs>
-            {allEdges.map(({ source, target }, index) => {
-              const sourceStatus = subjectStatuses[source.slug];
-              const isActive = activeChain.has(source.slug) && activeChain.has(target.slug);
-              const isCompletePath = sourceStatus === 'COMPLETED';
-              const markerId = isActive ? 'arrowActive' : isCompletePath ? 'arrowComplete' : 'arrowDefault';
+      <MapaGraphCanvas
+        activeChain={activeChain}
+        allEdges={allEdges}
+        camera={viewport.camera}
+        hoveredSlug={hoveredSlug}
+        isDragging={viewport.isDragging}
+        selectedSlug={selectedSlug}
+        subjectStatuses={subjectStatuses}
+        completed={completed}
+        viewportRef={viewport.viewportRef}
+        worldHeight={worldHeight}
+        onDoubleClickSubject={viewport.moveCameraToSubject}
+        onHoverSubject={setHoveredSlug}
+        onSelectSubject={selectSubject}
+        onPointerDown={viewport.startDragging}
+        onPointerMove={viewport.dragCamera}
+        onPointerUp={viewport.stopDragging}
+        onWheel={viewport.handleWheel}
+      />
 
-              return (
-                <g key={`${source.slug}-${target.slug}`}>
-                  <path
-                    d={createPath(source, target)}
-                    pathLength={1}
-                    className={cn('mapa-visual-trace transition duration-300', isActive && 'mapa-visual-trace-active')}
-                    stroke={isActive ? '#67e8f9' : isCompletePath ? '#6ee7b7' : '#ffffff'}
-                    strokeWidth={isActive ? 3.5 : isCompletePath ? 2 : 1.5}
-                    strokeLinecap="round"
-                    fill="none"
-                    filter={isActive ? 'url(#mapaVisualGlow)' : undefined}
-                    opacity={isActive ? 1 : isCompletePath ? 0.42 : 0.16}
-                    markerEnd={`url(#${markerId})`}
-                    style={{ '--trace-delay': `${index * 16}ms` } as CSSProperties}
-                  />
-                  {isActive ? (
-                    <path
-                      d={createPath(source, target)}
-                      className="mapa-visual-flow"
-                      stroke="#67e8f9"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeDasharray="8 16"
-                      fill="none"
-                      opacity={0.6}
-                    />
-                  ) : null}
-                </g>
-              );
-            })}
-          </svg>
-
-          {[1, 2, 3, 4, 5].map((year) => (
-            <div
-              key={year}
-              className="absolute top-8 w-[326px] pb-4"
-              style={{ left: START_X + (year - 1) * YEAR_GAP }}
-            >
-              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-200/40">Año {year}</p>
-              <p className="mt-1.5 text-lg font-black tracking-tight text-white">{YEAR_LABELS[year]}</p>
-              <div className="mt-3 h-px bg-gradient-to-r from-white/20 via-white/8 to-transparent" />
-            </div>
-          ))}
-
-          {subjectsData.map((subject, index) => {
-            const status = subjectStatuses[subject.slug];
-            const position = getNodePosition(subject);
-            const isSelected = selectedSlug === subject.slug;
-            const isActive = activeChain.has(subject.slug);
-            const missingCount = subject.correlativas.filter((slug) => !completed.includes(slug)).length;
-
-            return (
-              <button
-                key={subject.slug}
-                data-map-node
-                type="button"
-                onClick={() => {
-                  setSelectedSlug(subject.slug);
-                  setIsPanelOpen(true);
-                }}
-                onDoubleClick={() => moveCameraToSubject(subject)}
-                onMouseEnter={() => setHoveredSlug(subject.slug)}
-                onMouseLeave={() => setHoveredSlug(null)}
-                className={cn(
-                  'mapa-visual-node group absolute flex cursor-pointer flex-col justify-between border px-8 py-5 text-left backdrop-blur-md transition duration-300',
-                  STATUS_STYLES[status],
-                  isSelected && 'ring-2 ring-cyan-100/70',
-                  isActive && 'scale-[1.035]',
-                  status === 'LOCKED' && !isActive && 'opacity-58',
-                )}
-                style={{
-                  left: position.x,
-                  top: position.y,
-                  width: NODE_WIDTH,
-                  height: NODE_HEIGHT,
-                  animationDelay: `${index * 32}ms`,
-                  '--node-accent': STATUS_ACCENTS[status],
-                } as CSSProperties}
-                aria-label={`Ver ${subject.nombre}`}
-              >
-                <span className="pointer-events-none absolute left-[-7px] top-1/2 size-3.5 -translate-y-1/2 rounded-full border border-[var(--node-accent)] bg-[#060808] shadow-[0_0_14px_var(--node-accent)]" />
-                <span className="pointer-events-none absolute right-[-7px] top-1/2 size-3.5 -translate-y-1/2 rounded-full border border-[var(--node-accent)] bg-[#060808] shadow-[0_0_14px_var(--node-accent)]" />
-                <span className="relative z-10 flex items-start justify-between gap-4">
-                  <span className="min-w-0 flex-1">
-                    <span className="inline-flex min-h-6 items-center border border-white/10 bg-black/22 px-2 text-[10px] font-black uppercase tracking-widest text-white/46">
-                      {subject.codigo} · Año {subject.year}
-                    </span>
-                    <span className="mt-2 line-clamp-2 block text-[15px] font-black leading-5 text-white">
-                      {subject.nombre}
-                    </span>
-                  </span>
-                  <span className="flex size-9 shrink-0 items-center justify-center border border-white/10 bg-black/24 text-white">
-                    {status === 'COMPLETED' ? <CheckCircle2 className="size-4.5 text-emerald-100" /> : null}
-                    {status === 'UNLOCKED' ? <Unlock className="size-4.5 text-amber-100" /> : null}
-                    {status === 'LOCKED' ? <Lock className="size-4.5 text-white/28" /> : null}
-                  </span>
-                </span>
-                <span className="relative z-10 flex items-center justify-between gap-3 border-t border-white/10 pt-3">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white/48">
-                    {STATUS_COPY[status]}
-                  </span>
-                  {missingCount > 0 ? (
-                    <span className="border border-rose-200/20 bg-rose-300/10 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-rose-100/75">
-                      Faltan {missingCount}
-                    </span>
-                  ) : null}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div data-map-control className="absolute left-4 top-4 z-20">
-        <Link
-          href="/mapa"
-          className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-black/58 px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-white/45 shadow-2xl backdrop-blur-xl transition hover:bg-white/10 hover:text-white"
-        >
-          <ArrowLeft className="size-4" />
-          Volver
-        </Link>
-      </div>
-
-      <div data-map-control className="absolute bottom-4 left-4 z-20 flex items-center overflow-hidden rounded-md border border-white/10 bg-black/58 shadow-2xl backdrop-blur-xl">
-        <button
-          type="button"
-          title="Alejar"
-          onClick={() => zoomAt(camera.scale - 0.12)}
-          className="inline-flex size-11 cursor-pointer items-center justify-center border-r border-white/10 text-white/68 transition hover:bg-white/10 hover:text-white"
-        >
-          <Minus className="size-4" />
-        </button>
-        <div className="flex h-11 min-w-20 items-center justify-center gap-2 border-r border-white/10 px-3 text-xs font-black text-white/62">
-          <Move className="size-4" />
-          {Math.round(camera.scale * 100)}%
-        </div>
-        <button
-          type="button"
-          title="Acercar"
-          onClick={() => zoomAt(camera.scale + 0.12)}
-          className="inline-flex size-11 cursor-pointer items-center justify-center border-r border-white/10 text-white/68 transition hover:bg-white/10 hover:text-white"
-        >
-          <Plus className="size-4" />
-        </button>
-        <button
-          type="button"
-          title="Centrar mapa"
-          onClick={() => setCamera(INITIAL_CAMERA)}
-          className="inline-flex size-11 cursor-pointer items-center justify-center text-white/68 transition hover:bg-white/10 hover:text-white"
-        >
-          <LocateFixed className="size-4" />
-        </button>
-      </div>
+      <MapaVisualBackLink />
+      <MapaVisualToolbar camera={viewport.camera} onReset={viewport.resetCamera} onZoom={viewport.zoomAt} />
 
       {selectedSubject ? (
-        <aside
-          data-map-control
-          className={cn(
-            'absolute bottom-4 right-4 top-4 z-20 w-[min(360px,calc(100vw-2rem))] overflow-y-auto rounded-md border border-white/10 bg-black/64 p-4 shadow-2xl backdrop-blur-xl transition duration-300',
-            isPanelOpen ? 'translate-x-0 opacity-100' : 'pointer-events-none translate-x-[calc(100%+1rem)] opacity-0',
-          )}
-        >
-          <div className="space-y-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-100/55">
-                  Materia enfocada
-                </p>
-                <h2 className="mt-2 text-2xl font-black leading-tight text-white">{selectedSubject.nombre}</h2>
-                <p className="mt-2 text-xs font-bold uppercase tracking-widest text-white/38">
-                  {selectedSubject.codigo} · {selectedSubject.periodo}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsPanelOpen(false)}
-                className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-white/40 transition hover:bg-white/10 hover:text-white"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-
-            <div className={cn('rounded-md border p-3 backdrop-blur', STATUS_STYLES[selectedStatus])}>
-              <p className="text-[10px] font-black uppercase tracking-widest text-white/48">Estado</p>
-              <p className="mt-1 text-lg font-black text-white">{STATUS_COPY[selectedStatus]}</p>
-            </div>
-
-            <button
-              type="button"
-              disabled={selectedStatus === 'LOCKED'}
-              onClick={() => handleToggleSubject(selectedSubject)}
-              className={cn(
-                'inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border px-4 text-sm font-black uppercase tracking-wider transition',
-                selectedStatus === 'COMPLETED' &&
-                  'border-emerald-200/25 bg-emerald-300/10 text-emerald-50 hover:bg-emerald-300/16',
-                selectedStatus === 'UNLOCKED' &&
-                  'border-amber-200/25 bg-amber-300/10 text-amber-50 hover:bg-amber-300/16',
-                selectedStatus === 'LOCKED' && 'cursor-not-allowed border-white/10 bg-white/5 text-white/28',
-              )}
-            >
-              {selectedStatus === 'COMPLETED' ? <RefreshCw className="size-4" /> : <Check className="size-4" />}
-              {selectedStatus === 'COMPLETED' ? 'Quitar marca' : 'Marcar avance'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => moveCameraToSubject(selectedSubject)}
-              className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-cyan-200/18 bg-cyan-300/8 px-4 text-sm font-black uppercase tracking-wider text-cyan-50 transition hover:bg-cyan-300/13"
-            >
-              <LocateFixed className="size-4" />
-              Centrar
-            </button>
-
-            {availableSlugs.size === 0 || availableSlugs.has(selectedSubject.slug) ? (
-              <Link
-                href={buildSubjectHref({ yearSlug: yearSlugFromNumber(selectedSubject.year), subjectSlug: selectedSubject.slug })}
-                className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 text-sm font-black uppercase tracking-wider text-white/68 transition hover:bg-white/8 hover:text-white"
-              >
-                Abrir materia
-                <ArrowUpRight className="size-4" />
-              </Link>
-            ) : null}
-
-            <RelationCloud
-              title="Necesita"
-              slugs={selectedSubject.correlativas}
-              empty="No pide materias previas."
-              highlightSlugs={selectedMissing}
-            />
-            <RelationCloud
-              title="Abre camino a"
-              slugs={selectedUnlocks.map((subject) => subject.slug)}
-              empty="No abre materias directas."
-            />
-          </div>
-        </aside>
+        <MapaVisualDetailsPanel
+          availableSlugs={availableSlugs}
+          isOpen={isPanelOpen}
+          missingSlugs={selectedMissing}
+          selectedSubject={selectedSubject}
+          selectedStatus={selectedStatus}
+          selectedUnlocks={selectedUnlocks}
+          onCenterSubject={viewport.moveCameraToSubject}
+          onClose={() => setIsPanelOpen(false)}
+          onToggleSubject={markSubjectProgress}
+        />
       ) : null}
     </section>
+  );
+}
+
+function MapaVisualLoading() {
+  return (
+    <div className="grid min-h-[calc(100vh-4rem)] place-items-center bg-surface-1">
+      <div className="text-center">
+        <Radar className="mx-auto size-9 animate-spin text-cyan-200" />
+        <p className="mt-4 text-xs font-black uppercase tracking-[0.2em] text-white/42">Abriendo recorrido</p>
+      </div>
+    </div>
+  );
+}
+
+function MapaGraphCanvas({
+  activeChain,
+  allEdges,
+  camera,
+  completed,
+  hoveredSlug,
+  isDragging,
+  selectedSlug,
+  subjectStatuses,
+  viewportRef,
+  worldHeight,
+  onDoubleClickSubject,
+  onHoverSubject,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onSelectSubject,
+  onWheel,
+}: {
+  activeChain: Set<string>;
+  allEdges: MapaVisualEdge[];
+  camera: MapaCamera;
+  completed: readonly string[];
+  hoveredSlug: string | null;
+  isDragging: boolean;
+  selectedSlug: string;
+  subjectStatuses: Record<string, SubjectStatus>;
+  viewportRef: RefObject<HTMLDivElement | null>;
+  worldHeight: number;
+  onDoubleClickSubject: (subject: SubjectNode) => void;
+  onHoverSubject: (slug: string | null) => void;
+  onPointerDown: PointerEventHandler<HTMLDivElement>;
+  onPointerMove: PointerEventHandler<HTMLDivElement>;
+  onPointerUp: PointerEventHandler<HTMLDivElement>;
+  onSelectSubject: (subject: SubjectNode) => void;
+  onWheel: WheelEventHandler<HTMLDivElement>;
+}) {
+  return (
+    <div
+      ref={viewportRef}
+      className={cn('absolute inset-0 touch-none select-none overflow-hidden', isDragging ? 'cursor-grabbing' : 'cursor-grab')}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      onWheel={onWheel}
+    >
+      <div
+        className="absolute left-0 top-0"
+        style={{
+          width: MAPA_WORLD_WIDTH,
+          height: worldHeight,
+          transform: `translate3d(${camera.x}px, ${camera.y}px, 0) scale(${camera.scale})`,
+          transformOrigin: '0 0',
+        }}
+      >
+        <MapaEdges activeChain={activeChain} allEdges={allEdges} subjectStatuses={subjectStatuses} worldHeight={worldHeight} />
+        <MapaYearLabels />
+        <MapaNodes
+          activeChain={activeChain}
+          completed={completed}
+          hoveredSlug={hoveredSlug}
+          selectedSlug={selectedSlug}
+          subjectStatuses={subjectStatuses}
+          onDoubleClickSubject={onDoubleClickSubject}
+          onHoverSubject={onHoverSubject}
+          onSelectSubject={onSelectSubject}
+        />
+      </div>
+    </div>
+  );
+}
+
+function MapaEdges({
+  activeChain,
+  allEdges,
+  subjectStatuses,
+  worldHeight,
+}: {
+  activeChain: Set<string>;
+  allEdges: MapaVisualEdge[];
+  subjectStatuses: Record<string, SubjectStatus>;
+  worldHeight: number;
+}) {
+  return (
+    <svg aria-hidden="true" className="absolute inset-0 size-full" viewBox={`0 0 ${MAPA_WORLD_WIDTH} ${worldHeight}`} preserveAspectRatio="none">
+      <defs>
+        <filter id="mapaVisualGlow" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="4.5" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <EdgeMarker id="arrowActive" fill="#67e8f9" width={10} height={8} />
+        <EdgeMarker id="arrowComplete" fill="#6ee7b7" width={8} height={6} opacity={0.55} />
+        <EdgeMarker id="arrowDefault" fill="#ffffff" width={7} height={5} opacity={0.22} />
+      </defs>
+      {allEdges.map(({ source, target }, index) => {
+        const sourceStatus = subjectStatuses[source.slug];
+        const isActive = activeChain.has(source.slug) && activeChain.has(target.slug);
+        const isCompletePath = sourceStatus === 'COMPLETED';
+        const markerId = isActive ? 'arrowActive' : isCompletePath ? 'arrowComplete' : 'arrowDefault';
+        const path = createPath(source, target);
+
+        return (
+          <g key={`${source.slug}-${target.slug}`}>
+            <path
+              d={path}
+              pathLength={1}
+              className={cn('mapa-visual-trace transition duration-300', isActive && 'mapa-visual-trace-active')}
+              stroke={isActive ? '#67e8f9' : isCompletePath ? '#6ee7b7' : '#ffffff'}
+              strokeWidth={isActive ? 3.5 : isCompletePath ? 2 : 1.5}
+              strokeLinecap="round"
+              fill="none"
+              filter={isActive ? 'url(#mapaVisualGlow)' : undefined}
+              opacity={isActive ? 1 : isCompletePath ? 0.42 : 0.16}
+              markerEnd={`url(#${markerId})`}
+              style={{ '--trace-delay': `${index * 16}ms` } as CSSProperties}
+            />
+            {isActive ? <path d={path} className="mapa-visual-flow" stroke="#67e8f9" strokeWidth={2} strokeLinecap="round" strokeDasharray="8 16" fill="none" opacity={0.6} /> : null}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function EdgeMarker({ id, fill, width, height, opacity = 1 }: { id: string; fill: string; width: number; height: number; opacity?: number }) {
+  return (
+    <marker id={id} viewBox="0 0 12 10" refX="10" refY="5" markerWidth={width} markerHeight={height} orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 Z" fill={fill} opacity={opacity} />
+    </marker>
+  );
+}
+
+function MapaYearLabels() {
+  return (
+    <>
+      {MAPA_YEARS.map((year) => (
+        <div key={year} className="absolute top-8 w-[326px] pb-4" style={{ left: MAPA_START_X + (year - 1) * 580 }}>
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-200/40">Año {year}</p>
+          <p className="mt-1.5 text-lg font-black tracking-tight text-white">{YEAR_LABELS[year]}</p>
+          <div className="mt-3 h-px bg-gradient-to-r from-white/20 via-white/8 to-transparent" />
+        </div>
+      ))}
+    </>
+  );
+}
+
+function MapaNodes({
+  activeChain,
+  completed,
+  selectedSlug,
+  subjectStatuses,
+  onDoubleClickSubject,
+  onHoverSubject,
+  onSelectSubject,
+}: {
+  activeChain: Set<string>;
+  completed: readonly string[];
+  hoveredSlug: string | null;
+  selectedSlug: string;
+  subjectStatuses: Record<string, SubjectStatus>;
+  onDoubleClickSubject: (subject: SubjectNode) => void;
+  onHoverSubject: (slug: string | null) => void;
+  onSelectSubject: (subject: SubjectNode) => void;
+}) {
+  return subjectsData.map((subject, index) => {
+    const status = subjectStatuses[subject.slug];
+    const position = getNodePosition(subject);
+    const isSelected = selectedSlug === subject.slug;
+    const isActive = activeChain.has(subject.slug);
+    const missingCount = getMissingCorrelatives(subject, completed).length;
+
+    return (
+      <button
+        key={subject.slug}
+        data-map-node
+        type="button"
+        onClick={() => onSelectSubject(subject)}
+        onDoubleClick={() => onDoubleClickSubject(subject)}
+        onMouseEnter={() => onHoverSubject(subject.slug)}
+        onMouseLeave={() => onHoverSubject(null)}
+        className={cn(
+          'mapa-visual-node group absolute flex cursor-pointer flex-col justify-between border px-8 py-5 text-left backdrop-blur-md transition duration-300',
+          STATUS_STYLES[status],
+          isSelected && 'ring-2 ring-cyan-100/70',
+          isActive && 'scale-[1.035]',
+          status === 'LOCKED' && !isActive && 'opacity-58',
+        )}
+        style={{
+          left: position.x,
+          top: position.y,
+          width: MAPA_NODE_WIDTH,
+          height: MAPA_NODE_HEIGHT,
+          animationDelay: `${index * 32}ms`,
+          '--node-accent': STATUS_ACCENTS[status],
+        } as CSSProperties}
+        aria-label={`Ver ${subject.nombre}`}
+      >
+        <span className="pointer-events-none absolute left-[-7px] top-1/2 size-3.5 -translate-y-1/2 rounded-full border border-[var(--node-accent)] bg-[#060808] shadow-[0_0_14px_var(--node-accent)]" />
+        <span className="pointer-events-none absolute right-[-7px] top-1/2 size-3.5 -translate-y-1/2 rounded-full border border-[var(--node-accent)] bg-[#060808] shadow-[0_0_14px_var(--node-accent)]" />
+        <span className="relative z-10 flex items-start justify-between gap-4">
+          <span className="min-w-0 flex-1">
+            <span className="inline-flex min-h-6 items-center border border-white/10 bg-black/22 px-2 text-[10px] font-black uppercase tracking-widest text-white/46">
+              {subject.codigo} · Año {subject.year}
+            </span>
+            <span className="mt-2 line-clamp-2 block text-[15px] font-black leading-5 text-white">{subject.nombre}</span>
+          </span>
+          <span className="flex size-9 shrink-0 items-center justify-center border border-white/10 bg-black/24 text-white">
+            {status === 'COMPLETED' ? <CheckCircle2 className="size-4.5 text-emerald-100" /> : null}
+            {status === 'UNLOCKED' ? <Unlock className="size-4.5 text-amber-100" /> : null}
+            {status === 'LOCKED' ? <Lock className="size-4.5 text-white/28" /> : null}
+          </span>
+        </span>
+        <span className="relative z-10 flex items-center justify-between gap-3 border-t border-white/10 pt-3">
+          <span className="text-[10px] font-black uppercase tracking-widest text-white/48">{STATUS_COPY[status]}</span>
+          {missingCount > 0 ? (
+            <span className="border border-rose-200/20 bg-rose-300/10 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-rose-100/75">Faltan {missingCount}</span>
+          ) : null}
+        </span>
+      </button>
+    );
+  });
+}
+
+function MapaVisualBackLink() {
+  return (
+    <div data-map-control className="absolute left-4 top-4 z-20">
+      <Link href="/mapa" className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-black/58 px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-white/45 shadow-2xl backdrop-blur-xl transition hover:bg-white/10 hover:text-white">
+        <ArrowLeft className="size-4" />
+        Volver
+      </Link>
+    </div>
+  );
+}
+
+function MapaVisualToolbar({ camera, onReset, onZoom }: { camera: MapaCamera; onReset: () => void; onZoom: (scale: number) => void }) {
+  return (
+    <div data-map-control className="absolute bottom-4 left-4 z-20 flex items-center overflow-hidden rounded-md border border-white/10 bg-black/58 shadow-2xl backdrop-blur-xl">
+      <button type="button" title="Alejar" onClick={() => onZoom(camera.scale - 0.12)} className="inline-flex size-11 cursor-pointer items-center justify-center border-r border-white/10 text-white/68 transition hover:bg-white/10 hover:text-white">
+        <Minus className="size-4" />
+      </button>
+      <div className="flex h-11 min-w-20 items-center justify-center gap-2 border-r border-white/10 px-3 text-xs font-black text-white/62">
+        <Move className="size-4" />
+        {Math.round(camera.scale * 100)}%
+      </div>
+      <button type="button" title="Acercar" onClick={() => onZoom(camera.scale + 0.12)} className="inline-flex size-11 cursor-pointer items-center justify-center border-r border-white/10 text-white/68 transition hover:bg-white/10 hover:text-white">
+        <Plus className="size-4" />
+      </button>
+      <button type="button" title="Centrar mapa" onClick={onReset} className="inline-flex size-11 cursor-pointer items-center justify-center text-white/68 transition hover:bg-white/10 hover:text-white">
+        <LocateFixed className="size-4" />
+      </button>
+    </div>
+  );
+}
+
+function MapaVisualDetailsPanel({
+  availableSlugs,
+  isOpen,
+  missingSlugs,
+  selectedSubject,
+  selectedStatus,
+  selectedUnlocks,
+  onCenterSubject,
+  onClose,
+  onToggleSubject,
+}: {
+  availableSlugs: Set<string>;
+  isOpen: boolean;
+  missingSlugs: string[];
+  selectedSubject: SubjectNode;
+  selectedStatus: SubjectStatus;
+  selectedUnlocks: SubjectNode[];
+  onCenterSubject: (subject: SubjectNode) => void;
+  onClose: () => void;
+  onToggleSubject: (subject: SubjectNode) => void;
+}) {
+  const canOpenSubject = availableSlugs.size === 0 || availableSlugs.has(selectedSubject.slug);
+
+  return (
+    <aside
+      data-map-control
+      className={cn(
+        'absolute bottom-4 right-4 top-4 z-20 w-[min(360px,calc(100vw-2rem))] overflow-y-auto rounded-md border border-white/10 bg-black/64 p-4 shadow-2xl backdrop-blur-xl transition duration-300',
+        isOpen ? 'translate-x-0 opacity-100' : 'pointer-events-none translate-x-[calc(100%+1rem)] opacity-0',
+      )}
+    >
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-100/55">Materia enfocada</p>
+            <h2 className="mt-2 text-2xl font-black leading-tight text-white">{selectedSubject.nombre}</h2>
+            <p className="mt-2 text-xs font-bold uppercase tracking-widest text-white/38">{selectedSubject.codigo} · {selectedSubject.periodo}</p>
+          </div>
+          <button type="button" onClick={onClose} className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-white/40 transition hover:bg-white/10 hover:text-white">
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <div className={cn('rounded-md border p-3 backdrop-blur', STATUS_STYLES[selectedStatus])}>
+          <p className="text-[10px] font-black uppercase tracking-widest text-white/48">Estado</p>
+          <p className="mt-1 text-lg font-black text-white">{STATUS_COPY[selectedStatus]}</p>
+        </div>
+
+        <button
+          type="button"
+          disabled={selectedStatus === 'LOCKED'}
+          onClick={() => onToggleSubject(selectedSubject)}
+          className={cn(
+            'inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border px-4 text-sm font-black uppercase tracking-wider transition disabled:cursor-not-allowed',
+            selectedStatus === 'COMPLETED' && 'border-emerald-200/25 bg-emerald-300/10 text-emerald-50 hover:bg-emerald-300/16',
+            selectedStatus === 'UNLOCKED' && 'border-amber-200/25 bg-amber-300/10 text-amber-50 hover:bg-amber-300/16',
+            selectedStatus === 'LOCKED' && 'border-white/10 bg-white/5 text-white/28',
+          )}
+        >
+          {selectedStatus === 'COMPLETED' ? <RefreshCw className="size-4" /> : <Check className="size-4" />}
+          {selectedStatus === 'COMPLETED' ? 'Quitar marca' : 'Marcar avance'}
+        </button>
+
+        <button type="button" onClick={() => onCenterSubject(selectedSubject)} className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-cyan-200/18 bg-cyan-300/8 px-4 text-sm font-black uppercase tracking-wider text-cyan-50 transition hover:bg-cyan-300/13">
+          <LocateFixed className="size-4" />
+          Centrar
+        </button>
+
+        {canOpenSubject ? (
+          <Link href={buildSubjectHref({ yearSlug: yearSlugFromNumber(selectedSubject.year), subjectSlug: selectedSubject.slug })} className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 text-sm font-black uppercase tracking-wider text-white/68 transition hover:bg-white/8 hover:text-white">
+            Abrir materia
+            <ArrowUpRight className="size-4" />
+          </Link>
+        ) : null}
+
+        <RelationCloud title="Necesita" slugs={selectedSubject.correlativas} empty="No pide materias previas." highlightSlugs={missingSlugs} />
+        <RelationCloud title="Abre camino a" slugs={selectedUnlocks.map((subject) => subject.slug)} empty="No abre materias directas." />
+      </div>
+    </aside>
   );
 }
 
@@ -582,7 +490,7 @@ function RelationCloud({
   title,
   slugs,
   empty,
-  highlightSlugs = [],
+  highlightSlugs = EMPTY_HIGHLIGHT_SLUGS,
 }: {
   title: string;
   slugs: string[];
@@ -604,9 +512,7 @@ function RelationCloud({
                 key={slug}
                 className={cn(
                   'rounded-md border px-2 py-1 text-[11px] font-semibold leading-4',
-                  isHighlighted
-                    ? 'border-rose-200/28 bg-rose-300/10 text-rose-50'
-                    : 'border-white/10 bg-white/5 text-white/68',
+                  isHighlighted ? 'border-rose-200/28 bg-rose-300/10 text-rose-50' : 'border-white/10 bg-white/5 text-white/68',
                 )}
               >
                 {getSubjectName(slug)}
