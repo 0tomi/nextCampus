@@ -88,7 +88,24 @@ function EventModalContent({
 }: EventModalProps) {
   const router = useRouter()
   const actionToUse = eventToEdit ? updateEventoAction : createEventoAction
-  const [state, formAction, pending] = useActionState(actionToUse, emptyState)
+  const submitEvent = async (
+    previousState: EventoActionState,
+    formData: FormData,
+  ) => {
+    const nextState = await actionToUse(previousState, formData)
+
+    if (nextState.ok) {
+      toast.success(eventToEdit ? 'Evento actualizado' : 'Evento creado')
+      router.refresh()
+      onSuccess?.()
+      onClose()
+    } else if (nextState.message) {
+      toast.error(nextState.message)
+    }
+
+    return nextState
+  }
+  const [state, formAction, pending] = useActionState(submitEvent, emptyState)
   const [titulo, setTitulo] = useState(
     eventToEdit ? (eventToEdit.tituloOriginal ?? eventToEdit.title ?? eventToEdit.titulo ?? '') : ''
   )
@@ -135,17 +152,6 @@ function EventModalContent({
     query: apunteQuery,
     subjectId: activeSubjectId,
   })
-
-  useEffect(() => {
-    if (state.ok) {
-      toast.success(eventToEdit ? 'Evento actualizado' : 'Evento creado')
-      router.refresh()
-      onSuccess?.()
-      onClose()
-    } else if (state.message) {
-      toast.error(state.message)
-    }
-  }, [state, eventToEdit, onClose, onSuccess, router])
 
   useEffect(() => {
     const handle = window.setTimeout(() => {

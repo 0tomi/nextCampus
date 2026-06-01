@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useActionState } from 'react'
+import { useActionState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/ui/Modal'
 import {
@@ -28,17 +28,24 @@ export function CommissionModal({
   commissions,
 }: CommissionModalProps) {
   const router = useRouter()
+  const submitCommission = async (
+    _previousState: CommissionActionState,
+    formData: FormData,
+  ) => {
+    const nextState = await createCommissionAction(_previousState, formData)
+
+    if (nextState.ok) {
+      router.refresh()
+      onClose()
+    }
+
+    return nextState
+  }
+
   const [state, formAction, pending] = useActionState(
-    createCommissionAction,
+    submitCommission,
     emptyState,
   )
-
-  useEffect(() => {
-    if (!state.ok) return
-
-    router.refresh()
-    onClose()
-  }, [state.ok, onClose, router])
 
   return (
     <Modal open={open} onClose={onClose} title="Nueva comisión">

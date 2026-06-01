@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useActionState, useState } from 'react'
+import { useActionState, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/ui/Modal'
 import {
@@ -56,20 +56,27 @@ export function SubjectModal({
 
   const action = isEdit ? updateSubjectAction : createSubjectAction
 
-  const [state, formAction, pending] = useActionState(action, emptyState)
+  const submitSubject = async (
+    previousState: SubjectActionState,
+    formData: FormData,
+  ) => {
+    const nextState = await action(previousState, formData)
 
-  useEffect(() => {
-    if (state.ok) {
+    if (nextState.ok) {
       // Si la materia cambió de nombre, el destino final también cambió.
       // Mandamos al usuario a la nueva URL para que no se quede en una página
       // que ya no existe.
-      if (state.newSlug && state.yearSlug) {
-        router.replace(`/${state.yearSlug}/${state.newSlug}`)
+      if (nextState.newSlug && nextState.yearSlug) {
+        router.replace(`/${nextState.yearSlug}/${nextState.newSlug}`)
       }
       onSuccess?.()
       onClose()
     }
-  }, [state, onClose, onSuccess, router])
+
+    return nextState
+  }
+
+  const [state, formAction, pending] = useActionState(submitSubject, emptyState)
 
   const title = isEdit ? 'Editar materia' : 'Nueva materia'
 

@@ -52,18 +52,15 @@ type ModalTransitionState = {
 }
 
 type ModalTransitionAction =
-  | { type: 'mounted' }
-  | { type: 'visible' }
+  | { type: 'opened' }
   | { type: 'closing' }
   | { type: 'unmounted' }
   | { type: 'toggle-mobile-ranking' }
 
 function modalTransitionReducer(state: ModalTransitionState, action: ModalTransitionAction): ModalTransitionState {
   switch (action.type) {
-    case 'mounted':
-      return { ...state, mounted: true }
-    case 'visible':
-      return { ...state, visible: true }
+    case 'opened':
+      return { ...state, mounted: true, visible: true }
     case 'closing':
       return { ...state, showRankingMobile: false, visible: false }
     case 'unmounted':
@@ -84,12 +81,8 @@ function useNosotrosModalTransition(open: boolean) {
   useEffect(() => {
     if (open) {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
-      const mountTimer = setTimeout(() => dispatch({ type: 'mounted' }), 0)
-      const visibleTimer = setTimeout(() => dispatch({ type: 'visible' }), 20)
-      return () => {
-        clearTimeout(mountTimer)
-        clearTimeout(visibleTimer)
-      }
+      const openTimer = setTimeout(() => dispatch({ type: 'opened' }), 0)
+      return () => clearTimeout(openTimer)
     }
 
     const hideTimer = setTimeout(() => dispatch({ type: 'closing' }), 0)
@@ -98,8 +91,9 @@ function useNosotrosModalTransition(open: boolean) {
   }, [open])
 
   useEffect(() => {
+    const timerRef = closeTimerRef
     return () => {
-      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+      if (timerRef.current) clearTimeout(timerRef.current)
     }
   }, [])
 
@@ -228,7 +222,7 @@ function useNativeNosotrosDialog(
       dialog.removeEventListener('click', stopDialogClick)
       if (dialog.open) dialog.close()
     }
-  }, [mounted])
+  }, [dialogRef, mounted])
 }
 
 function useBodyScrollLock(mounted: boolean) {

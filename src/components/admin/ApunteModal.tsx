@@ -76,7 +76,22 @@ export function ApunteModal({
   const isEditMode = Boolean(apunte)
 
   const action = isEditMode ? updateApunteAction : createApunteAction
-  const [state, formAction, pending] = useActionState(action, emptyState)
+  const submitApunte = async (
+    previousState: ApunteActionState,
+    formData: FormData,
+  ) => {
+    const nextState = await action(previousState, formData)
+
+    if (nextState.ok) {
+      if (nextState.apunte) onCreated?.(nextState.apunte)
+      window.dispatchEvent(new CustomEvent('apuntes-changed'))
+      onSuccess?.()
+      onClose()
+    }
+
+    return nextState
+  }
+  const [state, formAction, pending] = useActionState(submitApunte, emptyState)
 
   const [titulo, setTitulo] = useState(apunte?.titulo ?? '')
   const [descriptionOpen, setDescriptionOpen] = useState(false)
@@ -111,15 +126,6 @@ export function ApunteModal({
   })
 
   const [validationError, setValidationError] = useState('')
-
-  useEffect(() => {
-    if (state.ok) {
-      if (state.apunte) onCreated?.(state.apunte)
-      window.dispatchEvent(new CustomEvent('apuntes-changed'))
-      onSuccess?.()
-      onClose()
-    }
-  }, [state.apunte, state.ok, onClose, onCreated, onSuccess])
 
   const handleTituloChange = useCallback((value: string) => {
     setTitulo(value)
