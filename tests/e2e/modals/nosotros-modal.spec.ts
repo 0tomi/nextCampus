@@ -13,11 +13,9 @@ import { test, expect } from '@playwright/test'
  *  H3 — El botón "Cerrar" cierra el modal.
  *  H4 — Mientras el modal está abierto, el scroll del body queda bloqueado.
  *
- * FUERA DE ALCANCE (documentado, no testeado):
- *  - Cierre por click en backdrop: NosotrosModal hace stopPropagation en el
- *    click del <dialog>, así que NO cierra por backdrop a propósito. Es una
- *    decisión de diseño de este modal, no un bug. (Modal.tsx genérico SÍ cierra
- *    por backdrop — eso se cubriría en su propio spec.)
+ * VERIFICACIÓN ADICIONAL:
+ *  - Cierre por click en backdrop: NosotrosModal permite cerrarse haciendo
+ *    click por fuera de su caja en la pantalla (backdrop del dialog).
  *  - Focus-trap y Esc son garantizados por el navegador vía showModal(); no
  *    re-testeamos la implementación de Chromium.
  */
@@ -67,5 +65,16 @@ test.describe('NosotrosModal · migración a <dialog> nativo', () => {
     await expect
       .poll(() => page.evaluate(() => document.body.style.overflow))
       .toBe('hidden')
+  })
+
+  test('modal abierto › toca fuera del modal (backdrop) › se cierra', async ({ page }) => {
+    await page.getByRole('button', { name: 'Nosotros' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Sobre nosotros' })
+    await expect(dialog).toBeVisible()
+
+    // Hacemos click en una zona fuera de las dimensiones del modal (arriba a la izquierda, x:10, y:10)
+    await page.mouse.click(10, 10)
+
+    await expect(dialog).toBeHidden()
   })
 })

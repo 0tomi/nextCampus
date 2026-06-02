@@ -172,9 +172,10 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
     >
       <dialog
         ref={dialogRef}
+        onClick={(e) => e.stopPropagation()}
         aria-labelledby="about-modal-title"
         className={cn(
-          'relative m-0 w-full max-w-4xl overflow-hidden rounded-2xl border border-white/8 bg-surface-1 p-0 text-white shadow-[0_24px_64px_rgba(0,0,0,0.85)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] backdrop:bg-transparent',
+          'relative m-auto w-full max-w-4xl overflow-hidden rounded-2xl border border-white/8 bg-surface-1 p-0 text-white shadow-[0_24px_64px_rgba(0,0,0,0.85)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] backdrop:bg-transparent',
           visible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-4 scale-95 opacity-0',
         )}
       >
@@ -209,17 +210,19 @@ function useNativeNosotrosDialog(
       event.preventDefault()
       closeDialog()
     }
-    const stopDialogClick = (event: globalThis.MouseEvent) => {
-      event.stopPropagation()
+    const closeFromBackdrop = (event: globalThis.MouseEvent) => {
+      if (event.target === dialog) {
+        closeDialog()
+      }
     }
 
     if (!dialog.open) dialog.showModal()
     dialog.addEventListener('cancel', closeFromNativeEvent)
-    dialog.addEventListener('click', stopDialogClick)
+    dialog.addEventListener('click', closeFromBackdrop)
 
     return () => {
       dialog.removeEventListener('cancel', closeFromNativeEvent)
-      dialog.removeEventListener('click', stopDialogClick)
+      dialog.removeEventListener('click', closeFromBackdrop)
       if (dialog.open) dialog.close()
     }
   }, [dialogRef, mounted])
