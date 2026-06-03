@@ -192,6 +192,15 @@ function ModeSelector() {
 function RankedNameField() {
   const { actions, state } = useQuiz()
 
+  if (state.rankedNameLocked && state.rankedName) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm font-bold text-white">Vas a participar como</p>
+        <p className="text-sm font-semibold text-white/72">{state.rankedName}</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-3">
       <label htmlFor="rankedName" className="block text-sm font-bold text-white">Nombre para el ranking</label>

@@ -11,6 +11,7 @@ import { useQuizKeyboardShortcuts } from './useQuizKeyboardShortcuts'
 type QuizActions = {
   closeExitDialog: () => void
   closeSubmitDialog: () => void
+  enterRanked: () => void
   finish: () => void
   next: () => void
   openExitDialog: () => void
@@ -37,8 +38,8 @@ type QuizContextValue = {
   isPractica: boolean
   isRanked: boolean
   maxPreguntas: number
-  rankedSelectedBank: BancoInfo | undefined
   rankedQuestionCount: number
+  rankedSelectedBank: BancoInfo | undefined
   progreso: number
   pregunta: PublicQuestion | undefined
   respondida: boolean
@@ -78,7 +79,15 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
 
   useEffect(() => {
     const storedName = window.localStorage.getItem(RANKED_NAME_STORAGE_KEY)
-    if (storedName) dispatch({ type: 'SET_RANKED_NAME', name: storedName })
+    if (!storedName) return
+
+    const participant = validateParticipantName(storedName)
+    if (participant.ok) {
+      dispatch({ type: 'SET_STORED_RANKED_NAME', name: participant.name })
+      return
+    }
+
+    window.localStorage.removeItem(RANKED_NAME_STORAGE_KEY)
   }, [])
 
   const availableUnits = useMemo(() => {
@@ -111,7 +120,6 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
   const respondida = pregunta ? state.answers[pregunta.id] !== undefined && state.answers[pregunta.id] !== null : false
   const progreso = state.preguntas.length > 0 ? ((state.index + 1) / state.preguntas.length) * 100 : 0
 
-
   const loadRankedTop = useCallback(
     async (bankId: string | undefined) => {
       if (!bankId) {
@@ -134,7 +142,7 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
   const invalidateRankedAttempt = useCallback(
     (reason: RankedInvalidationReason, delivery: 'fetch' | 'beacon' = 'fetch') => {
       const attemptId = state.rankedAttemptId
-      if (!attemptId || state.rankedInvalidated || state.phase !== 'running' || state.mode !== 'ranked') return
+      if (!attemptId || state.rankedInvalidated || !['ready', 'running'].includes(state.phase) || state.mode !== 'ranked') return
 
       dispatch({ type: 'RANKED_INVALIDATED' })
       const body = JSON.stringify({ attemptId, reason })
@@ -155,6 +163,11 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
 
   useEffect(() => {
     if (state.phase !== 'running' || state.mode !== 'ranked' || !state.rankedAttemptId) return
+
+    if (!document.fullscreenElement) {
+      invalidateRankedAttempt('fullscreen_exit')
+      return
+    }
 
     function handleFullscreenChange() {
       if (!document.fullscreenElement) invalidateRankedAttempt('fullscreen_exit')
@@ -204,12 +217,6 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
         dispatch({ type: 'SET_ERROR', error: participant.error })
         return
       }
-      try {
-        if (!document.fullscreenElement) await document.documentElement.requestFullscreen()
-      } catch {
-        dispatch({ type: 'SET_ERROR', error: 'Activá pantalla completa para iniciar el ranked.' })
-        return
-      }
 
       dispatch({ type: 'START_REQUEST' })
       try {
@@ -222,9 +229,8 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
         if (!res.ok || !data.preguntas || !data.attemptId) throw new Error(data.error ?? 'No se pudo cargar el ranked.')
 
         window.localStorage.setItem(RANKED_NAME_STORAGE_KEY, data.participantName ?? participant.name)
-        dispatch({ type: 'START_SUCCESS', preguntas: data.preguntas, timeLeft: null, rankedAttemptId: data.attemptId, rankedName: data.participantName ?? participant.name })
+        dispatch({ type: 'RANKED_READY_SUCCESS', preguntas: data.preguntas, rankedAttemptId: data.attemptId, rankedName: data.participantName ?? participant.name })
       } catch (error) {
-        if (document.fullscreenElement) void document.exitFullscreen()
         dispatch({ type: 'REQUEST_FAILURE', error: error instanceof Error ? error.message : 'Error inesperado.' })
       }
       return
@@ -261,6 +267,18 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
       dispatch({ type: 'REQUEST_FAILURE', error: error instanceof Error ? error.message : 'Error inesperado.' })
     }
   }, [availableUnits, rankedSelectedBank, state.count, state.excludedUnits, state.mode, state.rankedName, state.selectedBancos, state.timeLimit, subjectSlug])
+
+  const enterRanked = useCallback(async () => {
+    if (state.mode !== 'ranked' || state.phase !== 'ready') return
+
+    dispatch({ type: 'ENTER_RANKED_REQUEST' })
+    try {
+      if (!document.fullscreenElement) await document.documentElement.requestFullscreen()
+      dispatch({ type: 'ENTER_RANKED_SUCCESS' })
+    } catch {
+      dispatch({ type: 'REQUEST_FAILURE', error: 'Activá pantalla completa para iniciar el ranked.' })
+    }
+  }, [state.mode, state.phase])
 
   const setAnswer = useCallback(
     (answer: UserAnswer) => {
@@ -333,7 +351,7 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
   }, [finish, isLast])
 
   const reset = useCallback(() => {
-    if (state.phase === 'running' && state.mode === 'ranked') invalidateRankedAttempt('manual_exit')
+    if (['ready', 'running'].includes(state.phase) && state.mode === 'ranked') invalidateRankedAttempt('manual_exit')
     const shouldRefreshTop = state.mode === 'ranked'
     const bankId = state.selectedBancos[0]
     dispatch({ type: 'RESET' })
@@ -344,6 +362,7 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
     () => ({
       closeExitDialog: () => dispatch({ type: 'CLOSE_EXIT_DIALOG' }),
       closeSubmitDialog: () => dispatch({ type: 'CLOSE_SUBMIT_DIALOG' }),
+      enterRanked: () => void enterRanked(),
       finish: () => void finish(),
       next,
       openExitDialog: () => dispatch({ type: 'OPEN_EXIT_DIALOG' }),
@@ -367,7 +386,7 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
       toggleUnit: (nombre) => dispatch({ type: 'TOGGLE_UNIT', nombre }),
       verify: () => void verify(),
     }),
-    [finish, loadRankedTop, next, reset, setAnswer, start, state.mode, state.selectedBancos, verify],
+    [enterRanked, finish, loadRankedTop, next, reset, setAnswer, start, state.mode, state.selectedBancos, verify],
   )
 
   useExamTimer({

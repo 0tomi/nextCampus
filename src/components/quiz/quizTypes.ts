@@ -1,5 +1,5 @@
 export type QuizMode = 'practica' | 'examen' | 'ranked'
-export type QuizPhase = 'config' | 'running' | 'done'
+export type QuizPhase = 'config' | 'ready' | 'running' | 'done'
 
 export interface UnidadInfo {
   nombre: string
