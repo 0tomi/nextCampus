@@ -1,9 +1,9 @@
 ### Context
-Estas desarrollando una aplicacion de un campus academico, con Quiz, Calendario y Apuntes por materia. 
-Tecnologias que utilizamos aca: 
+Estas desarrollando una aplicacion de un campus academico, con Quiz, Calendario y Apuntes por materia.
+Tecnologias que utilizamos aca:
 - NextJS
 - Prisma
-- Supabase 
+- Supabase
 - PNPM Como gestor de dependencias
 
 Para supabase, contas con el MCP instalado para comunicarte con la base de datos si lo necesitas.
@@ -20,7 +20,7 @@ Este proyecto tiene skills disponibles que DEBES usar para trabajar de forma int
 - NOTIFICAR AL USUARIO si se van a cambiar algun tipo de slug. NO Cambiar slugs sin la aprobacion del usuario.
 
 ## Frontend rules
-- Cuando el usuario haga preguntas técnicas o observaciones técnicas, estas no deben anotarse en el frontend. El frontend DEBE manejar un vocabulario user friendly NO técnico y no hacer referencias a la infrastructura del programa, ya sea del frontend como del backend. 
+- Cuando el usuario haga preguntas técnicas o observaciones técnicas, estas no deben anotarse en el frontend. El frontend DEBE manejar un vocabulario user friendly NO técnico y no hacer referencias a la infrastructura del programa, ya sea del frontend como del backend.
 - Citas como estas en el frontend son intolerables: El calendario vive en un wrapper client-only y la página sigue siendo Server Component.
 - Los botones deben tener cursor pointer clickeable
 
@@ -40,3 +40,7 @@ El deploy en Vercel corre `pnpm build` (`prisma generate && next build` con Turb
 - **Antes de dar una tarea por terminada (rápido, segundos):** corré `pnpm typecheck`. Agarra errores de tipos, identificadores duplicados (ej: `name defined multiple times`) e imports rotos — la mayoría de los errores que rompen el build.
 - **Antes de mergear/pushear a `main` (autoritativo):** corré `pnpm build`. Es lo único que reproduce el 100% de lo que Vercel rechaza (incluye errores de RSC, boundaries client/server, etc.). Es más lento, por eso solo en este punto.
 
+### Reglas de redaccion Frontend
+- La redaccion debe ser de cara al usuario. No deben incluirse detalles tecnicos asociados al prompt ingresado por el usuario.
+- Usar redaccion clara, sencilla y profesional.
+- NO incluir cosas tecnicas, ni dar explicaciones donde se mencione la logica de la aplicacion. La intencionalidad del texto debe dejar claro para que sirve la feature.
