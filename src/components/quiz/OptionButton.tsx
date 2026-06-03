@@ -25,7 +25,7 @@ export function OptionButton({
       disabled={disabled}
       aria-pressed={selected}
       className={cn(
-        'flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm transition-colors cursor-pointer disabled:cursor-not-allowed',
+        'flex w-full min-w-0 items-center gap-3 px-4 py-3.5 text-left text-sm transition-colors cursor-pointer disabled:cursor-not-allowed',
         state === 'idle' && (selected ? CONTROL_ACTIVE : CONTROL),
         state === 'correct' && 'border border-emerald-400/50 bg-emerald-500/10',
         state === 'wrong' && (selected ? 'border border-rose-400/50 bg-rose-500/10' : 'border border-white/[0.06] bg-surface-3 opacity-55'),
@@ -45,7 +45,7 @@ export function OptionButton({
       >
         {typeof index === 'number' ? index + 1 : selected ? '•' : ''}
       </span>
-      <span className="min-w-0 flex-1 leading-relaxed text-white/82">{label}</span>
+      <span className="min-w-0 flex-1 break-words leading-relaxed text-white/82">{label}</span>
     </button>
   )
 }

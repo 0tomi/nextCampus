@@ -56,7 +56,7 @@ function QuestionBankSection({
         <h2 className="text-sm font-bold text-white">Bancos de preguntas</h2>
         <p className="mt-1 text-sm text-white/48">{rankedMode ? 'Elegí un banco para competir por el top.' : 'Elegí uno o combiná varios para mezclar sus preguntas.'}</p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid min-w-0 gap-3 sm:grid-cols-2">
         {bancos.map((banco) => (
           <QuestionBankCard key={banco.id} banco={banco} active={selectedBancos.includes(banco.id)} subjectSlug={subjectSlug} yearId={yearId} onToggle={() => onToggle(banco.id)} />
         ))}
@@ -79,7 +79,7 @@ function QuestionBankCard({
   onToggle: () => void
 }) {
   return (
-    <div className={cn('group relative flex items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors', active ? CONTROL_ACTIVE : CONTROL)}>
+    <div className={cn('group relative flex min-w-0 items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors', active ? CONTROL_ACTIVE : CONTROL)}>
       <button type="button" onClick={onToggle} className="absolute inset-0 size-full cursor-pointer text-left" aria-pressed={active}>
         <span className="sr-only">Seleccionar {banco.nombre}</span>
       </button>
@@ -92,7 +92,7 @@ function QuestionBankCard({
         ) : null}
       </div>
 
-      <div className="relative flex items-center gap-2 z-10">
+      <div className="relative z-10 flex shrink-0 items-center gap-2">
         <AdminControls yearId={yearId} ownerUserId={banco.subidoPorId} noWrapper>
           <form action={deleteQuizBankAction} className="flex">
             <input type="hidden" name="subjectSlug" value={subjectSlug} />
@@ -125,7 +125,7 @@ function UnitSelectorSection({
         <h2 className="text-sm font-bold text-white">Elegir unidades</h2>
         <p className="mt-1 text-sm text-white/48">De los bancos seleccionados, elegí qué unidades querés utilizar para autoevaluarte.</p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid min-w-0 gap-3 sm:grid-cols-2">
         {availableUnits.map((unit) => {
           const active = !excludedUnits.includes(unit.nombre)
           return <UnitToggleCard key={unit.nombre} unit={unit} active={active} onToggle={() => onToggle(unit.nombre)} />
@@ -137,7 +137,7 @@ function UnitSelectorSection({
 
 function UnitToggleCard({ unit, active, onToggle }: { unit: { nombre: string; totalPreguntas: number }; active: boolean; onToggle: () => void }) {
   return (
-    <div className={cn('group relative flex items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors', active ? CONTROL_ACTIVE : CONTROL)}>
+    <div className={cn('group relative flex min-w-0 items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors', active ? CONTROL_ACTIVE : CONTROL)}>
       <button type="button" onClick={onToggle} className="absolute inset-0 size-full cursor-pointer text-left" aria-pressed={active}>
         <span className="sr-only">Seleccionar {unit.nombre}</span>
       </button>
@@ -170,7 +170,7 @@ function ModeSelector() {
   return (
     <div className="space-y-3">
       <h2 className="text-sm font-bold text-white">Modo</h2>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {([
           ['practica', 'Práctica', null],
           ['examen', 'Examen', null],

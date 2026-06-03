@@ -33,11 +33,11 @@ function QuestionProgressHeader() {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between text-xs">
+      <div className="flex flex-col gap-2 text-xs sm:flex-row sm:items-center sm:justify-between">
         <span className="font-semibold text-white/56 tabular-nums">
           Pregunta {state.index + 1}<span className="text-white/32"> / {state.preguntas.length}</span>
         </span>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {state.timeLeft !== null ? <TimerBadge timeLeft={state.timeLeft} /> : null}
           <span className="font-semibold uppercase tracking-[0.18em] text-white/32">{isPractica ? 'Práctica' : isRanked ? 'Ranked · beta' : 'Examen'}</span>
           <button type="button" onClick={actions.openExitDialog} className="text-rose-400 hover:text-rose-300 font-semibold cursor-pointer transition-colors">
@@ -77,7 +77,7 @@ function QuestionCard() {
 
   return (
     <DarkCard className="p-6 sm:p-8">
-      <h2 className="text-xl font-black leading-snug tracking-tight text-white sm:text-2xl">{pregunta.question}</h2>
+      <h2 className="break-words text-xl font-black leading-snug tracking-tight text-white sm:text-2xl">{pregunta.question}</h2>
       <QuestionOptions />
       {pregunta.type === 'multiple' && !resultado ? <p className="mt-3 text-xs text-white/36">Puede haber más de una respuesta correcta.</p> : null}
       <PracticeFeedback />
@@ -139,7 +139,7 @@ function PracticeFeedback() {
   return (
     <div className={cn('mt-6 border-l-2 px-4 py-3 text-sm', resultado.correcta ? 'border-emerald-400 bg-emerald-500/10' : 'border-rose-400 bg-rose-500/10')}>
       <p className="font-bold text-white">{resultado.correcta ? 'Correcto' : 'Incorrecto'}</p>
-      {resultado.explicacion ? <p className="mt-1 leading-6 text-white/60">{resultado.explicacion}</p> : null}
+      {resultado.explicacion ? <p className="mt-1 break-words leading-6 text-white/60">{resultado.explicacion}</p> : null}
     </div>
   )
 }
@@ -148,13 +148,13 @@ function QuestionNavigation() {
   const { actions, canAdvance, isLast, isPractica, respondida, resultado, state } = useQuiz()
 
   return (
-    <div className="mt-7 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-5">
-      <button type="button" onClick={actions.previous} disabled={state.index === 0} className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/52 transition-colors hover:text-white disabled:pointer-events-none disabled:opacity-25 cursor-pointer">
+    <div className="mt-7 flex flex-col gap-3 border-t border-white/[0.06] pt-5 sm:flex-row sm:items-center sm:justify-between">
+      <button type="button" onClick={actions.previous} disabled={state.index === 0} className="inline-flex w-full items-center justify-center gap-1.5 text-sm font-semibold text-white/52 transition-colors hover:text-white disabled:pointer-events-none disabled:opacity-25 cursor-pointer sm:w-auto sm:justify-start">
         <ChevronLeft className="size-4" />
         Anterior
       </button>
 
-      <div className="flex items-center gap-3">
+      <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
         {isPractica && !resultado ? (
           <PracticeActions isLast={isLast} loading={state.loading} respondida={respondida} onNext={actions.next} onVerify={actions.verify} />
         ) : (
@@ -180,10 +180,10 @@ function PracticeActions({
 }) {
   return (
     <>
-      <button type="button" onClick={onNext} className="inline-flex items-center gap-2 border border-white/[0.06] bg-surface-3 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/12 cursor-pointer">
+      <button type="button" onClick={onNext} className="inline-flex w-full items-center justify-center gap-2 border border-white/[0.06] bg-surface-3 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/12 cursor-pointer sm:w-auto">
         {isLast ? 'Finalizar sin verificar' : 'Avanzar sin verificar'}
       </button>
-      <button type="button" onClick={onVerify} disabled={loading || !respondida} className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer">
+      <button type="button" onClick={onVerify} disabled={loading || !respondida} className="inline-flex w-full items-center justify-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer sm:w-auto">
         {loading ? 'Verificando…' : 'Verificar'}
       </button>
     </>
@@ -196,11 +196,11 @@ function AdvanceActions({ canAdvance, isLast }: { canAdvance: boolean; isLast: b
   return (
     <>
       {!isPractica && !isLast ? (
-        <button type="button" onClick={actions.openSubmitDialog} className="inline-flex items-center gap-2 border border-white/8 bg-surface-3 px-5 py-2.5 text-sm font-semibold text-white/85 transition-colors hover:border-rose-500/30 hover:bg-rose-500/5 hover:text-rose-300 cursor-pointer">
+        <button type="button" onClick={actions.openSubmitDialog} className="inline-flex w-full items-center justify-center gap-2 border border-white/8 bg-surface-3 px-5 py-2.5 text-sm font-semibold text-white/85 transition-colors hover:border-rose-500/30 hover:bg-rose-500/5 hover:text-rose-300 cursor-pointer sm:w-auto">
           Entregar examen
         </button>
       ) : null}
-      <button type="button" onClick={actions.next} disabled={state.loading || !canAdvance} className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer">
+      <button type="button" onClick={actions.next} disabled={state.loading || !canAdvance} className="inline-flex w-full items-center justify-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer sm:w-auto">
         {state.loading ? 'Corrigiendo…' : isLast ? 'Finalizar' : 'Siguiente'}
         {!isLast ? <ChevronRight className="size-4" /> : null}
       </button>

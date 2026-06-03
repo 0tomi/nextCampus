@@ -244,12 +244,16 @@ export function ApuntesFeed({
   return (
     <div className={variant === 'mobile' ? 'px-[18px]' : 'space-y-4'}>
       {addApunteButton}
-      <div className="flex flex-wrap gap-2">
+      <div
+        className={variant === 'mobile'
+          ? '-mx-[18px] flex flex-nowrap gap-2 overflow-x-auto px-[18px] pb-1 scrollbar-none'
+          : 'flex flex-wrap gap-2'}
+      >
         <button
           type="button"
           onClick={() => setSelectedIds([])}
           className={[
-            'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
+            'shrink-0 cursor-pointer whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
             selectedIds.length === 0
               ? 'border-cyan-300/50 bg-cyan-300/15 text-cyan-100'
               : 'border-white/10 bg-white/[0.03] text-white/55 hover:bg-white/[0.07] hover:text-white',
@@ -265,7 +269,7 @@ export function ApuntesFeed({
               type="button"
               onClick={() => toggleCategoria(categoria.id)}
               className={[
-                'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
+                'shrink-0 cursor-pointer whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
                 active
                   ? 'border-cyan-300/50 bg-cyan-300/15 text-cyan-100'
                   : 'border-white/10 bg-white/[0.03] text-white/55 hover:bg-white/[0.07] hover:text-white',
@@ -399,7 +403,7 @@ function ApunteCard({
       {apunte.recursos.length > 0 ? (
         <div className={variant === 'desktop' ? 'mt-4 flex flex-col gap-3' : 'flex flex-col gap-3'}>
           {apunte.recursos.slice(0, 3).map((recurso) => (
-            <ApunteRecursoView key={recurso.id} recurso={recurso} apunteHref={apunteHref} />
+            <ApunteRecursoView key={recurso.id} recurso={recurso} apunteHref={apunteHref} htmlLoadMode="on-click" />
           ))}
           {apunte.recursos.length > 3 ? (
             <Link

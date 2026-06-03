@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useEffectEvent, useRef, useState, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -78,12 +78,12 @@ export function Modal({
       ref={dialogRef}
       aria-labelledby={titleId}
       className={cn(
-        'm-auto w-[calc(100%-2rem)] max-w-lg overflow-visible rounded-none border border-white/8 bg-surface-1 p-0 text-white shadow-[0_24px_64px_rgba(0,0,0,0.72)] backdrop:bg-black/70 backdrop:backdrop-blur-sm animate-in md:w-full',
+        'm-auto flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg flex-col overflow-hidden rounded-none border border-white/8 bg-surface-1 p-0 text-white shadow-[0_24px_64px_rgba(0,0,0,0.72)] backdrop:bg-black/70 backdrop:backdrop-blur-sm animate-in md:w-full',
         className,
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/6 px-6 py-4">
+      <div className="flex shrink-0 items-center justify-between border-b border-white/6 px-6 py-4">
         <h2
           id={titleId}
           className="text-base font-black tracking-tight text-white"
@@ -101,7 +101,7 @@ export function Modal({
       </div>
 
       {/* Content */}
-      <div className={cn('px-6 py-5', contentClassName)}>{children}</div>
+      <div className={cn('min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5 scrollbar-none', contentClassName)}>{children}</div>
     </dialog>,
     document.body,
   )

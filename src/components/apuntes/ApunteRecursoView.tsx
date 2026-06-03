@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
 import Image from 'next/image'
 import {
   driveEmbedUrl,
@@ -44,9 +44,10 @@ interface ApunteRecursoViewProps {
   }
   variant?: 'card' | 'wide'
   apunteHref?: string
+  htmlLoadMode?: 'auto' | 'on-click'
 }
 
-export function ApunteRecursoView({ recurso, variant = 'card', apunteHref }: ApunteRecursoViewProps) {
+export function ApunteRecursoView({ recurso, variant = 'card', apunteHref, htmlLoadMode = 'auto' }: ApunteRecursoViewProps) {
   const titulo = recurso.nombre?.trim()
     ? recurso.nombre
     : nombreFallbackRecurso(recurso.tipo)
@@ -62,9 +63,9 @@ export function ApunteRecursoView({ recurso, variant = 'card', apunteHref }: Apu
     return (
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between border-b border-white/5 pb-2">
-          <div className="flex items-center gap-2">
-            <span className="size-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)] shrink-0" />
-            <h3 className="font-display text-sm font-bold tracking-tight text-white/90 sm:text-base">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="size-2 shrink-0 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]" />
+            <h3 className="min-w-0 break-words font-display text-sm font-bold tracking-tight text-white/90 sm:text-base">
               {titulo}
             </h3>
           </div>
@@ -91,7 +92,7 @@ export function ApunteRecursoView({ recurso, variant = 'card', apunteHref }: Apu
           )}
         </div>
 
-        <ApunteRecursoMedia recurso={recurso} titulo={titulo} variant={variant} apunteHref={apunteHref} />
+        <ApunteRecursoMedia recurso={recurso} titulo={titulo} variant={variant} apunteHref={apunteHref} htmlLoadMode={htmlLoadMode} />
       </div>
     )
   }
@@ -99,7 +100,7 @@ export function ApunteRecursoView({ recurso, variant = 'card', apunteHref }: Apu
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-surface-1 p-4">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-sm font-semibold text-white">{titulo}</p>
+        <p className="min-w-0 break-words text-sm font-semibold text-white">{titulo}</p>
         {recurso.tipo === 'HTML' ? (
           apunteHref ? (
             <a
@@ -121,7 +122,7 @@ export function ApunteRecursoView({ recurso, variant = 'card', apunteHref }: Apu
         )}
       </div>
 
-      <ApunteRecursoMedia recurso={recurso} titulo={titulo} variant={variant} apunteHref={apunteHref} />
+      <ApunteRecursoMedia recurso={recurso} titulo={titulo} variant={variant} apunteHref={apunteHref} htmlLoadMode={htmlLoadMode} />
     </div>
   )
 }
@@ -131,18 +132,20 @@ function ApunteRecursoMedia({
   titulo,
   variant,
   apunteHref,
+  htmlLoadMode,
 }: {
   recurso: ApunteRecursoViewProps['recurso']
   titulo: string
   variant: NonNullable<ApunteRecursoViewProps['variant']>
   apunteHref?: string
+  htmlLoadMode: NonNullable<ApunteRecursoViewProps['htmlLoadMode']>
 }) {
   if (recurso.tipo === 'HTML') {
     if (variant === 'wide') {
       return <HtmlPreviewIframe recursoId={recurso.id} titulo={titulo} />
     }
 
-    return <HtmlPreviewCard href={apunteHref} title={titulo} recursoId={recurso.id} />
+    return <HtmlPreviewCard href={apunteHref} title={titulo} recursoId={recurso.id} loadMode={htmlLoadMode} />
   }
 
   if (recurso.tipo === 'YOUTUBE') {
@@ -206,12 +209,52 @@ function ApunteRecursoMedia({
 function HtmlPreviewCard({
   title,
   recursoId,
+  loadMode,
 }: {
   href?: string
   title: string
   recursoId: string
+  loadMode: 'auto' | 'on-click'
 }) {
+  const [shouldLoad, setShouldLoad] = useState(loadMode === 'auto')
+
+  if (!shouldLoad) {
+    return <HtmlPreviewPlaceholder title={title} onLoad={() => setShouldLoad(true)} />
+  }
+
   return <HtmlPreviewIframe recursoId={recursoId} titulo={title} compact />
+}
+
+function HtmlPreviewPlaceholder({
+  title,
+  onLoad,
+}: {
+  title: string
+  onLoad: () => void
+}) {
+  return (
+    <div className="relative flex h-[360px] min-h-[360px] w-full flex-col items-center justify-center overflow-hidden rounded-xl border border-cyan-300/10 bg-[radial-gradient(circle_at_top,rgba(103,232,249,0.12),transparent_42%),linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015))] p-5 text-center sm:h-[420px]">
+      <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/25 to-transparent" />
+      <FileText className="size-8 text-cyan-100/70" aria-hidden="true" />
+      <p className="mt-4 text-[11px] font-black uppercase tracking-[0.22em] text-cyan-100/55">
+        Apunte interactivo
+      </p>
+      <h4 className="mt-2 max-w-sm break-words text-base font-black leading-tight text-white">
+        {title}
+      </h4>
+      <p className="mt-3 max-w-xs text-sm leading-6 text-white/52">
+        Tocá para abrir la vista previa.
+      </p>
+      <button
+        type="button"
+        onClick={onLoad}
+        className="mt-5 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-cyan-300/20 bg-cyan-300/10 px-4 py-2.5 text-sm font-bold text-cyan-50 transition-colors hover:bg-cyan-300/15 hover:text-white"
+      >
+        <PlayCircle className="size-4" aria-hidden="true" />
+        Ver apunte interactivo
+      </button>
+    </div>
+  )
 }
 
 function HtmlPreviewIframe({
@@ -237,19 +280,28 @@ function HtmlPreviewIframe({
     })
   }
 
-  const handleReduce = () => {
+  const handleReduce = useCallback(() => {
     setAnimate(false)
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => {
       setIsExpanded(false)
     }, 300)
-  }
+  }, [])
+
+  const reduceFromEscape = useEffectEvent(() => {
+    handleReduce()
+  })
+
+  const clearReduceTimer = useEffectEvent(() => {
+    const timer = timerRef.current
+    if (timer) clearTimeout(timer)
+  })
 
   useEffect(() => {
     if (!isExpanded) return
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleReduce()
+      if (e.key === 'Escape') reduceFromEscape()
     }
     window.addEventListener('keydown', handleKeyDown)
 
@@ -264,8 +316,7 @@ function HtmlPreviewIframe({
 
   useEffect(() => {
     return () => {
-      const timer = timerRef.current
-      if (timer) clearTimeout(timer)
+      clearReduceTimer()
     }
   }, [])
 

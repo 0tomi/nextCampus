@@ -19,12 +19,12 @@ export function UploaderByline({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 text-[11px] font-semibold text-white/40',
+        'inline-flex max-w-full min-w-0 items-center gap-1.5 text-[11px] font-semibold text-white/40',
         className,
       )}
     >
-      <UserRound className="size-3.5 text-white/30" aria-hidden="true" />
-      Subido por <span className="font-bold text-white/64">{nombre}</span>
+      <UserRound className="size-3.5 shrink-0 text-white/30" aria-hidden="true" />
+      <span className="shrink-0">Subido por</span> <span className="min-w-0 truncate font-bold text-white/64">{nombre}</span>
     </span>
   )
 }

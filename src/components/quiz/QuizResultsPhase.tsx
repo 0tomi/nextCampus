@@ -67,9 +67,9 @@ function QuestionReviewList() {
                 {index + 1}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold leading-relaxed text-white">{question.question}</p>
+                <p className="break-words font-semibold leading-relaxed text-white">{question.question}</p>
                 <AnswerSummary question={question} resultado={resultado} />
-                {resultado?.explicacion ? <p className="mt-3 border-l border-white/12 pl-3 text-sm leading-6 text-white/52">{resultado.explicacion}</p> : null}
+                {resultado?.explicacion ? <p className="mt-3 break-words border-l border-white/12 pl-3 text-sm leading-6 text-white/52">{resultado.explicacion}</p> : null}
               </div>
             </div>
           </DarkCard>

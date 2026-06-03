@@ -58,7 +58,7 @@ export function UnitBreakdown({ resultados }: { resultados: Resultado[] }) {
               <div className="mt-2 h-1.5 w-full overflow-hidden rounded-sm bg-white/[0.06]">
                 <div className={cn('h-full rounded-sm transition-[width] duration-500 ease-out', tone.bar)} style={{ width: `${unit.pct}%` }} />
               </div>
-              {needsReview ? <p className="mt-2 text-xs leading-5 text-rose-300/80">Estás flojo en {unit.name}: te conviene repasar este tema.</p> : null}
+              {needsReview ? <p className="mt-2 break-words text-xs leading-5 text-rose-300/80">Estás flojo en {unit.name}: te conviene repasar este tema.</p> : null}
             </div>
           )
         })}

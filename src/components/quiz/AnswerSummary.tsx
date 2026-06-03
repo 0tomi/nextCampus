@@ -9,7 +9,7 @@ export function AnswerSummary({ question, resultado }: { question: PublicQuestio
   const texto = formatCorrectAnswer(question, correcta)
 
   return (
-    <p className="mt-2 text-sm text-white/48">
+    <p className="mt-2 break-words text-sm text-white/48">
       Respuesta correcta: <span className="font-semibold text-white/82">{texto}</span>
     </p>
   )
