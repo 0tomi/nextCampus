@@ -7,12 +7,14 @@ import {
 } from './ranked-quiz'
 
 describe('ranked quiz rules', () => {
-  it('toma el 20% redondeado hacia arriba y exige mínimo 10', () => {
-    expect(getRankedQuestionCount(49)).toBe(10)
+  it('toma el porcentaje ranked y redondea hacia abajo a múltiplos de 5', () => {
+    expect(getRankedQuestionCount(49)).toBe(5)
     expect(getRankedQuestionCount(50)).toBe(10)
-    expect(getRankedQuestionCount(51)).toBe(11)
+    expect(getRankedQuestionCount(51)).toBe(10)
+    expect(getRankedQuestionCount(260)).toBe(50)
+    expect(getRankedQuestionCount(280)).toBe(55)
     expect(isRankedBankEligible(45)).toBe(false)
-    expect(isRankedBankEligible(46)).toBe(true)
+    expect(isRankedBankEligible(50)).toBe(true)
   })
 
   it('acepta nombres válidos y normaliza para agrupar ranking', () => {

@@ -11,7 +11,8 @@ export type RankedInvalidationReason =
 
 export function getRankedQuestionCount(totalPreguntas: number): number {
   if (!Number.isFinite(totalPreguntas) || totalPreguntas <= 0) return 0
-  return Math.ceil(totalPreguntas * RANKED_PERCENTAGE)
+  const rawCount = totalPreguntas * RANKED_PERCENTAGE
+  return Math.floor(rawCount / 5) * 5
 }
 
 export function isRankedBankEligible(totalPreguntas: number): boolean {

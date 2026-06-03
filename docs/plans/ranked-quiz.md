@@ -18,8 +18,8 @@
       - Agregar modo ranked con badge beta.
       - El usuario elige un banco.
       - No puede elegir unidades ni cantidad.
-      - Se toma ceil(totalPreguntas * 0.2).
-      - Ranked solo se habilita si ese 20% da al menos 10 preguntas.
+      - Se toma el porcentaje ranked del banco y se redondea hacia abajo al múltiplo de 5 más cercano.
+      - Ranked solo se habilita si la cantidad final da al menos 10 preguntas.
       - Cada intento vuelve a llamar al backend y recibe otro set random.
 
   - Nombre

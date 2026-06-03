@@ -184,7 +184,7 @@ function ModeSelector() {
           </button>
         ))}
       </div>
-      <p className="text-xs leading-5 text-white/40">{getModeDescription(state.mode)}</p>
+      {state.mode !== 'ranked' ? <p className="text-xs leading-5 text-white/40">{getModeDescription(state.mode)}</p> : null}
     </div>
   )
 }
@@ -204,7 +204,6 @@ function RankedNameField() {
         onChange={(event) => actions.setRankedName(event.target.value)}
         className="block w-full border border-white/[0.06] bg-surface-3 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-primary/45 focus:outline-none"
       />
-      <p className="text-xs leading-5 text-white/40">Lo guardamos en este dispositivo para tus próximos intentos.</p>
     </div>
   )
 }
@@ -218,7 +217,7 @@ function RankedInfoSection() {
       <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
         <div>
           <h2 className="text-sm font-bold text-white">Examen Ranked <span className="ml-2 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100">beta</span></h2>
-          <p className="mt-1 text-sm leading-6 text-white/48">Se arma con el 20% del banco elegido, se corrige al final y los mejores intentos aparecen en el top.</p>
+          <p className="mt-1 text-sm leading-6 text-white/48">Es un examen clasificado: se corrige al final y solo los mejores resultados aparecen en el top.</p>
         </div>
         <div className="text-left sm:text-right">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/36">Preguntas</p>
@@ -256,8 +255,8 @@ function RankedTop({ items, loading }: { items: RankedTopItem[]; loading: boolea
 
 function getModeDescription(mode: 'practica' | 'examen' | 'ranked') {
   if (mode === 'practica') return 'Corregís cada pregunta al instante y ves la explicación.'
-  if (mode === 'ranked') return 'Un banco, preguntas al azar y top por mejor intento válido.'
-  return 'Respondés todo y ves el resultado al final.'
+  if (mode === 'examen') return 'Respondés todo y ves el resultado al final.'
+  return ''
 }
 
 function QuestionCountField({ count, maxPreguntas, onChange }: { count: number; maxPreguntas: number; onChange: (count: number) => void }) {
