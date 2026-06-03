@@ -122,6 +122,20 @@ describe('toPublicQuestion', () => {
     const tf = flat.find((f) => f.question.type === 'truefalse')!
     expect(toPublicQuestion(tf)).not.toHaveProperty('options')
   })
+
+  it('expone opciones con id original y label, mezclables sin filtrar respuestas', () => {
+    const bank = parseQuizBank(JSON.stringify(VALID))
+    if (!bank.ok) throw new Error('banco inválido')
+    const flat = flattenBank('b1', bank.bank)
+    const single = flat.find((f) => f.question.type === 'single')!
+    const pub = toPublicQuestion(single)
+    if (pub.type === 'truefalse') throw new Error('tipo inesperado')
+
+    expect(pub.options).toHaveLength(3)
+    expect(new Set(pub.options.map((option) => option.id))).toEqual(new Set([0, 1, 2]))
+    expect(new Set(pub.options.map((option) => option.label))).toEqual(new Set(['Madrid', 'París', 'Roma']))
+  })
+
 })
 
 describe('isCorrect', () => {

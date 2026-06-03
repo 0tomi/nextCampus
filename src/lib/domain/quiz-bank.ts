@@ -13,7 +13,7 @@
 import { z } from 'zod'
 
 export type QuestionType = 'single' | 'multiple' | 'truefalse'
-export type QuizMode = 'practica' | 'examen' | 'general'
+export type QuizMode = 'practica' | 'examen' | 'general' | 'ranked'
 
 // --- Modelo con respuestas (vive solo server-side) -------------------------
 
@@ -51,9 +51,14 @@ export interface QuizBankFile {
 
 // --- Modelo público (lo que viaja al cliente: SIN answer ni explanation) ---
 
+export interface PublicQuestionOption {
+  id: number
+  label: string
+}
+
 export type PublicQuestion =
-  | { id: string; type: 'single'; question: string; options: string[] }
-  | { id: string; type: 'multiple'; question: string; options: string[] }
+  | { id: string; type: 'single'; question: string; options: PublicQuestionOption[] }
+  | { id: string; type: 'multiple'; question: string; options: PublicQuestionOption[] }
   | { id: string; type: 'truefalse'; question: string }
 
 export type UserAnswer = number | number[] | boolean | null
@@ -293,11 +298,11 @@ export function toPublicQuestion(flat: FlatQuestion): PublicQuestion {
     id: flat.id,
     type: q.type,
     question: q.question,
-    options: q.options,
+    options: shuffle(q.options.map((label, id) => ({ id, label }))),
   }
 }
 
-function shuffle<T>(items: T[]): T[] {
+export function shuffle<T>(items: T[]): T[] {
   const copy = [...items]
   for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))

@@ -7,9 +7,10 @@ import { UploaderByline } from '@/components/ui/UploaderByline'
 import { deleteQuizBankAction } from '@/app/admin/actions'
 import { cn } from '@/lib/utils'
 import { CONTROL, CONTROL_ACTIVE } from './quizStyles'
-import { allowOnlyPositiveIntegerKeys } from './quizFormat'
+import { allowOnlyPositiveIntegerKeys, formatQuizTime } from './quizFormat'
+import { isRankedBankEligible } from '@/lib/domain/ranked-quiz'
 import { useQuiz } from './QuizProvider'
-import type { BancoInfo } from './quizTypes'
+import type { BancoInfo, RankedTopItem } from './quizTypes'
 
 const COUNT_PRESETS = [
   { value: 30, label: '30' },
@@ -19,26 +20,31 @@ const COUNT_PRESETS = [
 const TIME_PRESETS = [30, 60, 120]
 
 export function QuizConfigPhase() {
-  const { actions, availableUnits, bancos, maxPreguntas, state, subjectSlug, yearId } = useQuiz()
+  const { actions, availableUnits, bancos, maxPreguntas, rankedSelectedBank, state, subjectSlug, yearId } = useQuiz()
+  const rankedCanStart = state.mode === 'ranked' && Boolean(rankedSelectedBank && isRankedBankEligible(rankedSelectedBank.totalPreguntas))
+  const regularCanStart = state.mode !== 'ranked' && state.selectedBancos.length > 0 && maxPreguntas > 0
 
   return (
     <DarkCard className="divide-y divide-white/[0.06]">
-      <QuestionBankSection bancos={bancos} selectedBancos={state.selectedBancos} subjectSlug={subjectSlug} yearId={yearId} onToggle={actions.toggleBanco} />
-      {availableUnits.length > 0 ? <UnitSelectorSection availableUnits={availableUnits} excludedUnits={state.excludedUnits} onToggle={actions.toggleUnit} /> : null}
+      <QuestionBankSection bancos={bancos} rankedMode={state.mode === 'ranked'} selectedBancos={state.selectedBancos} subjectSlug={subjectSlug} yearId={yearId} onToggle={actions.toggleBanco} />
+      {state.mode !== 'ranked' && availableUnits.length > 0 ? <UnitSelectorSection availableUnits={availableUnits} excludedUnits={state.excludedUnits} onToggle={actions.toggleUnit} /> : null}
       <QuizSettingsSection maxPreguntas={maxPreguntas} />
-      <StartQuizSection canStart={state.selectedBancos.length > 0 && maxPreguntas > 0} />
+      {state.mode === 'ranked' ? <RankedInfoSection /> : null}
+      <StartQuizSection canStart={rankedCanStart || regularCanStart} />
     </DarkCard>
   )
 }
 
 function QuestionBankSection({
   bancos,
+  rankedMode,
   selectedBancos,
   subjectSlug,
   yearId,
   onToggle,
 }: {
   bancos: BancoInfo[]
+  rankedMode: boolean
   selectedBancos: string[]
   subjectSlug: string
   yearId?: string
@@ -48,7 +54,7 @@ function QuestionBankSection({
     <section className="space-y-4 p-6 sm:p-8">
       <div>
         <h2 className="text-sm font-bold text-white">Bancos de preguntas</h2>
-        <p className="mt-1 text-sm text-white/48">Elegí uno o combiná varios para mezclar sus preguntas.</p>
+        <p className="mt-1 text-sm text-white/48">{rankedMode ? 'Elegí un banco para competir por el top.' : 'Elegí uno o combiná varios para mezclar sus preguntas.'}</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         {bancos.map((banco) => (
@@ -152,7 +158,7 @@ function QuizSettingsSection({ maxPreguntas }: { maxPreguntas: number }) {
   return (
     <section className={cn('grid gap-8 p-6 sm:p-8', state.mode === 'examen' ? 'sm:grid-cols-3' : 'sm:grid-cols-2')}>
       <ModeSelector />
-      <QuestionCountField count={state.count} maxPreguntas={maxPreguntas} onChange={actions.setCount} />
+      {state.mode !== 'ranked' ? <QuestionCountField count={state.count} maxPreguntas={maxPreguntas} onChange={actions.setCount} /> : <RankedNameField />}
       {state.mode === 'examen' ? <TimeLimitField timeLimit={state.timeLimit} onChange={actions.setTimeLimit} /> : null}
     </section>
   )
@@ -164,19 +170,94 @@ function ModeSelector() {
   return (
     <div className="space-y-3">
       <h2 className="text-sm font-bold text-white">Modo</h2>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {([
-          ['practica', 'Práctica'],
-          ['examen', 'Examen'],
-        ] as const).map(([value, label]) => (
-          <button key={value} type="button" onClick={() => actions.setMode(value)} className={cn('px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer', state.mode === value ? `${CONTROL_ACTIVE} text-white` : `${CONTROL} text-white/60`)}>
-            {label}
+          ['practica', 'Práctica', null],
+          ['examen', 'Examen', null],
+          ['ranked', 'Ranked', 'beta'],
+        ] as const).map(([value, label, badge]) => (
+          <button key={value} type="button" onClick={() => actions.setMode(value)} className={cn('px-3 py-2.5 text-sm font-semibold transition-colors cursor-pointer', state.mode === value ? `${CONTROL_ACTIVE} text-white` : `${CONTROL} text-white/60`)}>
+            <span className="inline-flex items-center justify-center gap-1.5">
+              {label}
+              {badge ? <span className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] text-cyan-100">{badge}</span> : null}
+            </span>
           </button>
         ))}
       </div>
-      <p className="text-xs leading-5 text-white/40">{state.mode === 'practica' ? 'Corregís cada pregunta al instante y ves la explicación.' : 'Respondés todo y ves el resultado al final.'}</p>
+      <p className="text-xs leading-5 text-white/40">{getModeDescription(state.mode)}</p>
     </div>
   )
+}
+
+function RankedNameField() {
+  const { actions, state } = useQuiz()
+
+  return (
+    <div className="space-y-3">
+      <label htmlFor="rankedName" className="block text-sm font-bold text-white">Nombre para el ranking</label>
+      <input
+        id="rankedName"
+        type="text"
+        value={state.rankedName}
+        maxLength={32}
+        placeholder="Tu nombre"
+        onChange={(event) => actions.setRankedName(event.target.value)}
+        className="block w-full border border-white/[0.06] bg-surface-3 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-primary/45 focus:outline-none"
+      />
+      <p className="text-xs leading-5 text-white/40">Lo guardamos en este dispositivo para tus próximos intentos.</p>
+    </div>
+  )
+}
+
+function RankedInfoSection() {
+  const { rankedQuestionCount, rankedSelectedBank, state } = useQuiz()
+  const eligible = rankedSelectedBank ? isRankedBankEligible(rankedSelectedBank.totalPreguntas) : false
+
+  return (
+    <section className="space-y-5 p-6 sm:p-8">
+      <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+        <div>
+          <h2 className="text-sm font-bold text-white">Examen Ranked <span className="ml-2 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100">beta</span></h2>
+          <p className="mt-1 text-sm leading-6 text-white/48">Se arma con el 20% del banco elegido, se corrige al final y los mejores intentos aparecen en el top.</p>
+        </div>
+        <div className="text-left sm:text-right">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/36">Preguntas</p>
+          <p className="mt-1 text-2xl font-black text-white tabular-nums">{rankedSelectedBank ? rankedQuestionCount : '—'}</p>
+        </div>
+      </div>
+      {rankedSelectedBank && !eligible ? <p className="border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">Este banco todavía no llega al mínimo para ranked.</p> : null}
+      {rankedSelectedBank ? <RankedTop items={state.rankedTop} loading={state.rankedTopLoading} /> : null}
+    </section>
+  )
+}
+
+function RankedTop({ items, loading }: { items: RankedTopItem[]; loading: boolean }) {
+  return (
+    <div className="border-t border-white/[0.06] pt-5">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/36">Top del banco</h3>
+        {loading ? <span className="text-xs text-white/36">Cargando…</span> : null}
+      </div>
+      {items.length === 0 && !loading ? <p className="text-sm text-white/44">Todavía no hay intentos válidos en el top.</p> : null}
+      {items.length > 0 ? (
+        <ol className="divide-y divide-white/[0.06]">
+          {items.map((item) => (
+            <li key={`${item.position}-${item.participantName}`} className="grid grid-cols-[2rem_1fr_auto] items-center gap-3 py-2.5 text-sm">
+              <span className="font-black text-white/40 tabular-nums">{item.position}</span>
+              <span className="min-w-0 truncate font-semibold text-white/82">{item.participantName}</span>
+              <span className="text-right text-white/48 tabular-nums">{item.percentage}% · {formatQuizTime(item.durationSeconds)}</span>
+            </li>
+          ))}
+        </ol>
+      ) : null}
+    </div>
+  )
+}
+
+function getModeDescription(mode: 'practica' | 'examen' | 'ranked') {
+  if (mode === 'practica') return 'Corregís cada pregunta al instante y ves la explicación.'
+  if (mode === 'ranked') return 'Un banco, preguntas al azar y top por mejor intento válido.'
+  return 'Respondés todo y ves el resultado al final.'
 }
 
 function QuestionCountField({ count, maxPreguntas, onChange }: { count: number; maxPreguntas: number; onChange: (count: number) => void }) {
@@ -257,7 +338,7 @@ function StartQuizSection({ canStart }: { canStart: boolean }) {
     <section className="space-y-4 p-6 sm:p-8">
       {state.error ? <p className="border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{state.error}</p> : null}
       <button type="button" onClick={actions.start} disabled={state.loading || !canStart} className="inline-flex w-full items-center justify-center gap-2 bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer">
-        {state.loading ? 'Cargando…' : 'Comenzar quiz'}
+        {state.loading ? 'Cargando…' : state.mode === 'ranked' ? 'Comenzar ranked' : 'Comenzar quiz'}
         <ChevronRight className="size-4" />
       </button>
     </section>

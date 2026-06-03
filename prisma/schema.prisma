@@ -55,22 +55,22 @@ enum UserStatus {
 }
 
 model UserAccount {
-  id              String               @id @default(cuid())
-  authUserId      String               @unique
-  email           String               @unique
-  role            UserRole
-  status          UserStatus           @default(ACTIVE)
-  yearPermissions UserYearPermission[]
-  nombreUsuario   String
-  puntaje         Int                  @default(0)
-  eventosCreados  Int                  @default(0)
-  apuntesCreados  Int                  @default(0)
-  bancosPreguntasCreados Int           @default(0)
-  auditLogs       AuditLog[]
-  eventos         Evento[]             @relation("EventoCreatedBy")
-  apuntes         Apunte[]             @relation("ApunteCreatedBy")
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
+  id                     String               @id @default(cuid())
+  authUserId             String               @unique
+  email                  String               @unique
+  role                   UserRole
+  status                 UserStatus           @default(ACTIVE)
+  yearPermissions        UserYearPermission[]
+  nombreUsuario          String
+  puntaje                Int                  @default(0)
+  eventosCreados         Int                  @default(0)
+  apuntesCreados         Int                  @default(0)
+  bancosPreguntasCreados Int                  @default(0)
+  auditLogs              AuditLog[]
+  eventos                Evento[]             @relation("EventoCreatedBy")
+  apuntes                Apunte[]             @relation("ApunteCreatedBy")
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
 
   @@index([role])
   @@index([status])
@@ -89,20 +89,21 @@ model UserYearPermission {
 }
 
 model Subject {
-  id              String       @id @default(cuid())
-  year            AcademicYear @relation(fields: [yearId], references: [id], onDelete: Cascade)
-  yearId          String
-  slug            String       @unique
-  nombre          String
-  descripcion     String       @default("")
-  driveUrl        String?
-  playlistUrl     String?
-  playlistEnabled Boolean      @default(false)
-  commissions     Commission[]
-  agendas         Agenda[]
-  apuntes         Apunte[]
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id                 String              @id @default(cuid())
+  year               AcademicYear        @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  yearId             String
+  slug               String              @unique
+  nombre             String
+  descripcion        String              @default("")
+  driveUrl           String?
+  playlistUrl        String?
+  playlistEnabled    Boolean             @default(false)
+  commissions        Commission[]
+  agendas            Agenda[]
+  apuntes            Apunte[]
+  rankedQuizAttempts RankedQuizAttempt[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@index([yearId])
 }
@@ -147,27 +148,59 @@ model TipoEvento {
 }
 
 model Evento {
-  id              String     @id @default(cuid())
-  agenda          Agenda     @relation(fields: [agendaId], references: [id], onDelete: Cascade)
+  id              String         @id @default(cuid())
+  agenda          Agenda         @relation(fields: [agendaId], references: [id], onDelete: Cascade)
   agendaId        String
-  tipoEvento      TipoEvento @relation(fields: [tipoEventoId], references: [id], onDelete: Restrict)
+  tipoEvento      TipoEvento     @relation(fields: [tipoEventoId], references: [id], onDelete: Restrict)
   tipoEventoId    String
   titulo          String
   /// HTML enriquecido y SANITIZADO (hipervínculos, formato). Nunca crudo.
-  descripcionHtml String     @default("")
+  descripcionHtml String         @default("")
   /// Solo fecha (sin hora). La hora vive aparte y es opcional.
-  fecha           DateTime   @db.Date
+  fecha           DateTime       @db.Date
   /// Hora opcional en formato "HH:mm" (24h). null = evento sin hora definida.
   hora            String?
-  createdAt       DateTime   @default(now())
-  createdBy       UserAccount? @relation("EventoCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime       @default(now())
+  createdBy       UserAccount?   @relation("EventoCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   createdByUserId String?
   apuntes         ApunteEvento[]
-  updatedAt       DateTime   @updatedAt
+  updatedAt       DateTime       @updatedAt
 
   @@index([agendaId])
   @@index([tipoEventoId])
   @@index([createdByUserId])
+}
+
+enum RankedQuizAttemptStatus {
+  IN_PROGRESS
+  VALID
+  INVALID
+}
+
+model RankedQuizAttempt {
+  id              String                  @id @default(cuid())
+  subject         Subject                 @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subjectId       String
+  bankId          String
+  bankName        String
+  participantName String
+  normalizedName  String
+  questionIds     String[]
+  status          RankedQuizAttemptStatus @default(IN_PROGRESS)
+  invalidReason   String?
+  invalidatedAt   DateTime?
+  correctAnswers  Int?
+  totalQuestions  Int
+  percentage      Int?
+  durationSeconds Int?
+  startedAt       DateTime                @default(now())
+  finishedAt      DateTime?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  @@index([subjectId, bankId, status, percentage, durationSeconds, finishedAt], map: "RankedQuizAttempt_top_idx")
+  @@index([subjectId, bankId, normalizedName], map: "RankedQuizAttempt_name_idx")
+  @@index([status, finishedAt], map: "RankedQuizAttempt_status_idx")
 }
 
 // ---------------------------------------------------------------------------
@@ -188,20 +221,20 @@ enum RecursoTipo {
 }
 
 model Apunte {
-  id              String          @id @default(cuid())
-  subject         Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  id              String            @id @default(cuid())
+  subject         Subject           @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   subjectId       String
   titulo          String
   slug            String
   /// HTML enriquecido y SANITIZADO (links a Drive/Docs, formato).
-  descripcionHtml String          @default("")
+  descripcionHtml String            @default("")
   recursos        ApunteRecurso[]
   categorias      ApunteCategoria[]
   eventos         ApunteEvento[]
-  createdBy       UserAccount?    @relation("ApunteCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdBy       UserAccount?      @relation("ApunteCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   createdByUserId String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   @@unique([subjectId, slug])
   @@index([subjectId, createdAt, id])
@@ -228,12 +261,11 @@ model ApunteCategoria {
   @@index([categoriaId, apunteId])
 }
 
-
 model ApunteEvento {
-  apunte   Apunte   @relation(fields: [apunteId], references: [id], onDelete: Cascade)
-  apunteId String
-  evento   Evento   @relation(fields: [eventoId], references: [id], onDelete: Cascade)
-  eventoId String
+  apunte    Apunte   @relation(fields: [apunteId], references: [id], onDelete: Cascade)
+  apunteId  String
+  evento    Evento   @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  eventoId  String
   createdAt DateTime @default(now())
 
   @@id([apunteId, eventoId])
@@ -242,17 +274,17 @@ model ApunteEvento {
 }
 
 model ApunteRecurso {
-  id        String      @id @default(cuid())
-  apunte    Apunte      @relation(fields: [apunteId], references: [id], onDelete: Cascade)
-  apunteId  String
-  tipo      RecursoTipo
-  url       String      @default("")
-  nombre    String?
+  id         String      @id @default(cuid())
+  apunte     Apunte      @relation(fields: [apunteId], references: [id], onDelete: Cascade)
+  apunteId   String
+  tipo       RecursoTipo
+  url        String      @default("")
+  nombre     String?
   storageKey String?
-  mimeType  String?
-  sizeBytes Int?
-  orden     Int         @db.SmallInt
-  createdAt DateTime    @default(now())
+  mimeType   String?
+  sizeBytes  Int?
+  orden      Int         @db.SmallInt
+  createdAt  DateTime    @default(now())
 
   @@unique([apunteId, orden])
   @@index([apunteId])

@@ -17,6 +17,7 @@ export function AnswerSummary({ question, resultado }: { question: PublicQuestio
 
 function formatCorrectAnswer(question: PublicQuestion, correcta: number | number[] | boolean) {
   if (typeof correcta === 'boolean') return correcta ? 'Verdadero' : 'Falso'
-  if (Array.isArray(correcta)) return correcta.map((index) => question.options?.[index] ?? `Opción ${index + 1}`).join(', ')
-  return question.options?.[correcta] ?? `Opción ${correcta + 1}`
+  const optionLabel = (id: number) => question.options?.find((option) => option.id === id)?.label ?? `Opción ${id + 1}`
+  if (Array.isArray(correcta)) return correcta.map(optionLabel).join(', ')
+  return optionLabel(correcta)
 }

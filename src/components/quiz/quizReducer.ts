@@ -1,4 +1,4 @@
-import type { PublicQuestion, QuizMode, QuizPhase, Resultado, UserAnswer } from './quizTypes'
+import type { PublicQuestion, QuizMode, QuizPhase, RankedSummary, RankedTopItem, Resultado, UserAnswer } from './quizTypes'
 
 export type QuizState = {
   phase: QuizPhase
@@ -16,21 +16,32 @@ export type QuizState = {
   showExitDialog: boolean
   showSubmitDialog: boolean
   excludedUnits: string[]
+  rankedName: string
+  rankedAttemptId: string | null
+  rankedInvalidated: boolean
+  rankedSummary: RankedSummary | null
+  rankedTop: RankedTopItem[]
+  rankedTopLoading: boolean
 }
 
 export type QuizAction =
   | { type: 'SET_MODE'; mode: QuizMode }
   | { type: 'SET_COUNT'; count: number }
   | { type: 'SET_TIME_LIMIT'; minutes: number }
+  | { type: 'SET_RANKED_NAME'; name: string }
   | { type: 'TOGGLE_BANCO'; id: string }
   | { type: 'TOGGLE_UNIT'; nombre: string }
   | { type: 'SET_ERROR'; error: string | null }
   | { type: 'START_REQUEST' }
-  | { type: 'START_SUCCESS'; preguntas: PublicQuestion[]; timeLeft: number | null }
+  | { type: 'START_SUCCESS'; preguntas: PublicQuestion[]; timeLeft: number | null; rankedAttemptId?: string | null; rankedName?: string }
+  | { type: 'RANKED_INVALIDATED' }
+  | { type: 'RANKED_TOP_REQUEST' }
+  | { type: 'RANKED_TOP_SUCCESS'; items: RankedTopItem[] }
+  | { type: 'RANKED_TOP_FAILURE' }
   | { type: 'VERIFY_REQUEST' }
   | { type: 'VERIFY_SUCCESS'; resultado: Resultado }
   | { type: 'FINISH_REQUEST' }
-  | { type: 'FINISH_SUCCESS'; resultados: Record<string, Resultado> }
+  | { type: 'FINISH_SUCCESS'; resultados: Record<string, Resultado>; rankedSummary?: RankedSummary | null }
   | { type: 'REQUEST_FAILURE'; error: string }
   | { type: 'SET_ANSWER'; questionId: string; answer: UserAnswer }
   | { type: 'NEXT_INDEX' }
@@ -59,18 +70,35 @@ export function createInitialQuizState(defaultBancoIds: string[]): QuizState {
     showExitDialog: false,
     showSubmitDialog: false,
     excludedUnits: [],
+    rankedName: '',
+    rankedAttemptId: null,
+    rankedInvalidated: false,
+    rankedSummary: null,
+    rankedTop: [],
+    rankedTopLoading: false,
   }
 }
 
 export function quizReducer(state: QuizState, action: QuizAction): QuizState {
   switch (action.type) {
     case 'SET_MODE':
-      return { ...state, mode: action.mode }
+      return {
+        ...state,
+        mode: action.mode,
+        selectedBancos: action.mode === 'ranked' ? state.selectedBancos.slice(0, 1) : state.selectedBancos,
+        excludedUnits: action.mode === 'ranked' ? [] : state.excludedUnits,
+        error: null,
+      }
     case 'SET_COUNT':
       return { ...state, count: Math.max(0, action.count) }
     case 'SET_TIME_LIMIT':
       return { ...state, timeLimit: Math.max(1, action.minutes) }
+    case 'SET_RANKED_NAME':
+      return { ...state, rankedName: action.name, error: null }
     case 'TOGGLE_BANCO':
+      if (state.mode === 'ranked') {
+        return { ...state, selectedBancos: state.selectedBancos.includes(action.id) ? [] : [action.id], excludedUnits: [] }
+      }
       return {
         ...state,
         selectedBancos: state.selectedBancos.includes(action.id)
@@ -103,7 +131,19 @@ export function quizReducer(state: QuizState, action: QuizAction): QuizState {
         error: null,
         showExitDialog: false,
         showSubmitDialog: false,
+        rankedAttemptId: action.rankedAttemptId ?? null,
+        rankedInvalidated: false,
+        rankedSummary: null,
+        rankedName: action.rankedName ?? state.rankedName,
       }
+    case 'RANKED_INVALIDATED':
+      return { ...state, rankedInvalidated: true }
+    case 'RANKED_TOP_REQUEST':
+      return { ...state, rankedTopLoading: true }
+    case 'RANKED_TOP_SUCCESS':
+      return { ...state, rankedTop: action.items, rankedTopLoading: false }
+    case 'RANKED_TOP_FAILURE':
+      return { ...state, rankedTop: [], rankedTopLoading: false }
     case 'VERIFY_SUCCESS':
       return {
         ...state,
@@ -115,6 +155,7 @@ export function quizReducer(state: QuizState, action: QuizAction): QuizState {
         ...state,
         phase: 'done',
         resultados: action.resultados,
+        rankedSummary: action.rankedSummary ?? null,
         loading: false,
         error: null,
         showSubmitDialog: false,
@@ -153,6 +194,9 @@ export function quizReducer(state: QuizState, action: QuizAction): QuizState {
         timeLeft: null,
         showExitDialog: false,
         showSubmitDialog: false,
+        rankedAttemptId: null,
+        rankedInvalidated: false,
+        rankedSummary: null,
       }
   }
 }

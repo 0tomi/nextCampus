@@ -21,6 +21,7 @@ export function QuizRunningPhase() {
   return (
     <div className="space-y-5">
       <QuestionProgressHeader />
+      <RankedInvalidationNotice />
       <QuestionCard />
       <QuizDialogs />
     </div>
@@ -28,7 +29,7 @@ export function QuizRunningPhase() {
 }
 
 function QuestionProgressHeader() {
-  const { actions, isPractica, progreso, state } = useQuiz()
+  const { actions, isPractica, isRanked, progreso, state } = useQuiz()
 
   return (
     <div className="space-y-2">
@@ -38,7 +39,7 @@ function QuestionProgressHeader() {
         </span>
         <div className="flex items-center gap-3">
           {state.timeLeft !== null ? <TimerBadge timeLeft={state.timeLeft} /> : null}
-          <span className="font-semibold uppercase tracking-[0.18em] text-white/32">{isPractica ? 'Práctica' : 'Examen'}</span>
+          <span className="font-semibold uppercase tracking-[0.18em] text-white/32">{isPractica ? 'Práctica' : isRanked ? 'Ranked · beta' : 'Examen'}</span>
           <button type="button" onClick={actions.openExitDialog} className="text-rose-400 hover:text-rose-300 font-semibold cursor-pointer transition-colors">
             Salir
           </button>
@@ -54,8 +55,19 @@ function QuestionProgressHeader() {
 function TimerBadge({ timeLeft }: { timeLeft: number }) {
   return (
     <span className={cn('font-mono font-bold px-2 py-0.5 rounded-sm text-[11px] tabular-nums', timeLeft < 60 ? 'bg-rose-500/20 text-rose-300 animate-pulse' : 'bg-white/[0.06] text-white/80')}>
-      ⏱️ {formatQuizTime(timeLeft)}
+      {formatQuizTime(timeLeft)}
     </span>
+  )
+}
+
+function RankedInvalidationNotice() {
+  const { isRanked, state } = useQuiz()
+  if (!isRanked || !state.rankedInvalidated) return null
+
+  return (
+    <div className="border border-amber-300/25 bg-amber-300/10 px-4 py-3 text-sm leading-6 text-amber-100">
+      Este intento queda fuera del top, pero podés terminarlo y ver tu resultado.
+    </div>
   )
 }
 
@@ -102,16 +114,16 @@ function QuestionOptions() {
   return (
     <div className="mt-6 space-y-2.5">
       {pregunta.options?.map((option, index) => {
-        const selected = isMulti ? selectedArr.includes(index) : state.answers[pregunta.id] === index
+        const selected = isMulti ? selectedArr.includes(option.id) : state.answers[pregunta.id] === option.id
         return (
           <OptionButton
-            key={option}
+            key={option.id}
             index={index}
-            label={option}
+            label={option.label}
             selected={selected}
-            state={optionState(resultado, index)}
+            state={optionState(resultado, option.id)}
             disabled={Boolean(resultado)}
-            onClick={() => actions.setAnswer(isMulti ? toggleOption(selectedArr, index) : index)}
+            onClick={() => actions.setAnswer(isMulti ? toggleOption(selectedArr, option.id) : option.id)}
           />
         )
       })}
@@ -205,8 +217,8 @@ function QuizDialogs() {
         open={state.showExitDialog}
         onClose={actions.closeExitDialog}
         onConfirm={actions.reset}
-        title={state.mode === 'examen' ? '¿Abandonar examen?' : '¿Salir del quiz?'}
-        description={state.mode === 'examen' ? '¿Estás seguro de que querés abandonar el examen? Perderás tu progreso actual.' : '¿Estás seguro de que querés salir y volver a la pantalla de configuración?'}
+        title={state.mode === 'practica' ? '¿Salir del quiz?' : '¿Abandonar examen?'}
+        description={state.mode === 'ranked' ? 'Si salís ahora, el intento queda fuera del top.' : state.mode === 'examen' ? '¿Estás seguro de que querés abandonar el examen? Perderás tu progreso actual.' : '¿Estás seguro de que querés salir y volver a la pantalla de configuración?'}
         cancelText="Cancelar"
         confirmText="Salir"
         variant="destructive"

@@ -63,14 +63,15 @@ export function useQuizKeyboardShortcuts({
         return
       }
 
-      const optionIndex = optionNumber - 1
+      const option = currentPregunta.options[optionNumber - 1]
+      if (!option) return
       if (currentPregunta.type === 'single') {
-        onAnswer(optionIndex)
+        onAnswer(option.id)
         return
       }
 
       const current = Array.isArray(answers[currentPregunta.id]) ? (answers[currentPregunta.id] as number[]) : []
-      onAnswer(current.includes(optionIndex) ? current.filter((item) => item !== optionIndex) : [...current, optionIndex])
+      onAnswer(current.includes(option.id) ? current.filter((item) => item !== option.id) : [...current, option.id])
     }
 
     window.addEventListener('keydown', handleQuizShortcut)

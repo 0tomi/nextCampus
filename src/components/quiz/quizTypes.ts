@@ -1,4 +1,4 @@
-export type QuizMode = 'practica' | 'examen'
+export type QuizMode = 'practica' | 'examen' | 'ranked'
 export type QuizPhase = 'config' | 'running' | 'done'
 
 export interface UnidadInfo {
@@ -17,11 +17,16 @@ export interface BancoInfo {
   subidoPorNombre?: string | null
 }
 
+export interface PublicQuestionOption {
+  id: number
+  label: string
+}
+
 export interface PublicQuestion {
   id: string
   type: 'single' | 'multiple' | 'truefalse'
   question: string
-  options?: string[]
+  options?: PublicQuestionOption[]
 }
 
 export interface Resultado {
@@ -30,6 +35,24 @@ export interface Resultado {
   correcta: boolean
   respuestaCorrecta: number | number[] | boolean
   explicacion: string
+}
+
+export interface RankedTopItem {
+  position: number
+  participantName: string
+  correctAnswers: number
+  totalQuestions: number
+  percentage: number
+  durationSeconds: number
+}
+
+export interface RankedSummary {
+  validForRanking: boolean
+  invalidReason?: string | null
+  correctAnswers: number
+  totalQuestions: number
+  percentage: number
+  durationSeconds: number
 }
 
 export type UserAnswer = number | number[] | boolean | null
