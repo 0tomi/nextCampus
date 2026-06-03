@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useReducer } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Check as CheckIcon } from 'lucide-react'
+import { ArrowLeft, Check as CheckIcon, ChevronDown } from 'lucide-react'
 import { usePreferences } from '@/hooks/usePreferences'
 import {
   EMPTY_PREFERENCES,
@@ -68,6 +68,143 @@ function CheckBox({ checked, size = 'md' }: { checked: boolean; size?: 'sm' | 'm
   )
 }
 
+type ConfigState = {
+  draft: UserPreferences
+  expandedSubjects: string[]
+}
+
+type ConfigAction =
+  | { type: 'toggle-year'; slug: string }
+  | { type: 'toggle-subject'; slug: string }
+  | { type: 'toggle-commission'; subjectSlug: string; commissionSlug: string }
+  | { type: 'toggle-subject-commissions'; subjectSlug: string }
+
+function unique(values: string[]) {
+  return Array.from(new Set(values))
+}
+
+function createConfigReducer(years: YearForConfig[]) {
+  return function configReducer(state: ConfigState, action: ConfigAction): ConfigState {
+    switch (action.type) {
+      case 'toggle-year': {
+        const targetYear = years.find((year) => year.slug === action.slug)
+        if (!targetYear) return state
+
+        const isCurrentlyHidden = state.draft.hiddenYears.includes(action.slug)
+        const subjectSlugs: string[] = []
+        const subjectsWithCommissions: string[] = []
+
+        for (const subject of targetYear.subjects) {
+          subjectSlugs.push(subject.slug)
+
+          if (subject.commissions.length > 1) {
+            subjectsWithCommissions.push(subject.slug)
+          }
+        }
+
+        if (isCurrentlyHidden) {
+          return {
+            draft: {
+              ...state.draft,
+              hiddenYears: state.draft.hiddenYears.filter((slug) => slug !== action.slug),
+              hiddenSubjects: state.draft.hiddenSubjects.filter(
+                (slug) => !subjectSlugs.includes(slug),
+              ),
+            },
+            expandedSubjects: unique([...state.expandedSubjects, ...subjectsWithCommissions]),
+          }
+        }
+
+        return {
+          draft: {
+            ...state.draft,
+            hiddenYears: [...state.draft.hiddenYears, action.slug],
+            hiddenSubjects: unique([...state.draft.hiddenSubjects, ...subjectSlugs]),
+          },
+          expandedSubjects: state.expandedSubjects.filter(
+            (slug) => !subjectSlugs.includes(slug),
+          ),
+        }
+      }
+
+      case 'toggle-subject': {
+        const parentYear = years.find((year) =>
+          year.subjects.some((subject) => subject.slug === action.slug),
+        )
+        if (!parentYear) return state
+
+        const targetSubject = parentYear.subjects.find((subject) => subject.slug === action.slug)
+        const isSubjectCurrentlyHidden = state.draft.hiddenSubjects.includes(action.slug)
+        const nextHiddenYears = [...state.draft.hiddenYears]
+
+        if (isSubjectCurrentlyHidden) {
+          return {
+            draft: {
+              ...state.draft,
+              hiddenSubjects: state.draft.hiddenSubjects.filter((slug) => slug !== action.slug),
+              hiddenYears: nextHiddenYears.filter((slug) => slug !== parentYear.slug),
+            },
+            expandedSubjects:
+              targetSubject && targetSubject.commissions.length > 1
+                ? unique([...state.expandedSubjects, action.slug])
+                : state.expandedSubjects,
+          }
+        }
+
+        const nextHiddenSubjects = [...state.draft.hiddenSubjects, action.slug]
+        const allSubjectsHidden = parentYear.subjects.every(
+          (subject) =>
+            subject.slug === action.slug || nextHiddenSubjects.includes(subject.slug),
+        )
+
+        if (allSubjectsHidden && !nextHiddenYears.includes(parentYear.slug)) {
+          nextHiddenYears.push(parentYear.slug)
+        }
+
+        return {
+          draft: {
+            ...state.draft,
+            hiddenSubjects: nextHiddenSubjects,
+            hiddenYears: nextHiddenYears,
+          },
+          expandedSubjects: state.expandedSubjects.filter((slug) => slug !== action.slug),
+        }
+      }
+
+      case 'toggle-commission': {
+        const scopedKey = getCommissionPreferenceKey(action.subjectSlug, action.commissionSlug)
+        const isHidden =
+          state.draft.hiddenCommissions.includes(scopedKey) ||
+          state.draft.hiddenCommissions.includes(action.commissionSlug)
+
+        return {
+          ...state,
+          draft: {
+            ...state.draft,
+            hiddenCommissions: isHidden
+              ? state.draft.hiddenCommissions.filter(
+                  (slug) => slug !== scopedKey && slug !== action.commissionSlug,
+                )
+              : [...state.draft.hiddenCommissions, scopedKey],
+          },
+        }
+      }
+
+      case 'toggle-subject-commissions': {
+        return {
+          ...state,
+          expandedSubjects: state.expandedSubjects.includes(action.subjectSlug)
+            ? state.expandedSubjects.filter((slug) => slug !== action.subjectSlug)
+            : [...state.expandedSubjects, action.subjectSlug],
+        }
+      }
+
+      default:
+        return state
+    }
+  }
+}
+
 export function ConfigurarForm(props: ConfigurarFormProps) {
   const { prefs, isHydrated, setPrefs } = usePreferences()
 
@@ -94,84 +231,20 @@ function ConfigurarFormInner({
   setPrefs: (p: UserPreferences) => void
 }) {
   const router = useRouter()
-  const [draft, setDraft] = useState<UserPreferences>(initialPrefs)
+  const [{ draft, expandedSubjects }, dispatch] = useReducer(
+    createConfigReducer(years),
+    {
+      draft: initialPrefs,
+      expandedSubjects: [],
+    },
+  )
 
-
-  const toggleYear = (slug: string) => {
-    const targetYear = years.find((y) => y.slug === slug)
-    if (!targetYear) return
-
-    setDraft((d) => {
-      const isCurrentlyHidden = d.hiddenYears.includes(slug)
-      const subjectSlugs = targetYear.subjects.map((s) => s.slug)
-
-      if (isCurrentlyHidden) {
-        return {
-          ...d,
-          hiddenYears: d.hiddenYears.filter((s) => s !== slug),
-          hiddenSubjects: d.hiddenSubjects.filter((s) => !subjectSlugs.includes(s)),
-        }
-      } else {
-        const newHiddenSubjects = Array.from(
-          new Set([...d.hiddenSubjects, ...subjectSlugs])
-        )
-        return {
-          ...d,
-          hiddenYears: [...d.hiddenYears, slug],
-          hiddenSubjects: newHiddenSubjects,
-        }
-      }
-    })
-  }
-
-  const toggleSubject = (slug: string) => {
-    const parentYear = years.find((y) => y.subjects.some((s) => s.slug === slug))
-    if (!parentYear) return
-
-    setDraft((d) => {
-      const isSubjectCurrentlyHidden = d.hiddenSubjects.includes(slug)
-      let newHiddenSubjects: string[]
-      let newHiddenYears = [...d.hiddenYears]
-
-      if (isSubjectCurrentlyHidden) {
-        newHiddenSubjects = d.hiddenSubjects.filter((s) => s !== slug)
-        newHiddenYears = newHiddenYears.filter((y) => y !== parentYear.slug)
-      } else {
-        newHiddenSubjects = [...d.hiddenSubjects, slug]
-        const allSubjectsHidden = parentYear.subjects.every(
-          (s) => s.slug === slug || newHiddenSubjects.includes(s.slug)
-        )
-        if (allSubjectsHidden && !newHiddenYears.includes(parentYear.slug)) {
-          newHiddenYears.push(parentYear.slug)
-        }
-      }
-
-      return {
-        ...d,
-        hiddenSubjects: newHiddenSubjects,
-        hiddenYears: newHiddenYears,
-      }
-    })
-  }
-
-  const toggleCommission = (subjectSlug: string, commissionSlug: string) => {
-    const scopedKey = getCommissionPreferenceKey(subjectSlug, commissionSlug)
-
-    setDraft((d) => {
-      const isHidden =
-        d.hiddenCommissions.includes(scopedKey) ||
-        d.hiddenCommissions.includes(commissionSlug)
-
-      return {
-        ...d,
-        hiddenCommissions: isHidden
-          ? d.hiddenCommissions.filter(
-              (s) => s !== scopedKey && s !== commissionSlug,
-            )
-          : [...d.hiddenCommissions, scopedKey],
-      }
-    })
-  }
+  const toggleYear = (slug: string) => dispatch({ type: 'toggle-year', slug })
+  const toggleSubject = (slug: string) => dispatch({ type: 'toggle-subject', slug })
+  const toggleCommission = (subjectSlug: string, commissionSlug: string) =>
+    dispatch({ type: 'toggle-commission', subjectSlug, commissionSlug })
+  const toggleSubjectCommissions = (subjectSlug: string) =>
+    dispatch({ type: 'toggle-subject-commissions', subjectSlug })
 
   const onSave = () => {
     setPrefs(draft)
@@ -273,27 +346,54 @@ function ConfigurarFormInner({
                             'border-b border-white/5',
                         )}
                       >
-                        <label className="flex cursor-pointer items-center gap-3 px-5 py-3.5 transition-colors hover:bg-white/5">
-                          <input
-                            type="checkbox"
-                            className="peer sr-only"
-                            checked={subjectChecked}
-                            onChange={() => toggleSubject(subject.slug)}
-                          />
-                          <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
-                            <CheckBox checked={subjectChecked} />
-                          </span>
-                          <span className="min-w-0 flex-1 text-[13px] font-medium text-white/70">
-                            {subject.nombre}
-                          </span>
-                        </label>
+                        <div className="flex items-center gap-2 px-5 py-3.5 transition-colors hover:bg-white/5">
+                          <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
+                            <input
+                              type="checkbox"
+                              className="peer sr-only"
+                              checked={subjectChecked}
+                              onChange={() => toggleSubject(subject.slug)}
+                            />
+                            <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
+                              <CheckBox checked={subjectChecked} />
+                            </span>
+                            <span className="min-w-0 flex-1 text-[13px] font-medium text-white/70">
+                              {subject.nombre}
+                            </span>
+                          </label>
 
-                        {subject.commissions.length > 1 && (
+                          {subject.commissions.length > 1 && (
+                            <button
+                              type="button"
+                              aria-expanded={expandedSubjects.includes(subject.slug)}
+                              aria-controls={`commissions-${subject.id}`}
+                              disabled={!subjectChecked}
+                              onClick={() => toggleSubjectCommissions(subject.slug)}
+                              className={cn(
+                                'flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors',
+                                subjectChecked
+                                  ? 'cursor-pointer border-white/10 text-white/50 hover:border-white/20 hover:bg-white/5 hover:text-white/80'
+                                  : 'cursor-not-allowed border-white/5 text-white/20',
+                              )}
+                            >
+                              Comisiones
+                              <ChevronDown
+                                className={cn(
+                                  'size-3.5 transition-transform',
+                                  expandedSubjects.includes(subject.slug) && 'rotate-180',
+                                )}
+                                aria-hidden
+                              />
+                            </button>
+                          )}
+                        </div>
+
+                        {subject.commissions.length > 1 &&
+                          subjectChecked &&
+                          expandedSubjects.includes(subject.slug) && (
                           <ul
-                            className={cn(
-                              'flex flex-col bg-white/[0.02] border-t border-white/5',
-                              !subjectChecked && 'opacity-50 pointer-events-none',
-                            )}
+                            id={`commissions-${subject.id}`}
+                            className="flex flex-col border-t border-white/5 bg-white/[0.02]"
                           >
                             {subject.commissions.map((commission) => {
                               const commissionPreferenceKey = getCommissionPreferenceKey(
@@ -453,45 +553,34 @@ function ConfigurarFormSkeleton({ careerName, years }: ConfigurarFormProps) {
                           'border-b border-white/5',
                       )}
                     >
-                      <label className="flex cursor-pointer items-center gap-3 px-5 py-3.5 transition-colors hover:bg-white/5">
-                        <input
-                          type="checkbox"
-                          className="peer sr-only"
-                          checked={false}
-                          disabled
-                          readOnly
-                        />
-                        <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
-                          <CheckBox checked={false} />
-                        </span>
-                        <span className="min-w-0 flex-1 text-[13px] font-medium text-white/70">
-                          {subject.nombre}
-                        </span>
-                      </label>
+                      <div className="flex items-center gap-2 px-5 py-3.5 transition-colors hover:bg-white/5">
+                        <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
+                          <input
+                            type="checkbox"
+                            className="peer sr-only"
+                            checked={false}
+                            disabled
+                            readOnly
+                          />
+                          <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
+                            <CheckBox checked={false} />
+                          </span>
+                          <span className="min-w-0 flex-1 text-[13px] font-medium text-white/70">
+                            {subject.nombre}
+                          </span>
+                        </label>
 
-                      {subject.commissions.length > 1 && (
-                        <ul className="flex flex-col bg-white/[0.02] border-t border-white/5">
-                          {subject.commissions.map((commission) => (
-                            <li key={commission.id}>
-                              <label className="flex cursor-pointer items-center gap-3 pl-12 pr-5 py-2.5 transition-colors hover:bg-white/[0.03]">
-                                <input
-                                  type="checkbox"
-                                  className="peer sr-only"
-                                  checked={false}
-                                  disabled
-                                  readOnly
-                                />
-                                <span className="peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-0">
-                                  <CheckBox checked={false} size="sm" />
-                                </span>
-                                <span className="min-w-0 flex-1 text-[12px] text-white/55">
-                                  Comisión {commission.nombre}
-                                </span>
-                              </label>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
+                        {subject.commissions.length > 1 && (
+                          <button
+                            type="button"
+                            disabled
+                            className="flex shrink-0 cursor-not-allowed items-center gap-1 rounded-full border border-white/5 px-2.5 py-1 text-[11px] font-medium text-white/20"
+                          >
+                            Comisiones
+                            <ChevronDown className="size-3.5" aria-hidden />
+                          </button>
+                        )}
+                      </div>
                     </li>
                   ))}
                 </ul>
