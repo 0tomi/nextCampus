@@ -824,6 +824,14 @@ body {
   cursor: pointer;
 }
 
+/* Períodos académicos: fondo del día (mesas, suspensiones). Pintan toda la celda
+   por detrás de las pastillas. El color va inline desde el evento; acá solo
+   anulamos la opacidad 0.3 que FullCalendar aplica por defecto (el rgba del
+   color ya trae su propia transparencia). */
+.fc .fc-bg-event.fc-bg-periodo {
+  opacity: 1;
+}
+
 .calendar-editable .fc-daygrid-day,
 .calendar-editable .fc-daygrid-day * {
   cursor: pointer;

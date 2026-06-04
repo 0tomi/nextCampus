@@ -8,6 +8,7 @@ import {
   getHomeCalendarEvents,
   getLatestApuntes,
   getTiposEvento,
+  getPeriodos,
 } from '@/lib/queries'
 import { todayKeyAR } from '@/lib/utils'
 import { DashboardShell } from '@/components/shell/DashboardShell'
@@ -39,11 +40,12 @@ export default async function HomePage() {
     cookieStore.get(PREFERENCES_KEY)?.value ?? null,
   )
 
-  const [career, homeCalendarEventsRaw, tiposEvento, latestApuntesRaw] = await Promise.all([
+  const [career, homeCalendarEventsRaw, tiposEvento, latestApuntesRaw, periodos] = await Promise.all([
     getCareer(),
     getHomeCalendarEvents(),
     getTiposEvento(),
     getLatestApuntes(),
+    getPeriodos(),
   ])
 
   if (!career) {
@@ -332,6 +334,7 @@ export default async function HomePage() {
             <HomeGlobalCalendar
               initialPrefs={initialPrefs}
               events={homeCalendarEvents}
+              periodos={periodos}
             />
 
             <HomeLatestApuntes

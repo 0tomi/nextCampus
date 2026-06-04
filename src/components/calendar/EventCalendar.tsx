@@ -7,6 +7,7 @@ import interactionPlugin, { type DateClickArg } from '@fullcalendar/interaction'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { cn, slugify } from '@/lib/utils'
 import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
+import { PERIODO_META, PERIODO_TONE_BG, type PeriodoCalendario } from '@/lib/periodos'
 
 type EventCalendarDateInput = string | Date
 
@@ -41,6 +42,8 @@ export interface EventCalendarEvent {
 
 interface EventCalendarProps {
   events?: readonly EventCalendarEvent[]
+  /** Períodos académicos (mesas, suspensiones): pintan el fondo de los días. */
+  periodos?: readonly PeriodoCalendario[]
   emptyMessage?: string
   className?: string
   dayMaxEvents?: number
@@ -52,6 +55,20 @@ interface EventCalendarProps {
   onDateClick?: (fecha: string) => void
   /** Callback cuando se hace clic en un evento. */
   onEventClick?: (event: EventCalendarEvent) => void
+  /** Callback cuando se hace clic en un día pintado por un período. */
+  onPeriodoClick?: (periodo: PeriodoCalendario) => void
+}
+
+const EMPTY_PERIODOS: readonly PeriodoCalendario[] = []
+
+const PERIODO_EVENT_ID_PREFIX = 'periodo-'
+
+// "YYYY-MM-DD" + 1 día. FullCalendar trata `end` como exclusivo, así que para
+// pintar hasta fechaFin inclusive hay que pasar el día siguiente.
+function nextDayKey(key: string): string {
+  const date = new Date(`${key}T00:00:00.000Z`)
+  date.setUTCDate(date.getUTCDate() + 1)
+  return date.toISOString().slice(0, 10)
 }
 
 const EMPTY_EVENTS: readonly EventCalendarEvent[] = []
@@ -139,6 +156,7 @@ function buildDayKey(dateValue: EventCalendarDateInput): string {
 
 export function EventCalendar({
   events = EMPTY_EVENTS,
+  periodos = EMPTY_PERIODOS,
   emptyMessage = 'Sin eventos cargados por ahora.',
   className,
   dayMaxEvents = 3,
@@ -146,6 +164,7 @@ export function EventCalendar({
   onEventDrop,
   onDateClick,
   onEventClick,
+  onPeriodoClick,
 }: EventCalendarProps) {
   const calendarRef = useRef<FullCalendar>(null)
 
@@ -204,6 +223,23 @@ export function EventCalendar({
     ]
   })
 
+  // Períodos como "background events" de FullCalendar: pintan el fondo del día
+  // y no compiten con las pastillas (quedan por debajo, no cuentan para "+más").
+  const periodoEvents = periodos.map((periodo) => ({
+    id: `${PERIODO_EVENT_ID_PREFIX}${periodo.id}`,
+    title: periodo.titulo,
+    start: periodo.fechaInicio,
+    end: nextDayKey(periodo.fechaFin),
+    allDay: true,
+    display: 'background' as const,
+    // El color va inline (FullCalendar lo aplica como style en el bg event;
+    // una clase CSS no podría pisarlo). La clase solo ajusta opacidad/cursor.
+    backgroundColor: PERIODO_TONE_BG[PERIODO_META[periodo.categoria].tone],
+    classNames: ['fc-bg-periodo'],
+  }))
+
+  const allCalendarEvents = [...periodoEvents, ...calendarEvents]
+
   return (
     <DarkCard className={cn('overflow-hidden p-4 sm:p-6', className, editable && 'calendar-editable')}>
       {calendarEvents.length === 0 ? (
@@ -235,7 +271,7 @@ export function EventCalendar({
             click: () => calendarRef.current?.getApi().today(),
           },
         }}
-        events={calendarEvents}
+        events={allCalendarEvents}
         locale="es"
         firstDay={1}
         height="auto"
@@ -268,6 +304,12 @@ export function EventCalendar({
         dateClick={editable ? handleDateClick : undefined}
         eventClick={(info) => {
           const clickedId = info.event.id
+          if (clickedId.startsWith(PERIODO_EVENT_ID_PREFIX)) {
+            const periodoId = clickedId.slice(PERIODO_EVENT_ID_PREFIX.length)
+            const periodo = periodos.find((p) => p.id === periodoId)
+            if (periodo && onPeriodoClick) onPeriodoClick(periodo)
+            return
+          }
           const originalEvent = events.find((e, idx) => {
             const startVal = e.start ?? e.date ?? e.fecha
             const titleVal = e.title ?? e.titulo ?? ''

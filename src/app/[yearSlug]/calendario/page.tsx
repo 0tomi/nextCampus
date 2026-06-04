@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getCareer, getYearBySlug, getTiposEvento, getCategoriasApunte } from '@/lib/queries'
+import { getCareer, getYearBySlug, getTiposEvento, getCategoriasApunte, getPeriodos } from '@/lib/queries'
 import { getYearColorClasses, getYearTone } from '@/lib/yearColors'
 import { type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
@@ -23,11 +23,12 @@ export default async function YearCalendarPage({
   params: Promise<{ yearSlug: string }>
 }) {
   const { yearSlug } = await params
-  const [year, tiposEvento, career, categoriasDisponibles] = await Promise.all([
+  const [year, tiposEvento, career, categoriasDisponibles, periodos] = await Promise.all([
     getYearBySlug(yearSlug),
     getTiposEvento(),
     getCareer(),
     getCategoriasApunte(),
+    getPeriodos(),
   ])
   if (!year) notFound()
 
@@ -105,6 +106,7 @@ export default async function YearCalendarPage({
       tiposEvento={tiposEvento}
       subjects={modalSubjects}
       events={events}
+      periodos={periodos}
     />
   )
 }

@@ -9,10 +9,48 @@ import { MobileEventDetailSheet } from './MobileEventDetailSheet'
 import { eventDateToLocal } from '@/lib/utils'
 import type { CommissionOption } from '@/lib/commission-preferences'
 import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
+import {
+  PERIODO_META,
+  PERIODO_TONE_BG,
+  type PeriodoCalendario,
+} from '@/lib/periodos'
 
 /** "YYYY-MM-DD" (o ISO) → Date local. Evita el off-by-one de `new Date(string)`. */
 function toLocalDate(value: Date | string): Date {
   return typeof value === 'string' ? eventDateToLocal(value.slice(0, 10)) : value
+}
+
+/** Date local → "YYYY-MM-DD" (sin pasar por UTC, evita el off-by-one). */
+function toDayKey(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${date.getFullYear()}-${month}-${day}`
+}
+
+/** Período que cubre un día + su posición en el rango (para redondear bordes). */
+interface PeriodoCobertura {
+  periodo: PeriodoCalendario
+  isStart: boolean
+  isEnd: boolean
+}
+
+function findPeriodoCobertura(
+  dayKey: string,
+  periodos: readonly PeriodoCalendario[],
+): PeriodoCobertura | null {
+  const periodo = periodos.find((p) => dayKey >= p.fechaInicio && dayKey <= p.fechaFin)
+  if (!periodo) return null
+  return {
+    periodo,
+    isStart: dayKey === periodo.fechaInicio,
+    isEnd: dayKey === periodo.fechaFin,
+  }
+}
+
+function periodoBorderRadius({ isStart, isEnd }: { isStart: boolean; isEnd: boolean }): string {
+  const left = isStart ? '6px' : '0'
+  const right = isEnd ? '6px' : '0'
+  return `${left} ${right} ${right} ${left}`
 }
 
 const MONTH_NAMES_ES = [
@@ -112,6 +150,7 @@ interface EventModalSubject {
 
 export interface MobileCalendarProps {
   events: MobileCalendarEvent[]
+  periodos?: readonly PeriodoCalendario[]
   accent: string
   initialDate?: Date | string
   initialSelected?: Date | string | null
@@ -124,8 +163,11 @@ export interface MobileCalendarProps {
   commissions?: readonly CommissionOption[]
 }
 
+const EMPTY_PERIODOS: readonly PeriodoCalendario[] = []
+
 export function MobileCalendar({
   events,
+  periodos = EMPTY_PERIODOS,
   accent,
   initialDate,
   initialSelected = null,
@@ -187,6 +229,13 @@ export function MobileCalendar({
         .toSorted(byFechaHora)
     : []
 
+  const selectedPeriodos = selected
+    ? periodos.filter((p) => {
+        const key = toDayKey(selected)
+        return key >= p.fechaInicio && key <= p.fechaFin
+      })
+    : []
+
   const monthEventsSorted = monthEvents.toSorted(byFechaHora)
 
   const goPrev = () => {
@@ -209,6 +258,7 @@ export function MobileCalendar({
         cells={cells}
         cursor={cursor}
         dayMap={dayMap}
+        periodos={periodos}
         selected={selected}
         today={today}
         onSelectDate={(date) => setSelected((current) => (current && sameDay(date, current) ? null : date))}
@@ -219,6 +269,7 @@ export function MobileCalendar({
         monthEventsSorted={monthEventsSorted}
         selected={selected}
         selectedEvents={selectedEvents}
+        selectedPeriodos={selectedPeriodos}
         yearId={yearId}
         onClearSelected={() => setSelected(null)}
         onOpenDetail={setDetailEvent}
@@ -277,6 +328,7 @@ function MobileCalendarCard({
   cells,
   cursor,
   dayMap,
+  periodos,
   selected,
   today,
   onSelectDate,
@@ -285,6 +337,7 @@ function MobileCalendarCard({
   cells: CalendarCell[]
   cursor: Date
   dayMap: Record<number, MobileCalendarEvent[]>
+  periodos: readonly PeriodoCalendario[]
   selected: Date | null
   today: Date
   onSelectDate: (date: Date) => void
@@ -297,11 +350,12 @@ function MobileCalendarCard({
         cells={cells}
         cursor={cursor}
         dayMap={dayMap}
+        periodos={periodos}
         selected={selected}
         today={today}
         onSelectDate={onSelectDate}
       />
-      <CalendarLegend />
+      <CalendarLegend periodos={periodos} />
     </div>
   )
 }
@@ -327,6 +381,7 @@ function DayGrid({
   cells,
   cursor,
   dayMap,
+  periodos,
   selected,
   today,
   onSelectDate,
@@ -335,6 +390,7 @@ function DayGrid({
   cells: CalendarCell[]
   cursor: Date
   dayMap: Record<number, MobileCalendarEvent[]>
+  periodos: readonly PeriodoCalendario[]
   selected: Date | null
   today: Date
   onSelectDate: (date: Date) => void
@@ -345,6 +401,7 @@ function DayGrid({
         const isToday = !cell.muted && sameDay(cell.date, today)
         const isSelected = !cell.muted && selected !== null && sameDay(cell.date, selected)
         const dayEvents = !cell.muted ? (dayMap[cell.d] ?? []) : []
+        const cobertura = cell.muted ? null : findPeriodoCobertura(toDayKey(cell.date), periodos)
 
         return (
           <DayButton
@@ -352,6 +409,7 @@ function DayGrid({
             accent={accent}
             cell={cell}
             cursor={cursor}
+            cobertura={cobertura}
             dayEvents={dayEvents}
             isSelected={isSelected}
             isToday={isToday}
@@ -366,6 +424,7 @@ function DayGrid({
 function DayButton({
   accent,
   cell,
+  cobertura,
   dayEvents,
   isSelected,
   isToday,
@@ -374,11 +433,19 @@ function DayButton({
   accent: string
   cell: CalendarCell
   cursor: Date
+  cobertura: PeriodoCobertura | null
   dayEvents: MobileCalendarEvent[]
   isSelected: boolean
   isToday: boolean
   onSelectDate: (date: Date) => void
 }) {
+  // El fondo del período va por debajo del número y los puntos, y solo cuando
+  // el día NO está seleccionado (ahí manda el accent).
+  const periodoBg =
+    cobertura && !isSelected
+      ? PERIODO_TONE_BG[PERIODO_META[cobertura.periodo.categoria].tone]
+      : null
+
   return (
     <button
       type="button"
@@ -386,7 +453,7 @@ function DayButton({
         if (!cell.muted) onSelectDate(cell.date)
       }}
       disabled={cell.muted}
-      className="flex aspect-square flex-col items-center justify-center rounded-md border-none p-0 transition-colors duration-[180ms]"
+      className="relative flex aspect-square flex-col items-center justify-center rounded-md border-none p-0 transition-colors duration-[180ms]"
       style={{
         background: isSelected ? accent : 'transparent',
         color: cell.muted
@@ -401,7 +468,14 @@ function DayButton({
         fontWeight: isToday || isSelected ? 900 : 600,
       }}
     >
-      <span className="leading-none">{cell.d}</span>
+      {periodoBg ? (
+        <span
+          aria-hidden="true"
+          className="absolute inset-0 z-0"
+          style={{ background: periodoBg, borderRadius: periodoBorderRadius(cobertura!) }}
+        />
+      ) : null}
+      <span className="relative z-10 leading-none">{cell.d}</span>
       {dayEvents.length > 0 ? <EventDots dayEvents={dayEvents} isSelected={isSelected} /> : null}
     </button>
   )
@@ -409,7 +483,7 @@ function DayButton({
 
 function EventDots({ dayEvents, isSelected }: { dayEvents: MobileCalendarEvent[]; isSelected: boolean }) {
   return (
-    <span className="mt-1 flex h-1 gap-0.5">
+    <span className="relative z-10 mt-1 flex h-1 gap-0.5">
       {dayEvents.slice(0, 3).map((event) => {
         const tone = getEventTone(event.tipo)
         return (
@@ -424,7 +498,10 @@ function EventDots({ dayEvents, isSelected }: { dayEvents: MobileCalendarEvent[]
   )
 }
 
-function CalendarLegend() {
+function CalendarLegend({ periodos }: { periodos: readonly PeriodoCalendario[] }) {
+  // Solo mostramos las categorías de período que realmente hay cargadas.
+  const categoriasPresentes = [...new Set(periodos.map((p) => p.categoria))]
+
   return (
     <div
       className="mt-3 flex flex-wrap gap-3 border-t border-white/5 text-[10px] font-bold uppercase tracking-[0.1em] text-white/55"
@@ -442,6 +519,15 @@ function CalendarLegend() {
           {label}
         </span>
       ))}
+      {categoriasPresentes.map((categoria) => (
+        <span key={categoria} className="inline-flex items-center gap-1.5">
+          <span
+            className="h-1.5 w-3 rounded-[2px]"
+            style={{ background: PERIODO_TONE_BG[PERIODO_META[categoria].tone] }}
+          />
+          {PERIODO_META[categoria].label}
+        </span>
+      ))}
     </div>
   )
 }
@@ -451,6 +537,7 @@ function MobileCalendarEventList({
   monthEventsSorted,
   selected,
   selectedEvents,
+  selectedPeriodos,
   yearId,
   onClearSelected,
   onOpenDetail,
@@ -459,6 +546,7 @@ function MobileCalendarEventList({
   monthEventsSorted: MobileCalendarEvent[]
   selected: Date | null
   selectedEvents: MobileCalendarEvent[]
+  selectedPeriodos: readonly PeriodoCalendario[]
   yearId?: string
   onClearSelected: () => void
   onOpenDetail: (event: MobileCalendarEvent) => void
@@ -473,6 +561,22 @@ function MobileCalendarEventList({
         </p>
         <MobileCalendarListActions selected={selected} yearId={yearId} onClearSelected={onClearSelected} />
       </div>
+      {selected && selectedPeriodos.length > 0 ? (
+        <div className="mt-2 flex flex-col gap-1.5">
+          {selectedPeriodos.map((periodo) => (
+            <div
+              key={periodo.id}
+              className="flex items-center gap-2 rounded-[10px] px-3 py-2 text-[12.5px] font-semibold text-white/85"
+              style={{ background: PERIODO_TONE_BG[PERIODO_META[periodo.categoria].tone] }}
+            >
+              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/55">
+                {PERIODO_META[periodo.categoria].label}
+              </span>
+              <span className="truncate">{periodo.titulo}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
       <EventCards
         events={selected ? selectedEvents : monthEventsSorted}
         emptyText={selected ? 'Sin eventos este día.' : 'Sin eventos este mes.'}

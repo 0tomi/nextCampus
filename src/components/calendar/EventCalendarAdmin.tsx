@@ -7,6 +7,9 @@ import { Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { EventCalendar, type EventCalendarEvent } from './EventCalendar'
 import { EventModal } from '@/components/admin/EventModal'
+import { PeriodoModal } from '@/components/admin/PeriodoModal'
+import { PeriodoLegend } from './PeriodoLegend'
+import { PeriodoDetailSheet } from './PeriodoDetailSheet'
 import { useAdminAccess } from '@/components/admin/adminAccess'
 import { Sheet } from '@/components/ui/Sheet'
 import { AlertDialog } from '@/components/ui/AlertDialog'
@@ -16,6 +19,7 @@ import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { RelatedApunteLinks } from '@/components/events/RelatedApunteLinks'
 import { SafeHtml } from '@/components/ui/SafeHtml'
 import type { CommissionOption } from '@/lib/commission-preferences'
+import type { PeriodoCalendario } from '@/lib/periodos'
 
 // "Fecha · hora" del evento seleccionado. La fecha llega como "YYYY-MM-DD"; si
 // viniera un Date (fallback de FullCalendar) tomamos su día en UTC.
@@ -32,8 +36,11 @@ interface TipoEvento {
   nombre: string
 }
 
+const EMPTY_PERIODOS: readonly PeriodoCalendario[] = []
+
 interface EventCalendarAdminProps {
   events: readonly EventCalendarEvent[]
+  periodos?: readonly PeriodoCalendario[]
   emptyMessage?: string
   className?: string
   dayMaxEvents?: number
@@ -68,6 +75,7 @@ interface EventCalendarAdminProps {
  */
 export function EventCalendarAdmin({
   events,
+  periodos = EMPTY_PERIODOS,
   emptyMessage,
   className,
   dayMaxEvents,
@@ -87,12 +95,16 @@ export function EventCalendarAdmin({
   setSheetOpen,
 }: EventCalendarAdminProps) {
   const canEdit = useAdminAccess({ yearId, yearSlug }) ?? false
+  // Los períodos son de toda la facultad: gestionarlos exige admin general.
+  const canManagePeriodos = useAdminAccess({ requireGlobal: true }) ?? false
   const router = useRouter()
   const [isDeleting, startTransition] = useTransition()
   const [eventModalOpen, setEventModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [initialDate, setInitialDate] = useState<string | undefined>()
+  const [periodoModalOpen, setPeriodoModalOpen] = useState(false)
+  const [selectedPeriodo, setSelectedPeriodo] = useState<PeriodoCalendario | null>(null)
 
   const [localSelectedEvent, setLocalSelectedEvent] = useState<EventCalendarEvent | null>(null)
   const [localSheetOpen, setLocalSheetOpen] = useState(false)
@@ -168,8 +180,24 @@ export function EventCalendarAdmin({
 
   return (
     <>
+      {(periodos.length > 0 || canManagePeriodos) ? (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <PeriodoLegend periodos={periodos} />
+          {canManagePeriodos ? (
+            <button
+              type="button"
+              onClick={() => setPeriodoModalOpen(true)}
+              className="inline-flex cursor-pointer items-center justify-center rounded border border-white/10 bg-surface-1 px-3 py-1.5 text-xs font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              Administrar períodos
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       <EventCalendar
         events={events}
+        periodos={periodos}
         emptyMessage={emptyMessage}
         className={className}
         dayMaxEvents={dayMaxEvents}
@@ -177,6 +205,7 @@ export function EventCalendarAdmin({
         onEventDrop={canEdit ? handleEventDrop : undefined}
         onDateClick={canEdit ? handleDateClick : undefined}
         onEventClick={handleEventClick}
+        onPeriodoClick={setSelectedPeriodo}
       />
 
       <EventDetailSheet
@@ -237,6 +266,16 @@ export function EventCalendarAdmin({
           setActiveSelectedEvent(null)
         }}
       />
+
+      <PeriodoDetailSheet periodo={selectedPeriodo} onClose={() => setSelectedPeriodo(null)} />
+
+      {canManagePeriodos ? (
+        <PeriodoModal
+          open={periodoModalOpen}
+          periodos={periodos}
+          onClose={() => setPeriodoModalOpen(false)}
+        />
+      ) : null}
     </>
   )
 }

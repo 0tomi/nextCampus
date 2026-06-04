@@ -14,6 +14,7 @@ import {
 } from '@/lib/commission-preferences'
 import { usePreferredCommissionMap } from '@/components/commissions/usePreferredCommission'
 import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
+import type { PeriodoCalendario } from '@/lib/periodos'
 
 interface TipoEvento {
   id: string
@@ -70,6 +71,7 @@ interface YearCalendarViewProps {
   tiposEvento: TipoEvento[]
   subjects: readonly YearSubjectOption[]
   events: readonly YearCalendarEvent[]
+  periodos: readonly PeriodoCalendario[]
 }
 
 export function YearCalendarView({
@@ -80,6 +82,7 @@ export function YearCalendarView({
   tiposEvento,
   subjects,
   events,
+  periodos,
 }: YearCalendarViewProps) {
   const preferredBySubject = usePreferredCommissionMap(subjects)
 
@@ -143,6 +146,7 @@ export function YearCalendarView({
             </div>
             <EventCalendarAdmin
               events={filteredEvents}
+              periodos={periodos}
               emptyMessage="Todavía no hay eventos cargados en este año."
               className="year-calendar-expanded"
               dayMaxEvents={4}
@@ -185,6 +189,7 @@ export function YearCalendarView({
                 createdByUserId: event.createdByUserId ?? null,
                 apuntes: event.apuntes,
               }))}
+              periodos={periodos}
               accent={tone}
               initialDate={filteredEvents[0]?.fecha}
               yearId={year.id}

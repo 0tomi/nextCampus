@@ -209,6 +209,7 @@ const TAGS = {
   year: (slug: string) => `year:${slug}`,
   subject: (slug: string) => `subject:${slug}`,
   upcomingEvents: 'upcoming-events',
+  periodos: 'periodos',
 } as const
 
 export const queryTags = TAGS
@@ -675,6 +676,30 @@ export const getTiposEvento = unstable_cache(
   () => prisma.tipoEvento.findMany({ orderBy: { nombre: 'asc' } }),
   ['tipos-evento'],
   { tags: [TAGS.tiposEvento], revalidate: 86400 },
+)
+
+// Períodos académicos (globales, no cuelgan de materia). Fechas serializadas a
+// "YYYY-MM-DD" para el cliente. Sin filtros de preferencias: aplican a todos.
+export const getPeriodos = unstable_cache(
+  async () => {
+    const rows = await prisma.periodoAcademico.findMany({
+      orderBy: { fechaInicio: 'asc' },
+      select: {
+        id: true,
+        categoria: true,
+        titulo: true,
+        fechaInicio: true,
+        fechaFin: true,
+      },
+    })
+    return rows.map((row) => ({
+      ...row,
+      fechaInicio: toDateKey(row.fechaInicio),
+      fechaFin: toDateKey(row.fechaFin),
+    }))
+  },
+  ['periodos'],
+  { tags: [TAGS.periodos], revalidate: 3600 },
 )
 
 // Cacheado 60s: el filtro "fecha >= ahora" se mueve con el reloj, pero a

@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { CalendarDays, SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react'
 import { EventCalendar, type EventCalendarEvent } from '@/components/calendar/EventCalendar'
+import { PeriodoLegend } from '@/components/calendar/PeriodoLegend'
+import { PeriodoDetailSheet } from '@/components/calendar/PeriodoDetailSheet'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { usePreferences } from '@/hooks/usePreferences'
 import { cn, formatEventDateTime, todayKeyAR } from '@/lib/utils'
@@ -12,6 +14,7 @@ import { SafeHtml } from '@/components/ui/SafeHtml'
 import { RelatedApunteLinks, type RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import type { UserPreferences } from '@/lib/preferences'
+import type { PeriodoCalendario } from '@/lib/periodos'
 import { buildHomeCalendarEventHref, isHomeCalendarEventVisible } from './HomeGlobalCalendar.utils'
 
 export interface HomeGlobalCalendarEvent {
@@ -35,13 +38,18 @@ export interface HomeGlobalCalendarEvent {
 interface HomeGlobalCalendarProps {
   initialPrefs: UserPreferences | null
   events: readonly HomeGlobalCalendarEvent[]
+  periodos?: readonly PeriodoCalendario[]
 }
+
+const EMPTY_PERIODOS: readonly PeriodoCalendario[] = []
 
 export function HomeGlobalCalendar({
   initialPrefs,
   events,
+  periodos = EMPTY_PERIODOS,
 }: HomeGlobalCalendarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [selectedPeriodo, setSelectedPeriodo] = useState<PeriodoCalendario | null>(null)
   const router = useRouter()
   const { prefs, isHydrated } = usePreferences(initialPrefs)
   const shouldWaitForStoredPrefs = !isHydrated && initialPrefs === null
@@ -188,9 +196,11 @@ export function HomeGlobalCalendar({
 
         {/* Calendario condicional */}
         {isExpanded && (
-          <div className="w-full">
+          <div className="w-full space-y-3">
+            <PeriodoLegend periodos={periodos} className="px-1" />
             <EventCalendar
               events={calendarEvents}
+              periodos={periodos}
               emptyMessage="Por ahora no hay eventos con tu selección actual."
               className="home-global-calendar"
               dayMaxEvents={4}
@@ -207,10 +217,13 @@ export function HomeGlobalCalendar({
                   }),
                 )
               }}
+              onPeriodoClick={setSelectedPeriodo}
             />
           </div>
         )}
       </div>
+
+      <PeriodoDetailSheet periodo={selectedPeriodo} onClose={() => setSelectedPeriodo(null)} />
 
       <div className="flex justify-center pt-2">
         <button

@@ -72,6 +72,7 @@ model UserAccount {
   bancosPreguntasCreados Int                  @default(0)
   auditLogs              AuditLog[]
   eventos                Evento[]             @relation("EventoCreatedBy")
+  periodos               PeriodoAcademico[]   @relation("PeriodoCreatedBy")
   apuntes                Apunte[]             @relation("ApunteCreatedBy")
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
@@ -172,6 +173,32 @@ model Evento {
 
   @@index([agendaId])
   @@index([tipoEventoId])
+  @@index([createdByUserId])
+}
+
+/// Categoría de período académico. Define el color por código (ver src/lib/periodos.ts).
+/// Expandible para el resto del calendario FCYT (feriados, inscripciones, etc.).
+enum CategoriaPeriodo {
+  SUSPENSION_CLASES
+  MESAS_EXAMEN
+}
+
+/// Período académico de la facultad (global, no cuelga de ninguna materia).
+/// Se renderiza pintando el fondo de los días del calendario, no como evento.
+model PeriodoAcademico {
+  id              String           @id @default(cuid())
+  categoria       CategoriaPeriodo
+  titulo          String
+  /// Solo fecha (sin hora). Medianoche UTC, igual que Evento.fecha.
+  fechaInicio     DateTime         @db.Date
+  /// Fecha final inclusiva. Un solo día => fechaFin == fechaInicio.
+  fechaFin        DateTime         @db.Date
+  createdBy       UserAccount?     @relation("PeriodoCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdByUserId String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([fechaInicio, fechaFin])
   @@index([createdByUserId])
 }
 
