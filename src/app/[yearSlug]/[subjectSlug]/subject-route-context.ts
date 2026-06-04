@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
-import { getCareer, getSubjectPageBySlug, getTiposEvento } from '@/lib/queries'
+import { getCareer, getPeriodos, getSubjectPageBySlug, getTiposEvento } from '@/lib/queries'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 
 type SubjectRouteContextInput = {
@@ -21,10 +21,11 @@ export async function getSubjectRouteContext({
   subjectSlug,
   commissionSlug,
 }: SubjectRouteContextInput) {
-  const [subject, tiposEvento, career] = await Promise.all([
+  const [subject, tiposEvento, career, periodos] = await Promise.all([
     getSubjectPageBySlug(subjectSlug),
     getTiposEvento(),
     getCareer(),
+    getPeriodos(),
   ])
 
   if (!subject) notFound()
@@ -76,6 +77,7 @@ export async function getSubjectRouteContext({
     allYears,
     activeCommission,
     visibleEvents,
+    periodos,
     agendaId: subject.agendaGeneral?.id ?? subject.agenda?.id ?? '',
   }
 }

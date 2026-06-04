@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
-import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
+import { CalendarPeriodControls, EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { AdminControls } from '@/components/admin/AdminControls'
 import {
@@ -19,6 +19,7 @@ import {
   type CommissionOption,
 } from '@/lib/commission-preferences'
 import { usePreferredCommissionMap } from '@/components/commissions/usePreferredCommission'
+import type { PeriodoCalendario } from '@/lib/periodos'
 
 interface TipoEvento {
   id: string
@@ -62,6 +63,7 @@ interface YearOverviewEventsProps {
   subjects: readonly YearSubjectOption[]
   events: readonly YearOverviewEvent[]
   nextEvents: readonly YearOverviewEvent[]
+  periodos: readonly PeriodoCalendario[]
 }
 
 export function YearOverviewEvents({
@@ -70,6 +72,7 @@ export function YearOverviewEvents({
   subjects,
   events,
   nextEvents,
+  periodos,
 }: YearOverviewEventsProps) {
   const preferredBySubject = usePreferredCommissionMap(subjects)
 
@@ -136,6 +139,7 @@ export function YearOverviewEvents({
                 Agregar nuevo evento
               </AdminTriggerButton>
             </AdminControls>
+            <CalendarPeriodControls periodos={periodos} showLegend={false} />
           </div>
         </div>
       </div>
@@ -143,6 +147,8 @@ export function YearOverviewEvents({
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.72fr)_minmax(324px,0.8fr)] 2xl:grid-cols-[minmax(0,1.82fr)_minmax(344px,0.78fr)]">
         <EventCalendarAdmin
           events={filteredEvents}
+          periodos={periodos}
+          showPeriodControls={false}
           emptyMessage="Todavía no hay eventos visibles a nivel año. Entrá a una materia para ver su agenda real."
           yearId={year.id}
           yearSlug={year.slug}

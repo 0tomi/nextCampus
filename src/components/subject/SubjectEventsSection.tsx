@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
-import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
+import { CalendarPeriodControls, EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
 import type { EventCalendarEvent } from '@/components/calendar/EventCalendar'
 import { DarkCard } from '@/components/ui/DarkCard'
 import {
@@ -24,6 +24,7 @@ import {
 } from '@/lib/commission-preferences'
 import { CommissionSelectField } from '@/components/commissions/CommissionSelectField'
 import { usePreferredCommissionId } from '@/components/commissions/usePreferredCommission'
+import type { PeriodoCalendario } from '@/lib/periodos'
 
 interface TipoEvento {
   id: string
@@ -63,6 +64,7 @@ interface SubjectEventsSectionProps {
   commissions: readonly CommissionOption[]
   activeCommission?: CommissionOption | null
   events: readonly SubjectEventItem[]
+  periodos: readonly PeriodoCalendario[]
   chipClassName: string
 }
 
@@ -74,6 +76,7 @@ export function SubjectEventsSection({
   commissions,
   activeCommission,
   events,
+  periodos,
   chipClassName,
 }: SubjectEventsSectionProps) {
   const [selectedEvent, setSelectedEvent] = useState<EventCalendarEvent | null>(null)
@@ -129,6 +132,7 @@ export function SubjectEventsSection({
                 Agregar nuevo evento
               </AdminTriggerButton>
             </AdminControls>
+            <CalendarPeriodControls periodos={periodos} showLegend={false} />
             {!activeCommission ? (
               <>
                 <div className="hidden sm:block h-4 w-px bg-white/10" />
@@ -180,6 +184,8 @@ export function SubjectEventsSection({
               ? 'Todavía no hay fechas cargadas para esta comisión.'
               : 'Sin eventos cargados para esta materia.'
           }
+          periodos={periodos}
+          showPeriodControls={false}
           agendaId={agendaId}
           subjectId={subject.id}
           subjectSlug={subject.slug}

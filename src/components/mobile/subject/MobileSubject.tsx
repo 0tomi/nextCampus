@@ -14,6 +14,7 @@ import {
 } from '@/lib/commission-preferences'
 import { usePreferredCommissionId } from '@/components/commissions/usePreferredCommission'
 import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
+import type { PeriodoCalendario } from '@/lib/periodos'
 
 interface SubjectForMobile {
   id: string
@@ -89,6 +90,7 @@ export function MobileSubject({
   allYears,
   commissions,
   events,
+  periodos,
   activeCommissionName,
   tiposEvento,
   focusApunteSlug,
@@ -97,6 +99,7 @@ export function MobileSubject({
   allYears: AllYear[]
   commissions: CommissionOption[]
   events?: SubjectMobileEvent[]
+  periodos?: readonly PeriodoCalendario[]
   activeCommissionName?: string
   tiposEvento: readonly TipoEvento[]
   focusApunteSlug?: string
@@ -287,6 +290,7 @@ export function MobileSubject({
             createdByNombre: e.createdByNombre ?? null,
             apuntes: e.apuntes,
           }))}
+          periodos={periodos}
           apuntes={subject.apuntes}
           categorias={subject.categoriasDisponibles}
           apuntesHasMore={subject.apuntesHasMore}

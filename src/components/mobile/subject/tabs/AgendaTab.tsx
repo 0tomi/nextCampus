@@ -2,6 +2,7 @@
 
 import { MobileCalendarLazy } from '@/components/mobile/calendar/MobileCalendarLazy'
 import type { MobileCalendarEvent } from '@/components/mobile/calendar/MobileCalendar'
+import type { PeriodoCalendario } from '@/lib/periodos'
 import {
   ALL_COMMISSIONS_VALUE,
   normalizePreferredCommissionId,
@@ -27,6 +28,7 @@ interface EventModalSubject {
 
 export function AgendaTab({
   events,
+  periodos,
   accent,
   yearId,
   yearSlug,
@@ -38,6 +40,7 @@ export function AgendaTab({
   activeCommissionName,
 }: {
   events: MobileCalendarEvent[]
+  periodos?: readonly PeriodoCalendario[]
   accent: string
   yearId: string
   yearSlug: string
@@ -77,6 +80,7 @@ export function AgendaTab({
 
       <MobileCalendarLazy
         events={events}
+        periodos={periodos}
         accent={accent}
         initialDate={events[0]?.fecha}
         yearId={yearId}
@@ -90,4 +94,3 @@ export function AgendaTab({
     </div>
   )
 }
-

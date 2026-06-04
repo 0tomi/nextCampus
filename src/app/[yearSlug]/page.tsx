@@ -3,7 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { ArrowRight, CirclePlay } from 'lucide-react'
-import { getYearBySlug, getTiposEvento, getCareer, getCategoriasApunte } from '@/lib/queries'
+import { getYearBySlug, getTiposEvento, getCareer, getCategoriasApunte, getPeriodos } from '@/lib/queries'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
@@ -46,11 +46,12 @@ export default async function YearPage({
   params: Promise<{ yearSlug: string }>
 }) {
   const { yearSlug } = await params
-  const [year, tiposEvento, career, categoriasDisponibles] = await Promise.all([
+  const [year, tiposEvento, career, categoriasDisponibles, periodos] = await Promise.all([
     getYearBySlug(yearSlug),
     getTiposEvento(),
     getCareer(),
     getCategoriasApunte(),
+    getPeriodos(),
   ])
   if (!year) notFound()
 
@@ -303,6 +304,7 @@ export default async function YearPage({
             subjects={modalSubjects}
             events={events}
             nextEvents={nextEvents}
+            periodos={periodos}
           />
 
           <section className="space-y-4">

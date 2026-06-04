@@ -8,6 +8,7 @@ import { ApuntesTab } from './tabs/ApuntesTab'
 import { getYearColorClasses } from '@/lib/yearColors'
 import type { MobileCalendarEvent } from '@/components/mobile/calendar/MobileCalendar'
 import type { CommissionOption } from '@/lib/commission-preferences'
+import type { PeriodoCalendario } from '@/lib/periodos'
 
 type TabKey = 'agenda' | 'quiz' | 'apuntes'
 
@@ -34,6 +35,7 @@ interface SubjectTabsProps {
   yearId: string
   agendaId: string
   events: MobileCalendarEvent[]
+  periodos?: readonly PeriodoCalendario[]
   apuntes: Array<{
     id: string
     titulo: string
@@ -66,7 +68,7 @@ const HASH_MAP: Record<string, TabKey> = {
   '#apuntes': 'apuntes',
 }
 
-export function SubjectTabs({ subjectId, subjectSlug, subjectName, yearSlug, yearColor, yearId, agendaId, events, apuntes, categorias, apuntesHasMore, apuntesNextCursor, tiposEvento, subjects, commissions, focusApunteSlug, activeCommissionName }: SubjectTabsProps) {
+export function SubjectTabs({ subjectId, subjectSlug, subjectName, yearSlug, yearColor, yearId, agendaId, events, periodos, apuntes, categorias, apuntesHasMore, apuntesNextCursor, tiposEvento, subjects, commissions, focusApunteSlug, activeCommissionName }: SubjectTabsProps) {
   const [active, setActive] = useState<TabKey>(() => {
     if (focusApunteSlug) return 'apuntes'
     if (typeof window === 'undefined') return 'agenda'
@@ -115,6 +117,7 @@ export function SubjectTabs({ subjectId, subjectSlug, subjectName, yearSlug, yea
         {active === 'agenda' && (
           <AgendaTab
             events={events}
+            periodos={periodos}
             accent={colors.tone}
             yearId={yearId}
             yearSlug={yearSlug}

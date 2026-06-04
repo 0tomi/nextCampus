@@ -10,12 +10,12 @@ export interface PeriodoMeta {
   /// Texto user-friendly para mostrar en la UI y la leyenda.
   label: string
   /// Tono de color (mapea a las clases .fc-bg-tone-{tone} y a los estilos mobile).
-  tone: 'slate' | 'amber'
+  tone: 'sky' | 'yellow'
 }
 
 export const PERIODO_META: Record<CategoriaPeriodo, PeriodoMeta> = {
-  SUSPENSION_CLASES: { label: 'Suspensión de clases', tone: 'slate' },
-  MESAS_EXAMEN: { label: 'Mesas de examen', tone: 'amber' },
+  SUSPENSION_CLASES: { label: 'Suspensión de clases', tone: 'sky' },
+  MESAS_EXAMEN: { label: 'Mesas de examen', tone: 'yellow' },
 }
 
 export function getPeriodoMeta(categoria: CategoriaPeriodo): PeriodoMeta {
@@ -24,8 +24,8 @@ export function getPeriodoMeta(categoria: CategoriaPeriodo): PeriodoMeta {
 
 // Color de fondo (rgba) por tono. Una sola fuente para FullCalendar y mobile.
 export const PERIODO_TONE_BG: Record<PeriodoMeta['tone'], string> = {
-  slate: 'rgba(148, 163, 184, 0.16)',
-  amber: 'rgba(251, 191, 36, 0.16)',
+  sky: 'rgba(56, 189, 248, 0.18)',
+  yellow: 'rgba(234, 179, 8, 0.18)',
 }
 
 /// Período serializado para el cliente: fechas como "YYYY-MM-DD".

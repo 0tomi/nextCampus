@@ -41,6 +41,7 @@ const EMPTY_PERIODOS: readonly PeriodoCalendario[] = []
 interface EventCalendarAdminProps {
   events: readonly EventCalendarEvent[]
   periodos?: readonly PeriodoCalendario[]
+  showPeriodControls?: boolean
   emptyMessage?: string
   className?: string
   dayMaxEvents?: number
@@ -76,6 +77,7 @@ interface EventCalendarAdminProps {
 export function EventCalendarAdmin({
   events,
   periodos = EMPTY_PERIODOS,
+  showPeriodControls = true,
   emptyMessage,
   className,
   dayMaxEvents,
@@ -95,15 +97,12 @@ export function EventCalendarAdmin({
   setSheetOpen,
 }: EventCalendarAdminProps) {
   const canEdit = useAdminAccess({ yearId, yearSlug }) ?? false
-  // Los períodos son de toda la facultad: gestionarlos exige admin general.
-  const canManagePeriodos = useAdminAccess({ requireGlobal: true }) ?? false
   const router = useRouter()
   const [isDeleting, startTransition] = useTransition()
   const [eventModalOpen, setEventModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [initialDate, setInitialDate] = useState<string | undefined>()
-  const [periodoModalOpen, setPeriodoModalOpen] = useState(false)
   const [selectedPeriodo, setSelectedPeriodo] = useState<PeriodoCalendario | null>(null)
 
   const [localSelectedEvent, setLocalSelectedEvent] = useState<EventCalendarEvent | null>(null)
@@ -180,20 +179,7 @@ export function EventCalendarAdmin({
 
   return (
     <div className="min-w-0">
-      {(periodos.length > 0 || canManagePeriodos) ? (
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <PeriodoLegend periodos={periodos} />
-          {canManagePeriodos ? (
-            <button
-              type="button"
-              onClick={() => setPeriodoModalOpen(true)}
-              className="inline-flex cursor-pointer items-center justify-center rounded border border-white/10 bg-surface-1 px-3 py-1.5 text-xs font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-            >
-              Administrar períodos
-            </button>
-          ) : null}
-        </div>
-      ) : null}
+      {showPeriodControls ? <CalendarPeriodControls periodos={periodos} className="mb-3 justify-between" /> : null}
 
       <EventCalendar
         events={events}
@@ -268,18 +254,48 @@ export function EventCalendarAdmin({
       />
 
       <PeriodoDetailSheet periodo={selectedPeriodo} onClose={() => setSelectedPeriodo(null)} />
-
-      {canManagePeriodos ? (
-        <PeriodoModal
-          open={periodoModalOpen}
-          periodos={periodos}
-          onClose={() => setPeriodoModalOpen(false)}
-        />
-      ) : null}
     </div>
   )
 }
 
+export function CalendarPeriodControls({
+  periodos,
+  className,
+  showLegend = true,
+}: {
+  periodos?: readonly PeriodoCalendario[]
+  className?: string
+  showLegend?: boolean
+}) {
+  // Los períodos son de toda la facultad: gestionarlos exige admin general.
+  const canManagePeriodos = useAdminAccess({ requireGlobal: true }) ?? false
+  const [periodoModalOpen, setPeriodoModalOpen] = useState(false)
+  const activePeriodos = periodos ?? EMPTY_PERIODOS
+
+  if (activePeriodos.length === 0 && !canManagePeriodos) return null
+
+  return (
+    <div className={cn('flex flex-wrap items-center gap-3', className)}>
+      {showLegend ? <PeriodoLegend periodos={activePeriodos} /> : null}
+      {canManagePeriodos ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setPeriodoModalOpen(true)}
+            className="inline-flex cursor-pointer items-center justify-center rounded border border-white/10 bg-surface-1 px-3 py-1.5 text-xs font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            Administrar períodos
+          </button>
+          <PeriodoModal
+            open={periodoModalOpen}
+            periodos={activePeriodos}
+            onClose={() => setPeriodoModalOpen(false)}
+          />
+        </>
+      ) : null}
+    </div>
+  )
+}
 
 function getEventToneClass(tipo?: string | null) {
   const normalized = tipo?.toLowerCase()

@@ -79,6 +79,7 @@ export function SubjectRoutePage({
   allYears,
   activeCommission,
   visibleEvents,
+  periodos,
   agendaId,
   focusApunteSlug,
 }: SubjectRouteContext & { focusApunteSlug?: string }) {
@@ -99,6 +100,7 @@ export function SubjectRoutePage({
         agendaId={agendaId}
         colors={colors}
         focusApunteSlug={focusApunteSlug}
+        periodos={periodos}
         quizHref={quizHref}
         subject={subject}
         subjectHref={subjectHref}
@@ -110,6 +112,7 @@ export function SubjectRoutePage({
         activeCommissionName={activeCommission?.nombre}
         allYears={allYears}
         focusApunteSlug={focusApunteSlug}
+        periodos={periodos}
         subject={subject}
         tiposEvento={tiposEvento}
         visibleEvents={visibleEvents}
@@ -140,12 +143,13 @@ function SubjectDesktopView({
   agendaId,
   colors,
   focusApunteSlug,
+  periodos,
   quizHref,
   subject,
   subjectHref,
   tiposEvento,
   visibleEvents,
-}: Pick<SubjectRouteContext, 'activeCommission' | 'agendaId' | 'subject' | 'tiposEvento' | 'visibleEvents'> & {
+}: Pick<SubjectRouteContext, 'activeCommission' | 'agendaId' | 'periodos' | 'subject' | 'tiposEvento' | 'visibleEvents'> & {
   colors: YearColorClasses
   focusApunteSlug?: string
   quizHref: string
@@ -184,6 +188,7 @@ function SubjectDesktopView({
           commissions={subject.commissions}
           activeCommission={activeCommission}
           events={toSubjectEvents(visibleEvents)}
+          periodos={periodos}
           chipClassName={colors.chipClassName}
         />
 
@@ -512,10 +517,11 @@ function SubjectMobileView({
   activeCommissionName,
   allYears,
   focusApunteSlug,
+  periodos,
   subject,
   tiposEvento,
   visibleEvents,
-}: Pick<SubjectRouteContext, 'allYears' | 'subject' | 'tiposEvento' | 'visibleEvents'> & {
+}: Pick<SubjectRouteContext, 'allYears' | 'periodos' | 'subject' | 'tiposEvento' | 'visibleEvents'> & {
   activeCommissionName?: string
   focusApunteSlug?: string
 }) {
@@ -527,6 +533,7 @@ function SubjectMobileView({
         focusApunteSlug={focusApunteSlug}
         commissions={subject.commissions}
         events={toMobileEvents(visibleEvents)}
+        periodos={periodos}
         activeCommissionName={activeCommissionName}
         tiposEvento={tiposEvento}
       />
