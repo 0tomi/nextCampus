@@ -21,6 +21,10 @@ interface YearModalProps {
     driveUrl?: string | null
     playlistUrl?: string | null
     playlistEnabled?: boolean
+    discordUrl?: string | null
+    discordDescripcion?: string | null
+    discordAltUrl?: string | null
+    discordAltDescripcion?: string | null
     orden: number
     color?: string | null
   }
@@ -161,6 +165,62 @@ export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
         </div>
 
         <input type="hidden" name="playlistEnabled" value="true" />
+
+        <div className="space-y-1">
+          <label
+            htmlFor="year-discordUrl"
+            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
+          >
+            Enlace de Discord{' '}
+            <span className="font-normal normal-case tracking-normal text-white/30">
+              (opcional)
+            </span>
+          </label>
+          <input
+            id="year-discordUrl"
+            type="url"
+            name="discordUrl"
+            defaultValue={year?.discordUrl ?? ''}
+            placeholder="Ej: https://discord.gg/..."
+            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
+          />
+          <input
+            id="year-discordDescripcion"
+            type="text"
+            name="discordDescripcion"
+            defaultValue={year?.discordDescripcion ?? ''}
+            placeholder="Descripción del Discord (opcional)"
+            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label
+            htmlFor="year-discordAltUrl"
+            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
+          >
+            Enlace de Discord alternativo{' '}
+            <span className="font-normal normal-case tracking-normal text-white/30">
+              (opcional)
+            </span>
+          </label>
+          <input
+            id="year-discordAltUrl"
+            type="url"
+            name="discordAltUrl"
+            defaultValue={year?.discordAltUrl ?? ''}
+            placeholder="Ej: https://discord.gg/..."
+            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
+          />
+          <input
+            id="year-discordAltDescripcion"
+            type="text"
+            name="discordAltDescripcion"
+            defaultValue={year?.discordAltDescripcion ?? ''}
+            placeholder="Descripción del Discord alternativo (opcional)"
+            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
+          />
+        </div>
 
         <input type="hidden" name="color" value={color} />
 

@@ -33,6 +33,10 @@ model AcademicYear {
   driveUrl         String?
   playlistUrl      String?
   playlistEnabled  Boolean              @default(false)
+  discordUrl            String?
+  discordDescripcion    String?
+  discordAltUrl         String?
+  discordAltDescripcion String?
   orden            Int
   color            String?
   subjects         Subject[]

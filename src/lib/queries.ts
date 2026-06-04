@@ -310,6 +310,10 @@ export function getYearBySlug(slug: string) {
           driveUrl: true,
           playlistUrl: true,
           playlistEnabled: true,
+          discordUrl: true,
+          discordDescripcion: true,
+          discordAltUrl: true,
+          discordAltDescripcion: true,
           color: true,
           subjects: {
             orderBy: { nombre: 'asc' },

@@ -8,6 +8,7 @@ import { getYearColorClasses } from '@/lib/yearColors'
 import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
 import { DarkCard } from '@/components/ui/DarkCard'
+import { DiscordIcon } from '@/components/ui/DiscordIcon'
 import { YearPageAdminOverlay } from '@/components/admin/YearPageAdminOverlay'
 import { EditYearButton } from '@/components/admin/EditYearButton'
 import { MobileYear } from '@/components/mobile/year/MobileYear'
@@ -253,6 +254,44 @@ export default async function YearPage({
                 )}
               </div>
             )}
+
+            {(year.discordUrl || year.discordAltUrl) && (
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                {year.discordUrl && (
+                  <div className="flex max-w-xs flex-col gap-1.5">
+                    {year.discordDescripcion && (
+                      <p className="text-sm text-white/55">{year.discordDescripcion}</p>
+                    )}
+                    <a
+                      href={year.discordUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex cursor-pointer items-center gap-2 self-start rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                      <DiscordIcon className="size-5 text-indigo-400" />
+                      Discord
+                    </a>
+                  </div>
+                )}
+
+                {year.discordAltUrl && (
+                  <div className="flex max-w-xs flex-col gap-1.5">
+                    {year.discordAltDescripcion && (
+                      <p className="text-sm text-white/55">{year.discordAltDescripcion}</p>
+                    )}
+                    <a
+                      href={year.discordAltUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex cursor-pointer items-center gap-2 self-start rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                      <DiscordIcon className="size-5 text-indigo-400" />
+                      Discord alternativo
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
 
           <YearOverviewEvents
@@ -340,6 +379,10 @@ export default async function YearPage({
           driveUrl: year.driveUrl,
           playlistUrl: year.playlistUrl,
           playlistEnabled: year.playlistEnabled,
+          discordUrl: year.discordUrl,
+          discordDescripcion: year.discordDescripcion,
+          discordAltUrl: year.discordAltUrl,
+          discordAltDescripcion: year.discordAltDescripcion,
           orden: yearIndex >= 0 ? yearIndex + 1 : 1,
           color: year.color,
         }}

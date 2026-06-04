@@ -17,6 +17,7 @@ import {
 import { usePreferredCommissionMap } from '@/components/commissions/usePreferredCommission'
 import { formatDescription } from '@/lib/text'
 import { GoogleDriveIcon } from '@/components/ui/GoogleDriveIcon'
+import { DiscordIcon } from '@/components/ui/DiscordIcon'
 
 interface YearForMobile {
   id: string
@@ -26,6 +27,10 @@ interface YearForMobile {
   driveUrl?: string | null
   playlistUrl?: string | null
   playlistEnabled?: boolean
+  discordUrl?: string | null
+  discordDescripcion?: string | null
+  discordAltUrl?: string | null
+  discordAltDescripcion?: string | null
   color?: string | null
   subjects: Array<{
     id: string
@@ -248,7 +253,14 @@ function MobileYearHero({
               {formatDescription(year.descripcion.trim())}
             </p>
           ) : null}
-          <MobileYearResourceLinks driveUrl={year.driveUrl} playlistUrl={year.playlistUrl} />
+          <MobileYearResourceLinks
+            driveUrl={year.driveUrl}
+            playlistUrl={year.playlistUrl}
+            discordUrl={year.discordUrl}
+            discordDescripcion={year.discordDescripcion}
+            discordAltUrl={year.discordAltUrl}
+            discordAltDescripcion={year.discordAltDescripcion}
+          />
         </div>
       </div>
     </section>
@@ -303,8 +315,22 @@ function MobileYearStats({ eventCount, subjectsCount }: { eventCount: number; su
   )
 }
 
-function MobileYearResourceLinks({ driveUrl, playlistUrl }: { driveUrl?: string | null; playlistUrl?: string | null }) {
-  if (!driveUrl && !playlistUrl) return null
+function MobileYearResourceLinks({
+  driveUrl,
+  playlistUrl,
+  discordUrl,
+  discordDescripcion,
+  discordAltUrl,
+  discordAltDescripcion,
+}: {
+  driveUrl?: string | null
+  playlistUrl?: string | null
+  discordUrl?: string | null
+  discordDescripcion?: string | null
+  discordAltUrl?: string | null
+  discordAltDescripcion?: string | null
+}) {
+  if (!driveUrl && !playlistUrl && !discordUrl && !discordAltUrl) return null
 
   return (
     <div className="mt-4 flex flex-col gap-2">
@@ -329,6 +355,38 @@ function MobileYearResourceLinks({ driveUrl, playlistUrl }: { driveUrl?: string 
           <CirclePlay className="size-5 text-red-100" />
           Playlist del año
         </a>
+      ) : null}
+      {discordUrl ? (
+        <div className="flex flex-col gap-1.5">
+          {discordDescripcion ? (
+            <p className="text-center text-xs text-white/55">{discordDescripcion}</p>
+          ) : null}
+          <a
+            href={discordUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-white/15 bg-black/20 text-sm font-bold text-white transition-colors hover:bg-black/30"
+          >
+            <DiscordIcon className="size-5 text-indigo-300" />
+            Discord
+          </a>
+        </div>
+      ) : null}
+      {discordAltUrl ? (
+        <div className="flex flex-col gap-1.5">
+          {discordAltDescripcion ? (
+            <p className="text-center text-xs text-white/55">{discordAltDescripcion}</p>
+          ) : null}
+          <a
+            href={discordAltUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-white/15 bg-black/20 text-sm font-bold text-white transition-colors hover:bg-black/30"
+          >
+            <DiscordIcon className="size-5 text-indigo-300" />
+            Discord alternativo
+          </a>
+        </div>
       ) : null}
     </div>
   )

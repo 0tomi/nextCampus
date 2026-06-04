@@ -30,6 +30,10 @@ interface YearData {
   driveUrl?: string | null
   playlistUrl?: string | null
   playlistEnabled?: boolean
+  discordUrl?: string | null
+  discordDescripcion?: string | null
+  discordAltUrl?: string | null
+  discordAltDescripcion?: string | null
   orden: number
   color?: string | null
 }
@@ -104,6 +108,10 @@ export function YearPageAdminOverlay({
                 driveUrl: year.driveUrl,
                 playlistUrl: year.playlistUrl,
                 playlistEnabled: year.playlistEnabled,
+                discordUrl: year.discordUrl,
+                discordDescripcion: year.discordDescripcion,
+                discordAltUrl: year.discordAltUrl,
+                discordAltDescripcion: year.discordAltDescripcion,
                 orden: year.orden,
                 color: year.color,
               }}
