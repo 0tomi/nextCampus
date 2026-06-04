@@ -332,6 +332,9 @@ function MobileYearResourceLinks({
 }) {
   if (!driveUrl && !playlistUrl && !discordUrl && !discordAltUrl) return null
 
+  const discordLabel = discordDescripcion?.trim() || 'Discord'
+  const discordAltLabel = discordAltDescripcion?.trim() || 'Discord alternativo'
+
   return (
     <div className="mt-4 flex flex-col gap-2">
       {driveUrl ? (
@@ -357,36 +360,26 @@ function MobileYearResourceLinks({
         </a>
       ) : null}
       {discordUrl ? (
-        <div className="flex flex-col gap-1.5">
-          {discordDescripcion ? (
-            <p className="text-center text-xs text-white/55">{discordDescripcion}</p>
-          ) : null}
-          <a
-            href={discordUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-white/15 bg-black/20 text-sm font-bold text-white transition-colors hover:bg-black/30"
-          >
-            <DiscordIcon className="size-5 text-indigo-300" />
-            Discord
-          </a>
-        </div>
+        <a
+          href={discordUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-white/15 bg-black/20 px-3 text-sm font-bold text-white transition-colors hover:bg-black/30"
+        >
+          <DiscordIcon className="size-5 shrink-0 text-indigo-300" />
+          <span className="truncate">{discordLabel}</span>
+        </a>
       ) : null}
       {discordAltUrl ? (
-        <div className="flex flex-col gap-1.5">
-          {discordAltDescripcion ? (
-            <p className="text-center text-xs text-white/55">{discordAltDescripcion}</p>
-          ) : null}
-          <a
-            href={discordAltUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-white/15 bg-black/20 text-sm font-bold text-white transition-colors hover:bg-black/30"
-          >
-            <DiscordIcon className="size-5 text-indigo-300" />
-            Discord alternativo
-          </a>
-        </div>
+        <a
+          href={discordAltUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-white/15 bg-black/20 px-3 text-sm font-bold text-white transition-colors hover:bg-black/30"
+        >
+          <DiscordIcon className="size-5 shrink-0 text-indigo-300" />
+          <span className="truncate">{discordAltLabel}</span>
+        </a>
       ) : null}
     </div>
   )

@@ -110,6 +110,7 @@ model Subject {
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 
+  @@unique([yearId, nombre])
   @@index([yearId])
 }
 

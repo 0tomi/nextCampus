@@ -2,7 +2,7 @@ import 'dotenv/config'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from './generated/client/client'
 import { CategoriaPeriodo } from './generated/client/enums'
-import { uniqueSlug, yearSlugFromNumber } from '../src/lib/slug'
+import { yearSlugFromNumber } from '../src/lib/slug'
 
 // Seed usa conexión directa (DIRECT_URL): corre en CLI, no en serverless.
 const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL
@@ -278,10 +278,6 @@ async function main(): Promise<void> {
     create: CAREER,
   })
 
-  const takenSubjectSlugs = new Set<string>(
-    (await prisma.subject.findMany({ select: { slug: true } })).map((s) => s.slug),
-  )
-
   for (let i = 0; i < YEAR_NAMES.length; i++) {
     const yearSlug = yearSlugFromNumber(i + 1)
     const year = await prisma.academicYear.upsert({
@@ -296,14 +292,25 @@ async function main(): Promise<void> {
     })
 
     for (const subjectName of SUBJECTS_BY_YEAR[i]) {
-      const base = slugify(subjectName)
-      const subjectSlug = uniqueSlug(base, takenSubjectSlugs)
-      takenSubjectSlugs.add(subjectSlug)
-      const subject = await prisma.subject.upsert({
+      const subjectSlug = slugify(subjectName)
+      let subject = await prisma.subject.findUnique({
         where: { slug: subjectSlug },
-        update: { nombre: subjectName },
-        create: { yearId: year.id, slug: subjectSlug, nombre: subjectName },
+        select: { id: true },
       })
+      const isNewSubject = !subject
+
+      if (subject) {
+        subject = await prisma.subject.update({
+          where: { id: subject.id },
+          data: { yearId: year.id, nombre: subjectName },
+          select: { id: true },
+        })
+      } else {
+        subject = await prisma.subject.create({
+          data: { yearId: year.id, slug: subjectSlug, nombre: subjectName },
+          select: { id: true },
+        })
+      }
 
       const generalAgenda = await prisma.agenda.findFirst({
         where: { subjectId: subject.id, commissionId: null },
@@ -313,31 +320,42 @@ async function main(): Promise<void> {
         await prisma.agenda.create({ data: { subjectId: subject.id } })
       }
 
-      let commission = await prisma.commission.findFirst({
-        where: { subjectId: subject.id },
-        orderBy: [{ createdAt: 'asc' }, { slug: 'asc' }],
-      })
-      if (!commission) {
-        commission = await prisma.commission.create({
+      if (isNewSubject) {
+        const commission = await prisma.commission.create({
           data: {
             subjectId: subject.id,
             slug: DEFAULT_COMMISSION.slug,
             nombre: DEFAULT_COMMISSION.nombre,
           },
         })
-      }
 
-      const specificAgenda = await prisma.agenda.findUnique({
-        where: { commissionId: commission.id },
-        select: { id: true },
-      })
-      if (!specificAgenda) {
         await prisma.agenda.create({
           data: {
             subjectId: subject.id,
             commissionId: commission.id,
           },
         })
+        continue
+      }
+
+      const commission = await prisma.commission.findFirst({
+        where: { subjectId: subject.id },
+        orderBy: [{ createdAt: 'asc' }, { slug: 'asc' }],
+        select: { id: true },
+      })
+      if (commission) {
+        const specificAgenda = await prisma.agenda.findUnique({
+          where: { commissionId: commission.id },
+          select: { id: true },
+        })
+        if (!specificAgenda) {
+          await prisma.agenda.create({
+            data: {
+              subjectId: subject.id,
+              commissionId: commission.id,
+            },
+          })
+        }
       }
     }
   }
