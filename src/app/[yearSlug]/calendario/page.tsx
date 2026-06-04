@@ -1,10 +1,14 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getCareer, getYearBySlug, getTiposEvento, getCategoriasApunte, getPeriodos } from '@/lib/queries'
+import { getCareer, getCategoriasApunte, getPeriodos, getTiposEvento, getYearBySlug } from '@/lib/queries'
 import { getYearColorClasses, getYearTone } from '@/lib/yearColors'
-import { type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
-import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { YearCalendarView } from '@/components/year/YearCalendarView'
+import {
+  buildYearCalendarEvents,
+  buildYearDrawerYears,
+  buildYearModalSubjects,
+  buildYearSidebarItems,
+} from '@/lib/domain/year-page-adapters'
 
 export const metadata: Metadata = {
   title: 'Calendario del año | NextCampus',
@@ -12,10 +16,6 @@ export const metadata: Metadata = {
 }
 
 export const revalidate = 300
-
-function getSubjectVisibleEvents<TEvent>(subject: { agendas: Array<{ eventos: TEvent[] }> }): TEvent[] {
-  return subject.agendas.flatMap((agenda) => agenda.eventos)
-}
 
 export default async function YearCalendarPage({
   params,
@@ -30,67 +30,10 @@ export default async function YearCalendarPage({
     getCategoriasApunte(),
     getPeriodos(),
   ])
+
   if (!year) notFound()
 
   const colors = getYearColorClasses({ slug: year.slug, color: year.color })
-  const tone = getYearTone({ slug: year.slug, color: year.color })
-  const events = year.subjects
-    .flatMap((s) =>
-      getSubjectVisibleEvents(s).map((e) => ({
-        id: e.id,
-        titulo: `${e.titulo} · ${s.nombre}`,
-        fecha: e.fecha,
-        hora: e.hora,
-        tipo: e.tipoEvento.nombre,
-        tipoId: e.tipoEventoId,
-        subjectSlug: s.slug,
-        subjectId: s.id,
-        materiaNombre: s.nombre,
-        descripcionHtml: e.descripcionHtml,
-        tituloOriginal: e.titulo,
-        commissionId: e.commissionId,
-        commissionSlug: e.commission?.slug ?? null,
-        commissionNombre: e.commission?.nombre ?? null,
-        createdByUserId: e.createdByUserId,
-        apuntes: e.apuntes,
-      })),
-    )
-    .sort((a, b) => a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? ''))
-
-  const allYears = (career?.years ?? []).map((y) => ({
-    slug: y.slug,
-    nombre: y.nombre,
-    color: y.color,
-    subjectsCount: y.subjects.length,
-    orden: y.orden,
-    subjects: y.subjects.map(s => ({
-      id: s.id,
-      slug: s.slug,
-      nombre: s.nombre,
-    })),
-  }))
-
-  const drawerYears: MobileShellDrawerYear[] = allYears
-
-  const sidebarItems = year.subjects.map((subject, index) => ({
-    id: subject.id,
-    href: buildSubjectHref({ yearSlug: year.slug, subjectSlug: subject.slug }),
-    label: subject.nombre,
-    badge: String(index + 1).padStart(2, '0'),
-    meta: 'Materia',
-    badgeClassName: colors.badgeClassName,
-  }))
-
-  const modalSubjects = year.subjects
-    .filter((s) => s.agenda !== null)
-    .map((s) => ({
-      id: s.id,
-      slug: s.slug,
-      nombre: s.nombre,
-      agendaId: s.agenda!.id,
-      commissions: s.commissions,
-      categoriasDisponibles,
-    }))
 
   return (
     <YearCalendarView
@@ -100,12 +43,16 @@ export default async function YearCalendarPage({
         nombre: year.nombre,
         career: year.career,
       }}
-      allYears={drawerYears}
-      sidebarItems={sidebarItems}
-      tone={tone}
+      allYears={buildYearDrawerYears(career)}
+      sidebarItems={buildYearSidebarItems({
+        badgeClassName: colors.badgeClassName,
+        subjects: year.subjects,
+        yearSlug: year.slug,
+      })}
+      tone={getYearTone({ slug: year.slug, color: year.color })}
       tiposEvento={tiposEvento}
-      subjects={modalSubjects}
-      events={events}
+      subjects={buildYearModalSubjects(year.subjects, categoriasDisponibles)}
+      events={buildYearCalendarEvents(year.subjects)}
       periodos={periodos}
     />
   )
