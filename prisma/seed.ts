@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from './generated/client/client'
+import { CategoriaPeriodo } from './generated/client/enums'
 import { uniqueSlug, yearSlugFromNumber } from '../src/lib/slug'
 
 // Seed usa conexión directa (DIRECT_URL): corre en CLI, no en serverless.
@@ -62,6 +63,196 @@ const TIPOS_EVENTO = [
 const DEFAULT_COMMISSION = {
   slug: 'comision-1',
   nombre: 'Comisión 1',
+}
+
+type SeedPeriodoAcademico = {
+  categoria: CategoriaPeriodo
+  titulo: string
+  fechaInicio: string
+  fechaFin: string
+}
+
+// Calendario académico FCyT · UADER 2026-2027.
+// Fuente: https://fcyt.uader.edu.ar/secretaria-academica/calendario-academico/
+const PERIODOS_ACADEMICOS_FCYT: SeedPeriodoAcademico[] = [
+  {
+    categoria: CategoriaPeriodo.SUSPENSION_CLASES,
+    titulo: 'Día del Veterano y de los Caídos en la Guerra de Malvinas',
+    fechaInicio: '2026-04-02',
+    fechaFin: '2026-04-02',
+  },
+  {
+    categoria: CategoriaPeriodo.SUSPENSION_CLASES,
+    titulo: 'Viernes Santo',
+    fechaInicio: '2026-04-03',
+    fechaFin: '2026-04-03',
+  },
+  {
+    categoria: CategoriaPeriodo.SUSPENSION_CLASES,
+    titulo: 'Día del Trabajador',
+    fechaInicio: '2026-05-01',
+    fechaFin: '2026-05-01',
+  },
+  {
+    categoria: CategoriaPeriodo.MESAS_EXAMEN,
+    titulo: 'Mesas de exámenes turno Mayo',
+    fechaInicio: '2026-05-04',
+    fechaFin: '2026-05-09',
+  },
+  {
+    categoria: CategoriaPeriodo.SUSPENSION_CLASES,
+    titulo: 'Día de la Revolución de Mayo',
+    fechaInicio: '2026-05-25',
+    fechaFin: '2026-05-25',
+  },
+  {
+    categoria: CategoriaPeriodo.SUSPENSION_CLASES,
+    titulo: 'Paso a la inmortalidad del Gral. Martín Miguel de Güemes',
+    fechaInicio: '2026-06-17',
+    fechaFin: '2026-06-17',
+  },
+  {
+    categoria: CategoriaPeriodo.MESAS_EXAMEN,
+    titulo: 'Mesas de exámenes primer llamado turno Julio/Agosto',
+    fechaInicio: '2026-06-29',
+    fechaFin: '2026-07-04',
+  },
+  {
+    categoria: CategoriaPeriodo.SUSPENSION_CLASES,
+    titulo: 'Receso académico de invierno',
+    fechaInicio: '2026-07-06',
+    fechaFin: '2026-07-17',
+  },
+  {
+    categoria: CategoriaPeriodo.MESAS_EXAMEN,
+    titulo: 'Mesas de exámenes segundo llamado turno Julio/Agosto',
+    fechaInicio: '2026-07-27',
+    fechaFin: '2026-08-01',
+  },
+  {
+    categoria: CategoriaPeriodo.SUSPENSION_CLASES,
+    titulo: 'Paso a la Inmortalidad del Gral. José de San Martín',
+    fechaInicio: '2026-08-17',
+    fechaFin: '2026-08-17',
+  },
+  {
+    categoria: CategoriaPeriodo.SUSPENSION_CLASES,
+    titulo: 'Día del Docente',
+    fechaInicio: '2026-09-11',
+    fechaFin: '2026-09-11',
+  },
+  {
+    categoria: CategoriaPeriodo.SUSPENSION_CLASES,
+    titulo: 'Día del estudiante',
+    fechaInicio: '2026-09-21',
+    fechaFin: '2026-09-21',
+  },
+  {
+    categoria: CategoriaPeriodo.MESAS_EXAMEN,
+    titulo: 'Mesas de exámenes turno Septiembre',
+    fechaInicio: '2026-09-22',
+    fechaFin: '2026-09-26',
+  },
+  {
+    categoria: CategoriaPeriodo.SUSPENSION_CLASES,
+    titulo: 'Conmemoración San Miguel Arcángel, Patrono de Entre Ríos',
+    fechaInicio: '2026-09-29',
+    fechaFin: '2026-09-29',
+  },
+  {
+    categoria: CategoriaPeriodo.SUSPENSION_CLASES,
+    titulo: 'Día del Respeto a la Diversidad Cultural',
+    fechaInicio: '2026-10-12',
+    fechaFin: '2026-10-12',
+  },
+  {
+    categoria: CategoriaPeriodo.SUSPENSION_CLASES,
+    titulo: 'Día de la Soberanía Nacional',
+    fechaInicio: '2026-11-20',
+    fechaFin: '2026-11-20',
+  },
+  {
+    categoria: CategoriaPeriodo.MESAS_EXAMEN,
+    titulo: 'Mesas de exámenes primer llamado turno Noviembre/Diciembre',
+    fechaInicio: '2026-11-24',
+    fechaFin: '2026-11-30',
+  },
+  {
+    categoria: CategoriaPeriodo.SUSPENSION_CLASES,
+    titulo: 'Conmemoración Inmaculada Concepción de María',
+    fechaInicio: '2026-12-08',
+    fechaFin: '2026-12-08',
+  },
+  {
+    categoria: CategoriaPeriodo.MESAS_EXAMEN,
+    titulo: 'Mesas de examen segundo llamado turno Noviembre/Diciembre',
+    fechaInicio: '2026-12-09',
+    fechaFin: '2026-12-15',
+  },
+  {
+    categoria: CategoriaPeriodo.SUSPENSION_CLASES,
+    titulo: 'Feriado de carnaval',
+    fechaInicio: '2027-02-08',
+    fechaFin: '2027-02-09',
+  },
+  {
+    categoria: CategoriaPeriodo.MESAS_EXAMEN,
+    titulo: 'Mesas de exámenes primer llamado turno Febrero/Marzo',
+    fechaInicio: '2027-02-10',
+    fechaFin: '2027-02-16',
+  },
+  {
+    categoria: CategoriaPeriodo.MESAS_EXAMEN,
+    titulo: 'Mesas de exámenes segundo llamado turno Febrero/Marzo',
+    fechaInicio: '2027-03-01',
+    fechaFin: '2027-03-06',
+  },
+  {
+    categoria: CategoriaPeriodo.SUSPENSION_CLASES,
+    titulo: 'Día Nacional de la Memoria por la Verdad y la Justicia',
+    fechaInicio: '2027-03-24',
+    fechaFin: '2027-03-24',
+  },
+  {
+    categoria: CategoriaPeriodo.SUSPENSION_CLASES,
+    titulo: 'Viernes Santo',
+    fechaInicio: '2027-03-26',
+    fechaFin: '2027-03-26',
+  },
+]
+
+function dateOnly(fecha: string): Date {
+  return new Date(`${fecha}T00:00:00.000Z`)
+}
+
+async function seedPeriodosAcademicos(): Promise<void> {
+  for (const periodo of PERIODOS_ACADEMICOS_FCYT) {
+    const data = {
+      categoria: periodo.categoria,
+      titulo: periodo.titulo,
+      fechaInicio: dateOnly(periodo.fechaInicio),
+      fechaFin: dateOnly(periodo.fechaFin),
+    }
+
+    const existing = await prisma.periodoAcademico.findFirst({
+      where: {
+        categoria: periodo.categoria,
+        titulo: periodo.titulo,
+        fechaInicio: data.fechaInicio,
+      },
+      select: { id: true },
+    })
+
+    if (existing) {
+      await prisma.periodoAcademico.update({
+        where: { id: existing.id },
+        data,
+      })
+      continue
+    }
+
+    await prisma.periodoAcademico.create({ data })
+  }
 }
 
 async function main(): Promise<void> {
@@ -151,7 +342,9 @@ async function main(): Promise<void> {
     }
   }
 
-  console.log('Seed completo: carrera, años, materias, comisiones, agendas, tipos de evento y categorías de apuntes.')
+  await seedPeriodosAcademicos()
+
+  console.log('Seed completo: carrera, años, materias, comisiones, agendas, períodos, tipos de evento y categorías de apuntes.')
 }
 
 main()

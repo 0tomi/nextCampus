@@ -179,7 +179,7 @@ export function EventCalendarAdmin({
     : null
 
   return (
-    <>
+    <div className="min-w-0">
       {(periodos.length > 0 || canManagePeriodos) ? (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <PeriodoLegend periodos={periodos} />
@@ -276,7 +276,7 @@ export function EventCalendarAdmin({
           onClose={() => setPeriodoModalOpen(false)}
         />
       ) : null}
-    </>
+    </div>
   )
 }
 
