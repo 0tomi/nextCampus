@@ -16,7 +16,6 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getYearColorClasses } from '@/lib/yearColors'
-import { InstallPWATopbarButton } from '@/components/pwa/InstallPWA'
 import { usePreferences } from '@/hooks/usePreferences'
 import { isYearVisible, isSubjectVisible, type UserPreferences } from '@/lib/preferences'
 
@@ -332,7 +331,7 @@ function MobileTopbar({ title, subtitle, onBack, onOpenMenu }: MobileTopbarProps
           </div>
         </Link>
 
-        <InstallPWATopbarButton />
+        <div className="size-10 shrink-0" aria-hidden />
       </div>
     </header>
   )

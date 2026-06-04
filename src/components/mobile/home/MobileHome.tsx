@@ -15,6 +15,7 @@ import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import { Mascot } from '@/components/ui/Mascot'
 import { usePreferences } from '@/hooks/usePreferences'
 import { NosotrosModal } from '@/components/ui/NosotrosModal'
+import { InstallPWAHeroButton } from '@/components/pwa/InstallPWA'
 import {
   isCommissionVisible,
   isSubjectVisible,
@@ -222,7 +223,7 @@ export function MobileHome({
                 <h1 className="mt-2 text-2xl font-black tracking-tight text-white leading-tight">{career.nombre}</h1>
               </div>
               <div className="absolute bottom-[-14px] left-0 right-[-6px] flex items-center justify-between pointer-events-none">
-                <div className="pointer-events-auto">
+                <div className="pointer-events-auto flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setIsAboutOpen(true)}
@@ -230,6 +231,7 @@ export function MobileHome({
                   >
                     Nosotros
                   </button>
+                  <InstallPWAHeroButton />
                 </div>
                 <div className="pointer-events-auto">
                   <Mascot size={74} className="opacity-95" />

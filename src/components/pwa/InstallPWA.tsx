@@ -149,6 +149,29 @@ export function InstallPWATopbarButton() {
   )
 }
 
+export function InstallPWAHeroButton() {
+  const action = useInstallAction()
+
+  if (!action.visible) {
+    return null
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        aria-label="Instalar app"
+        onClick={action.onClick}
+        className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 px-4 py-2 text-sm font-bold text-black shadow-[0_0_22px_rgba(251,191,36,0.25)] transition-colors hover:from-amber-300 hover:to-orange-400"
+      >
+        <Download size={16} strokeWidth={2.5} />
+        Instalar App
+      </button>
+      {action.showIos && <IosInstructionsSheet onClose={action.closeIos} />}
+    </>
+  )
+}
+
 interface InstallPWASettingsCardProps {
   className?: string
 }
