@@ -172,7 +172,7 @@ export function buildHomeLatestApuntes(
       id: apunte.id,
       titulo: apunte.titulo,
       slug: apunte.slug,
-      createdAt: apunte.createdAt.toISOString(),
+      createdAt: apunte.createdAt,
       subjectSlug: apunte.subject.slug,
       subjectNombre: apunte.subject.nombre,
       yearSlug: apunte.subject.year.slug,

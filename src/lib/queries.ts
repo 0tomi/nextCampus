@@ -848,8 +848,8 @@ export function getLatestApuntes() {
   // limitáramos acá, un año podría quedarse sin apuntes en el home solo
   // porque sus apuntes no entran en los más nuevos del campus entero.
   return unstable_cache(
-    () =>
-      prisma.apunte.findMany({
+    async () => {
+      const rows = await prisma.apunte.findMany({
         orderBy: { createdAt: 'desc' },
         select: {
           id: true,
@@ -869,7 +869,15 @@ export function getLatestApuntes() {
             },
           },
         },
-      }),
+      })
+      // unstable_cache serializa a JSON: un Date vuelve como string en los
+      // cache-hits. Normalizamos a string acá para que el contrato sea estable
+      // en hit y en miss (mismo patrón que `fecha: toDateKey(...)` arriba).
+      return rows.map((apunte) => ({
+        ...apunte,
+        createdAt: apunte.createdAt.toISOString(),
+      }))
+    },
     ['latest-apuntes'],
     { tags: [TAGS.latestApuntes, TAGS.career], revalidate: 300 },
   )()

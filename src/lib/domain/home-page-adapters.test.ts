@@ -47,7 +47,7 @@ function makeApunte(overrides: Partial<RawHomeLatestApunte> = {}): RawHomeLatest
     id: 'apunte-1',
     titulo: 'Guía 1',
     slug: 'guia-1',
-    createdAt: new Date('2026-05-20T12:00:00.000Z'),
+    createdAt: '2026-05-20T12:00:00.000Z',
     subject: {
       slug: 'calculo',
       nombre: 'Cálculo',
