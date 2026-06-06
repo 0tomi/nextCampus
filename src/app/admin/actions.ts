@@ -52,6 +52,7 @@ import {
   awardQuizBankCreated,
 } from '@/lib/contributions'
 import { isReservedYearSlug, reservedYearSlugSet } from '@/lib/year-slugs'
+import { SUBJECT_LINK_TYPES } from '@/lib/subjectLinks'
 
 // Next 16 exige un perfil de cacheLife como segundo argumento de
 // revalidateTag. Usamos "max" (stale-while-revalidate) en todas las
@@ -1685,10 +1686,29 @@ export interface CommissionActionState {
   message: string
 }
 
+const subjectLinkItemSchema = z.object({
+  tipo: z.string().trim().min(1),
+  label: z.string().trim(),
+  url: z
+    .string()
+    .trim()
+    .url()
+    .refine(
+      (u) => {
+        try {
+          const protocol = new URL(u).protocol
+          return protocol === 'https:' || protocol === 'http:'
+        } catch {
+          return false
+        }
+      },
+      { message: 'El enlace debe empezar con http:// o https://' },
+    ),
+})
+
 const subjectSchema = z.object({
   nombre: z.string().trim().min(1, 'El nombre es obligatorio').max(200),
   descripcion: z.string().trim().max(500).default(''),
-  driveUrl: z.string().trim().url('El enlace de Drive debe ser una URL válida').or(z.literal('')).nullable().optional(),
 })
 
 const commissionSchema = z.object({
@@ -1712,12 +1732,29 @@ export async function createSubjectAction(
   const parsed = subjectSchema.safeParse({
     nombre: formData.get('nombre'),
     descripcion: formData.get('descripcion') ?? '',
-    driveUrl: formData.get('driveUrl') ?? '',
   })
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0].message }
   }
-  const { nombre, descripcion, driveUrl } = parsed.data
+  const { nombre, descripcion } = parsed.data
+
+  // Parse links defensively
+  let rawLinks: z.infer<typeof subjectLinkItemSchema>[] = []
+  try {
+    const linksJson = formData.get('links')
+    if (linksJson && typeof linksJson === 'string' && linksJson.trim() !== '') {
+      const parsed = z.array(subjectLinkItemSchema).safeParse(JSON.parse(linksJson))
+      if (parsed.success) rawLinks = parsed.data
+    }
+  } catch {
+    rawLinks = []
+  }
+  const links = rawLinks.map((l, i) => ({
+    tipo: l.tipo,
+    label: l.label || SUBJECT_LINK_TYPES.find((t) => t.value === l.tipo)?.label || l.tipo,
+    url: l.url,
+    orden: i,
+  }))
 
   const year = await prisma.academicYear.findUnique({
     where: { id: yearId },
@@ -1735,9 +1772,15 @@ export async function createSubjectAction(
   // Crear materia + agenda general + comisión inicial + agenda específica en una transacción
   const subject = await prisma.$transaction(async (tx) => {
     const created = await tx.subject.create({
-      data: { nombre, slug, descripcion, driveUrl: driveUrl || null, yearId },
+      data: { nombre, slug, descripcion, yearId },
       select: { id: true },
     })
+
+    if (links.length > 0) {
+      await tx.subjectLink.createMany({
+        data: links.map((l) => ({ subjectId: created.id, ...l })),
+      })
+    }
 
     await tx.agenda.create({ data: { subjectId: created.id } })
 
@@ -1845,11 +1888,6 @@ export async function createCommissionAction(
   return { ok: true, message: 'Comisión creada correctamente.' }
 }
 
-const updateSubjectSchema = subjectSchema.extend({
-  playlistUrl: z.string().trim().url().or(z.literal('')).nullable().optional(),
-  playlistEnabled: z.coerce.boolean().default(false),
-})
-
 export async function updateSubjectAction(
   _prev: SubjectActionState,
   formData: FormData,
@@ -1859,26 +1897,32 @@ export async function updateSubjectAction(
   const scope = await requireYearAdminForSubjectId(id)
   if (!scope) return { ok: false, message: 'Materia no encontrada.' }
 
-  const parsed = updateSubjectSchema.safeParse({
+  const parsed = subjectSchema.safeParse({
     nombre: formData.get('nombre'),
     descripcion: formData.get('descripcion') ?? '',
-    driveUrl: formData.get('driveUrl') ?? '',
-    playlistUrl: formData.get('playlistUrl') ?? '',
-    playlistEnabled: formData.get('playlistEnabled'),
   })
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0].message }
   }
-  const { nombre, descripcion, driveUrl, playlistUrl, playlistEnabled } = parsed.data
+  const { nombre, descripcion } = parsed.data
 
-  // Validar que playlistUrl sea de YouTube si se provee
-  const normalizedPlaylistUrl = playlistUrl || null
-  if (normalizedPlaylistUrl) {
-    const detected = detectarRecurso(normalizedPlaylistUrl)
-    if (!detected || detected.tipo !== 'YOUTUBE') {
-      return { ok: false, message: 'La playlist debe ser un enlace de YouTube válido.' }
+  // Parse links defensively
+  let rawLinks: z.infer<typeof subjectLinkItemSchema>[] = []
+  try {
+    const linksJson = formData.get('links')
+    if (linksJson && typeof linksJson === 'string' && linksJson.trim() !== '') {
+      const parsedLinks = z.array(subjectLinkItemSchema).safeParse(JSON.parse(linksJson))
+      if (parsedLinks.success) rawLinks = parsedLinks.data
     }
+  } catch {
+    rawLinks = []
   }
+  const links = rawLinks.map((l, i) => ({
+    tipo: l.tipo,
+    label: l.label || SUBJECT_LINK_TYPES.find((t) => t.value === l.tipo)?.label || l.tipo,
+    url: l.url,
+    orden: i,
+  }))
 
   const oldSlug = scope.subjectSlug
 
@@ -1890,16 +1934,23 @@ export async function updateSubjectAction(
   const base = slugify(nombre)
   const newSlug = uniqueSlug(base, takenSlugs)
 
-  await prisma.subject.update({
-    where: { id },
-    data: {
-      nombre,
-      slug: newSlug,
-      descripcion,
-      driveUrl: driveUrl || null,
-      playlistUrl: normalizedPlaylistUrl,
-      playlistEnabled,
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.subject.update({
+      where: { id },
+      data: {
+        nombre,
+        slug: newSlug,
+        descripcion,
+      },
+    })
+
+    // Full replace: delete existing links, then recreate
+    await tx.subjectLink.deleteMany({ where: { subjectId: id } })
+    if (links.length > 0) {
+      await tx.subjectLink.createMany({
+        data: links.map((l) => ({ subjectId: id, ...l })),
+      })
+    }
   })
 
   revalidateTag(queryTags.career)
@@ -1983,125 +2034,6 @@ export async function getSubjectDeleteImpactAction(
   return getSubjectDeleteImpact(id)
 }
 
-export async function updateSubjectDriveUrlAction(
-  subjectId: string,
-  driveUrl: string | null,
-  _subjectSlug: string,
-): Promise<SubjectActionState> {
-  await requireAuth('academic')
-  void _subjectSlug
-  const urlSchema = z
-    .string()
-    .trim()
-    .url('El enlace de Drive debe ser una URL válida')
-    .or(z.literal(''))
-    .nullable()
-    .optional()
-
-  const parsed = urlSchema.safeParse(driveUrl)
-  if (!parsed.success) {
-    return { ok: false, message: parsed.error.issues[0].message }
-  }
-
-  const normalizedDriveUrl = parsed.data || null
-  const validSubjectId = z.string().min(1).parse(subjectId)
-  const scope = await requireYearAdminForSubjectId(validSubjectId)
-  if (!scope) return { ok: false, message: 'Materia no encontrada.' }
-
-  await prisma.subject.update({
-    where: { id: validSubjectId },
-    data: { driveUrl: normalizedDriveUrl },
-  })
-
-  revalidateTag(queryTags.career)
-  revalidateTag(queryTags.year(scope.yearSlug))
-  revalidateTag(queryTags.subject(scope.subjectSlug))
-  revalidatePath('/')
-  revalidatePath(`/${scope.yearSlug}`)
-  revalidatePath(`/${scope.yearSlug}/calendario`)
-  revalidatePath(`/${scope.yearSlug}/${scope.subjectSlug}`)
-
-  await recordAudit({
-    userId: scope.admin.id,
-    action: AUDIT_ACTIONS.SUBJECT_DRIVE_UPDATED,
-    entityType: 'subject',
-    entityId: validSubjectId,
-    yearId: scope.yearId,
-    yearSlug: scope.yearSlug,
-    detail: {
-      driveUrl: normalizedDriveUrl,
-      subjectSlug: scope.subjectSlug,
-      yearSlug: scope.yearSlug,
-    },
-  })
-
-  return { ok: true, message: 'Enlace de Google Drive actualizado correctamente.' }
-}
-
-// Edición rápida de la playlist (espejo de updateSubjectDriveUrlAction).
-// Firma: (subjectId, playlistUrl | null, playlistEnabled, _subjectSlug)
-export async function updateSubjectPlaylistAction(
-  subjectId: string,
-  playlistUrl: string | null,
-  playlistEnabled: boolean,
-  _subjectSlug: string,
-): Promise<SubjectActionState> {
-  await requireAuth('academic')
-  void _subjectSlug
-
-  const urlParsed = z
-    .string()
-    .trim()
-    .url()
-    .or(z.literal(''))
-    .nullable()
-    .optional()
-    .safeParse(playlistUrl)
-  if (!urlParsed.success) {
-    return { ok: false, message: 'El enlace de la playlist no es válido.' }
-  }
-
-  const normalizedPlaylistUrl = urlParsed.data || null
-  if (normalizedPlaylistUrl) {
-    const detected = detectarRecurso(normalizedPlaylistUrl)
-    if (!detected || detected.tipo !== 'YOUTUBE') {
-      return { ok: false, message: 'La playlist debe ser un enlace de YouTube válido.' }
-    }
-  }
-
-  const validSubjectId = z.string().min(1).parse(subjectId)
-  const scope = await requireYearAdminForSubjectId(validSubjectId)
-  if (!scope) return { ok: false, message: 'Materia no encontrada.' }
-
-  await prisma.subject.update({
-    where: { id: validSubjectId },
-    data: { playlistUrl: normalizedPlaylistUrl, playlistEnabled },
-  })
-
-  revalidateTag(queryTags.year(scope.yearSlug))
-  revalidateTag(queryTags.subject(scope.subjectSlug))
-  revalidatePath('/')
-  revalidatePath(`/${scope.yearSlug}`)
-  revalidatePath(`/${scope.yearSlug}/calendario`)
-  revalidatePath(`/${scope.yearSlug}/${scope.subjectSlug}`)
-
-  await recordAudit({
-    userId: scope.admin.id,
-    action: AUDIT_ACTIONS.SUBJECT_PLAYLIST_UPDATED,
-    entityType: 'subject',
-    entityId: validSubjectId,
-    yearId: scope.yearId,
-    yearSlug: scope.yearSlug,
-    detail: {
-      playlistUrl: normalizedPlaylistUrl,
-      playlistEnabled,
-      subjectSlug: scope.subjectSlug,
-      yearSlug: scope.yearSlug,
-    },
-  })
-
-  return { ok: true, message: 'Playlist actualizada correctamente.' }
-}
 
 // --- Sesión ----------------------------------------------------------------
 

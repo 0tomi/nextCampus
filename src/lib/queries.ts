@@ -285,7 +285,10 @@ export function getCareer() {
               slug: true,
               nombre: true,
               descripcion: true,
-              driveUrl: true,
+              links: {
+                select: { id: true, tipo: true, label: true, url: true, orden: true },
+                orderBy: { orden: 'asc' },
+              },
               commissions: {
                 orderBy: { nombre: 'asc' },
                 select: { id: true, slug: true, nombre: true },
@@ -362,9 +365,10 @@ export function getSubjectPageBySlug(slug: string) {
           slug: true,
           nombre: true,
           descripcion: true,
-          driveUrl: true,
-          playlistUrl: true,
-          playlistEnabled: true,
+          links: {
+            select: { id: true, tipo: true, label: true, url: true, orden: true },
+            orderBy: { orden: 'asc' },
+          },
           year: {
             select: {
               id: true,

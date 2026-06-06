@@ -1,11 +1,12 @@
 import { isSubjectVisible, isYearVisible, type UserPreferences } from '@/lib/preferences'
+import type { SubjectLinkDTO } from '@/lib/subjectLinks'
 
 export type HomeGridSubject = {
   id: string
   slug: string
   nombre: string
   descripcion: string | null
-  driveUrl: string | null
+  links: SubjectLinkDTO[]
 }
 
 export type HomeGridYear = {

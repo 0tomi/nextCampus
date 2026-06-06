@@ -23,9 +23,7 @@ interface SubjectPageAdminOverlayProps {
     slug: string
     nombre: string
     descripcion?: string
-    driveUrl?: string | null
-    playlistUrl?: string | null
-    playlistEnabled?: boolean
+    links?: { tipo: string; label: string; url: string; orden: number }[]
     commissions: readonly CommissionOption[]
     categoriasDisponibles: Array<{ id: string; nombre: string }>
   }
@@ -164,9 +162,7 @@ export function SubjectPageAdminOverlay({
             id: subject.id,
             nombre: subject.nombre,
             descripcion: subject.descripcion,
-            driveUrl: subject.driveUrl,
-            playlistUrl: subject.playlistUrl,
-            playlistEnabled: subject.playlistEnabled,
+            links: subject.links,
           }}
           yearId={yearId}
         />

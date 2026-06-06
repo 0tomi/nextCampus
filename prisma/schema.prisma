@@ -100,9 +100,7 @@ model Subject {
   slug               String              @unique
   nombre             String
   descripcion        String              @default("")
-  driveUrl           String?
-  playlistUrl        String?
-  playlistEnabled    Boolean             @default(false)
+  links              SubjectLink[]
   commissions        Commission[]
   agendas            Agenda[]
   apuntes            Apunte[]
@@ -112,6 +110,20 @@ model Subject {
 
   @@unique([yearId, nombre])
   @@index([yearId])
+}
+
+model SubjectLink {
+  id        String   @id @default(cuid())
+  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subjectId String
+  tipo      String
+  label     String
+  url       String
+  orden     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subjectId])
 }
 
 // ---------------------------------------------------------------------------

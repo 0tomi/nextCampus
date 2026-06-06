@@ -113,7 +113,7 @@ function makeCareer(): YearPageCareer {
         playlistEnabled: true,
         orden: 1,
         color: null,
-        subjects: [{ id: 'subject-1', slug: 'calculo', nombre: 'Cálculo', descripcion: '', driveUrl: '', commissions: [] }],
+        subjects: [{ id: 'subject-1', slug: 'calculo', nombre: 'Cálculo', descripcion: '', links: [], commissions: [] }],
       },
     ],
   }

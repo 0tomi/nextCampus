@@ -14,7 +14,7 @@ interface SubjectData {
   slug: string
   nombre: string
   descripcion?: string | null
-  driveUrl?: string | null
+  links?: { tipo: string; label: string; url: string; orden: number }[]
 }
 
 interface YearData {
@@ -151,7 +151,7 @@ function SubjectAdminRow({
           id: subject.id,
           nombre: subject.nombre,
           descripcion: subject.descripcion ?? undefined,
-          driveUrl: subject.driveUrl,
+          links: subject.links,
         }}
         yearId={yearId}
       />

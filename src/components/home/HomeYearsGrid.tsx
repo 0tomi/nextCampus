@@ -178,7 +178,7 @@ export function HomeYearsGrid({ initialPrefs, years }: HomeYearsGridProps) {
                             slug: subject.slug,
                             nombre: subject.nombre,
                             descripcion: subject.descripcion,
-                            driveUrl: subject.driveUrl,
+                            links: subject.links,
                           }}
                           yearId={year.id}
                         />
@@ -372,7 +372,7 @@ function HomeYearCardSection({
                                 slug: subject.slug,
                                 nombre: subject.nombre,
                                 descripcion: subject.descripcion,
-                                driveUrl: subject.driveUrl,
+                                links: subject.links,
                               }}
                               yearId={year.id}
                             />

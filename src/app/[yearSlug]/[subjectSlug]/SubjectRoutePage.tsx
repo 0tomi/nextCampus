@@ -7,7 +7,6 @@ import {
   Sparkles,
   Plus,
   Pencil,
-  CirclePlay,
 } from 'lucide-react'
 import { MobileSubject } from '@/components/mobile/subject/MobileSubject'
 import { DashboardShell } from '@/components/shell/DashboardShell'
@@ -29,7 +28,7 @@ import type { SubjectRouteContext } from './subject-route-context'
 import { SubjectEventsSection } from '@/components/subject/SubjectEventsSection'
 import { SubjectEventSummaryCard } from '@/components/subject/SubjectEventSummaryCard'
 import { ApuntesFeed } from '@/components/apuntes/ApuntesFeed'
-import { GoogleDriveIcon } from '@/components/ui/GoogleDriveIcon'
+import { SubjectLinkButtons } from '@/components/subject/SubjectLinkButtons'
 
 type YearColorClasses = ReturnType<typeof getYearColorClasses>
 
@@ -124,9 +123,7 @@ export function SubjectRoutePage({
           slug: subject.slug,
           nombre: subject.nombre,
           descripcion: subject.descripcion || undefined,
-          driveUrl: subject.driveUrl,
-          playlistUrl: subject.playlistUrl,
-          playlistEnabled: subject.playlistEnabled,
+          links: subject.links,
           commissions: subject.commissions,
           categoriasDisponibles: subject.categoriasDisponibles,
         }}
@@ -361,7 +358,7 @@ function SubjectHeroBadges({
 function SubjectResourceActions({ subject }: { subject: SubjectRouteContext['subject'] }) {
   return (
     <div className="mt-6 flex flex-wrap items-center gap-2">
-      <SubjectExternalLinks driveUrl={subject.driveUrl} playlistUrl={subject.playlistUrl} />
+      <SubjectLinkButtons links={subject.links} variant="desktop" />
       <AdminControls yearId={subject.year.id} requireAcademicStructure>
         <AdminTriggerButton
           action="edit-subject"
@@ -374,35 +371,6 @@ function SubjectResourceActions({ subject }: { subject: SubjectRouteContext['sub
         </AdminTriggerButton>
       </AdminControls>
     </div>
-  )
-}
-
-function SubjectExternalLinks({ driveUrl, playlistUrl }: { driveUrl?: string | null; playlistUrl?: string | null }) {
-  return (
-    <>
-      {driveUrl ? (
-        <a
-          href={driveUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex cursor-pointer items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-        >
-          <GoogleDriveIcon className="size-5" />
-          Drive con contenido de la materia
-        </a>
-      ) : null}
-      {playlistUrl ? (
-        <a
-          href={playlistUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex cursor-pointer items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-        >
-          <CirclePlay className="size-5 text-red-400" />
-          Playlist de clases
-        </a>
-      ) : null}
-    </>
   )
 }
 

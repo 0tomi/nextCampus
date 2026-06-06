@@ -1,11 +1,10 @@
 'use client'
 
-import Image from 'next/image'
 import { useMemo } from 'react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { SubjectTabs } from './SubjectTabs'
 import { getYearColorClasses } from '@/lib/yearColors'
-import { CirclePlay, Pencil, Plus } from 'lucide-react'
+import { Pencil, Plus } from 'lucide-react'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { formatDescription } from '@/lib/text'
 import {
@@ -15,15 +14,15 @@ import {
 import { usePreferredCommissionId } from '@/components/commissions/usePreferredCommission'
 import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import type { PeriodoCalendario } from '@/lib/periodos'
+import type { SubjectLinkDTO } from '@/lib/subjectLinks'
+import { SubjectLinkButtons } from '@/components/subject/SubjectLinkButtons'
 
 interface SubjectForMobile {
   id: string
   slug: string
   nombre: string
   descripcion: string | null
-  driveUrl: string | null
-  playlistUrl: string | null
-  playlistEnabled: boolean
+  links: SubjectLinkDTO[]
   year: { id: string; slug: string; nombre: string; color?: string | null; career: { nombre: string } }
   agenda: { id: string; eventos: Array<{ id: string; titulo: string; descripcionHtml: string | null; fecha: string; hora: string | null; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId?: string | null; commissionSlug?: string | null; commissionNombre?: string | null; createdByUserId?: string | null; createdByNombre?: string | null; apuntes?: RelatedApunteLink[] }> } | null
   apuntes: Array<{
@@ -72,18 +71,6 @@ interface SubjectMobileEvent {
   apuntes?: RelatedApunteLink[]
 }
 
-function GoogleDriveIcon({ className }: { className?: string }) {
-  return (
-    <Image
-      src="/resources/google_drive_logo_icon_159334.png"
-      alt=""
-      width={20}
-      height={20}
-      aria-hidden="true"
-      className={className}
-    />
-  )
-}
 
 export function MobileSubject({
   subject,
@@ -199,53 +186,28 @@ export function MobileSubject({
               </p>
             )}
             <div className="mt-4 flex flex-col gap-2">
-              {subject.driveUrl ? (
-                <div className="flex gap-2 w-full">
-                  <a
-                    href={subject.driveUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 flex items-center justify-center gap-2 h-11 rounded-md bg-white/[0.04] border border-white/10 text-sm font-bold text-white cursor-pointer hover:bg-white/10 transition-colors"
+              <SubjectLinkButtons links={subject.links} variant="mobile" />
+              <AdminControls yearId={subject.year.id} requireAcademicStructure noWrapper>
+                {subject.links.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-subject'))}
+                    className="flex items-center justify-center size-11 shrink-0 rounded-md bg-white/[0.04] border border-white/10 text-white cursor-pointer hover:bg-white/10 transition-colors"
+                    title="Editar materia"
                   >
-                    <GoogleDriveIcon className="size-5" />
-                    Drive con contenido
-                  </a>
-                  <AdminControls yearId={subject.year.id} requireAcademicStructure noWrapper>
-                    <button
-                      type="button"
-                      onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-subject'))}
-                      className="flex items-center justify-center size-11 shrink-0 rounded-md bg-white/[0.04] border border-white/10 text-white cursor-pointer hover:bg-white/10 transition-colors"
-                      title="Editar materia"
-                    >
-                      <Pencil className="size-4 text-white/70" />
-                    </button>
-                  </AdminControls>
-                </div>
-              ) : (
-                <AdminControls yearId={subject.year.id} requireAcademicStructure noWrapper>
+                    <Pencil className="size-4 text-white/70" />
+                  </button>
+                ) : (
                   <button
                     type="button"
                     onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-subject'))}
                     className="w-full flex items-center justify-center gap-2 h-11 rounded-md bg-white/[0.04] border border-white/10 text-sm font-bold text-white cursor-pointer hover:bg-white/10 transition-colors"
                   >
                     <Plus className="size-4 text-white/70" />
-                    Vincular carpeta de Google Drive
+                    Agregar enlaces
                   </button>
-                </AdminControls>
-              )}
-
-              {/* Playlist - solo si tiene enlace puesto (independiente de playlistEnabled) */}
-              {subject.playlistUrl && (
-                <a
-                  href={subject.playlistUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full h-11 rounded-md bg-white/[0.04] border border-white/10 text-sm font-bold text-white cursor-pointer hover:bg-white/10 transition-colors"
-                >
-                  <CirclePlay className="size-5 text-red-400" />
-                  Playlist de clases
-                </a>
-              )}
+                )}
+              </AdminControls>
             </div>
              <div className="mt-4 grid grid-cols-2 divide-x divide-white/5">
               <div className="flex flex-col items-center justify-center gap-0.5">

@@ -11,6 +11,7 @@ import {
   AddSubjectButton,
 } from '@/components/admin/HomeAdminOverlay'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
+import type { SubjectLinkDTO } from '@/lib/subjectLinks'
 
 interface CarouselYear {
   id: string
@@ -23,7 +24,7 @@ interface CarouselYear {
     slug: string
     nombre: string
     descripcion: string | null
-    driveUrl: string | null
+    links: SubjectLinkDTO[]
   }>
 }
 
@@ -142,7 +143,7 @@ export function YearCarousel({ years }: { years: CarouselYear[] }) {
                               slug: s.slug,
                               nombre: s.nombre,
                               descripcion: s.descripcion ?? undefined,
-                              driveUrl: s.driveUrl,
+                              links: s.links,
                             }}
                             yearId={y.id}
                           />

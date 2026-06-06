@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useReducer } from 'react'
 import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/ui/Modal'
 import {
@@ -8,7 +8,56 @@ import {
   updateSubjectAction,
   type SubjectActionState,
 } from '@/app/admin/actions'
-import { detectarRecurso } from '@/lib/recursos'
+import { SUBJECT_LINK_TYPES } from '@/lib/subjectLinks'
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface LinkRow {
+  tipo: string
+  label: string
+  url: string
+}
+
+type LinksAction =
+  | { type: 'ADD' }
+  | { type: 'REMOVE'; index: number }
+  | { type: 'UPDATE_FIELD'; index: number; field: keyof LinkRow; value: string }
+  | { type: 'MOVE_UP'; index: number }
+  | { type: 'MOVE_DOWN'; index: number }
+
+function linksReducer(state: LinkRow[], action: LinksAction): LinkRow[] {
+  switch (action.type) {
+    case 'ADD':
+      return [...state, { tipo: SUBJECT_LINK_TYPES[0].value, label: '', url: '' }]
+    case 'REMOVE':
+      return state.filter((_, i) => i !== action.index)
+    case 'UPDATE_FIELD': {
+      const next = [...state]
+      next[action.index] = { ...next[action.index], [action.field]: action.value }
+      return next
+    }
+    case 'MOVE_UP': {
+      if (action.index === 0) return state
+      const next = [...state]
+      ;[next[action.index - 1], next[action.index]] = [next[action.index], next[action.index - 1]]
+      return next
+    }
+    case 'MOVE_DOWN': {
+      if (action.index === state.length - 1) return state
+      const next = [...state]
+      ;[next[action.index], next[action.index + 1]] = [next[action.index + 1], next[action.index]]
+      return next
+    }
+    default:
+      return state
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
 
 interface SubjectModalProps {
   open: boolean
@@ -18,9 +67,7 @@ interface SubjectModalProps {
     id: string
     nombre: string
     descripcion?: string
-    driveUrl?: string | null
-    playlistUrl?: string | null
-    playlistEnabled?: boolean
+    links?: { tipo: string; label: string; url: string; orden: number }[]
   }
   /** ID del año al que pertenece la materia (requerido para crear). */
   yearId?: string
@@ -28,6 +75,10 @@ interface SubjectModalProps {
 }
 
 const emptyState: SubjectActionState = { ok: false, message: '' }
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 export function SubjectModal({
   open,
@@ -38,21 +89,14 @@ export function SubjectModal({
 }: SubjectModalProps) {
   const isEdit = !!subject
   const router = useRouter()
-  const [playlistUrlError, setPlaylistUrlError] = useState('')
 
-  const handlePlaylistUrlBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const val = e.target.value.trim()
-    if (!val) {
-      setPlaylistUrlError('')
-      return
-    }
-    const result = detectarRecurso(val)
-    if (!result || result.tipo !== 'YOUTUBE') {
-      setPlaylistUrlError('El link debe ser de YouTube (youtube.com o youtu.be).')
-    } else {
-      setPlaylistUrlError('')
-    }
-  }
+  const initialLinks: LinkRow[] = subject?.links
+    ? subject.links
+        .toSorted((a, b) => a.orden - b.orden)
+        .map(({ tipo, label, url }) => ({ tipo, label, url }))
+    : []
+
+  const [links, dispatch] = useReducer(linksReducer, initialLinks)
 
   const action = isEdit ? updateSubjectAction : createSubjectAction
 
@@ -63,9 +107,6 @@ export function SubjectModal({
     const nextState = await action(previousState, formData)
 
     if (nextState.ok) {
-      // Si la materia cambió de nombre, el destino final también cambió.
-      // Mandamos al usuario a la nueva URL para que no se quede en una página
-      // que ya no existe.
       if (nextState.newSlug && nextState.yearSlug) {
         router.replace(`/${nextState.yearSlug}/${nextState.newSlug}`)
       }
@@ -80,6 +121,10 @@ export function SubjectModal({
 
   const title = isEdit ? 'Editar materia' : 'Nueva materia'
 
+  const serializedLinks = JSON.stringify(
+    links.filter((l) => l.url.trim() !== ''),
+  )
+
   return (
     <Modal open={open} onClose={onClose} title={title}>
       <form action={formAction} className="space-y-4">
@@ -92,6 +137,10 @@ export function SubjectModal({
           <input type="hidden" name="yearId" value={yearId ?? ''} />
         )}
 
+        {/* Serialized links for the server action */}
+        <input type="hidden" name="links" value={serializedLinks} readOnly />
+
+        {/* Nombre */}
         <div className="space-y-1">
           <label
             htmlFor="subject-nombre"
@@ -110,6 +159,7 @@ export function SubjectModal({
           />
         </div>
 
+        {/* Descripción */}
         <div className="space-y-1">
           <label
             htmlFor="subject-descripcion"
@@ -130,55 +180,117 @@ export function SubjectModal({
           />
         </div>
 
-        <div className="space-y-1">
-          <label
-            htmlFor="subject-driveUrl"
-            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
-          >
-            Enlace de Google Drive{' '}
+        {/* Links repeater */}
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
+            Botones de acceso rápido{' '}
             <span className="font-normal normal-case tracking-normal text-white/30">
               (opcional)
             </span>
-          </label>
-          <input
-            id="subject-driveUrl"
-            type="url"
-            name="driveUrl"
-            defaultValue={subject?.driveUrl ?? ''}
-            placeholder="Ej: https://drive.google.com/drive/folders/..."
-            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
-          />
-        </div>
+          </p>
 
-        <div className="space-y-1">
-          <label
-            htmlFor="subject-playlistUrl"
-            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
+          {links.map((link, index) => (
+            <div
+              key={index}
+              className="rounded border border-white/10 bg-surface-0 p-3 space-y-2"
+            >
+              {/* Row controls: reorder + remove */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-white/30">Enlace {index + 1}</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => dispatch({ type: 'MOVE_UP', index })}
+                    disabled={index === 0}
+                    className="rounded px-1.5 py-0.5 text-xs text-white/40 hover:bg-white/5 hover:text-white disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
+                    title="Subir"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => dispatch({ type: 'MOVE_DOWN', index })}
+                    disabled={index === links.length - 1}
+                    className="rounded px-1.5 py-0.5 text-xs text-white/40 hover:bg-white/5 hover:text-white disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
+                    title="Bajar"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => dispatch({ type: 'REMOVE', index })}
+                    className="rounded px-1.5 py-0.5 text-xs text-rose-400/60 hover:bg-rose-500/10 hover:text-rose-300 cursor-pointer"
+                    title="Eliminar enlace"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+
+              {/* Tipo */}
+              <div className="space-y-1">
+                <label htmlFor={`link-${index}-tipo`} className="block text-xs text-white/40">Tipo</label>
+                <select
+                  id={`link-${index}-tipo`}
+                  value={link.tipo}
+                  onChange={(e) =>
+                    dispatch({ type: 'UPDATE_FIELD', index, field: 'tipo', value: e.target.value })
+                  }
+                  className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/20 focus:outline-none cursor-pointer"
+                >
+                  {SUBJECT_LINK_TYPES.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Texto del botón */}
+              <div className="space-y-1">
+                <label htmlFor={`link-${index}-label`} className="block text-xs text-white/40">
+                  Texto del botón{' '}
+                  <span className="text-white/20">(opcional)</span>
+                </label>
+                <input
+                  id={`link-${index}-label`}
+                  type="text"
+                  aria-label="Texto del botón"
+                  value={link.label}
+                  onChange={(e) =>
+                    dispatch({ type: 'UPDATE_FIELD', index, field: 'label', value: e.target.value })
+                  }
+                  placeholder="Ej: Ver apuntes"
+                  className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
+                />
+              </div>
+
+              {/* Enlace */}
+              <div className="space-y-1">
+                <label htmlFor={`link-${index}-url`} className="block text-xs text-white/40">Enlace</label>
+                <input
+                  id={`link-${index}-url`}
+                  type="url"
+                  aria-label="Enlace"
+                  value={link.url}
+                  onChange={(e) =>
+                    dispatch({ type: 'UPDATE_FIELD', index, field: 'url', value: e.target.value })
+                  }
+                  placeholder="https://..."
+                  className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
+                />
+              </div>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'ADD' })}
+            className="w-full rounded border border-dashed border-white/15 px-3 py-2 text-sm text-white/40 hover:border-white/25 hover:text-white/60 transition-colors cursor-pointer"
           >
-            Playlist de YouTube{' '}
-            <span className="font-normal normal-case tracking-normal text-white/30">
-              (opcional)
-            </span>
-          </label>
-          <input
-            id="subject-playlistUrl"
-            type="url"
-            name="playlistUrl"
-            defaultValue={subject?.playlistUrl ?? ''}
-            placeholder="Ej: https://www.youtube.com/playlist?list=..."
-            onBlur={handlePlaylistUrlBlur}
-            className={`w-full rounded border bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none ${
-              playlistUrlError
-                ? 'border-rose-400/50 focus:border-rose-400/70'
-                : 'border-white/10 focus:border-white/20'
-            }`}
-          />
-          {playlistUrlError && (
-            <p className="text-xs text-rose-400">{playlistUrlError}</p>
-          )}
+            + Agregar enlace
+          </button>
         </div>
-
-        <input type="hidden" name="playlistEnabled" value="true" />
 
         {state.message && !state.ok && (
           <p className="rounded border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">

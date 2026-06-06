@@ -23,6 +23,7 @@ import {
   type UserPreferences,
 } from '@/lib/preferences'
 import type { CommissionOption } from '@/lib/commission-preferences'
+import type { SubjectLinkDTO } from '@/lib/subjectLinks'
 
 interface CareerForMobile {
   nombre: string
@@ -38,7 +39,7 @@ interface CareerForMobile {
       slug: string
       nombre: string
       descripcion: string | null
-      driveUrl: string | null
+      links: SubjectLinkDTO[]
       commissions: CommissionOption[]
     }>
   }>
