@@ -191,11 +191,11 @@ function PracticeActions({
 }
 
 function AdvanceActions({ canAdvance, isLast }: { canAdvance: boolean; isLast: boolean }) {
-  const { actions, isPractica, state } = useQuiz()
+  const { actions, isPractica, isRanked, state } = useQuiz()
 
   return (
     <>
-      {!isPractica && !isLast ? (
+      {!isPractica && !isRanked && !isLast ? (
         <button type="button" onClick={actions.openSubmitDialog} className="inline-flex w-full items-center justify-center gap-2 border border-white/8 bg-surface-3 px-5 py-2.5 text-sm font-semibold text-white/85 transition-colors hover:border-rose-500/30 hover:bg-rose-500/5 hover:text-rose-300 cursor-pointer sm:w-auto">
           Entregar examen
         </button>
