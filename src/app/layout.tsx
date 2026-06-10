@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans, Sora } from 'next/font/google'
+import { Suspense, type ReactNode } from 'react'
 import './globals.css'
 import { getAdminClientSession } from '@/lib/auth'
 import { AdminSessionProvider } from '@/components/admin/AdminSessionProvider'
@@ -47,11 +48,16 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 }
 
-export default async function RootLayout({
+const anonymousAdminSession = { isAdmin: false, admin: null } as const
+
+async function AdminSessionBoundary({ children }: { children: ReactNode }) {
+  const session = await getAdminClientSession()
+  return <AdminSessionProvider session={session}>{children}</AdminSessionProvider>
+}
+
+export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const session = await getAdminClientSession()
-
   return (
     <html
       lang="es"
@@ -59,7 +65,15 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full bg-surface-0 font-sans text-white antialiased">
-        <AdminSessionProvider session={session}>{children}</AdminSessionProvider>
+        <Suspense
+          fallback={
+            <AdminSessionProvider session={anonymousAdminSession}>
+              {children}
+            </AdminSessionProvider>
+          }
+        >
+          <AdminSessionBoundary>{children}</AdminSessionBoundary>
+        </Suspense>
         <Toaster />
         <PWARegister />
       </body>

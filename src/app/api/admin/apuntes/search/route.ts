@@ -3,7 +3,6 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireAnyAdmin, adminCanManageYear } from '@/lib/auth'
 
-export const dynamic = 'force-dynamic'
 
 const querySchema = z.object({
   q: z.string().trim().max(120).default(''),

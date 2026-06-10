@@ -1,0 +1,88 @@
+plan: improve-performance
+meta:
+  objetivo: Ejecutar íntegramente docs/plans/improve_performance.md con cambios quirúrgicos, sin deuda técnica ni cambios de slugs.
+  dominio: nextjs + datos + frontend
+  creado: 2026-06-10T00:00:00-03:00
+  fases_totales: 4
+  fuente: docs/plans/improve_performance.md
+
+restricciones:
+  R1:
+    titulo: Slugs y rutas inmutables
+    contenido: No cambiar slugs, rutas ni slugs del mapa.
+  R2:
+    titulo: Alcance quirúrgico
+    contenido: No partir DashboardShell, no fusionar vistas del mapa, no cambiar TTLs ni la semántica de getLatestApuntes.
+  R3:
+    titulo: Invariantes del mapa
+    contenido: Preservar localStorage, evento de sincronización, copy por vista, gate de hidratación e initialMode.
+  R4:
+    titulo: Verificación y commits
+    contenido: Ejecutar typecheck y build por fase, tests al final y un commit convencional por fase sin atribución de IA.
+
+fases:
+  F1:
+    nombre: Cache Components
+    dominio: nextjs + datos
+    criticidad: critica
+    objetivo: Migrar caching, segment configs y boundaries según la fase 1 del plan fuente.
+    dependencias: []
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - next.config.ts
+        - src/lib/queries.ts
+        - src/lib/storage.ts
+        - src/app/layout.tsx
+        - src/app/**/loading.tsx
+        - src/app/**/page.tsx
+        - src/app/api/**/route.ts
+        - src/app/admin/actions.ts
+      supuestos:
+        - No existen acciones CRUD de categorías; el tag queda listo para invalidación cuando se incorporen.
+      deuda: []
+      notas: Build PPR exitoso; segundas visitas a home, materia y apunte ejecutaron cero queries reales. El apunte ejecutó una sola query en cache miss entre metadata y página.
+      timestamp: 2026-06-10T00:00:00-03:00
+  F2:
+    nombre: Upload paralelo
+    dominio: backend
+    criticidad: estandar
+    objetivo: Paralelizar compilación y subida de recursos con un cliente admin por batch.
+    dependencias: [F1]
+    estado: en_curso
+  F3:
+    nombre: Bundle
+    dominio: frontend
+    criticidad: estandar
+    objetivo: Lazy-load de extras del shell, simplificar calendario móvil y borrar assets muertos.
+    dependencias: [F2]
+    estado: pendiente
+  F4:
+    nombre: Refactor Mapa
+    dominio: frontend + dominio
+    criticidad: critica
+    objetivo: Extraer únicamente la lógica duplicada indicada, preservar invariantes y ampliar tests.
+    dependencias: [F3]
+    estado: pendiente
+
+estado_global:
+  estado: en_curso
+  fases:
+    F1: completada
+    F2: en_curso
+    F3: pendiente
+    F4: pendiente
+
+auditoria: null
+
+historial:
+  - timestamp: 2026-06-10T00:00:00-03:00
+    evento: plan_creado
+    detalle: Tracker creado desde el plan aprobado; F1 iniciada.
+  - timestamp: 2026-06-10T00:00:00-03:00
+    evento: fase_completada
+    fase: F1
+    validacion: typecheck, build y verificación de queries aprobados.
+  - timestamp: 2026-06-10T00:00:00-03:00
+    evento: fase_iniciada
+    fase: F2

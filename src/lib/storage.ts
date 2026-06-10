@@ -1,5 +1,5 @@
 import 'server-only'
-import { unstable_cache } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { createSupabaseAdminClient } from './supabase/admin'
 import { env } from '@/lib/env'
 import {
@@ -158,15 +158,15 @@ async function listQuizBanksUncached(
     .sort((a, b) => a.subidoEl.localeCompare(b.subidoEl))
 }
 
-export function listQuizBanks(
+export async function listQuizBanks(
   yearSlug: string,
   subjectSlug: string,
 ): Promise<QuizBankMeta[]> {
-  return unstable_cache(
-    () => listQuizBanksUncached(yearSlug, subjectSlug),
-    ['quiz-banks', yearSlug, subjectSlug],
-    { tags: [quizBanksCacheTag(yearSlug, subjectSlug)], revalidate: 3600 },
-  )()
+  'use cache'
+  cacheTag(quizBanksCacheTag(yearSlug, subjectSlug))
+  cacheLife({ revalidate: 3600 })
+
+  return listQuizBanksUncached(yearSlug, subjectSlug)
 }
 
 export async function getQuizBankMeta(

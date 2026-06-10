@@ -7,7 +7,6 @@ export const metadata: Metadata = {
   description: 'Elegí qué años, materias y comisiones querés ver en tu campus.',
 }
 
-export const revalidate = 300
 
 export default async function ConfigurarPage() {
   const career = await getCareer()

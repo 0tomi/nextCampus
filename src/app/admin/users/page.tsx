@@ -4,7 +4,6 @@ import { UserRole, UserStatus } from '../../../../prisma/generated/client/enums'
 import { prisma } from '@/lib/prisma'
 import { requireGeneralAdmin } from '@/lib/auth'
 
-export const dynamic = 'force-dynamic'
 
 function roleLabel(role: string) {
   if (role === UserRole.SUPERVISOR) return 'Supervisor'

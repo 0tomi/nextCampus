@@ -4,7 +4,6 @@ import { getSubjectQuizMeta } from '@/lib/queries'
 import { listQuizBanks, readQuizBanks } from '@/lib/storage'
 import { buildSet, flattenBank, toPublicQuestion } from '@/lib/domain/quiz-bank'
 
-export const dynamic = 'force-dynamic'
 
 const querySchema = z.object({
   subject: z.string().min(1),

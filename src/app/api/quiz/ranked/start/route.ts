@@ -6,7 +6,6 @@ import { buildSet, flattenBank, toPublicQuestion } from '@/lib/domain/quiz-bank'
 import { getRankedQuestionCount, RANKED_MIN_QUESTIONS, validateParticipantName } from '@/lib/domain/ranked-quiz'
 import { listQuizBanks, readQuizBank } from '@/lib/storage'
 
-export const dynamic = 'force-dynamic'
 
 const bodySchema = z.object({
   subject: z.string().min(1),

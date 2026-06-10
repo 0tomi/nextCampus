@@ -1,5 +1,5 @@
 import 'server-only'
-import { unstable_cache } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import type { Prisma } from '../../prisma/generated/client/client'
 import { prisma } from './prisma'
 import { countSubjectQuizBanks } from './storage'
@@ -197,13 +197,12 @@ function attachCommissionMetadataToSubject<
 
 // Lecturas públicas (anónimas). Sin datos sensibles.
 //
-// Cacheamos con unstable_cache + tags para deduplicar entre rutas y permitir
-// invalidación quirúrgica desde server actions con revalidateTag(). Es un
-// reemplazo intermedio del directivo "use cache" — funciona en 16.2 sin
-// activar cacheComponents.
+// Cacheamos las lecturas públicas por función y las invalidamos quirúrgicamente
+// desde las server actions mediante tags.
 
 const TAGS = {
   career: 'career',
+  categorias: 'categorias-apunte',
   latestApuntes: 'latest-apuntes',
   tiposEvento: 'tipos-evento',
   year: (slug: string) => `year:${slug}`,
@@ -260,7 +259,11 @@ function serializeApunteCard(apunte: Prisma.ApunteGetPayload<{ select: typeof ap
   }
 }
 
-export function getCareer() {
+export async function getCareer() {
+  'use cache'
+  cacheTag(TAGS.career)
+  cacheLife({ revalidate: 3600 })
+
   return prisma.career.findFirst({
     select: {
       id: true,
@@ -301,83 +304,32 @@ export function getCareer() {
   })
 }
 
-export function getYearBySlug(slug: string) {
-  return unstable_cache(
-    async () => {
-      const year = await prisma.academicYear.findUnique({
-        where: { slug },
+export async function getYearBySlug(slug: string) {
+  'use cache'
+  cacheTag(TAGS.year(slug), TAGS.career)
+  cacheLife({ revalidate: 3600 })
+
+  const year = await prisma.academicYear.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      slug: true,
+      nombre: true,
+      descripcion: true,
+      driveUrl: true,
+      playlistUrl: true,
+      playlistEnabled: true,
+      discordUrl: true,
+      discordDescripcion: true,
+      discordAltUrl: true,
+      discordAltDescripcion: true,
+      color: true,
+      subjects: {
+        orderBy: { nombre: 'asc' },
         select: {
           id: true,
           slug: true,
           nombre: true,
-          descripcion: true,
-          driveUrl: true,
-          playlistUrl: true,
-          playlistEnabled: true,
-          discordUrl: true,
-          discordDescripcion: true,
-          discordAltUrl: true,
-          discordAltDescripcion: true,
-          color: true,
-          subjects: {
-            orderBy: { nombre: 'asc' },
-            select: {
-              id: true,
-              slug: true,
-              nombre: true,
-              agendas: {
-                orderBy: { createdAt: 'asc' },
-                select: agendaWithEventosSelect,
-              },
-              commissions: {
-                orderBy: { nombre: 'asc' },
-                select: {
-                  id: true,
-                  slug: true,
-                  nombre: true,
-                },
-              },
-            },
-          },
-          career: { select: { nombre: true } },
-        },
-      })
-
-      if (!year) return null
-
-      return {
-        ...year,
-        subjects: year.subjects.map((subject) => attachCommissionMetadataToSubject(subject)),
-      }
-    },
-    ['year', slug],
-    { tags: [TAGS.year(slug), TAGS.career], revalidate: 3600 },
-  )()
-}
-
-export function getSubjectPageBySlug(slug: string) {
-  return unstable_cache(
-    async () => {
-      const subject = await prisma.subject.findUnique({
-        where: { slug },
-        select: {
-          id: true,
-          slug: true,
-          nombre: true,
-          descripcion: true,
-          links: {
-            select: { id: true, tipo: true, label: true, url: true, orden: true },
-            orderBy: { orden: 'asc' },
-          },
-          year: {
-            select: {
-              id: true,
-              slug: true,
-              nombre: true,
-              color: true,
-              career: { select: { nombre: true } },
-            },
-          },
           agendas: {
             orderBy: { createdAt: 'asc' },
             select: agendaWithEventosSelect,
@@ -390,112 +342,157 @@ export function getSubjectPageBySlug(slug: string) {
               nombre: true,
             },
           },
-          _count: { select: { apuntes: true } },
-          apuntes: {
-            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-            take: APUNTES_PAGE_SIZE + 1,
-            select: apunteCardSelect,
-          },
         },
-      })
-
-      if (!subject) return null
-
-      const [categorias, base] = await Promise.all([
-        prisma.categoria.findMany({ orderBy: { nombre: 'asc' }, select: categoriaSelect }),
-        Promise.resolve(attachCommissionMetadataToSubject({
-          ...subject,
-          apuntes: subject.apuntes.slice(0, APUNTES_PAGE_SIZE).map(serializeApunteCard),
-        })),
-      ])
-
-      return {
-        ...base,
-        categoriasDisponibles: categorias,
-        apuntesHasMore: subject.apuntes.length > APUNTES_PAGE_SIZE,
-        apuntesNextCursor:
-          subject.apuntes.length > APUNTES_PAGE_SIZE
-            ? subject.apuntes[APUNTES_PAGE_SIZE - 1]?.id ?? null
-            : null,
-        apuntesTotal: subject._count.apuntes,
-      }
+      },
+      career: { select: { nombre: true } },
     },
-    ['subject', slug],
-    { tags: [TAGS.subject(slug)], revalidate: 3600 },
-  )()
+  })
+
+  if (!year) return null
+
+  return {
+    ...year,
+    subjects: year.subjects.map((subject) => attachCommissionMetadataToSubject(subject)),
+  }
 }
 
-export function getApuntePageBySlug(subjectSlug: string, apunteSlug: string) {
-  return unstable_cache(
-    async () => {
-      const subject = await prisma.subject.findUnique({
-        where: { slug: subjectSlug },
+export async function getSubjectPageBySlug(slug: string) {
+  'use cache'
+  cacheTag(TAGS.subject(slug))
+  cacheLife({ revalidate: 3600 })
+
+  const subject = await prisma.subject.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      slug: true,
+      nombre: true,
+      descripcion: true,
+      links: {
+        select: { id: true, tipo: true, label: true, url: true, orden: true },
+        orderBy: { orden: 'asc' },
+      },
+      year: {
         select: {
           id: true,
           slug: true,
           nombre: true,
-          year: {
-            select: {
-              id: true,
-              slug: true,
-              nombre: true,
-              color: true,
-              career: { select: { nombre: true } },
-            },
-          },
-          apuntes: {
-            where: { slug: apunteSlug },
-            take: 1,
-            select: {
-              id: true,
-              titulo: true,
-              slug: true,
-              descripcionHtml: true,
-              createdAt: true,
-              createdBy: { select: { nombreUsuario: true } },
-              categorias: {
-                select: { categoria: { select: categoriaSelect } },
-                orderBy: { categoria: { nombre: 'asc' } },
-              },
-              recursos: {
-                orderBy: { orden: 'asc' },
-                select: {
-                  id: true,
-                  tipo: true,
-                  url: true,
-                  orden: true,
-                  nombre: true,
-                  storageKey: true,
-                  mimeType: true,
-                  sizeBytes: true,
-                },
-              },
-            },
-          },
+          color: true,
+          career: { select: { nombre: true } },
         },
-      })
-
-      const apunte = subject?.apuntes[0]
-      if (!subject || !apunte) return null
-
-      return {
-        subject: {
-          id: subject.id,
-          slug: subject.slug,
-          nombre: subject.nombre,
-          year: subject.year,
+      },
+      agendas: {
+        orderBy: { createdAt: 'asc' },
+        select: agendaWithEventosSelect,
+      },
+      commissions: {
+        orderBy: { nombre: 'asc' },
+        select: {
+          id: true,
+          slug: true,
+          nombre: true,
         },
-        apunte: {
-          ...apunte,
-          createdAt: apunte.createdAt.toISOString(),
-          createdByNombre: apunte.createdBy?.nombreUsuario ?? null,
-          categorias: apunte.categorias.map(({ categoria }) => categoria),
-        },
-      }
+      },
+      _count: { select: { apuntes: true } },
+      apuntes: {
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: APUNTES_PAGE_SIZE + 1,
+        select: apunteCardSelect,
+      },
     },
-    ['apunte-page', subjectSlug, apunteSlug],
-    { tags: [TAGS.subject(subjectSlug)], revalidate: 3600 },
-  )()
+  })
+
+  if (!subject) return null
+
+  const [categorias, base] = await Promise.all([
+    prisma.categoria.findMany({ orderBy: { nombre: 'asc' }, select: categoriaSelect }),
+    Promise.resolve(attachCommissionMetadataToSubject({
+      ...subject,
+      apuntes: subject.apuntes.slice(0, APUNTES_PAGE_SIZE).map(serializeApunteCard),
+    })),
+  ])
+
+  return {
+    ...base,
+    categoriasDisponibles: categorias,
+    apuntesHasMore: subject.apuntes.length > APUNTES_PAGE_SIZE,
+    apuntesNextCursor:
+      subject.apuntes.length > APUNTES_PAGE_SIZE
+        ? subject.apuntes[APUNTES_PAGE_SIZE - 1]?.id ?? null
+        : null,
+    apuntesTotal: subject._count.apuntes,
+  }
+}
+
+export async function getApuntePageBySlug(subjectSlug: string, apunteSlug: string) {
+  'use cache'
+  cacheTag(TAGS.subject(subjectSlug))
+  cacheLife({ revalidate: 3600 })
+
+  const subject = await prisma.subject.findUnique({
+    where: { slug: subjectSlug },
+    select: {
+      id: true,
+      slug: true,
+      nombre: true,
+      year: {
+        select: {
+          id: true,
+          slug: true,
+          nombre: true,
+          color: true,
+          career: { select: { nombre: true } },
+        },
+      },
+      apuntes: {
+        where: { slug: apunteSlug },
+        take: 1,
+        select: {
+          id: true,
+          titulo: true,
+          slug: true,
+          descripcionHtml: true,
+          createdAt: true,
+          createdBy: { select: { nombreUsuario: true } },
+          categorias: {
+            select: { categoria: { select: categoriaSelect } },
+            orderBy: { categoria: { nombre: 'asc' } },
+          },
+          recursos: {
+            orderBy: { orden: 'asc' },
+            select: {
+              id: true,
+              tipo: true,
+              url: true,
+              orden: true,
+              nombre: true,
+              storageKey: true,
+              mimeType: true,
+              sizeBytes: true,
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const apunte = subject?.apuntes[0]
+  if (!subject || !apunte) return null
+
+  return {
+    subject: {
+      id: subject.id,
+      slug: subject.slug,
+      nombre: subject.nombre,
+      year: subject.year,
+    },
+    apunte: {
+      ...apunte,
+      createdAt: apunte.createdAt.toISOString(),
+      createdByNombre: apunte.createdBy?.nombreUsuario ?? null,
+      categorias: apunte.categorias.map(({ categoria }) => categoria),
+    },
+  }
 }
 
 /**
@@ -520,6 +517,10 @@ export async function getUserNamesByAccountId(
 }
 
 export async function getCategoriasApunte(): Promise<CategoriaListItem[]> {
+  'use cache'
+  cacheTag(TAGS.categorias)
+  cacheLife({ revalidate: 3600 })
+
   return prisma.categoria.findMany({ orderBy: { nombre: 'asc' }, select: categoriaSelect })
 }
 
@@ -557,21 +558,20 @@ export async function getApuntesPage(input: {
 
 // Metadata mínima para resolver la key de Storage del banco de preguntas
 // (quizzes/{anioSlug}/{materiaSlug}/...) y los títulos de la UI de quiz.
-export function getSubjectQuizMeta(slug: string) {
-  return unstable_cache(
-    () =>
-      prisma.subject.findUnique({
-        where: { slug },
-        select: {
-          id: true,
-          slug: true,
-          nombre: true,
-          year: { select: { id: true, slug: true } },
-        },
-      }),
-    ['subject-quiz-meta', slug],
-    { tags: [TAGS.subject(slug)], revalidate: 3600 },
-  )()
+export async function getSubjectQuizMeta(slug: string) {
+  'use cache'
+  cacheTag(TAGS.subject(slug))
+  cacheLife({ revalidate: 3600 })
+
+  return prisma.subject.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      slug: true,
+      nombre: true,
+      year: { select: { id: true, slug: true } },
+    },
+  })
 }
 
 // Sin cache: usa includes para campos de edición que cambian con cada
@@ -676,211 +676,204 @@ export function getAdminSubjectBySlug(slug: string) {
   })
 }
 
-export const getTiposEvento = unstable_cache(
-  () => prisma.tipoEvento.findMany({ orderBy: { nombre: 'asc' } }),
-  ['tipos-evento'],
-  { tags: [TAGS.tiposEvento], revalidate: 86400 },
-)
+export async function getTiposEvento() {
+  'use cache'
+  cacheTag(TAGS.tiposEvento)
+  cacheLife({ revalidate: 86400 })
+
+  return prisma.tipoEvento.findMany({ orderBy: { nombre: 'asc' } })
+}
 
 // Períodos académicos (globales, no cuelgan de materia). Fechas serializadas a
 // "YYYY-MM-DD" para el cliente. Sin filtros de preferencias: aplican a todos.
-export const getPeriodos = unstable_cache(
-  async () => {
-    const rows = await prisma.periodoAcademico.findMany({
-      orderBy: { fechaInicio: 'asc' },
-      select: {
-        id: true,
-        categoria: true,
-        titulo: true,
-        fechaInicio: true,
-        fechaFin: true,
-      },
-    })
-    return rows.map((row) => ({
-      ...row,
-      fechaInicio: toDateKey(row.fechaInicio),
-      fechaFin: toDateKey(row.fechaFin),
-    }))
-  },
-  ['periodos'],
-  { tags: [TAGS.periodos], revalidate: 3600 },
-)
+export async function getPeriodos() {
+  'use cache'
+  cacheTag(TAGS.periodos)
+  cacheLife({ revalidate: 3600 })
+
+  const rows = await prisma.periodoAcademico.findMany({
+    orderBy: { fechaInicio: 'asc' },
+    select: {
+      id: true,
+      categoria: true,
+      titulo: true,
+      fechaInicio: true,
+      fechaFin: true,
+    },
+  })
+  return rows.map((row) => ({
+    ...row,
+    fechaInicio: toDateKey(row.fechaInicio),
+    fechaFin: toDateKey(row.fechaFin),
+  }))
+}
 
 // Cacheado 60s: el filtro "fecha >= ahora" se mueve con el reloj, pero a
 // nivel de la home con revalidate=300 ya estábamos sirviendo datos hasta
 // 5 min viejos. 60s es un buen balance entre frescura y carga a la DB.
-export function getUpcomingEventsCrossYear(limit = 6) {
-  return unstable_cache(
-    async () => {
-      const rows = await prisma.evento.findMany({
-        // "Próximo" es por DÍA, no por instante: un evento de hoy sigue
-        // apareciendo todo el día (incluido uno sin hora). Comparamos contra
-        // el inicio del día calendario de AR.
-        where: { fecha: { gte: arTodayBoundary() } },
-        orderBy: eventoOrderBy,
-        take: limit,
-        select: {
-          id: true,
-          titulo: true,
-          fecha: true,
-          hora: true,
-          tipoEvento: { select: { nombre: true } },
-          apuntes: {
-            orderBy: { createdAt: 'asc' },
-            select: {
-              apunte: {
-                select: {
-                  id: true,
-                  titulo: true,
-                  slug: true,
-                  subject: {
-                    select: { slug: true, year: { select: { slug: true } } },
-                  },
-                },
-              },
-            },
-          },
-          agenda: {
-            select: {
-              commissionId: true,
-              commission: {
-                select: {
-                  id: true,
-                  slug: true,
-                  nombre: true,
-                },
-              },
-              subject: {
-                select: { slug: true, nombre: true },
-              },
-            },
-          },
-        },
-      })
-      return rows.map((row) => ({
-        ...row,
-        fecha: toDateKey(row.fecha),
-        apuntes: row.apuntes.map(({ apunte }) => apunte),
-      }))
-    },
-    ['upcoming-events', String(limit)],
-    { tags: [TAGS.upcomingEvents], revalidate: 60 },
-  )()
-}
+export async function getUpcomingEventsCrossYear(limit = 6) {
+  'use cache'
+  cacheTag(TAGS.upcomingEvents)
+  cacheLife({ revalidate: 60 })
 
-export function getHomeCalendarEvents() {
-  return unstable_cache(
-    async () => {
-      const rows = await prisma.evento.findMany({
-        orderBy: eventoOrderBy,
+  const rows = await prisma.evento.findMany({
+    // "Próximo" es por DÍA, no por instante: un evento de hoy sigue
+    // apareciendo todo el día (incluido uno sin hora). Comparamos contra
+    // el inicio del día calendario de AR.
+    where: { fecha: { gte: arTodayBoundary() } },
+    orderBy: eventoOrderBy,
+    take: limit,
+    select: {
+      id: true,
+      titulo: true,
+      fecha: true,
+      hora: true,
+      tipoEvento: { select: { nombre: true } },
+      apuntes: {
+        orderBy: { createdAt: 'asc' },
         select: {
-          id: true,
-          titulo: true,
-          descripcionHtml: true,
-          fecha: true,
-          hora: true,
-          tipoEventoId: true,
-          tipoEvento: { select: { nombre: true } },
-          createdByUserId: true,
-          apuntes: {
-            orderBy: { createdAt: 'asc' },
-            select: {
-              apunte: {
-                select: {
-                  id: true,
-                  titulo: true,
-                  slug: true,
-                  subject: {
-                    select: { slug: true, year: { select: { slug: true } } },
-                  },
-                },
-              },
-            },
-          },
-          agenda: {
+          apunte: {
             select: {
               id: true,
-              commissionId: true,
-              commission: {
-                select: {
-                  id: true,
-                  slug: true,
-                  nombre: true,
-                },
-              },
+              titulo: true,
+              slug: true,
               subject: {
+                select: { slug: true, year: { select: { slug: true } } },
+              },
+            },
+          },
+        },
+      },
+      agenda: {
+        select: {
+          commissionId: true,
+          commission: {
+            select: {
+              id: true,
+              slug: true,
+              nombre: true,
+            },
+          },
+          subject: {
+            select: { slug: true, nombre: true },
+          },
+        },
+      },
+    },
+  })
+  return rows.map((row) => ({
+    ...row,
+    fecha: toDateKey(row.fecha),
+    apuntes: row.apuntes.map(({ apunte }) => apunte),
+  }))
+}
+
+export async function getHomeCalendarEvents() {
+  'use cache'
+  cacheTag(TAGS.upcomingEvents, TAGS.career)
+  cacheLife({ revalidate: 300 })
+
+  const rows = await prisma.evento.findMany({
+    orderBy: eventoOrderBy,
+    select: {
+      id: true,
+      titulo: true,
+      descripcionHtml: true,
+      fecha: true,
+      hora: true,
+      tipoEventoId: true,
+      tipoEvento: { select: { nombre: true } },
+      createdByUserId: true,
+      apuntes: {
+        orderBy: { createdAt: 'asc' },
+        select: {
+          apunte: {
+            select: {
+              id: true,
+              titulo: true,
+              slug: true,
+              subject: {
+                select: { slug: true, year: { select: { slug: true } } },
+              },
+            },
+          },
+        },
+      },
+      agenda: {
+        select: {
+          id: true,
+          commissionId: true,
+          commission: {
+            select: {
+              id: true,
+              slug: true,
+              nombre: true,
+            },
+          },
+          subject: {
+            select: {
+              id: true,
+              slug: true,
+              nombre: true,
+              commissions: {
+                orderBy: { nombre: 'asc' },
+                select: { id: true, slug: true, nombre: true },
+              },
+              year: {
                 select: {
                   id: true,
                   slug: true,
                   nombre: true,
-                  commissions: {
-                    orderBy: { nombre: 'asc' },
-                    select: { id: true, slug: true, nombre: true },
-                  },
-                  year: {
-                    select: {
-                      id: true,
-                      slug: true,
-                      nombre: true,
-                      orden: true,
-                    },
-                  },
+                  orden: true,
                 },
               },
             },
           },
         },
-      })
-      return rows.map((row) => ({
-        ...row,
-        fecha: toDateKey(row.fecha),
-        apuntes: row.apuntes.map(({ apunte }) => apunte),
-      }))
+      },
     },
-    ['home-calendar-events'],
-    { tags: [TAGS.upcomingEvents, TAGS.career], revalidate: 300 },
-  )()
+  })
+  return rows.map((row) => ({
+    ...row,
+    fecha: toDateKey(row.fecha),
+    apuntes: row.apuntes.map(({ apunte }) => apunte),
+  }))
 }
 
-export function getLatestApuntes() {
+export async function getLatestApuntes() {
+  'use cache'
+  cacheTag(TAGS.latestApuntes, TAGS.career)
+  cacheLife({ revalidate: 300 })
+
   // Traemos todos los apuntes ordenados por fecha y dejamos que el cliente
   // filtre según los años/materias elegidos y recorte a los últimos. Si
   // limitáramos acá, un año podría quedarse sin apuntes en el home solo
   // porque sus apuntes no entran en los más nuevos del campus entero.
-  return unstable_cache(
-    async () => {
-      const rows = await prisma.apunte.findMany({
-        orderBy: { createdAt: 'desc' },
+  const rows = await prisma.apunte.findMany({
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      titulo: true,
+      slug: true,
+      createdAt: true,
+      subject: {
         select: {
-          id: true,
-          titulo: true,
           slug: true,
-          createdAt: true,
-          subject: {
+          nombre: true,
+          year: {
             select: {
               slug: true,
               nombre: true,
-              year: {
-                select: {
-                  slug: true,
-                  nombre: true,
-                },
-              },
             },
           },
         },
-      })
-      // unstable_cache serializa a JSON: un Date vuelve como string en los
-      // cache-hits. Normalizamos a string acá para que el contrato sea estable
-      // en hit y en miss (mismo patrón que `fecha: toDateKey(...)` arriba).
-      return rows.map((apunte) => ({
-        ...apunte,
-        createdAt: apunte.createdAt.toISOString(),
-      }))
+      },
     },
-    ['latest-apuntes'],
-    { tags: [TAGS.latestApuntes, TAGS.career], revalidate: 300 },
-  )()
+  })
+  return rows.map((apunte) => ({
+    ...apunte,
+    createdAt: apunte.createdAt.toISOString(),
+  }))
 }
 
 // ---------------------------------------------------------------------------

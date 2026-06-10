@@ -4,7 +4,6 @@ import { requireGeneralAdmin } from '@/lib/auth'
 import { AdminUserForm } from '../UserForm'
 import { createAdminCampusAction } from '../actions'
 
-export const dynamic = 'force-dynamic'
 
 export default async function CreateAdminUserPage() {
   await requireGeneralAdmin()

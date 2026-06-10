@@ -5,7 +5,6 @@ import { getSubjectQuizMeta } from '@/lib/queries'
 import { getQuestionFromBank, gradeQuestion, parseQuestionId, resumirIntento, type GradeResult, type QuizBankFile } from '@/lib/domain/quiz-bank'
 import { readQuizBank } from '@/lib/storage'
 
-export const dynamic = 'force-dynamic'
 
 const userAnswerSchema = z.union([
   z.number().int(),

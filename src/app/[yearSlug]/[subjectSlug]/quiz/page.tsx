@@ -16,7 +16,6 @@ export const metadata: Metadata = {
   description: 'Practicá preguntas por unidad para preparar la materia.',
 }
 
-export const revalidate = 3600
 
 export default async function QuizPage({
   params,

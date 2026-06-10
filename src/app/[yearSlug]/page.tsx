@@ -7,7 +7,6 @@ export const metadata: Metadata = {
   description: 'Accedé a materias, calendario y apuntes del año académico.',
 }
 
-export const revalidate = 300
 
 export default async function YearPage({
   params,

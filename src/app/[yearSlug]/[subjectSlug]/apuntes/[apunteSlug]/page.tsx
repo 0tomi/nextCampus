@@ -9,7 +9,6 @@ import { getApuntePageBySlug } from '@/lib/queries'
 import { SafeHtml } from '@/components/ui/SafeHtml'
 import { UploaderByline } from '@/components/ui/UploaderByline'
 
-export const revalidate = 300
 
 type ApuntePageParams = {
   yearSlug: string

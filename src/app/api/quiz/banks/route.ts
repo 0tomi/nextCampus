@@ -3,7 +3,6 @@ import { z } from 'zod'
 import { getSubjectQuizMeta } from '@/lib/queries'
 import { listQuizBanks } from '@/lib/storage'
 
-export const dynamic = 'force-dynamic'
 
 const querySchema = z.object({ subject: z.string().min(1) })
 

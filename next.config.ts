@@ -15,6 +15,7 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  cacheComponents: true,
   // esbuild tiene binarios nativos por plataforma; lo usamos solo en server para
   // compilar apuntes React subidos por admins, así que Next no debe empaquetarlo
   // dentro del bundle de rutas.

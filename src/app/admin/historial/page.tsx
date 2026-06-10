@@ -4,7 +4,6 @@ import { AUDIT_ACTION_LABELS, type AuditAction, type AuditDetail } from '@/lib/a
 import { auditLogScopeWhere, userHasScopedAuditWhere } from '@/lib/audit-history-scope'
 import { HistorialList, type HistorialEntry, type HistorialUserOption } from './HistorialList'
 
-export const dynamic = 'force-dynamic'
 
 const PAGE_SIZE = 20
 

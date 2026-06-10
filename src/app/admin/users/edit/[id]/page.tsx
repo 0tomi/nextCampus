@@ -6,7 +6,6 @@ import { requireGeneralAdmin } from '@/lib/auth'
 import { AdminUserForm } from '../../UserForm'
 import { updateAdminCampusAction } from '../../actions'
 
-export const dynamic = 'force-dynamic'
 
 interface EditAdminUserPageProps {
   params: Promise<{ id: string }>

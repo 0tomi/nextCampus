@@ -73,8 +73,8 @@ async function requireAuth(scope: AdminAuthScope = 'any') {
 }
 
 async function revalidateSubjectContent(subjectSlug: string): Promise<void> {
-  // Invalida los caches granulares (unstable_cache) por tag. Los revalidatePath
-  // quedan como red de seguridad para la ISR de página completa.
+  // Invalida los caches granulares por tag. Los revalidatePath quedan como
+  // red de seguridad para las rutas afectadas.
   revalidateTag(queryTags.subject(subjectSlug))
   revalidateTag(queryTags.upcomingEvents)
   revalidateTag(queryTags.latestApuntes)
@@ -1869,6 +1869,7 @@ export async function createCommissionAction(
     return created
   })
 
+  revalidateTag(queryTags.career)
   await revalidateSubjectContent(scope.subjectSlug)
   await recordAudit({
     userId: scope.admin.id,

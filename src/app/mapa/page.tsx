@@ -17,7 +17,6 @@ export const metadata: Metadata = {
   description: 'Explorá el avance de materias y correlativas de la carrera.',
 }
 
-export const revalidate = 300;
 
 function DashboardBrand() {
   return <CampusHeaderBrand />;

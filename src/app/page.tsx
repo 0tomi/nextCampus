@@ -23,7 +23,6 @@ export const metadata: Metadata = {
   description: 'Campus académico con calendario, apuntes y práctica por materia.',
 }
 
-export const revalidate = 300
 
 export default async function HomePage() {
   const cookieStore = await cookies()

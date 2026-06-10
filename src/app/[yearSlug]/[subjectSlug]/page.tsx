@@ -7,7 +7,6 @@ export const metadata: Metadata = {
   description: 'Consultá el calendario, apuntes y quiz de la materia.',
 }
 
-export const revalidate = 300
 
 export default async function SubjectPage({
   params,

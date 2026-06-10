@@ -3,7 +3,6 @@ import { requireAnyAdmin } from '@/lib/auth'
 import { ProfileForm } from './ProfileForm'
 import { updateAdminProfileAction, updateAdminPasswordAction } from './actions'
 
-export const dynamic = 'force-dynamic'
 
 export function roleLabel(role: string) {
   if (role === 'ADMIN') return 'Admin'

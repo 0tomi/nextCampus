@@ -4,7 +4,6 @@ import { prisma } from '@/lib/prisma'
 import { getSubjectQuizMeta } from '@/lib/queries'
 import { RANKED_TOP_LIMIT } from '@/lib/domain/ranked-quiz'
 
-export const dynamic = 'force-dynamic'
 
 const querySchema = z.object({
   subject: z.string().min(1),

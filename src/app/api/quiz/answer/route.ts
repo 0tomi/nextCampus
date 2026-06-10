@@ -10,7 +10,6 @@ import {
   type QuizBankFile,
 } from '@/lib/domain/quiz-bank'
 
-export const dynamic = 'force-dynamic'
 
 const userAnswerSchema = z.union([
   z.number().int(),

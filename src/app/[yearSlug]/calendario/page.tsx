@@ -15,7 +15,6 @@ export const metadata: Metadata = {
   description: 'Consultá las fechas y actividades de las materias del año.',
 }
 
-export const revalidate = 300
 
 export default async function YearCalendarPage({
   params,
