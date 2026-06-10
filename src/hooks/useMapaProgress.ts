@@ -8,7 +8,8 @@ import { getMapaProgressSnapshot, subscribeMapaProgress, writeMapaProgress } fro
 const subscribeHydration = () => () => undefined;
 const getHydratedSnapshot = () => true;
 const getServerHydratedSnapshot = () => false;
-const getServerProgressSnapshot = () => [] as string[];
+const EMPTY_SERVER_PROGRESS: string[] = [];
+const getServerProgressSnapshot = () => EMPTY_SERVER_PROGRESS;
 
 export function useMapaProgress() {
   const completed = useSyncExternalStore(

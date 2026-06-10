@@ -87,17 +87,49 @@ fases:
     criticidad: critica
     objetivo: Extraer únicamente la lógica duplicada indicada, preservar invariantes y ampliar tests.
     dependencias: [F3]
-    estado: en_curso
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/lib/domain/mapa/subjectQueries.ts
+        - src/lib/domain/mapa/subjectQueries.test.ts
+        - src/lib/domain/mapa/correlativasData.ts
+        - src/hooks/useSubjectSelection.ts
+        - src/hooks/useMapaProgress.ts
+        - src/components/mapa/MapaResetDialog.tsx
+        - src/components/mapa/MapaCorrelativas.tsx
+        - src/components/mapa/MapaCorrelativasMobile.tsx
+        - src/components/mapa/MapaVisualCorrelativas.tsx
+      supuestos: []
+      deuda: []
+      notas: Tests de dominio, typecheck, build y smoke desktop/mobile/visual aprobados. Se preservaron slugs, storage key, evento e initialMode.
+      timestamp: 2026-06-10T00:00:00-03:00
 
 estado_global:
-  estado: en_curso
+  estado: completado
   fases:
     F1: completada
     F2: completada
     F3: completada
-    F4: en_curso
+    F4: completada
 
-auditoria: null
+auditoria:
+  cobertura:
+    cache_components: completada
+    uploads_paralelos: completada
+    bundle: completada
+    mapa: completada
+  consistencia:
+    - No se modificaron slugs ni rutas.
+    - Se preservaron TTLs y la semántica de getLatestApuntes.
+    - Se preservaron la key, el evento y los modos iniciales del mapa.
+  verificacion:
+    - pnpm test: 29 suites y 207 tests aprobados.
+    - pnpm typecheck: aprobado.
+    - pnpm build: aprobado con Cache Components y PPR.
+    - React Doctor: sin regresiones aplicables; el único warning es falso positivo por estados independientes según la regla del proyecto.
+    - Playwright: desktop, mobile y visual aprobados, incluida persistencia y sincronización entre pestañas.
+    - Bundle inicial de DashboardShell en /mapa reducido 20123 bytes respecto de F2.
+  deuda: []
 
 historial:
   - timestamp: 2026-06-10T00:00:00-03:00
@@ -124,3 +156,10 @@ historial:
   - timestamp: 2026-06-10T00:00:00-03:00
     evento: fase_iniciada
     fase: F4
+  - timestamp: 2026-06-10T00:00:00-03:00
+    evento: fase_completada
+    fase: F4
+    validacion: tests, typecheck, build, React Doctor revisado y smoke Playwright aprobados.
+  - timestamp: 2026-06-10T00:00:00-03:00
+    evento: plan_cerrado
+    detalle: Auditoría integral aprobada sin deuda técnica.

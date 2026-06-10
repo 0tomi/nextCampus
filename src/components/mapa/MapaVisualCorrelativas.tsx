@@ -37,9 +37,10 @@ import {
   MAPA_WORLD_WIDTH,
   type MapaCamera,
 } from '@/lib/domain/mapa/visualLayout';
-import { getMissingCorrelatives, getSubjectName, getUnlocks } from '@/lib/domain/mapa/subjectQueries';
+import { canOpenSubjectPage, getMissingCorrelatives, getSubjectName, getUnlocks } from '@/lib/domain/mapa/subjectQueries';
 import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
 import { useMapaProgress } from '@/hooks/useMapaProgress';
+import { useSubjectSelection } from '@/hooks/useSubjectSelection';
 import { useMapaViewport } from '@/hooks/useMapaViewport';
 import { cn } from '@/lib/utils';
 import { yearSlugFromNumber } from '@/lib/slug';
@@ -55,19 +56,16 @@ const EMPTY_AVAILABLE_SUBJECT_SLUGS: string[] = [];
 const EMPTY_HIGHLIGHT_SLUGS: string[] = [];
 
 export function MapaVisualCorrelativas({ availableSubjectSlugs = EMPTY_AVAILABLE_SUBJECT_SLUGS }: MapaVisualCorrelativasProps) {
-  const [selectedSlug, setSelectedSlug] = useState(subjectsData[0]?.slug ?? '');
   const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
-  const { completed, isHydrated, subjectStatuses, toggleSubject } = useMapaProgress();
+  const progress = useMapaProgress();
+  const { completed, isHydrated, subjectStatuses } = progress;
+  const { selectedMissing, selectedSlug, selectedStatus, selectedSubject, selectedUnlocks, selectSubject: setSelectedSubject, toggleSubject } = useSubjectSelection(progress);
   const availableSlugs = useMemo(() => new Set(availableSubjectSlugs), [availableSubjectSlugs]);
   const allEdges = useMemo(() => getMapaVisualEdges(), []);
   const worldHeight = useMemo(() => getMapaWorldHeight(), []);
   const viewport = useMapaViewport(worldHeight);
 
-  const selectedSubject = subjectsData.find((subject) => subject.slug === selectedSlug) ?? subjectsData[0];
-  const selectedStatus = selectedSubject ? subjectStatuses[selectedSubject.slug] : 'UNLOCKED';
-  const selectedUnlocks = selectedSubject ? getUnlocks(selectedSubject.slug) : [];
-  const selectedMissing = selectedSubject ? getMissingCorrelatives(selectedSubject, completed) : [];
   const activeSlug = hoveredSlug ?? selectedSlug;
   const activeSubject = subjectsData.find((subject) => subject.slug === activeSlug);
   const activeChain = new Set<string>([
@@ -77,13 +75,8 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = EMPTY_AVAILABLE
   ]);
 
   const selectSubject = (subject: SubjectNode) => {
-    setSelectedSlug(subject.slug);
+    setSelectedSubject(subject.slug);
     setIsPanelOpen(true);
-  };
-
-  const markSubjectProgress = (subject: SubjectNode) => {
-    setSelectedSlug(subject.slug);
-    toggleSubject(subject);
   };
 
   if (!isHydrated) {
@@ -128,7 +121,7 @@ export function MapaVisualCorrelativas({ availableSubjectSlugs = EMPTY_AVAILABLE
           selectedUnlocks={selectedUnlocks}
           onCenterSubject={viewport.moveCameraToSubject}
           onClose={() => setIsPanelOpen(false)}
-          onToggleSubject={markSubjectProgress}
+          onToggleSubject={toggleSubject}
         />
       ) : null}
     </section>
@@ -425,7 +418,7 @@ function MapaVisualDetailsPanel({
   onClose: () => void;
   onToggleSubject: (subject: SubjectNode) => void;
 }) {
-  const canOpenSubject = availableSlugs.size === 0 || availableSlugs.has(selectedSubject.slug);
+  const canOpenSubject = canOpenSubjectPage(availableSlugs, selectedSubject.slug);
 
   return (
     <aside

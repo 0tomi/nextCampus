@@ -6,6 +6,8 @@ const P3 = '';
 const P4 = '';
 const P5 = '';
 
+// Invariante: cada slug debe coincidir exactamente con el slug de la materia en DB.
+// Los links públicos y el progreso guardado dependen de esa identidad.
 const S = {
   sistemas: `${P1}sistemas-y-organizaciones`,
   fundamentosProgramacion: `${P1}fundamentos-de-programacion`,

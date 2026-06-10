@@ -16,7 +16,6 @@ import {
   Sparkles,
   Unlock,
 } from 'lucide-react';
-import { subjectsData } from '@/lib/domain/mapa/correlativasData';
 import {
   DESKTOP_STATUS_LABELS as STATUS_LABELS,
   MAPA_YEARS,
@@ -25,20 +24,26 @@ import {
   type MapaYear,
 } from '@/lib/domain/mapa/mapaConstants';
 import {
+  canOpenSubjectPage,
+  filterSubjects,
+  getSuggestedSubjects,
+  groupSubjectsByYear,
   getMissingCorrelatives,
   getSubjectName,
   getUnlocks,
+  resolveSubjectSlugs,
+  type SubjectsByYear,
 } from '@/lib/domain/mapa/subjectQueries';
 import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
 import { useMapaProgress } from '@/hooks/useMapaProgress';
+import { useSubjectSelection } from '@/hooks/useSubjectSelection';
 import { useSuggestedYear } from '@/hooks/useSuggestedYear';
 import { cn } from '@/lib/utils';
 import { yearSlugFromNumber } from '@/lib/slug';
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes';
-import { AlertDialog } from '@/components/ui/AlertDialog';
+import { MapaResetDialog } from './MapaResetDialog';
 
 type StatusFilter = 'ALL' | SubjectStatus;
-type SubjectsByYear = Record<MapaYear, SubjectNode[]>;
 
 type MapaCorrelativasProps = {
   availableSubjectSlugs?: string[];
@@ -78,14 +83,14 @@ export function MapaCorrelativas({
 }: MapaCorrelativasProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
-  const [selectedSubjectSlug, setSelectedSubjectSlug] = useState(subjectsData[0]?.slug ?? '');
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const progress = useMapaProgress();
+  const selection = useSubjectSelection(progress);
   const derived = useMapaDerivedState({
     availableSubjectSlugs,
     completed: progress.completed,
     searchTerm,
-    selectedSubjectSlug,
+    selection,
     statusFilter,
     subjectStatuses: progress.subjectStatuses,
   });
@@ -94,20 +99,15 @@ export function MapaCorrelativas({
     autocompleteYear: progress.autocompleteYear,
     onAskReset: () => setConfirmResetOpen(true),
     onSearchTermChange: setSearchTerm,
-    onSelectSubject: setSelectedSubjectSlug,
+    onSelectSubject: selection.selectSubject,
     onStatusFilterChange: setStatusFilter,
-    onToggleSubject: (subject) => {
-      const currentStatus = progress.subjectStatuses[subject.slug];
-      setSelectedSubjectSlug(subject.slug);
-      if (currentStatus === 'LOCKED') return;
-      progress.toggleSubject(subject);
-    },
+    onToggleSubject: selection.toggleSubject,
   };
 
   const confirmReset = () => {
     setConfirmResetOpen(false);
     progress.reset();
-    setSelectedSubjectSlug(subjectsData[0]?.slug ?? '');
+    selection.resetSelection();
   };
 
   if (!progress.isHydrated) return <MapaLoadingState />;
@@ -125,17 +125,13 @@ export function MapaCorrelativas({
         actions={actions}
         completed={progress.completed}
         derived={derived}
-        selectedSubjectSlug={selectedSubjectSlug}
+        selectedSubjectSlug={selection.selectedSlug}
         subjectStatuses={progress.subjectStatuses}
       />
-      <AlertDialog
+      <MapaResetDialog
         open={confirmResetOpen}
         onClose={() => setConfirmResetOpen(false)}
         onConfirm={confirmReset}
-        title="Reiniciar el progreso del mapa"
-        description="Se va a borrar todo el avance que marcaste en el mapa de correlativas. Esta acción no se puede deshacer."
-        confirmText="Reiniciar"
-        variant="destructive"
       />
     </div>
   );
@@ -145,83 +141,40 @@ function useMapaDerivedState({
   availableSubjectSlugs,
   completed,
   searchTerm,
-  selectedSubjectSlug,
+  selection,
   statusFilter,
   subjectStatuses,
 }: {
   availableSubjectSlugs: string[];
   completed: string[];
   searchTerm: string;
-  selectedSubjectSlug: string;
+  selection: ReturnType<typeof useSubjectSelection>;
   statusFilter: StatusFilter;
   subjectStatuses: Record<string, SubjectStatus>;
 }): MapaDerivedState {
   const availableSlugs = useMemo(() => new Set(availableSubjectSlugs), [availableSubjectSlugs]);
   const suggestedYearToComplete = useSuggestedYear(completed) as MapaYear | null;
+  const filteredSubjects = filterSubjects({ searchTerm, statusFilter, subjectStatuses });
+  const {
+    selectedMissing,
+    selectedStatus,
+    selectedSubject,
+    selectedUnlocks,
+  } = selection;
 
-  return useMemo(() => {
-    const filteredSubjects = getFilteredSubjects(searchTerm, statusFilter, subjectStatuses);
-    const selectedSubject = getSelectedSubject(selectedSubjectSlug);
-    const selectedStatus = subjectStatuses[selectedSubject.slug] ?? 'UNLOCKED';
-    const selectedMissing = getMissingCorrelatives(selectedSubject, completed);
-    const selectedUnlocks = getUnlocks(selectedSubject.slug);
-    const selectedDirectUnlocks = selectedUnlocks.slice(0, 4);
-
-    return {
-      availableSlugs,
-      filteredSubjects,
-      selectedDirectUnlocks,
-      selectedMissing,
-      selectedMissingSubjects: resolveSubjectSlugs(selectedMissing).slice(0, 5),
-      selectedStatus,
-      selectedSubject,
-      selectedUnlocks,
-      subjectsByYear: groupSubjectsByYear(filteredSubjects),
-      suggestedSubjects: getSuggestedSubjects(subjectStatuses),
-      suggestedYearToComplete,
-    };
-  }, [availableSlugs, completed, searchTerm, selectedSubjectSlug, statusFilter, subjectStatuses, suggestedYearToComplete]);
-}
-
-function getFilteredSubjects(
-  searchTerm: string,
-  statusFilter: StatusFilter,
-  subjectStatuses: Record<string, SubjectStatus>,
-) {
-  const normalizedSearch = searchTerm.trim().toLowerCase();
-
-  return subjectsData.filter((subject) => {
-    const matchesSearch =
-      normalizedSearch.length === 0 ||
-      subject.nombre.toLowerCase().includes(normalizedSearch) ||
-      subject.codigo.includes(normalizedSearch);
-    const matchesStatus = statusFilter === 'ALL' || subjectStatuses[subject.slug] === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-}
-
-function getSelectedSubject(selectedSubjectSlug: string) {
-  return subjectsData.find((subject) => subject.slug === selectedSubjectSlug) ?? subjectsData[0];
-}
-
-function getSuggestedSubjects(subjectStatuses: Record<string, SubjectStatus>) {
-  return subjectsData
-    .filter((subject) => subjectStatuses[subject.slug] === 'UNLOCKED')
-    .sort((a, b) => getUnlocks(b.slug).length - getUnlocks(a.slug).length)
-    .slice(0, 4);
-}
-
-function resolveSubjectSlugs(slugs: string[]) {
-  return slugs
-    .map((slug) => subjectsData.find((subject) => subject.slug === slug))
-    .filter((subject): subject is SubjectNode => Boolean(subject));
-}
-
-function groupSubjectsByYear(subjects: SubjectNode[]) {
-  const grouped: SubjectsByYear = { 1: [], 2: [], 3: [], 4: [], 5: [] };
-  for (const subject of subjects) grouped[subject.year as MapaYear].push(subject);
-  return grouped;
+  return {
+    availableSlugs,
+    filteredSubjects,
+    selectedDirectUnlocks: selectedUnlocks.slice(0, 4),
+    selectedMissing,
+    selectedMissingSubjects: resolveSubjectSlugs(selectedMissing).slice(0, 5),
+    selectedStatus,
+    selectedSubject,
+    selectedUnlocks,
+    subjectsByYear: groupSubjectsByYear(filteredSubjects),
+    suggestedSubjects: getSuggestedSubjects(subjectStatuses, 4),
+    suggestedYearToComplete,
+  };
 }
 
 function MapaLoadingState() {
@@ -955,7 +908,7 @@ function MapaSubjectCard({
   const isCompleted = status === 'COMPLETED';
   const isRequirement = !isCompleted && selectedSubject.correlativas.includes(subject.slug);
   const missing = getMissingCorrelatives(subject, completed);
-  const hasPage = availableSlugs.size === 0 || availableSlugs.has(subject.slug);
+  const hasPage = canOpenSubjectPage(availableSlugs, subject.slug);
 
   return (
     <div
