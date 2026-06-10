@@ -20,8 +20,10 @@ Pautas de entrada:
 
 Tipos de pregunta que podés usar (solo estos tres):
 - "single": una sola opción correcta entre varias.
-- "multiple": varias opciones correctas. Indicá en el enunciado cuántas marcar (ej: "Seleccioná 2 opciones").
+- "multiple": varias opciones correctas. NO digas en el enunciado cuántas hay que marcar: revelarlo regala información y vuelve la pregunta más fácil. Variá a lo largo del banco cuántas opciones hay (4 a 6) y cuántas son correctas, sin patrón fijo: como el estudiante no sabe el número, una sola correcta entre varias es válida y difícil. Lo único que conviene evitar es que TODAS sean correctas.
 - "truefalse": una afirmación que es inequívocamente verdadera o falsa.
+
+Usá los tres tipos a lo largo del banco y que "single" no domine. Como referencia, para ~12 preguntas: alrededor de la mitad "single" y el resto repartido entre "multiple" y "truefalse".
 
 Para preguntas sobre código o salida de comandos, usá "single" o "multiple" e incluí el fragmento dentro del texto del enunciado (se muestra como texto plano, sin imágenes). Mantené esos fragmentos cortos.
 
@@ -42,7 +44,8 @@ Cómo construir las opciones incorrectas (distractores) para que sean plausibles
 - Generalización indebida: tomar algo verdadero y agregarle "siempre" o "nunca" que lo vuelve falso.
 - Plausible pero técnicamente falso: lo que alguien creería por intuición sin haber estudiado.
 - Datos numéricos cercanos pero incorrectos (años, tamaños, cantidades).
-- Evitá: opciones absurdas, que la correcta sea siempre la más larga, y opciones que se contradigan entre sí. Mantené todas las opciones de longitud parecida.
+- La forma no debe delatar el fondo: la correcta no puede ser sistemáticamente la más larga ni la más detallada. A propósito, a veces hacé que el distractor más largo sea el incorrecto, y variá la posición de la correcta entre preguntas (que no caiga siempre en el mismo lugar). Truco para chequear: tapá la respuesta correcta y leé solo las opciones; si se adivina por la forma, rehacela.
+- Evitá: opciones absurdas, opciones que se contradigan exactamente de a pares (delatan que la correcta es una de las dos), y distractores que parafraseen la correcta (crean dos respuestas válidas). Mantené las opciones con estructura y tecnicismo parejos.
 
 Para Verdadero/Falso:
 - La afirmación debe ser inequívocamente V o F, no interpretable.
@@ -70,7 +73,7 @@ El formato del JSON que debés devolver tiene que seguir EXACTAMENTE esta estruc
         },
         {
           "type": "multiple",
-          "question": "¿Cuáles de los siguientes son características del concepto Y? (Seleccioná 2 opciones)",
+          "question": "¿Cuáles de los siguientes son características del concepto Y?",
           "options": ["Característica A", "Característica B", "Característica C", "Característica D"],
           "answer": [0, 2],
           "explanation": "A y C son correctas porque... B y D son incorrectas porque..."
@@ -89,7 +92,7 @@ El formato del JSON que debés devolver tiene que seguir EXACTAMENTE esta estruc
 Reglas del formato:
 - "type" es exactamente uno de: "single", "multiple", "truefalse".
 - En "single": "answer" es el índice (0-based) de la única opción correcta. Requiere "options" con mínimo 2 elementos.
-- En "multiple": "answer" es un array de índices (0-based) de las opciones correctas, sin repetir. Requiere "options" con mínimo 2 elementos.
+- En "multiple": "answer" es un array de índices (0-based) de las opciones correctas, sin repetir. Requiere "options" con mínimo 2 elementos. NO declares en el enunciado cuántas hay que marcar.
 - En "truefalse": "answer" es true o false (booleano, sin comillas). NO lleva campo "options".
 - "explanation" es OBLIGATORIA en todos los tipos — explicá por qué la respuesta es correcta y por qué las otras opciones no lo son.
 - Cubrí todas las unidades del material. Apuntá a preguntas conceptuales, no triviales.

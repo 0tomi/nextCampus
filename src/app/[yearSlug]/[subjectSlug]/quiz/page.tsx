@@ -80,21 +80,9 @@ export default async function QuizPage({
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
-        <div className="mb-10">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/36">
-            Modo estudio
-          </p>
-          <h1 className="mt-3 break-words font-display text-4xl font-black tracking-tight text-white">
-            Quiz · {subject.nombre}
-          </h1>
-          <p className="mt-3 max-w-xl text-sm leading-7 text-white/52">
-            Elegí uno o varios bancos de preguntas, configurá tu práctica y
-            poné a prueba lo que sabés.
-          </p>
-        </div>
-
         <QuizRunner
           subjectSlug={subject.slug}
+          subjectNombre={subject.nombre}
           bancos={bancos}
           yearId={subject.year.id}
         />
