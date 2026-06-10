@@ -65,22 +65,37 @@ fases:
     criticidad: estandar
     objetivo: Lazy-load de extras del shell, simplificar calendario móvil y borrar assets muertos.
     dependencias: [F2]
-    estado: en_curso
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/components/shell/DashboardShell.tsx
+        - src/components/year/YearCalendarView.tsx
+        - src/components/mobile/subject/tabs/AgendaTab.tsx
+        - src/components/mobile/calendar/MobileCalendarLazy.tsx
+        - public/vercel.svg
+        - public/next.svg
+        - public/file.svg
+        - public/globe.svg
+        - public/window.svg
+      supuestos: []
+      deuda: []
+      notas: Modal y mascota quedaron en chunks separados; el modal conserva animación de salida tras la primera apertura. React Doctor 100/100.
+      timestamp: 2026-06-10T00:00:00-03:00
   F4:
     nombre: Refactor Mapa
     dominio: frontend + dominio
     criticidad: critica
     objetivo: Extraer únicamente la lógica duplicada indicada, preservar invariantes y ampliar tests.
     dependencias: [F3]
-    estado: pendiente
+    estado: en_curso
 
 estado_global:
   estado: en_curso
   fases:
     F1: completada
     F2: completada
-    F3: en_curso
-    F4: pendiente
+    F3: completada
+    F4: en_curso
 
 auditoria: null
 
@@ -102,3 +117,10 @@ historial:
   - timestamp: 2026-06-10T00:00:00-03:00
     evento: fase_iniciada
     fase: F3
+  - timestamp: 2026-06-10T00:00:00-03:00
+    evento: fase_completada
+    fase: F3
+    validacion: typecheck, build, inspección de chunks y React Doctor aprobados.
+  - timestamp: 2026-06-10T00:00:00-03:00
+    evento: fase_iniciada
+    fase: F4

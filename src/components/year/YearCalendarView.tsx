@@ -7,7 +7,7 @@ import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
 import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
-import { MobileCalendarLazy } from '@/components/mobile/calendar/MobileCalendarLazy'
+import { MobileCalendar } from '@/components/mobile/calendar/MobileCalendar'
 import {
   filterEventsByPreferredCommission,
   type CommissionOption,
@@ -168,7 +168,7 @@ export function YearCalendarView({
           currentYearSlug={year.slug}
         >
           <div className="pt-4">
-            <MobileCalendarLazy
+            <MobileCalendar
               events={filteredEvents.map((event) => ({
                 id: event.id,
                 fecha: event.fecha,

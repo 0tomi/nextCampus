@@ -2,13 +2,17 @@
 
 import { useState, useEffect, type ReactNode } from 'react'
 import { Menu, X } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { SignOutButton } from '@/components/admin/SignOutButton'
 import { CampusHeaderBrand } from '@/components/shell/CampusHeaderBrand'
-import { Mascot } from '@/components/ui/Mascot'
-import { NosotrosModal } from '@/components/ui/NosotrosModal'
+
+const Mascot = dynamic(() => import('@/components/ui/Mascot').then((module) => module.Mascot))
+const NosotrosModal = dynamic(() =>
+  import('@/components/ui/NosotrosModal').then((module) => module.NosotrosModal),
+)
 
 interface DashboardShellProps {
   brand?: ReactNode
@@ -32,6 +36,12 @@ export function DashboardShell({
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const [isAboutOpen, setIsAboutOpen] = useState(false)
+  const [hasOpenedAbout, setHasOpenedAbout] = useState(false)
+
+  function openAbout() {
+    setHasOpenedAbout(true)
+    setIsAboutOpen(true)
+  }
 
   // Bloquear scroll cuando el drawer móvil está abierto
   useEffect(() => {
@@ -71,7 +81,7 @@ export function DashboardShell({
             {pathname === '/' ? (
               <button
                 type="button"
-                onClick={() => setIsAboutOpen(true)}
+                onClick={openAbout}
                 className="hidden lg:inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
               >
                 Nosotros
@@ -131,7 +141,9 @@ export function DashboardShell({
         </main>
       </div>
 
-      <NosotrosModal open={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+      {hasOpenedAbout ? (
+        <NosotrosModal open={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+      ) : null}
     </div>
   )
 }

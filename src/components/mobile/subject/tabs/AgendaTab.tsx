@@ -1,7 +1,9 @@
 'use client'
 
-import { MobileCalendarLazy } from '@/components/mobile/calendar/MobileCalendarLazy'
-import type { MobileCalendarEvent } from '@/components/mobile/calendar/MobileCalendar'
+import {
+  MobileCalendar,
+  type MobileCalendarEvent,
+} from '@/components/mobile/calendar/MobileCalendar'
 import type { PeriodoCalendario } from '@/lib/periodos'
 import {
   ALL_COMMISSIONS_VALUE,
@@ -78,7 +80,7 @@ export function AgendaTab({
         </div>
       )}
 
-      <MobileCalendarLazy
+      <MobileCalendar
         events={events}
         periodos={periodos}
         accent={accent}
