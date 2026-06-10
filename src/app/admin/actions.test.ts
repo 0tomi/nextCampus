@@ -372,6 +372,66 @@ describe('admin apunte actions', () => {
     })
   })
 
+  it('sube recursos interactivos en paralelo y conserva el orden del formulario', async () => {
+    requireYearAdminForSubjectIdMock.mockResolvedValue({
+      subjectSlug: 'calculo',
+      yearSlug: 'primer-anio',
+      admin: { id: 'admin-1' },
+    })
+    prismaMock.apunte.create.mockResolvedValue({ id: 'apunte-1' })
+
+    let resolveFirst!: (key: string) => void
+    let resolveSecond!: (key: string) => void
+    uploadApunteHtmlMock
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveFirst = resolve }))
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveSecond = resolve }))
+
+    const formData = makeFormData({
+      subjectId: 'subject-1',
+      titulo: 'Laboratorios',
+      descripcionHtml: '<p>Interactivos</p>',
+      recursosJson: JSON.stringify([
+        { tipo: 'HTML', localId: 'html-1', orden: 7, nombre: 'Primero' },
+        { tipo: 'HTML', localId: 'html-2', orden: 3, nombre: 'Segundo' },
+      ]),
+    })
+    formData.set(
+      'htmlFile:html-1',
+      new File(['<!doctype html><html><body>Uno</body></html>'], 'uno.html', {
+        type: 'text/html',
+      }),
+    )
+    formData.set(
+      'htmlFile:html-2',
+      new File(['<!doctype html><html><body>Dos</body></html>'], 'dos.html', {
+        type: 'text/html',
+      }),
+    )
+
+    const { createApunteAction } = await import('./actions')
+    const action = createApunteAction({ ok: false, message: '' }, formData)
+
+    await vi.waitFor(() => expect(uploadApunteHtmlMock).toHaveBeenCalledTimes(2))
+    resolveSecond('apuntes/primer-anio/calculo/apunte-1/segundo.html')
+    resolveFirst('apuntes/primer-anio/calculo/apunte-1/primero.html')
+
+    await expect(action).resolves.toMatchObject({ ok: true })
+    expect(prismaMock.apunteRecurso.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          nombre: 'Primero',
+          orden: 0,
+          storageKey: 'apuntes/primer-anio/calculo/apunte-1/primero.html',
+        }),
+        expect.objectContaining({
+          nombre: 'Segundo',
+          orden: 1,
+          storageKey: 'apuntes/primer-anio/calculo/apunte-1/segundo.html',
+        }),
+      ],
+    })
+  })
+
   it('compila recursos TSX y registra el HTML resultante', async () => {
     requireYearAdminForSubjectIdMock.mockResolvedValue({
       subjectSlug: 'calculo',

@@ -761,68 +761,77 @@ async function buildApunteRecursos(params: {
   data: RecursoCreateData[]
   uploadedStorageKeys: string[]
 } | { error: string; uploadedStorageKeys: string[] }> {
-  const data: RecursoCreateData[] = []
   const uploadedStorageKeys: string[] = []
 
-  for (const recurso of params.recursos) {
-    if (recurso.tipo !== 'HTML') {
-      data.push({
-        apunteId: params.apunteId,
-        tipo: recurso.tipo,
-        url: recurso.url,
-        orden: recurso.orden,
-        nombre: recurso.nombre,
-      })
-      continue
-    }
-
-    if (recurso.storageKey) {
-      const existingMeta = params.existingResourceMetaByStorageKey.get(recurso.storageKey)
-      if (!existingMeta) {
-        return { error: 'No encontramos el apunte interactivo que querés conservar.', uploadedStorageKeys }
+  const results: Array<RecursoCreateData | { error: string }> = await Promise.all(
+    params.recursos.map(async (recurso, index) => {
+      if (recurso.tipo !== 'HTML') {
+        return {
+          apunteId: params.apunteId,
+          tipo: recurso.tipo,
+          url: recurso.url,
+          orden: index,
+          nombre: recurso.nombre,
+        } satisfies RecursoCreateData
       }
 
-      data.push({
+      if (recurso.storageKey) {
+        const existingMeta = params.existingResourceMetaByStorageKey.get(recurso.storageKey)
+        if (!existingMeta) {
+          return { error: 'No encontramos el apunte interactivo que querés conservar.' }
+        }
+
+        return {
+          apunteId: params.apunteId,
+          tipo: 'HTML',
+          url: '',
+          orden: index,
+          nombre: recurso.nombre,
+          storageKey: recurso.storageKey,
+          mimeType: existingMeta.mimeType ?? APUNTE_HTML_MIME,
+          sizeBytes: existingMeta.sizeBytes,
+        } satisfies RecursoCreateData
+      }
+
+      if (!recurso.localId) {
+        return { error: 'No se pudo identificar el archivo de apunte interactivo.' }
+      }
+
+      const upload = await readInteractiveUpload(params.formData, recurso.localId, recurso.nombre ?? params.apunteTitulo)
+      if ('error' in upload) {
+        return upload
+      }
+
+      const storageKey = await uploadApunteHtml({
+        yearSlug: params.yearSlug,
+        subjectSlug: params.subjectSlug,
+        apunteId: params.apunteId,
+        html: upload.html,
+      })
+      uploadedStorageKeys.push(storageKey)
+      return {
         apunteId: params.apunteId,
         tipo: 'HTML',
         url: '',
-        orden: recurso.orden,
+        orden: index,
         nombre: recurso.nombre,
-        storageKey: recurso.storageKey,
-        mimeType: existingMeta.mimeType ?? APUNTE_HTML_MIME,
-        sizeBytes: existingMeta.sizeBytes,
-      })
-      continue
-    }
+        storageKey,
+        mimeType: APUNTE_HTML_MIME,
+        sizeBytes: upload.sizeBytes,
+      } satisfies RecursoCreateData
+    }),
+  )
 
-    if (!recurso.localId) {
-      return { error: 'No se pudo identificar el archivo de apunte interactivo.', uploadedStorageKeys }
-    }
-
-    const upload = await readInteractiveUpload(params.formData, recurso.localId, recurso.nombre ?? params.apunteTitulo)
-    if ('error' in upload) {
-      return { error: upload.error, uploadedStorageKeys }
-    }
-
-    const storageKey = await uploadApunteHtml({
-      yearSlug: params.yearSlug,
-      subjectSlug: params.subjectSlug,
-      apunteId: params.apunteId,
-      html: upload.html,
-    })
-    uploadedStorageKeys.push(storageKey)
-    data.push({
-      apunteId: params.apunteId,
-      tipo: 'HTML',
-      url: '',
-      orden: recurso.orden,
-      nombre: recurso.nombre,
-      storageKey,
-      mimeType: APUNTE_HTML_MIME,
-      sizeBytes: upload.sizeBytes,
-    })
+  const failed = results.find(
+    (result): result is { error: string } => 'error' in result,
+  )
+  if (failed) {
+    return { error: failed.error, uploadedStorageKeys }
   }
 
+  const data = results.filter(
+    (result): result is RecursoCreateData => !('error' in result),
+  )
   return { data, uploadedStorageKeys }
 }
 

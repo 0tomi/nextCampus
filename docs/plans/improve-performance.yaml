@@ -49,14 +49,23 @@ fases:
     criticidad: estandar
     objetivo: Paralelizar compilación y subida de recursos con un cliente admin por batch.
     dependencias: [F1]
-    estado: en_curso
+    estado: completada
+    cierre:
+      archivos_tocados:
+        - src/app/admin/actions.ts
+        - src/app/admin/actions.test.ts
+        - src/lib/supabase/admin.ts
+      supuestos: []
+      deuda: []
+      notas: Promise.all procesa compilación y uploads en paralelo; test prueba resolución fuera de orden y persistencia estable. Create y update comparten el helper.
+      timestamp: 2026-06-10T00:00:00-03:00
   F3:
     nombre: Bundle
     dominio: frontend
     criticidad: estandar
     objetivo: Lazy-load de extras del shell, simplificar calendario móvil y borrar assets muertos.
     dependencias: [F2]
-    estado: pendiente
+    estado: en_curso
   F4:
     nombre: Refactor Mapa
     dominio: frontend + dominio
@@ -69,8 +78,8 @@ estado_global:
   estado: en_curso
   fases:
     F1: completada
-    F2: en_curso
-    F3: pendiente
+    F2: completada
+    F3: en_curso
     F4: pendiente
 
 auditoria: null
@@ -86,3 +95,10 @@ historial:
   - timestamp: 2026-06-10T00:00:00-03:00
     evento: fase_iniciada
     fase: F2
+  - timestamp: 2026-06-10T00:00:00-03:00
+    evento: fase_completada
+    fase: F2
+    validacion: test focalizado, typecheck y build aprobados.
+  - timestamp: 2026-06-10T00:00:00-03:00
+    evento: fase_iniciada
+    fase: F3
