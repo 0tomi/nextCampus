@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  # Dummies: src/lib/env.ts valida al importar; ningún job de este workflow
+  # se conecta a servicios reales.
+  NEXT_PUBLIC_SUPABASE_URL: https://dummy.supabase.co
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: dummy-publishable-key
+  SUPABASE_SECRET_KEY: dummy-secret-key
+  ADMIN_EMAILS: ci@example.com
+  DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+  DIRECT_URL: postgresql://dummy:dummy@localhost:5432/dummy
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          # Misma major que generó pnpm-lock.yaml y pnpm-workspace.yaml
+          # (allowBuilds/trustPolicy son settings de pnpm 11).
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
