@@ -1,6 +1,18 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { HomeGlobalCalendarEvent } from './HomeGlobalCalendar'
+
+// El fixture usa fechas fijas ('2026-06-10') y el componente filtra eventos
+// pasados contra "hoy": sin congelar el reloj, la suite expira cuando el
+// calendario real pasa esa fecha. 12:00Z = 09:00 en AR → "hoy" es 9 de junio
+// y el evento del 10 sigue siendo próximo.
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-06-09T12:00:00Z') })
+})
+
+afterAll(() => {
+  vi.useRealTimers()
+})
 
 vi.mock('next/link', () => ({
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
