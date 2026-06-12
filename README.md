@@ -48,6 +48,19 @@ Repositorio de material de estudio por materia. Soporta PDFs (almacenados en Sup
 | Package manager | pnpm |
 | Deploy | Vercel |
 
+## 🚀 Empezar a desarrollar
+
+```bash
+git clone https://github.com/0tomi/nextCampus.git
+cd nextCampus
+pnpm install
+# Configurá Supabase y el .env siguiendo la guía: docs/SETUP.md
+pnpm dev
+```
+
+La guía completa de credenciales y puesta en marcha está en
+[`docs/SETUP.md`](docs/SETUP.md). Antes de mandar un PR, corré `pnpm verify`.
+
 ## Contribuir
 
 El proyecto es completamente abierto. Si encontrás algo que falta, algo que está mal, o simplemente querés agregar una feature que te haría la vida más fácil como estudiante — abrí un issue o mandá un PR.

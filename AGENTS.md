@@ -39,6 +39,7 @@ El deploy en Vercel corre `pnpm build` (`prisma generate && next build` con Turb
 
 - **Antes de dar una tarea por terminada (rápido, segundos):** corré `pnpm typecheck`. Agarra errores de tipos, identificadores duplicados (ej: `name defined multiple times`) e imports rotos — la mayoría de los errores que rompen el build.
 - **Antes de mergear/pushear a `main` (autoritativo):** corré `pnpm build`. Es lo único que reproduce el 100% de lo que Vercel rechaza (incluye errores de RSC, boundaries client/server, etc.). Es más lento, por eso solo en este punto.
+- **Atajo:** `pnpm verify` corre todo junto en orden (generate → typecheck → lint → test → build).
 
 ### Reglas de redaccion Frontend
 - La redaccion debe ser de cara al usuario. No deben incluirse detalles tecnicos asociados al prompt ingresado por el usuario.
