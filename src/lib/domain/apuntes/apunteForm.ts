@@ -1,6 +1,6 @@
 import { detectarRecurso, type RecursoTipo } from '@/lib/recursos'
 
-export type RecursoDraftKind = 'LINK' | 'HTML' | 'OTHER'
+export type RecursoDraftKind = 'LINK' | 'HTML'
 
 export interface RecursoDraft {
   /** Local key — nunca se manda al server */
@@ -44,15 +44,9 @@ export function makeRecursoDraft(
   nombre: string = '',
   extra?: Partial<RecursoDraft>,
 ): RecursoDraft {
-  let kind: RecursoDraftKind = 'LINK'
-  if (tipo === 'HTML') {
-    kind = 'HTML'
-  } else if (tipo === 'OTHER') {
-    kind = 'OTHER'
-  }
   return {
     localId: crypto.randomUUID(),
-    kind,
+    kind: tipo === 'HTML' ? 'HTML' : 'LINK',
     url,
     tipo,
     nombre,
@@ -103,10 +97,7 @@ export function serializeRecursos(recursos: RecursoDraft[]): string {
 
 export function getApunteFormValidationError(recursos: RecursoDraft[], categoriaIds: string[]): string {
   const hasInvalidLink = recursos.some((recurso) => recurso.kind === 'LINK' && recurso.url.trim() && !recurso.tipo)
-  if (hasInvalidLink) return 'Hay links inválidos. Revisá que sean de YouTube, Google Drive o GitHub.'
-
-  const hasInvalidOther = recursos.some((recurso) => recurso.kind === 'OTHER' && (!recurso.url.trim() || recurso.tipo !== 'OTHER'))
-  if (hasInvalidOther) return 'Hay enlaces en "Otro" que están vacíos o no son válidos (deben empezar con https://).'
+  if (hasInvalidLink) return 'Hay links inválidos. Deben ser URLs válidas (deben empezar con https://).'
 
   const invalidHtml = recursos.find(
     (recurso) => recurso.kind === 'HTML' && (!recurso.storageKey || recurso.replacingStorage) && !recurso.fileName,

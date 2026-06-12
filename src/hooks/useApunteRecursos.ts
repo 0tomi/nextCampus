@@ -8,7 +8,7 @@ import {
   type RecursoDraft,
   type RecursoDraftKind,
 } from '@/lib/domain/apuntes/apunteForm'
-import { isValidHttpsUrl } from '@/lib/recursos'
+import { isValidHttpsUrl, detectarRecurso } from '@/lib/recursos'
 
 type InitialRecurso = {
   tipo: 'YOUTUBE' | 'DRIVE' | 'HTML' | 'REPOSITORY' | 'OTHER'
@@ -44,10 +44,13 @@ export function useApunteRecursos(initialRecursos: InitialRecurso[] = []) {
         let tipo: 'YOUTUBE' | 'DRIVE' | 'HTML' | 'REPOSITORY' | 'OTHER' | null = null
         if (kind === 'HTML') {
           tipo = 'HTML'
-        } else if (kind === 'OTHER') {
-          tipo = isValidHttpsUrl(recurso.url) ? 'OTHER' : null
         } else {
-          tipo = detectRecursoTipo(recurso.url)
+          const detected = detectarRecurso(recurso.url)
+          if (detected) {
+            tipo = detected.tipo
+          } else {
+            tipo = isValidHttpsUrl(recurso.url) ? 'OTHER' : null
+          }
         }
 
         return {
@@ -147,20 +150,18 @@ export function useApunteRecursos(initialRecursos: InitialRecurso[] = []) {
       prev.map((recurso) => {
         if (recurso.localId !== localId) return recurso
 
-        if (recurso.kind === 'OTHER') {
-          const ok = isValidHttpsUrl(value)
-          return {
-            ...recurso,
-            tipo: ok ? 'OTHER' : null,
-            error: ok ? undefined : 'Ingresá una URL válida (debe empezar con https://)',
-          }
+        const detected = detectarRecurso(value)
+        let tipo: 'YOUTUBE' | 'DRIVE' | 'HTML' | 'REPOSITORY' | 'OTHER' | null = null
+        if (detected) {
+          tipo = detected.tipo
+        } else {
+          tipo = isValidHttpsUrl(value) ? 'OTHER' : null
         }
 
-        const tipo = detectRecursoTipo(value)
         return {
           ...recurso,
           tipo,
-          error: tipo ? undefined : 'Solo links de YouTube, Drive o GitHub',
+          error: tipo ? undefined : 'Ingresá una URL válida (debe empezar con https://)',
         }
       }),
     )

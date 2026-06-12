@@ -232,16 +232,6 @@ function ResourceKindSelector({
       </button>
       <button
         type="button"
-        onClick={() => onKindChange('OTHER')}
-        className={[
-          'flex-1 cursor-pointer rounded px-2 py-1.5 text-xs font-semibold transition-colors',
-          kind === 'OTHER' ? 'bg-white/10 text-white' : 'text-white/45 hover:bg-white/5 hover:text-white/70',
-        ].join(' ')}
-      >
-        Otro
-      </button>
-      <button
-        type="button"
         onClick={onInfoToggle}
         aria-label="¿Qué es este tipo de recurso?"
         aria-expanded={infoOpen}
@@ -279,13 +269,7 @@ function ResourceInfoPanel({
           {kind === 'LINK' ? (
             <p>
               Al ser un proyecto gratuito, contamos con almacenamiento limitado. Por eso preferimos que compartas un
-              link hacia el recurso vía Drive, un video vía YouTube o un repositorio de GitHub. Ofrecemos
-              previsualizaciones una vez subido el apunte.
-            </p>
-          ) : kind === 'OTHER' ? (
-            <p>
-              El tipo "Otro" permite enlazar a cualquier recurso o página externa útil. Intentaremos extraer sus
-              metadatos Open Graph para mostrar una previsualización elegante con imagen, título y descripción.
+              enlace hacia el recurso (como Google Drive, YouTube, GitHub o cualquier link de utilidad). Mostraremos una previsualización una vez subido el apunte.
             </p>
           ) : (
             <p>
@@ -323,7 +307,7 @@ function ResourceInputControl({
   onUrlBlur: (localId: string, value: string) => void
   onUrlChange: (localId: string, value: string) => void
 }) {
-  if (recurso.kind === 'LINK' || recurso.kind === 'OTHER') {
+  if (recurso.kind === 'LINK') {
     return <LinkResourceInput recurso={recurso} onUrlBlur={onUrlBlur} onUrlChange={onUrlChange} />
   }
 
@@ -346,10 +330,7 @@ function LinkResourceInput({
   onUrlBlur: (localId: string, value: string) => void
   onUrlChange: (localId: string, value: string) => void
 }) {
-  const isOther = recurso.kind === 'OTHER'
-  const placeholder = isOther
-    ? 'https://ejemplo.com/recurso-util'
-    : 'https://youtube.com/watch?v=... o https://drive.google.com/...'
+  const placeholder = 'https://drive.google.com/..., https://youtube.com/..., https://github.com/... o cualquier link'
 
   return (
     <div className="relative flex-1">
