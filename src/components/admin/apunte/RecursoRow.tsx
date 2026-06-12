@@ -29,61 +29,80 @@ import type { RecursoDraft, RecursoDraftKind } from '@/lib/domain/apuntes/apunte
 // Editá libremente este texto: es lo que se copia al tocar "Tocá acá".
 // ---------------------------------------------------------------------------
 
-const HTML_PROMPT = `Vas a recibir un material de estudio. Ese material NO es algo que tengas que comentar, resumir ni anotar: es únicamente el TEMARIO, es decir, la lista de temas y conceptos que tu apunte nuevo tiene que cubrir. Tratalo como materia prima.
+const HTML_PROMPT = `# OBJETIVO
 
-Dato más importante de todos: el estudiante que va a usar tu apunte JAMÁS va a ver el material original. Tu apunte lo reemplaza por completo. Si algo no está explicado dentro de tu apunte, para el estudiante simplemente no existe. Por eso no estás "mejorando" un texto: estás construyendo desde cero un apunte autocontenido y definitivo que enseña esos temas mejor de lo que cualquier texto plano podría.
+Vas a construir un **apunte interactivo** en formato TSX que reemplaza por completo al material de estudio que te envía el usuario. El estudiante que lo use JAMÁS va a ver el material original: si algo no está explicado dentro de tu apunte, para él no existe. No estás mejorando un texto: estás construyendo desde cero un recurso autocontenido y definitivo.
 
-Tu tarea: identificá la idea general y cada concepto del temario, sin dejar ninguno afuera, y armá una clase didáctica, visual e interactiva que explique cada concepto de forma progresiva, construyéndolo paso a paso.
+La meta pedagógica no es que el apunte *presente* la información, sino que el estudiante termine **pudiendo explicar y aplicar cada concepto por su cuenta**. Un apunte que solo se lee produce un estudiante que reconoce el tema; uno que hace predecir, manipular y resolver produce un estudiante que lo sabe. Diseñá para lo segundo.
 
-== REGLAS PEDAGÓGICAS (el corazón del apunte) ==
+# EL MATERIAL QUE RECIBÍS
 
-- Explicá desde cero. Cada concepto, ejemplo y fórmula debe explicarse desde sus fundamentos, como si el estudiante no supiera absolutamente nada del tema. No asumas que tiene otro material al lado: no lo tiene.
+El material adjunto NO es algo que tengas que comentar, resumir ni anotar: es únicamente el **TEMARIO** — la lista de temas y conceptos que tu apunte tiene que cubrir. Tratalo como materia prima. Identificá la idea general y cada concepto, sin dejar ninguno afuera.
 
-- Prohibido comentar en vez de enseñar. Está terminantemente prohibido usar frases que solo tienen sentido teniendo el texto original al lado, como "como vimos", "según el apunte", "el texto menciona", "el ejemplo anterior", "recordemos que". Si una frase remite a un material externo, está mal: reescribila explicando la idea en su totalidad.
+Si el mensaje del usuario incluye indicaciones de estilo, enfoque o estructura para este apunte, esas indicaciones mandan sobre los defaults de este documento (nunca sobre el contrato técnico).
 
-- Ningún ejemplo sin su explicación. Cada ejemplo, caso o ejercicio que muestres tiene que venir acompañado de su explicación completa: qué representa, por qué es así, paso a paso, y qué tiene que observar el estudiante. Mostrar un ejemplo y seguir de largo no sirve.
+# CÓMO ESTRUCTURAR EL CONTENIDO
 
-- No pases por encima. Si un concepto es importante, tomate el tiempo de desarrollarlo en profundidad. Preferí explicar bien lo central antes que mencionar muchas cosas superficialmente.
+- **Secuencia guiada, no muro de texto.** El apunte avanza como una clase: cada idea se revela y se construye progresivamente, un paso por vez.
+- **Cada sección abre con la pregunta que va a responder** o el problema que motiva el concepto ("¿Cómo sabemos si la red memorizó en vez de aprender?"). El estudiante tiene que saber para qué está leyendo antes de leer.
+- **Cada sección cierra con una síntesis breve y un puente** a la siguiente: qué quedó establecido y qué pregunta nueva abre.
+- **Orden de dependencias:** ningún concepto se usa antes de definirse. Todo término técnico se define la primera vez que aparece.
+- **Profundidad sobre exhaustividad:** desarrollá a fondo lo central antes que mencionar mucho superficialmente.
 
-- Formato presentación. Estructurá el apunte como una secuencia guiada donde cada idea se revela y se construye progresivamente. El estudiante debería poder avanzar y ver cómo la idea se va formando, no recibir todo de golpe como un muro de texto.
+# DIRECTIVAS PEDAGÓGICAS
 
-== MANDATO VISUAL (no es decoración, es la forma de enseñar) ==
+- **Explicá desde cero.** Cada concepto, ejemplo y fórmula desde sus fundamentos, como si el estudiante no supiera nada del tema. No tiene otro material al lado.
+- **Ejemplo trabajado con narración.** Cada ejemplo viene completo: qué representa, por qué es así, el razonamiento narrado paso a paso, y qué tiene que observar el estudiante. Mostrar un ejemplo y seguir de largo no enseña.
+- **Después del ejemplo trabajado, un caso para que lo resuelva él.** Donde haya un procedimiento (un algoritmo, un método, un cálculo), cerrá con un ejercicio paralelo — mismo método, datos distintos — con verificación interactiva. Aplicar el método es donde el aprendizaje se cementa.
+- **Predicción antes de revelado.** En las construcciones paso a paso, antes de mostrar el paso siguiente invitá al estudiante a predecirlo ("¿qué celda conviene elegir ahora? Pensalo antes de seguir") y recién entonces revelá con la explicación de por qué.
+- **Recuerdo activo en las autoevaluaciones.** Preguntas que obligan a recuperar y aplicar, no a reconocer. El feedback es inmediato y explica tanto por qué la correcta es correcta como por qué cada distractor es tentador pero incorrecto.
+- **Señalá las trampas.** Donde los estudiantes típicamente se confunden, decilo explícitamente ("este paso confunde a la mayoría: el error común es...") y mostrá el error y su corrección.
 
-- Lo abstracto se vuelve visual, siempre. Todo concepto abstracto, ecuación, algoritmo, estructura o proceso DEBE tener una representación visual interactiva o animada que lo modele. Si algo se puede mostrar en movimiento o manipular, no lo expliques solo con texto.
+# INTERACTIVIDAD Y MANDATO VISUAL
 
-- Fidelidad sobre adorno. Las animaciones y gráficos tienen que REPRESENTAR fielmente el mecanismo real de lo que se explica: cómo cambia una variable, cómo itera un algoritmo, cómo se deforma una curva, cómo fluyen los datos. Nunca pongas animaciones que solo decoran y no enseñan nada.
+No es decoración: es la forma de enseñar.
 
-- Ejemplos del tipo de interacción que se espera: sliders que recalculan una fórmula y su gráfico en vivo mientras el estudiante mueve los parámetros; un algoritmo que se ejecuta paso a paso resaltando en cada iteración qué elemento cambia y por qué; diagramas que se arman ante el ojo a medida que se explica cada parte; simulaciones manipulables; autoevaluaciones con feedback inmediato.
+- **Lo abstracto se vuelve visual, siempre.** Todo concepto abstracto, ecuación, algoritmo, estructura o proceso DEBE tener una representación visual interactiva o animada que lo modele.
+- **Fidelidad sobre adorno.** La visualización representa el mecanismo real: cómo cambia una variable, cómo itera el algoritmo, cómo se deforma la curva, cómo fluyen los datos. Una animación que no carga el concepto es decoración, y la decoración enseña a pasar de largo.
+- **Una relación por visual.** Mostrá un paso, una relación, una comparación por vez — no el mecanismo completo terminado de una. La animación de todo el mecanismo es la respuesta disfrazada: saltea el pensamiento del estudiante igual que dárselo escrito.
+- **Cada interactivo lleva una pregunta, no un epígrafe.** El slider, la simulación o el paso a paso vienen acompañados de una consigna que pide predecir o explicar ("antes de mover el slider: ¿qué le pasa a la curva si b crece? Ahora probalo"). La mano del estudiante en el parámetro vale más que la tuya.
+- **Interacciones esperadas:** sliders que recalculan fórmula y gráfico en vivo; algoritmos ejecutados paso a paso resaltando qué cambió en cada iteración y por qué; diagramas que se arman ante el ojo; simulaciones manipulables; autoevaluaciones con feedback inmediato.
 
-== PRIORIDAD ==
+# TONO
 
-Profundidad sobre los conceptos centrales por encima de la exhaustividad superficial. Y por encima de todo: el apunte tiene que FUNCIONAR y renderizar de verdad. Un artefacto que corre y explica bien lo central vale más que uno gigantesco que se trunca o no abre. Si tenés que elegir, garantizá primero que funcione.
+- Tratá al estudiante como un adulto capaz trabajando en algo difícil. Cálido y directo, sin infantilizar.
+- Sin cheerleading ni entusiasmo vacío: nada de "¡es facilísimo!" ni signos de exclamación gratuitos. Cuando algo es difícil, decilo: "esto le cuesta a la mayoría" enseña más que "¡cualquiera puede!".
+- Sencillo sin perder rigor: lenguaje claro, terminología correcta, sin dejar detalles afuera. Es un apunte para estudiar.
 
-== CONTRATO TÉCNICO (cumplir SIN EXCEPCIÓN) ==
+# QUÉ EVITAR (anti-patrones)
 
-- Formato de entrega: Exportá todo como un ÚNICO archivo TSX con un export default del componente principal. No hace falta el boilerplate de ReactDOM ni de createRoot: eso ya lo maneja la plataforma.
+- **Comentar en vez de enseñar.** Prohibidas las frases que solo tienen sentido con el texto original al lado: "como vimos", "según el apunte", "el texto menciona", "el ejemplo anterior" (refiriendo al material), "recordemos que". Si una frase remite a un material externo, reescribila explicando la idea completa.
+- **Ejemplos sueltos** sin desarrollo paso a paso.
+- **Visuales que sobreentregan:** la animación del mecanismo entero como primera exposición, o una visual por párrafo que no carga concepto.
+- **Quices de reconocimiento:** preguntas cuya respuesta es literalmente una frase que aparece dos pantallas arriba.
+- **Meta-contenido:** no incluyas frases, referencias o directivas de este pedido dentro del apunte. El apunte se redacta exclusivamente para el estudiante.
 
-- Tono educativo: Explicado de forma sencilla sin perder rigor sobre la materia, sin dejar detalles afuera. Es un apunte para estudiar.
+# PRIORIDAD ABSOLUTA
 
-- Diseño responsivo: El documento debe verse bien tanto en Desktop como en un teléfono (9:16).
+El apunte tiene que FUNCIONAR y renderizar de verdad. Un artefacto que corre y explica bien lo central vale más que uno gigantesco que se trunca o no abre. Si tenés que elegir, recortá amplitud periférica; nunca correctitud, ni profundidad de lo central, ni que renderice.
 
-- Estilos con Tailwind CSS: Tailwind CSS v4 está disponible en el entorno. Usá clases de utilidad directamente en className, es la forma preferida de estilizar. Podés complementar con estilos inline cuando necesites valores dinámicos calculados en JS.
+# CONTRATO TÉCNICO (cumplir SIN EXCEPCIÓN)
 
-- Librerías disponibles: Podés importar ÚNICAMENTE las siguientes librerías. Cualquier otro import hace que el apunte se rechace:
+- **Formato de entrega:** un ÚNICO archivo TSX con "export default" del componente principal. Sin boilerplate de ReactDOM ni createRoot: lo maneja la plataforma.
+- **Diseño responsivo:** debe verse bien en Desktop y en teléfono (9:16).
+- **Estilos con Tailwind CSS v4:** clases de utilidad directamente en className (forma preferida). Estilos inline solo para valores dinámicos calculados en JS.
+- **Librerías disponibles** — podés importar ÚNICAMENTE estas; cualquier otro import rechaza el apunte:
+  - "react" — hooks (useState, useEffect, useRef, useMemo, useCallback, etc.)
+  - "recharts" — gráficos de datos: LineChart, BarChart, AreaChart, PieChart, ScatterChart y sus componentes. Todo ResponsiveContainer necesita un padre con altura explícita, o el gráfico mide 0px.
+  - "lucide-react" — íconos SVG: "import { Search, BookOpen, ChevronRight } from 'lucide-react'"
+  - "framer-motion" — animaciones declarativas: motion.div, AnimatePresence, variants
+  - "katex" — fórmulas LaTeX: usar "katex.renderToString('\\frac{a}{b}', { throwOnError: false })" con dangerouslySetInnerHTML (no existe componente <TeX>). El CSS de KaTeX ya está cargado: importá solo la librería.
+  - "d3" — visualizaciones que recharts no cubre: grafos, árboles, fuerzas, heatmaps. "import * as d3 from 'd3'"
+  - "mathjs" — cálculo: "import { evaluate, derivative, parse } from 'mathjs'". Ideal para sliders que recalculan fórmulas en vivo.
+- **Fórmulas matemáticas siempre renderizadas con katex**, nunca texto plano tipo x^2.
+- **Prohibido:** "import()" dinámico, "require()", y cargar scripts con document.createElement.
 
-  • react — hooks (useState, useEffect, useRef, useMemo, useCallback, etc.)
-  • recharts — gráficos de datos: LineChart, BarChart, AreaChart, PieChart, ScatterChart, y sus componentes (Line, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, etc.)
-  • lucide-react — íconos SVG: import { Search, BookOpen, ChevronRight, etc. } from 'lucide-react'
-  • framer-motion — animaciones declarativas: motion.div, AnimatePresence, useAnimation, variants, etc.
-  • katex — renderizado de fórmulas LaTeX: katex.renderToString('\\\\frac{a}{b}', { throwOnError: false }). El CSS de KaTeX ya está cargado, solo importá la librería.
-  • d3 — visualizaciones científicas avanzadas: import * as d3 from 'd3'. Ideal para grafos, árboles, fuerzas, mapas de calor, y gráficos que recharts no cubre.
-  • mathjs — cálculo matemático: import { evaluate, derivative, parse } from 'mathjs'. Perfecto para sliders que recalculan fórmulas en vivo sin escribir tu propio parser.
-
-  Importalas normalmente con import: import { LineChart, Line } from 'recharts'. NO uses import() dinámico, require(), ni document.createElement para cargar scripts.
-
-- Enfoque de contenido (Directiva Crítica): NO incluir frases, referencias o directivas proveídas por el usuario dentro del apunte generado. El apunte debe estar redactado para el estudiante que quiere conocer la información sobre los temas que trata el propio recurso; no interesan los detalles técnicos que te pidió el usuario para generar dicho apunte.
-
-Debes devolverme un TSX que cumpla con estas características a rajatabla.`
+Devolveme un TSX que cumpla con todo esto a rajatabla.`
 
 // ---------------------------------------------------------------------------
 // RecursoRow — individual resource row in the list
