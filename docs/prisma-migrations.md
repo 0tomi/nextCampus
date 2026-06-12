@@ -11,15 +11,22 @@ datasource: {
 
 La app en runtime usa `DATABASE_URL` desde `src/lib/prisma.ts`, pero los comandos de migración usan `DIRECT_URL`.
 
-## Migración pendiente de Examen Ranked
+## Regla: nunca renombrar una migración ya aplicada
 
-La feature de Examen Ranked agrega esta migración:
+Una migración aplicada queda registrada por NOMBRE en la tabla
+`_prisma_migrations`. Si se renombra la carpeta local después de aplicarla,
+la base queda con una fila huérfana que apunta a un archivo inexistente:
+`migrate status` sigue diciendo "up to date", pero `prisma migrate dev` la
+detecta como drift y propone **resetear la base (borra todos los datos)**.
 
-```txt
-prisma/migrations/20260602180000_add_ranked_quiz_attempts/migration.sql
-```
-
-Crea la tabla `RankedQuizAttempt`, el enum `RankedQuizAttemptStatus`, índices para el top y habilita RLS.
+Ya pasó: `20260603120000_add_periodo_academico` se aplicó y después se
+renombró a `20260604030000_...` — eso dejó `migrate dev` roto hasta el
+2026-06-12, cuando se eliminó la fila huérfana de `_prisma_migrations`
+(solo bookkeeping, sin tocar schema ni datos). Si vuelve a aparecer el
+mensaje "applied to the database but missing from the local migrations
+directory": NO aceptar el reset; identificar la fila huérfana en
+`_prisma_migrations`, verificar que su trabajo esté cubierto por una
+migración local aplicada, snapshotearla y borrarla.
 
 ## Checklist antes de aplicar
 
@@ -92,7 +99,7 @@ pnpm db:deploy
 
 contra la base del entorno correspondiente.
 
-Para Examen Ranked, si no se aplica la migración, los endpoints ranked van a fallar porque la tabla `RankedQuizAttempt` todavía no existe.
+Si una feature nueva depende de una tabla que todavía no se migró, sus endpoints van a fallar en runtime: aplicar la migración ANTES de desplegar el código que la usa.
 
 ## Si algo falla
 
