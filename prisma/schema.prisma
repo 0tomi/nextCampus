@@ -24,25 +24,25 @@ model Career {
 }
 
 model AcademicYear {
-  id               String               @id @default(cuid())
-  career           Career               @relation(fields: [careerId], references: [id], onDelete: Cascade)
-  careerId         String
-  slug             String               @unique
-  nombre           String
-  descripcion      String               @default("")
-  driveUrl         String?
-  playlistUrl      String?
-  playlistEnabled  Boolean              @default(false)
+  id                    String               @id @default(cuid())
+  career                Career               @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  careerId              String
+  slug                  String               @unique
+  nombre                String
+  descripcion           String               @default("")
+  driveUrl              String?
+  playlistUrl           String?
+  playlistEnabled       Boolean              @default(false)
   discordUrl            String?
   discordDescripcion    String?
   discordAltUrl         String?
   discordAltDescripcion String?
-  orden            Int
-  color            String?
-  subjects         Subject[]
-  adminPermissions UserYearPermission[]
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
+  orden                 Int
+  color                 String?
+  subjects              Subject[]
+  adminPermissions      UserYearPermission[]
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
 
   @@index([careerId])
 }
@@ -187,6 +187,8 @@ model Evento {
   @@index([agendaId])
   @@index([tipoEventoId])
   @@index([createdByUserId])
+  /// Cubre el feed de próximos eventos (WHERE fecha >= hoy ORDER BY fecha, hora LIMIT n).
+  @@index([fecha, hora])
 }
 
 /// Categoría de período académico. Define el color por código (ver src/lib/periodos.ts).
