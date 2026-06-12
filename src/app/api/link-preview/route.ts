@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
 
-export const dynamic = 'force-dynamic'
-
 function extractMeta(html: string, url: string): { title: string; description: string; image?: string; logo?: string } {
   const result: { title: string; description: string; image?: string; logo?: string } = {
     title: '',
