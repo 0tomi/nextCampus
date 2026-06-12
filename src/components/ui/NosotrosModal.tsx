@@ -239,49 +239,6 @@ function useBodyScrollLock(mounted: boolean) {
   }, [mounted])
 }
 
-function useEscapeToClose(visible: boolean, onClose: () => void) {
-  useEffect(() => {
-    if (!visible) return
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', closeOnEscape)
-    return () => document.removeEventListener('keydown', closeOnEscape)
-  }, [visible, onClose])
-}
-
-function useFocusTrap(visible: boolean, dialogRef: React.RefObject<HTMLDivElement | null>) {
-  useEffect(() => {
-    if (!visible || !dialogRef.current) return
-    const el = dialogRef.current
-    const focusable = el.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    )
-    const first = focusable[0]
-    const last = focusable[focusable.length - 1]
-
-    first?.focus()
-
-    function trapFocus(event: KeyboardEvent) {
-      if (event.key !== 'Tab') return
-      if (focusable.length === 0) {
-        event.preventDefault()
-        return
-      }
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault()
-        last?.focus()
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault()
-        first?.focus()
-      }
-    }
-
-    document.addEventListener('keydown', trapFocus)
-    return () => document.removeEventListener('keydown', trapFocus)
-  }, [visible, dialogRef])
-}
-
 function AboutModalGlow() {
   return (
     <>

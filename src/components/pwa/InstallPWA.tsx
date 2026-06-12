@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useEffectEvent, useRef, useState, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from 'react'
 import { Download, Share, Plus, X, Smartphone } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useInstallPrompt } from './useInstallPrompt'
