@@ -31,7 +31,7 @@ import {
   quizBanksCacheTag,
 } from '@/lib/storage'
 import { queryTags } from '@/lib/queries'
-import { detectarRecurso } from '@/lib/recursos'
+import { detectarRecurso, isValidHttpsUrl } from '@/lib/recursos'
 import {
   getSubjectDeleteImpact,
   getYearDeleteImpact,
@@ -654,12 +654,7 @@ const linkRecursoSchema = baseRecursoSchema
   .refine(
     (r) => {
       if (r.tipo === 'OTHER') {
-        try {
-          const u = new URL(r.url)
-          return u.protocol === 'https:'
-        } catch {
-          return false
-        }
+        return isValidHttpsUrl(r.url)
       }
       const detected = detectarRecurso(r.url)
       return detected !== null && detected.tipo === r.tipo

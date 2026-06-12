@@ -16,6 +16,7 @@ import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import type { PeriodoCalendario } from '@/lib/periodos'
 import type { SubjectLinkDTO } from '@/lib/subjectLinks'
 import { SubjectLinkButtons } from '@/components/subject/SubjectLinkButtons'
+import type { RecursoTipo } from '@/lib/recursos'
 
 interface SubjectForMobile {
   id: string
@@ -33,7 +34,7 @@ interface SubjectForMobile {
     createdAt: string
     createdByUserId: string | null
     categorias: Array<{ id: string; nombre: string }>
-    recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE' | 'HTML' | 'REPOSITORY' | 'OTHER'; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }>
+    recursos: Array<{ id: string; tipo: RecursoTipo; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }>
   }>
   categoriasDisponibles: Array<{ id: string; nombre: string }>
   apuntesHasMore: boolean

@@ -8,6 +8,7 @@ import {
   type RecursoDraft,
   type RecursoDraftKind,
 } from '@/lib/domain/apuntes/apunteForm'
+import { isValidHttpsUrl } from '@/lib/recursos'
 
 type InitialRecurso = {
   tipo: 'YOUTUBE' | 'DRIVE' | 'HTML' | 'REPOSITORY' | 'OTHER'
@@ -18,14 +19,6 @@ type InitialRecurso = {
   sizeBytes?: number | null
 }
 
-function esUrlValidaHttps(url: string): boolean {
-  try {
-    const u = new URL(url)
-    return u.protocol === 'https:'
-  } catch {
-    return false
-  }
-}
 
 export function useApunteRecursos(initialRecursos: InitialRecurso[] = []) {
   const [recursos, setRecursos] = useState<RecursoDraft[]>(() =>
@@ -52,7 +45,7 @@ export function useApunteRecursos(initialRecursos: InitialRecurso[] = []) {
         if (kind === 'HTML') {
           tipo = 'HTML'
         } else if (kind === 'OTHER') {
-          tipo = esUrlValidaHttps(recurso.url) ? 'OTHER' : null
+          tipo = isValidHttpsUrl(recurso.url) ? 'OTHER' : null
         } else {
           tipo = detectRecursoTipo(recurso.url)
         }
@@ -155,7 +148,7 @@ export function useApunteRecursos(initialRecursos: InitialRecurso[] = []) {
         if (recurso.localId !== localId) return recurso
 
         if (recurso.kind === 'OTHER') {
-          const ok = esUrlValidaHttps(value)
+          const ok = isValidHttpsUrl(value)
           return {
             ...recurso,
             tipo: ok ? 'OTHER' : null,

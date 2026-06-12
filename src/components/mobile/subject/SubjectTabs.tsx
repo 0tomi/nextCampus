@@ -9,6 +9,7 @@ import { getYearColorClasses } from '@/lib/yearColors'
 import type { MobileCalendarEvent } from '@/components/mobile/calendar/MobileCalendar'
 import type { CommissionOption } from '@/lib/commission-preferences'
 import type { PeriodoCalendario } from '@/lib/periodos'
+import type { RecursoTipo } from '@/lib/recursos'
 
 type TabKey = 'agenda' | 'quiz' | 'apuntes'
 
@@ -44,7 +45,7 @@ interface SubjectTabsProps {
     createdAt: string
     createdByUserId: string | null
     categorias: Array<{ id: string; nombre: string }>
-    recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE' | 'HTML' | 'REPOSITORY' | 'OTHER'; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }>
+    recursos: Array<{ id: string; tipo: RecursoTipo; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }>
   }>
   categorias: Array<{ id: string; nombre: string }>
   apuntesHasMore: boolean

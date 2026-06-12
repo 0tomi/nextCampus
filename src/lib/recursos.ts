@@ -1,5 +1,14 @@
 export type RecursoTipo = 'YOUTUBE' | 'DRIVE' | 'HTML' | 'REPOSITORY' | 'OTHER'
 
+export function isValidHttpsUrl(url: string): boolean {
+  try {
+    const u = new URL(url)
+    return u.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 const YOUTUBE_HOSTS = new Set([
   'youtube.com',
   'www.youtube.com',
