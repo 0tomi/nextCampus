@@ -1,5 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeQuestionId, type QuizBankFile } from '@/lib/domain/quiz-bank'
+
+// El route calcula la duración contra el reloj real y el fixture usa
+// startedAt fijo: sin congelar el reloj, los intentos "recientes" envejecen
+// con el calendario y el techo de duración los invalidaría solos.
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-06-02T10:05:00.000Z') })
+})
+
+afterAll(() => {
+  vi.useRealTimers()
+})
 
 const rankedFindFirstMock = vi.fn()
 const rankedUpdateMock = vi.fn()
@@ -48,6 +59,7 @@ beforeEach(() => {
     subjectId: 'subject-1',
     bankId: 'bank-1',
     questionIds,
+    totalQuestions: questionIds.length,
     startedAt: new Date('2026-06-02T10:00:00.000Z'),
     finishedAt: null,
     invalidatedAt: null,
@@ -108,6 +120,7 @@ describe('POST /api/quiz/ranked/finish', () => {
       subjectId: 'subject-1',
       bankId: 'bank-1',
       questionIds,
+      totalQuestions: questionIds.length,
       startedAt: new Date('2026-06-02T10:00:00.000Z'),
       finishedAt: null,
       invalidatedAt: new Date('2026-06-02T10:01:00.000Z'),
@@ -125,6 +138,65 @@ describe('POST /api/quiz/ranked/finish', () => {
     expect(body.ranked.validForRanking).toBe(false)
     expect(rankedUpdateMock).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ status: 'INVALID' }),
+    }))
+  })
+
+  it('invalida para el ranking un intento que superó el techo de duración, pero igual lo corrige', async () => {
+    rankedFindFirstMock.mockResolvedValue({
+      id: 'attempt-1',
+      subjectId: 'subject-1',
+      bankId: 'bank-1',
+      questionIds,
+      totalQuestions: questionIds.length,
+      // 24 horas antes del "ahora" congelado: muy por encima del presupuesto
+      // (2 preguntas * 300s + 600s = 1200s).
+      startedAt: new Date('2026-06-01T10:05:00.000Z'),
+      finishedAt: null,
+      invalidatedAt: null,
+      invalidReason: null,
+    })
+
+    const { POST } = await import('./route')
+    const response = await POST(new Request('http://campus.test/api/quiz/ranked/finish', {
+      method: 'POST',
+      body: JSON.stringify({
+        subject: 'algoritmos',
+        attemptId: 'attempt-1',
+        answers: [{ id: questionIds[0], answer: 1 }],
+      }),
+    }))
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.resultados).toHaveLength(2)
+    expect(body.ranked.validForRanking).toBe(false)
+    expect(body.ranked.invalidReason).toBe('duration_exceeded')
+    expect(rankedUpdateMock).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        status: 'INVALID',
+        invalidReason: 'duration_exceeded',
+        invalidatedAt: expect.any(Date),
+      }),
+    }))
+  })
+
+  it('mantiene válido un intento dentro del presupuesto de tiempo', async () => {
+    const { POST } = await import('./route')
+    const response = await POST(new Request('http://campus.test/api/quiz/ranked/finish', {
+      method: 'POST',
+      body: JSON.stringify({
+        subject: 'algoritmos',
+        attemptId: 'attempt-1',
+        answers: [{ id: questionIds[0], answer: 1 }],
+      }),
+    }))
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.ranked.validForRanking).toBe(true)
+    expect(body.ranked.durationSeconds).toBe(300)
+    expect(rankedUpdateMock).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ status: 'VALID', invalidReason: null }),
     }))
   })
 })

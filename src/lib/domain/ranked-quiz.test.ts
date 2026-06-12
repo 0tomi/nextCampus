@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   OFFENSIVE_NAME_VARIATION_COUNT,
+  getRankedMaxDurationSeconds,
   getRankedQuestionCount,
   isRankedBankEligible,
+  isRankedDurationExceeded,
   validateParticipantName,
 } from './ranked-quiz'
 
@@ -46,5 +48,15 @@ describe('ranked quiz rules', () => {
 
   it('mantiene al menos 100 variaciones ofensivas cubiertas por regex', () => {
     expect(OFFENSIVE_NAME_VARIATION_COUNT).toBeGreaterThanOrEqual(100)
+  })
+
+  it('calcula el techo de duración según la cantidad de preguntas', () => {
+    // 10 preguntas * 300s + 600s de margen = 3600s
+    expect(getRankedMaxDurationSeconds(10)).toBe(3600)
+  })
+
+  it('no excede en el límite exacto y excede un segundo después', () => {
+    expect(isRankedDurationExceeded(3600, 10)).toBe(false)
+    expect(isRankedDurationExceeded(3601, 10)).toBe(true)
   })
 })

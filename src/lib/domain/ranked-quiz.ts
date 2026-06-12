@@ -9,6 +9,20 @@ export type RankedInvalidationReason =
   | 'page_unload'
   | 'manual_exit'
 
+// Presupuesto generoso por pregunta. Un ranked real ronda 1-2 min por
+// pregunta; 5 min por pregunta + margen fijo solo excluye intentos que
+// quedaron abiertos mucho más tiempo del que un examen honesto puede durar.
+export const RANKED_SECONDS_PER_QUESTION_BUDGET = 300
+export const RANKED_DURATION_GRACE_SECONDS = 600
+
+export function getRankedMaxDurationSeconds(totalQuestions: number): number {
+  return totalQuestions * RANKED_SECONDS_PER_QUESTION_BUDGET + RANKED_DURATION_GRACE_SECONDS
+}
+
+export function isRankedDurationExceeded(durationSeconds: number, totalQuestions: number): boolean {
+  return durationSeconds > getRankedMaxDurationSeconds(totalQuestions)
+}
+
 export function getRankedQuestionCount(totalPreguntas: number): number {
   if (!Number.isFinite(totalPreguntas) || totalPreguntas <= 0) return 0
   const rawCount = totalPreguntas * RANKED_PERCENTAGE

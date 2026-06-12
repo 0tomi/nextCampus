@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getSubjectQuizMeta } from '@/lib/queries'
 import { getQuestionFromBank, gradeQuestion, parseQuestionId, resumirIntento, type GradeResult, type QuizBankFile } from '@/lib/domain/quiz-bank'
+import { isRankedDurationExceeded } from '@/lib/domain/ranked-quiz'
 import { readQuizBank } from '@/lib/storage'
 
 
@@ -79,7 +80,13 @@ export async function POST(request: Request) {
   const resumen = resumirIntento(resultados)
   const finishedAt = new Date()
   const durationSeconds = Math.max(0, Math.round((finishedAt.getTime() - attempt.startedAt.getTime()) / 1000))
-  const validForRanking = !attempt.invalidatedAt && parsed.data.clientInvalidated !== true
+  // Techo server-side: el anti-cheat del cliente es voluntario, pero el tiempo
+  // lo verifica el server solo. Un intento que quedó abierto más de lo que un
+  // examen honesto puede durar no compite en el ranking (sí se corrige).
+  const durationExceeded = isRankedDurationExceeded(durationSeconds, attempt.totalQuestions)
+  const validForRanking =
+    !attempt.invalidatedAt && parsed.data.clientInvalidated !== true && !durationExceeded
+  const fallbackInvalidReason = durationExceeded ? 'duration_exceeded' : 'client_invalidated'
 
   await prisma.rankedQuizAttempt.update({
     where: { id: attempt.id },
@@ -89,7 +96,7 @@ export async function POST(request: Request) {
       percentage: resumen.porcentaje,
       durationSeconds,
       finishedAt,
-      invalidReason: validForRanking ? attempt.invalidReason : attempt.invalidReason ?? 'client_invalidated',
+      invalidReason: validForRanking ? attempt.invalidReason : attempt.invalidReason ?? fallbackInvalidReason,
       invalidatedAt: validForRanking ? attempt.invalidatedAt : attempt.invalidatedAt ?? finishedAt,
     },
   })
@@ -98,7 +105,7 @@ export async function POST(request: Request) {
     resultados,
     ranked: {
       validForRanking,
-      invalidReason: validForRanking ? null : attempt.invalidReason ?? 'client_invalidated',
+      invalidReason: validForRanking ? null : attempt.invalidReason ?? fallbackInvalidReason,
       correctAnswers: resumen.correctas,
       totalQuestions: resumen.total,
       percentage: resumen.porcentaje,
