@@ -16,7 +16,7 @@ actualizar su fila al terminar.
 | [002](002-evento-fecha-index.md) | Índice sobre `Evento.fecha` | P1 | S | 001 (rec.) | DONE (2026-06-12, commits `b7b81d9` + `2b9a6ca`) |
 | [003](003-dx-quick-wins.md) | Quick wins DX (`pnpm verify`, README, archivar yamls) | P2 | S | — | DONE (2026-06-12, commit `3f8a743`) |
 | [004](004-rate-limit-fail-closed.md) | Rate limit de login admin fail-closed en producción | P1 | S | 001 (rec.) | TODO |
-| [005](005-ranked-server-side-guards.md) | Techo de duración server-side en el ranked | P2 | S | 001 (rec.) | TODO |
+| [005](005-ranked-server-side-guards.md) | Techo de duración server-side en el ranked | P2 | S | 001 (rec.) | DONE (2026-06-12, commit `dea28fc`) |
 | [006](006-split-admin-actions.md) | Partir `admin/actions.ts` por dominio | P2 | L | 001 | TODO |
 | [007](007-cache-invalidation-policy.md) | Política de invalidación de cache | P2 | M | 006 | TODO |
 | [008](008-mapa-shared-state-hook.md) | Estado derivado compartido del mapa | P3 | M | 001 | TODO |
@@ -77,6 +77,16 @@ Valores de estado: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED (motivo en una lí
   se corrió y pasó (incluido el build, que validó además los planes 001-002 y
   el cierre de deuda). Los dos `plan-*.yaml` del root fueron a
   `docs/plans/plans-done/` con `git mv` (historial preservado).
+- **005 (2026-06-12)**: implementado (`dea28fc`). Techo =
+  `totalQuestions * 300s + 600s` (`getRankedMaxDurationSeconds` en el
+  dominio); el finish marca `INVALID` con `invalidReason: 'duration_exceeded'`
+  pero sigue corrigiendo y devolviendo los resultados. La UI no necesitó
+  cambios (solo consume el booleano `validForRanking`). De paso se desactivó
+  otra bomba de tiempo en tests: el mock de `finish/route.test.ts` usaba
+  `startedAt` fijo contra el reloj real — ahora el reloj se congela con
+  `vi.useFakeTimers({ toFake: ['Date'] })` (mismo patrón del registro 001).
+  Diferido conocido: limpieza de intentos `IN_PROGRESS` abandonados (este
+  techo define qué es "abandonado").
 
 ## Hallazgos auditados y NO seleccionados (sin plan, registrados para no re-auditar)
 
