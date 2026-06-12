@@ -649,10 +649,18 @@ const baseRecursoSchema = z.object({
 const linkRecursoSchema = baseRecursoSchema
   .extend({
     url: z.url(),
-    tipo: z.enum(['YOUTUBE', 'DRIVE']),
+    tipo: z.enum(['YOUTUBE', 'DRIVE', 'REPOSITORY', 'OTHER']),
   })
   .refine(
     (r) => {
+      if (r.tipo === 'OTHER') {
+        try {
+          const u = new URL(r.url)
+          return u.protocol === 'https:'
+        } catch {
+          return false
+        }
+      }
       const detected = detectarRecurso(r.url)
       return detected !== null && detected.tipo === r.tipo
     },

@@ -10,12 +10,21 @@ import {
 } from '@/lib/domain/apuntes/apunteForm'
 
 type InitialRecurso = {
-  tipo: 'YOUTUBE' | 'DRIVE' | 'HTML'
+  tipo: 'YOUTUBE' | 'DRIVE' | 'HTML' | 'REPOSITORY' | 'OTHER'
   url: string
   nombre?: string | null
   storageKey?: string | null
   mimeType?: string | null
   sizeBytes?: number | null
+}
+
+function esUrlValidaHttps(url: string): boolean {
+  try {
+    const u = new URL(url)
+    return u.protocol === 'https:'
+  } catch {
+    return false
+  }
 }
 
 export function useApunteRecursos(initialRecursos: InitialRecurso[] = []) {
@@ -36,16 +45,25 @@ export function useApunteRecursos(initialRecursos: InitialRecurso[] = []) {
 
   const handleKindChange = useCallback((localId: string, kind: RecursoDraftKind) => {
     setRecursos((prev) =>
-      prev.map((recurso) =>
-        recurso.localId === localId
-          ? {
-              ...recurso,
-              kind,
-              tipo: kind === 'HTML' ? 'HTML' : detectRecursoTipo(recurso.url),
-              error: undefined,
-            }
-          : recurso,
-      ),
+      prev.map((recurso) => {
+        if (recurso.localId !== localId) return recurso
+
+        let tipo: 'YOUTUBE' | 'DRIVE' | 'HTML' | 'REPOSITORY' | 'OTHER' | null = null
+        if (kind === 'HTML') {
+          tipo = 'HTML'
+        } else if (kind === 'OTHER') {
+          tipo = esUrlValidaHttps(recurso.url) ? 'OTHER' : null
+        } else {
+          tipo = detectRecursoTipo(recurso.url)
+        }
+
+        return {
+          ...recurso,
+          kind,
+          tipo,
+          error: undefined,
+        }
+      }),
     )
   }, [])
 
@@ -132,17 +150,26 @@ export function useApunteRecursos(initialRecursos: InitialRecurso[] = []) {
       return
     }
 
-    const tipo = detectRecursoTipo(value)
     setRecursos((prev) =>
-      prev.map((recurso) =>
-        recurso.localId === localId
-          ? {
-              ...recurso,
-              tipo,
-              error: tipo ? undefined : 'Solo links de YouTube o Drive',
-            }
-          : recurso,
-      ),
+      prev.map((recurso) => {
+        if (recurso.localId !== localId) return recurso
+
+        if (recurso.kind === 'OTHER') {
+          const ok = esUrlValidaHttps(value)
+          return {
+            ...recurso,
+            tipo: ok ? 'OTHER' : null,
+            error: ok ? undefined : 'Ingresá una URL válida (debe empezar con https://)',
+          }
+        }
+
+        const tipo = detectRecursoTipo(value)
+        return {
+          ...recurso,
+          tipo,
+          error: tipo ? undefined : 'Solo links de YouTube, Drive o GitHub',
+        }
+      }),
     )
   }, [])
 

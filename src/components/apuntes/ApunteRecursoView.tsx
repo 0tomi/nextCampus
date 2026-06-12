@@ -13,7 +13,25 @@ import {
   type DriveKind,
   type RecursoTipo,
 } from '@/lib/recursos'
-import { ExternalLink, FileText, ImageIcon, PlayCircle, Maximize2, Minimize2 } from 'lucide-react'
+import { ExternalLink, FileText, ImageIcon, PlayCircle, Maximize2, Minimize2, Globe } from 'lucide-react'
+
+function Github({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+      <path d="M9 18c-4.51 2-5-2-7-2" />
+    </svg>
+  )
+}
 
 function driveEmbedClassName(kind: DriveKind, variant: 'card' | 'wide'): string {
   const rounded = variant === 'wide' ? 'rounded-xl' : 'rounded-md'
@@ -57,7 +75,11 @@ export function ApunteRecursoView({ recurso, variant = 'card', apunteHref, htmlL
       ? 'Abrir en YouTube'
       : recurso.tipo === 'DRIVE'
         ? 'Abrir en Drive'
-        : 'Abrir apunte'
+        : recurso.tipo === 'REPOSITORY'
+          ? 'Abrir en GitHub'
+          : recurso.tipo === 'OTHER'
+            ? 'Visitar enlace'
+            : 'Abrir apunte'
 
   if (variant === 'wide') {
     return (
@@ -140,6 +162,14 @@ function ApunteRecursoMedia({
   apunteHref?: string
   htmlLoadMode: NonNullable<ApunteRecursoViewProps['htmlLoadMode']>
 }) {
+  if (recurso.tipo === 'REPOSITORY') {
+    return <GithubRepositoryPreview href={recurso.url} title={titulo} variant={variant} />
+  }
+
+  if (recurso.tipo === 'OTHER') {
+    return <LinkPreview href={recurso.url} title={titulo} variant={variant} />
+  }
+
   if (recurso.tipo === 'HTML') {
     if (variant === 'wide') {
       return <HtmlPreviewIframe recursoId={recurso.id} titulo={titulo} />
@@ -479,5 +509,153 @@ function DriveFallback({
         <ExternalLink className="size-3" />
       </a>
     </div>
+  )
+}
+
+function GithubRepositoryPreview({
+  href,
+  title,
+  variant = 'card',
+}: {
+  href: string
+  title: string
+  variant?: 'card' | 'wide'
+}) {
+  return (
+    <div className="flex flex-col items-start gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-5 sm:flex-row sm:items-center sm:justify-between transition-colors hover:bg-white/[0.04] hover:border-white/10 group">
+      <div className="flex min-w-0 items-center gap-3.5">
+        <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-white/5 bg-white/[0.04] text-white/70 shadow-sm transition-colors group-hover:text-white group-hover:bg-white/[0.06]">
+          <Github className="size-5.5" />
+        </span>
+        <div className="min-w-0">
+          {variant !== 'wide' && (
+            <p className="text-sm font-bold text-white tracking-tight">{title}</p>
+          )}
+          <p className="text-xs leading-relaxed text-white/45">
+            Repositorio de GitHub asociado. Podés acceder al código fuente y documentación del recurso.
+          </p>
+        </div>
+      </div>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+      >
+        Ver en GitHub
+        <ExternalLink className="size-3" />
+      </a>
+    </div>
+  )
+}
+
+function LinkPreview({
+  href,
+  title,
+  variant = 'card',
+}: {
+  href: string
+  title: string
+  variant?: 'card' | 'wide'
+}) {
+  const [data, setData] = useState<{ title: string; description: string; image?: string; logo?: string } | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    fetch(`/api/link-preview?url=${encodeURIComponent(href)}`)
+      .then((res) => {
+        if (!res.ok) throw new Error()
+        return res.json()
+      })
+      .then((json) => {
+        if (active) {
+          setData(json)
+          setLoading(false)
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      active = false
+    }
+  }, [href])
+
+  if (loading) {
+    return (
+      <div className="flex animate-pulse flex-col items-start gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex w-full items-center gap-3.5">
+          <div className="size-11 shrink-0 rounded-lg bg-white/[0.06]" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-1/3 rounded bg-white/[0.06]" />
+            <div className="h-3 w-2/3 rounded bg-white/[0.06]" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const previewTitle = data?.title || title || new URL(href).hostname
+  const previewDesc = data?.description || 'Enlace a recurso externo.'
+  const logoSrc = data?.logo
+  const imageSrc = data?.image
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer nofollow"
+      className="group block overflow-hidden rounded-xl border border-white/5 bg-white/[0.02] transition-all duration-300 hover:border-white/10 hover:bg-white/[0.04] hover:-translate-y-0.5 cursor-pointer"
+    >
+      <div className="flex flex-col sm:flex-row">
+        {imageSrc && (
+          <div className="relative h-40 w-full shrink-0 overflow-hidden bg-black/10 sm:h-auto sm:w-48">
+            <Image
+              src={imageSrc}
+              alt={previewTitle}
+              fill
+              sizes="(min-width: 640px) 192px, 100vw"
+              className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+              unoptimized
+            />
+          </div>
+        )}
+        <div className="flex flex-1 flex-col justify-between p-5">
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">
+              {logoSrc ? (
+                <img
+                  src={logoSrc}
+                  alt="Site logo"
+                  className="size-4 rounded-sm object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none'
+                  }}
+                />
+              ) : (
+                <Globe className="size-3.5 text-white/30" />
+              )}
+              <span className="truncate max-w-[200px]">{new URL(href).hostname}</span>
+            </div>
+            <div>
+              <h4 className="line-clamp-2 text-sm font-bold leading-snug text-white group-hover:text-cyan-200 transition-colors">
+                {previewTitle}
+              </h4>
+              <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-white/55">
+                {previewDesc}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-cyan-300 group-hover:text-cyan-200">
+            <span>Visitar sitio</span>
+            <ExternalLink className="size-3 transition-transform duration-300 group-hover:translate-x-0.5" />
+          </div>
+        </div>
+      </div>
+    </a>
   )
 }

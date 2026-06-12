@@ -1,4 +1,4 @@
-export type RecursoTipo = 'YOUTUBE' | 'DRIVE' | 'HTML'
+export type RecursoTipo = 'YOUTUBE' | 'DRIVE' | 'HTML' | 'REPOSITORY' | 'OTHER'
 
 const YOUTUBE_HOSTS = new Set([
   'youtube.com',
@@ -30,6 +30,10 @@ export function detectarRecurso(rawUrl: string): { tipo: RecursoTipo; url: strin
 
   if (DRIVE_HOSTS.has(host)) {
     return { tipo: 'DRIVE', url: u.toString() }
+  }
+
+  if (host === 'github.com' || host.endsWith('.github.com')) {
+    return { tipo: 'REPOSITORY', url: u.toString() }
   }
 
   return null
@@ -247,5 +251,9 @@ export function nombreFallbackRecurso(tipo: RecursoTipo): string {
       return 'Archivo de Drive'
     case 'HTML':
       return 'Vista interactiva'
+    case 'REPOSITORY':
+      return 'Repositorio de GitHub'
+    case 'OTHER':
+      return 'Recurso externo'
   }
 }

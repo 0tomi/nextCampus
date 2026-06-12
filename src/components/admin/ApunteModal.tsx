@@ -33,7 +33,7 @@ export type ApunteFull = {
   categorias?: Array<{ id: string; nombre: string }>
   recursos: Array<{
     id: string
-    tipo: 'YOUTUBE' | 'DRIVE' | 'HTML'
+    tipo: 'YOUTUBE' | 'DRIVE' | 'HTML' | 'REPOSITORY' | 'OTHER'
     url: string
     orden: number
     /** Nombre custom del recurso (fallback genérico cuando es null). */

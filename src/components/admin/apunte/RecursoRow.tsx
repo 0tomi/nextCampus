@@ -2,8 +2,26 @@
 
 import { useCallback, useState } from 'react'
 import Image from 'next/image'
-import { AlertCircle, ChevronDown, ChevronUp, CirclePlay, FileCode2, Info, Trash2 } from 'lucide-react'
+import { AlertCircle, ChevronDown, ChevronUp, CirclePlay, FileCode2, Globe, Info, Trash2 } from 'lucide-react'
 import type { RecursoTipo } from '@/lib/recursos'
+
+function Github({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+      <path d="M9 18c-4.51 2-5-2-7-2" />
+    </svg>
+  )
+}
 import type { RecursoDraft, RecursoDraftKind } from '@/lib/domain/apuntes/apunteForm'
 
 // ---------------------------------------------------------------------------
@@ -91,6 +109,8 @@ function nombreFallbackHint(tipo: RecursoTipo | null): string | null {
   if (tipo === 'HTML') return 'Se mostrará como vista interactiva'
   if (tipo === 'DRIVE') return 'Se mostrará como “Archivo de Drive”'
   if (tipo === 'YOUTUBE') return 'Se mostrará como “Video de YouTube”'
+  if (tipo === 'REPOSITORY') return 'Se mostrará como “Repositorio de GitHub”'
+  if (tipo === 'OTHER') return 'Se mostrará como enlace externo con vista previa'
   return null
 }
 
@@ -212,6 +232,16 @@ function ResourceKindSelector({
       </button>
       <button
         type="button"
+        onClick={() => onKindChange('OTHER')}
+        className={[
+          'flex-1 cursor-pointer rounded px-2 py-1.5 text-xs font-semibold transition-colors',
+          kind === 'OTHER' ? 'bg-white/10 text-white' : 'text-white/45 hover:bg-white/5 hover:text-white/70',
+        ].join(' ')}
+      >
+        Otro
+      </button>
+      <button
+        type="button"
         onClick={onInfoToggle}
         aria-label="¿Qué es este tipo de recurso?"
         aria-expanded={infoOpen}
@@ -249,8 +279,13 @@ function ResourceInfoPanel({
           {kind === 'LINK' ? (
             <p>
               Al ser un proyecto gratuito, contamos con almacenamiento limitado. Por eso preferimos que compartas un
-              link hacia el recurso vía Drive, o un video vía YouTube. Ambos recursos ofrecen una previsualización una
-              vez subido el apunte.
+              link hacia el recurso vía Drive, un video vía YouTube o un repositorio de GitHub. Ofrecemos
+              previsualizaciones una vez subido el apunte.
+            </p>
+          ) : kind === 'OTHER' ? (
+            <p>
+              El tipo "Otro" permite enlazar a cualquier recurso o página externa útil. Intentaremos extraer sus
+              metadatos Open Graph para mostrar una previsualización elegante con imagen, título y descripción.
             </p>
           ) : (
             <p>
@@ -288,7 +323,7 @@ function ResourceInputControl({
   onUrlBlur: (localId: string, value: string) => void
   onUrlChange: (localId: string, value: string) => void
 }) {
-  if (recurso.kind === 'LINK') {
+  if (recurso.kind === 'LINK' || recurso.kind === 'OTHER') {
     return <LinkResourceInput recurso={recurso} onUrlBlur={onUrlBlur} onUrlChange={onUrlChange} />
   }
 
@@ -311,6 +346,11 @@ function LinkResourceInput({
   onUrlBlur: (localId: string, value: string) => void
   onUrlChange: (localId: string, value: string) => void
 }) {
+  const isOther = recurso.kind === 'OTHER'
+  const placeholder = isOther
+    ? 'https://ejemplo.com/recurso-util'
+    : 'https://youtube.com/watch?v=... o https://drive.google.com/...'
+
   return (
     <div className="relative flex-1">
       <input
@@ -319,7 +359,7 @@ function LinkResourceInput({
         value={recurso.url}
         onChange={(event) => onUrlChange(recurso.localId, event.target.value)}
         onBlur={(event) => onUrlBlur(recurso.localId, event.target.value)}
-        placeholder="https://youtube.com/watch?v=... o https://drive.google.com/..."
+        placeholder={placeholder}
         className={`w-full rounded border bg-surface-0 px-3 py-2 pr-9 text-sm text-white placeholder:text-white/30 focus:outline-none ${
           recurso.error ? 'border-rose-400/50 focus:border-rose-400/70' : 'border-white/10 focus:border-white/20'
         }`}
@@ -335,6 +375,8 @@ function LinkResourceInput({
             className="size-4"
           />
         ) : null}
+        {recurso.tipo === 'REPOSITORY' ? <Github className="size-4 text-slate-300" /> : null}
+        {recurso.tipo === 'OTHER' ? <Globe className="size-4 text-cyan-400" /> : null}
         {recurso.error ? <AlertCircle className="size-4 text-rose-400" /> : null}
       </div>
     </div>

@@ -44,7 +44,7 @@ interface SubjectTabsProps {
     createdAt: string
     createdByUserId: string | null
     categorias: Array<{ id: string; nombre: string }>
-    recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE' | 'HTML'; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }>
+    recursos: Array<{ id: string; tipo: 'YOUTUBE' | 'DRIVE' | 'HTML' | 'REPOSITORY' | 'OTHER'; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }>
   }>
   categorias: Array<{ id: string; nombre: string }>
   apuntesHasMore: boolean
