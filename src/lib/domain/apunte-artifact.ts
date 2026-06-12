@@ -2,8 +2,16 @@ import { build, type Plugin } from 'esbuild'
 
 export const MAX_APUNTE_REACT_SOURCE_BYTES = 500 * 1024
 
-const ALLOWED_IMPORTS = new Set(['react'])
-const ARTIFACT_BUNDLER_IMPORT_RE = /^(react|react-dom\/client|react\/jsx-runtime)$/
+const ALLOWED_IMPORTS = new Set([
+  'react',
+  'recharts',
+  'lucide-react',
+  'framer-motion',
+  'katex',
+  'd3',
+  'mathjs',
+])
+const ARTIFACT_BUNDLER_IMPORT_RE = /^(react(\/.*)?|react-dom(\/.*)?|recharts|lucide-react|framer-motion|katex|d3|mathjs)$/
 const IMPORT_RE = /(?:import|export)\s+(?:[^'";]+?\s+from\s+)?["']([^"']+)["']/g
 const DYNAMIC_IMPORT_RE = /\bimport\s*\(/
 const REQUIRE_RE = /\brequire\s*\(/
@@ -34,7 +42,7 @@ function validateImports(source: string): string | null {
   for (const match of source.matchAll(IMPORT_RE)) {
     const specifier = match[1]
     if (!ALLOWED_IMPORTS.has(specifier)) {
-      return `El apunte solo puede importar React. Quitá "${specifier}" y volvé a subirlo.`
+      return `El import "${specifier}" no está soportado. Librerías permitidas: ${[...ALLOWED_IMPORTS].join(', ')}.`
     }
   }
 
@@ -178,10 +186,19 @@ export async function compileReactArtifact(params: {
     "imports": {
       "react": "https://esm.sh/react@19",
       "react/jsx-runtime": "https://esm.sh/react@19/jsx-runtime",
-      "react-dom/client": "https://esm.sh/react-dom@19/client"
+      "react-dom": "https://esm.sh/react-dom@19?external=react",
+      "react-dom/client": "https://esm.sh/react-dom@19/client?external=react",
+      "recharts": "https://esm.sh/recharts@2?external=react,react-dom",
+      "lucide-react": "https://esm.sh/lucide-react?external=react",
+      "framer-motion": "https://esm.sh/framer-motion@12?external=react,react-dom",
+      "katex": "https://esm.sh/katex@0.16",
+      "d3": "https://esm.sh/d3@7",
+      "mathjs": "https://esm.sh/mathjs@14"
     }
   }
   </script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <style>
     :root { color-scheme: light dark; }
     html, body, #root { min-height: 100%; margin: 0; }

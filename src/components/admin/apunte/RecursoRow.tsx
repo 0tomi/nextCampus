@@ -35,7 +35,7 @@ Tu tarea: identificá la idea general y cada concepto del temario, sin dejar nin
 
 - Fidelidad sobre adorno. Las animaciones y gráficos tienen que REPRESENTAR fielmente el mecanismo real de lo que se explica: cómo cambia una variable, cómo itera un algoritmo, cómo se deforma una curva, cómo fluyen los datos. Nunca pongas animaciones que solo decoran y no enseñan nada.
 
-- Ejemplos del tipo de interacción que se espera: sliders que recalculan una fórmula y su gráfico en vivo mientras el estudiante mueve los parámetros; un algoritmo que se ejecuta paso a paso resaltando en cada iteración qué elemento cambia y por qué; diagramas que se arman ante el ojo a medida que se explica cada parte; simulaciones manipulables; autoevaluaciones con feedback inmediato. Usá la expresividad de React y el navegador al máximo para que el estudiante APRENDA, no solo lea.
+- Ejemplos del tipo de interacción que se espera: sliders que recalculan una fórmula y su gráfico en vivo mientras el estudiante mueve los parámetros; un algoritmo que se ejecuta paso a paso resaltando en cada iteración qué elemento cambia y por qué; diagramas que se arman ante el ojo a medida que se explica cada parte; simulaciones manipulables; autoevaluaciones con feedback inmediato.
 
 == PRIORIDAD ==
 
@@ -43,19 +43,25 @@ Profundidad sobre los conceptos centrales por encima de la exhaustividad superfi
 
 == CONTRATO TÉCNICO (cumplir SIN EXCEPCIÓN) ==
 
-- Formato de entrega: Exportá todo como un ÚNICO archivo React, preferiblemente TSX, con un componente default listo para renderizarse. Incluí los estilos dentro del mismo componente o del mismo archivo.
+- Formato de entrega: Exportá todo como un ÚNICO archivo TSX con un export default del componente principal. No hace falta el boilerplate de ReactDOM ni de createRoot: eso ya lo maneja la plataforma.
 
 - Tono educativo: Explicado de forma sencilla sin perder rigor sobre la materia, sin dejar detalles afuera. Es un apunte para estudiar.
 
-- Diseño responsivo: El documento debe verse bien tanto en interfaz de Desktop como en una interfaz de Teléfono como lo es 9:16.
+- Diseño responsivo: El documento debe verse bien tanto en Desktop como en un teléfono (9:16).
 
-- Dependencias y Expresividad: Debe ser un único archivo. La ÚNICA sentencia "import" permitida es la de React y sus hooks (import React, { useState, useEffect } from 'react'). NO uses "import" de ninguna otra librería, ni "import()" dinámico, ni "require()": el apunte se rechaza y no abre.
+- Estilos con Tailwind CSS: Tailwind CSS v4 está disponible en el entorno. Usá clases de utilidad directamente en className, es la forma preferida de estilizar. Podés complementar con estilos inline cuando necesites valores dinámicos calculados en JS.
 
-- Cómo usar librerías externas (CDN): Para aprovechar librerías de gráficos, animación, diagramas o matemática NO las importás: las cargás en tiempo de ejecución inyectando una etiqueta <script> (y <link> para su CSS) que apunte a un build UMD/global, y después las usás desde el objeto window. El patrón correcto es: dentro de un useEffect, creás el <script> con document.createElement, le ponés el src del CDN, esperás su evento onload, y recién ahí leés la librería desde window (por ejemplo window.Chart, window.d3, window.gsap) y dibujás. IMPORTANTE: los scripts y estilos SOLO pueden cargarse desde estos tres hosts (cualquier otro dominio queda bloqueado y el apunte no carga): https://cdn.jsdelivr.net , https://unpkg.com y https://cdnjs.cloudflare.com . Solo sirven librerías con build de navegador (UMD/global); no uses librerías solo-ESM ni que dependan de React (como Recharts o Framer Motion), porque no se enganchan a esta instancia de React.
+- Librerías disponibles: Podés importar ÚNICAMENTE las siguientes librerías. Cualquier otro import hace que el apunte se rechace:
 
-- Librerías recomendadas (todas tienen build UMD/global y aligeran tu código en vez de dibujar todo a mano): KaTeX o MathJax para fórmulas matemáticas; Chart.js para gráficos de datos (barras, líneas, dispersión); D3 o Plotly para visualizaciones y gráficos científicos más ricos; p5.js para simulaciones, física y animaciones generativas sobre canvas; GSAP o anime.js para animar transiciones y revelar conceptos paso a paso; Mermaid para diagramas de flujo, árboles y secuencias. Elegí las que mejor representen cada tema; no estás obligado a usar todas. Cualquier otro recurso con build de navegador que mejore la comprensión es bienvenido, siempre que no requiera archivos locales.
+  • react — hooks (useState, useEffect, useRef, useMemo, useCallback, etc.)
+  • recharts — gráficos de datos: LineChart, BarChart, AreaChart, PieChart, ScatterChart, y sus componentes (Line, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, etc.)
+  • lucide-react — íconos SVG: import { Search, BookOpen, ChevronRight, etc. } from 'lucide-react'
+  • framer-motion — animaciones declarativas: motion.div, AnimatePresence, useAnimation, variants, etc.
+  • katex — renderizado de fórmulas LaTeX: katex.renderToString('\\\\frac{a}{b}', { throwOnError: false }). El CSS de KaTeX ya está cargado, solo importá la librería.
+  • d3 — visualizaciones científicas avanzadas: import * as d3 from 'd3'. Ideal para grafos, árboles, fuerzas, mapas de calor, y gráficos que recharts no cubre.
+  • mathjs — cálculo matemático: import { evaluate, derivative, parse } from 'mathjs'. Perfecto para sliders que recalculan fórmulas en vivo sin escribir tu propio parser.
 
-- Fórmulas matemáticas: Si el apunte presenta fórmulas matemáticas, presentar dichas ecuaciones utilizando algún motor compatible que renderice LaTeX (por ejemplo, cargando dinámicamente KaTeX o MathJax por CDN) para que el estudiante pueda interpretar el apunte fácilmente.
+  Importalas normalmente con import: import { LineChart, Line } from 'recharts'. NO uses import() dinámico, require(), ni document.createElement para cargar scripts.
 
 - Enfoque de contenido (Directiva Crítica): NO incluir frases, referencias o directivas proveídas por el usuario dentro del apunte generado. El apunte debe estar redactado para el estudiante que quiere conocer la información sobre los temas que trata el propio recurso; no interesan los detalles técnicos que te pidió el usuario para generar dicho apunte.
 
