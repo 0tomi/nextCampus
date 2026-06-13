@@ -35,4 +35,25 @@ describe('apunte recurso preview route', () => {
     expect(csp).toContain("connect-src https://esm.sh")
     expect(csp).toContain("form-action 'none'")
   })
+
+  it('adjunta Content-Disposition si viene download=1 con el nombre sanitizado', async () => {
+    findUniqueMock.mockResolvedValue({
+      tipo: 'HTML',
+      storageKey: 'apuntes/demo.html',
+      nombre: 'Mi Recurso Eñe / Barra',
+      apunte: { titulo: 'Titulo Apunte' },
+    })
+    readApunteHtmlMock.mockResolvedValue('<html></html>')
+
+    const { GET } = await import('./route')
+    const response = await GET(new Request('https://nextcampus.test/api/apuntes/recursos/r1/preview?download=1'), {
+      params: Promise.resolve({ recursoId: 'r1' }),
+    })
+
+    expect(response.status).toBe(200)
+    const contentDisposition = response.headers.get('Content-Disposition') ?? ''
+    expect(contentDisposition).toContain('attachment;')
+    expect(contentDisposition).toContain('filename="Mi Recurso E_e _ Barra.html"')
+    expect(contentDisposition).toContain("filename*=UTF-8''Mi%20Recurso%20E%C3%B1e%20_%20Barra.html")
+  })
 })

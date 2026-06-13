@@ -440,21 +440,10 @@ function HtmlPreviewIframe({
 
         {isExpanded && (
           <div className="absolute top-3.5 right-3.5 z-30 flex items-center gap-2">
-            <a
-              href={`/api/apuntes/recursos/${recursoId}/preview`}
-              download
-              className="cursor-pointer inline-flex items-center justify-center h-[34px] px-2.5 hover:px-3 gap-0 hover:gap-1.5 rounded-lg border border-white/10 bg-black/60 text-xs font-semibold text-white/90 backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-black/80 hover:border-white/20 group select-none"
-              title="Descargar apunte"
-            >
-              <Download className="size-4 shrink-0" />
-              <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-out group-hover:max-w-[80px] group-hover:opacity-100">
-                Descargar
-              </span>
-            </a>
             <button
               type="button"
               onClick={handleReduce}
-              className="cursor-pointer inline-flex items-center justify-center h-[34px] px-2.5 hover:px-3 gap-0 hover:gap-1.5 rounded-lg border border-white/10 bg-black/60 text-xs font-semibold text-white/90 backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-black/80 hover:border-white/20 group select-none"
+              className="cursor-pointer inline-flex items-center justify-center h-[34px] px-2.5 hover:px-3 gap-0 hover:gap-1.5 rounded-lg border border-white/10 bg-black/60 text-xs font-semibold text-white/90 backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-black/80 hover:border-white/20 group select-none opacity-80 hover:opacity-100"
               title="Reducir apunte"
             >
               <Minimize2 className="size-4 shrink-0" />
@@ -468,12 +457,13 @@ function HtmlPreviewIframe({
         {!isExpanded && !isLoading && (
           <div className="absolute top-3.5 right-3.5 z-10 flex items-center gap-2">
             <a
-              href={`/api/apuntes/recursos/${recursoId}/preview`}
+              href={`/api/apuntes/recursos/${recursoId}/preview?download=1`}
               download
-              className="cursor-pointer inline-flex items-center justify-center size-[34px] rounded-lg border border-white/10 bg-black/60 text-white/90 backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-black/80 hover:border-white/20 hover:text-white"
+              className="cursor-pointer inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/60 px-3 py-2 text-xs font-semibold text-white/90 backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-black/80 hover:border-white/20 hover:text-white"
               title="Descargar apunte"
             >
               <Download className="size-3.5" />
+              <span>Descargar</span>
             </a>
             <button
               type="button"

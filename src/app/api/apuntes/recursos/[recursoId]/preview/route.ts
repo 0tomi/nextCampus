@@ -28,16 +28,24 @@ const HTML_PREVIEW_CSP = [
 ].join('; ')
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ recursoId: string }> },
 ) {
   const { recursoId } = await params
+  const { searchParams } = new URL(request.url)
+  const isDownload = searchParams.get('download') === '1'
 
   const recurso = await prisma.apunteRecurso.findUnique({
     where: { id: recursoId },
     select: {
       tipo: true,
       storageKey: true,
+      nombre: true,
+      apunte: {
+        select: {
+          titulo: true,
+        },
+      },
     },
   })
 
@@ -50,13 +58,22 @@ export async function GET(
     return new NextResponse('No encontrado', { status: 404 })
   }
 
-  return new NextResponse(html, {
-    headers: {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Content-Security-Policy': HTML_PREVIEW_CSP,
-      'X-Content-Type-Options': 'nosniff',
-      'Referrer-Policy': 'no-referrer',
-      'Cache-Control': 'private, max-age=300',
-    },
-  })
+  const headers: Record<string, string> = {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Content-Security-Policy': HTML_PREVIEW_CSP,
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'no-referrer',
+    'Cache-Control': 'private, max-age=300',
+  }
+
+  if (isDownload) {
+    const baseName = recurso.nombre?.trim() || recurso.apunte?.titulo?.trim() || 'apunte'
+    const safeBaseName = baseName.replace(/[/\\?%*:|"<>]/g, '_')
+    const filename = safeBaseName.endsWith('.html') ? safeBaseName : `${safeBaseName}.html`
+    const asciiFilename = filename.replace(/[^\x20-\x7E]/g, '_')
+    const encodedFilename = encodeURIComponent(filename)
+    headers['Content-Disposition'] = `attachment; filename="${asciiFilename}"; filename*=UTF-8''${encodedFilename}`
+  }
+
+  return new NextResponse(html, { headers })
 }
