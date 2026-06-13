@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
 const STORAGE_KEY = 'nextcampus:pwa-install-status'
-const SESSION_STORAGE_KEY = 'nextcampus:pwa-dismissed'
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[]
@@ -23,21 +22,6 @@ function readInstalledStatus(): boolean {
 function writeInstalledStatus() {
   try {
     window.localStorage.setItem(STORAGE_KEY, 'installed')
-  } catch {}
-}
-
-function readDismissedStatus(): boolean {
-  if (typeof window === 'undefined') return false
-  try {
-    return window.sessionStorage.getItem(SESSION_STORAGE_KEY) === 'dismissed'
-  } catch {
-    return false
-  }
-}
-
-function writeDismissedStatus() {
-  try {
-    window.sessionStorage.setItem(SESSION_STORAGE_KEY, 'dismissed')
   } catch {}
 }
 
@@ -65,29 +49,19 @@ export interface UseInstallPromptResult {
   isIOS: boolean
   canPromptNatively: boolean
   promptInstall: () => Promise<void>
-  dismiss: () => void
 }
 
 export function useInstallPrompt(): UseInstallPromptResult {
   const [isReady, setIsReady] = useState(false)
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
   const [isInstalled, setIsInstalled] = useState(false)
-  const [isDismissed, setIsDismissed] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
 
   useEffect(() => {
     const installed = readInstalledStatus()
-    const dismissed = readDismissedStatus()
-    // Estado disponible solo en el cliente (localStorage, matchMedia, user-agent).
-    // Se inicializa tras el montaje a propósito: `isReady` arranca en false en
-    // server y cliente, así no hay mismatch de hidratación. El set sincrónico acá
-    // es intencional, no una cascada de renders accidental.
-    /* eslint-disable react-hooks/set-state-in-effect */
     setIsInstalled(detectStandalone() || installed)
-    setIsDismissed(dismissed)
     setIsIOS(detectIOS())
     setIsReady(true)
-    /* eslint-enable react-hooks/set-state-in-effect */
 
     const onBeforeInstall = (event: Event) => {
       event.preventDefault()
@@ -123,14 +97,8 @@ export function useInstallPrompt(): UseInstallPromptResult {
     }
   }, [deferred])
 
-  const dismiss = useCallback(() => {
-    writeDismissedStatus()
-    setIsDismissed(true)
-  }, [])
-
   const canPromptNatively = Boolean(deferred)
-  const shouldShow =
-    isReady && !isInstalled && !isDismissed && (canPromptNatively || isIOS)
+  const shouldShow = isReady && !isInstalled
 
   return {
     isReady,
@@ -138,6 +106,5 @@ export function useInstallPrompt(): UseInstallPromptResult {
     isIOS,
     canPromptNatively,
     promptInstall,
-    dismiss,
   }
 }
