@@ -95,7 +95,7 @@ export function Sheet({
           type="button"
           onClick={onClose}
           aria-label="Cerrar panel"
-          className="inline-flex size-8 items-center justify-center text-white/46 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 cursor-pointer"
+          className="inline-flex size-11 items-center justify-center rounded-lg text-white/46 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 cursor-pointer"
         >
           <X className="size-4" />
         </button>

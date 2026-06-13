@@ -99,7 +99,7 @@ export function SubjectTabs({ subjectId, subjectSlug, subjectName, yearSlug, yea
                 aria-selected={isActive}
                 onClick={() => onSelect(key)}
                 className={[
-                  'flex-1 flex items-center justify-center gap-1.5 h-9 rounded-md',
+                  'flex-1 flex items-center justify-center gap-1.5 h-11 rounded-md',
                   'text-xs font-bold cursor-pointer transition-colors',
                   isActive
                     ? 'bg-[#1f1f1f] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'

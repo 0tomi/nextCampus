@@ -147,7 +147,7 @@ export function MobileShell({
         pathname={pathname}
         years={yearsWithFilteredSubjects}
       />
-      <main className={cn('pb-12 pt-14', mainClassName)}>{children}</main>
+      <main className={cn('pb-12 pt-[calc(3.5rem+var(--spacing-safe-top))]', mainClassName)}>{children}</main>
     </div>
   )
 }
@@ -301,13 +301,13 @@ function MobileTopbar({ title, subtitle, onBack, onOpenMenu }: MobileTopbarProps
     : onOpenMenu
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 h-14 border-b border-white/5 bg-[rgba(20,20,20,0.92)] backdrop-blur-[14px] backdrop-saturate-[1.8]">
+    <header className="fixed inset-x-0 top-0 z-50 h-[calc(3.5rem+var(--spacing-safe-top))] pt-safe-top border-b border-white/5 bg-[rgba(20,20,20,0.92)] backdrop-blur-[14px] backdrop-saturate-[1.8]">
       <div className="flex h-full items-center justify-between px-3">
         <button
           type="button"
           aria-label={onBack ? 'Volver' : 'Abrir menú'}
           onClick={handleLeadingAction}
-          className="flex size-10 cursor-pointer items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+          className="flex size-11 cursor-pointer items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white"
         >
           {onBack ? <ChevronLeft size={22} strokeWidth={2.5} /> : <Menu size={22} strokeWidth={2} />}
         </button>
@@ -331,7 +331,7 @@ function MobileTopbar({ title, subtitle, onBack, onOpenMenu }: MobileTopbarProps
           </div>
         </Link>
 
-        <div className="size-10 shrink-0" aria-hidden />
+        <div className="size-11 shrink-0" aria-hidden />
       </div>
     </header>
   )
@@ -400,7 +400,7 @@ function MobileDrawer({
 
 function DrawerHeader({ careerName, onClose }: { careerName: string; onClose: () => void }) {
   return (
-    <div className="flex items-start justify-between border-b border-white/5 px-5 pb-4 pt-5">
+    <div className="flex items-start justify-between border-b border-white/5 px-5 pb-4 pt-[calc(1.25rem+var(--spacing-safe-top))]">
       <div className="flex flex-col gap-0.5">
         <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
           CARRERA
@@ -411,7 +411,7 @@ function DrawerHeader({ careerName, onClose }: { careerName: string; onClose: ()
         type="button"
         aria-label="Cerrar menú"
         onClick={onClose}
-        className="mt-0.5 flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/5 hover:text-white"
+        className="mt-0.5 flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/5 hover:text-white"
       >
         <X size={18} strokeWidth={2} />
       </button>
@@ -589,7 +589,7 @@ function DrawerYearLink({
 
 function DrawerFooter({ pathname, onClose }: DrawerFooterProps) {
   return (
-    <div className="border-t border-white/5 p-3">
+    <div className="border-t border-white/5 px-3 pt-3 pb-[calc(0.75rem+var(--spacing-safe-bottom))]">
       <div className="mb-3 flex flex-col gap-1">
         <DrawerUtilityLink
           href="/admin"

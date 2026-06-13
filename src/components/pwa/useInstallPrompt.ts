@@ -4,28 +4,24 @@ import { useCallback, useEffect, useState } from 'react'
 
 const STORAGE_KEY = 'nextcampus:pwa-install-status'
 
-type StoredStatus = 'dismissed' | 'installed'
-
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[]
   prompt: () => Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
 }
 
-function readStatus(): StoredStatus | null {
-  if (typeof window === 'undefined') return null
+function readInstalledStatus(): boolean {
+  if (typeof window === 'undefined') return false
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (raw === 'dismissed' || raw === 'installed') return raw
-    return null
+    return window.localStorage.getItem(STORAGE_KEY) === 'installed'
   } catch {
-    return null
+    return false
   }
 }
 
-function writeStatus(status: StoredStatus) {
+function writeInstalledStatus() {
   try {
-    window.localStorage.setItem(STORAGE_KEY, status)
+    window.localStorage.setItem(STORAGE_KEY, 'installed')
   } catch {}
 }
 
@@ -53,25 +49,22 @@ export interface UseInstallPromptResult {
   isIOS: boolean
   canPromptNatively: boolean
   promptInstall: () => Promise<void>
-  dismiss: () => void
 }
 
 export function useInstallPrompt(): UseInstallPromptResult {
   const [isReady, setIsReady] = useState(false)
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
   const [isInstalled, setIsInstalled] = useState(false)
-  const [isDismissed, setIsDismissed] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
 
   useEffect(() => {
-    const stored = readStatus()
+    const installed = readInstalledStatus()
     // Estado disponible solo en el cliente (localStorage, matchMedia, user-agent).
     // Se inicializa tras el montaje a propósito: `isReady` arranca en false en
     // server y cliente, así no hay mismatch de hidratación. El set sincrónico acá
     // es intencional, no una cascada de renders accidental.
     /* eslint-disable react-hooks/set-state-in-effect */
-    setIsInstalled(detectStandalone() || stored === 'installed')
-    setIsDismissed(stored === 'dismissed')
+    setIsInstalled(detectStandalone() || installed)
     setIsIOS(detectIOS())
     setIsReady(true)
     /* eslint-enable react-hooks/set-state-in-effect */
@@ -82,7 +75,7 @@ export function useInstallPrompt(): UseInstallPromptResult {
     }
 
     const onAppInstalled = () => {
-      writeStatus('installed')
+      writeInstalledStatus()
       setIsInstalled(true)
       setDeferred(null)
     }
@@ -102,25 +95,16 @@ export function useInstallPrompt(): UseInstallPromptResult {
       await deferred.prompt()
       const choice = await deferred.userChoice
       if (choice.outcome === 'accepted') {
-        writeStatus('installed')
+        writeInstalledStatus()
         setIsInstalled(true)
-      } else {
-        writeStatus('dismissed')
-        setIsDismissed(true)
       }
     } finally {
       setDeferred(null)
     }
   }, [deferred])
 
-  const dismiss = useCallback(() => {
-    writeStatus('dismissed')
-    setIsDismissed(true)
-  }, [])
-
   const canPromptNatively = Boolean(deferred)
-  const shouldShow =
-    isReady && !isInstalled && !isDismissed && (canPromptNatively || isIOS)
+  const shouldShow = isReady && !isInstalled
 
   return {
     isReady,
@@ -128,6 +112,5 @@ export function useInstallPrompt(): UseInstallPromptResult {
     isIOS,
     canPromptNatively,
     promptInstall,
-    dismiss,
   }
 }

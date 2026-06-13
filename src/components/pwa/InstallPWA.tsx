@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from 'react'
-import { Download, Share, Plus, X, Smartphone } from 'lucide-react'
+import { Download, Share, Plus, X, Smartphone, MoreVertical } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useInstallPrompt } from './useInstallPrompt'
 
-function IosInstructionsSheet({ onClose }: { onClose: () => void }) {
+function InstructionsSheet({ isIOS, onClose }: { isIOS: boolean; onClose: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   const closeDialog = useEffectEvent(() => {
@@ -35,64 +35,97 @@ function IosInstructionsSheet({ onClose }: { onClose: () => void }) {
     }
   }, [])
 
-
   return (
     <dialog
       ref={dialogRef}
-      aria-label="Instalar en iPhone"
+      aria-label={isIOS ? 'Instalar en iPhone' : 'Instalar aplicación'}
       className="fixed inset-x-4 bottom-6 top-auto z-[110] mx-auto max-w-md rounded-xl border border-white/10 bg-surface-1 p-5 text-white shadow-[0_24px_60px_rgba(0,0,0,0.6)] backdrop:bg-black/70 backdrop:backdrop-blur-sm sm:inset-x-0"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
-            Instalar en iPhone
+            {isIOS ? 'Instalar en iPhone' : 'Instalar aplicación'}
           </span>
           <h3 className="text-lg font-bold text-white">
-            Agregala a tu pantalla de inicio
+            {isIOS ? 'Agregala a tu pantalla de inicio' : 'Instalación manual'}
           </h3>
         </div>
         <button
           type="button"
           onClick={onClose}
           aria-label="Cerrar"
-          className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-white/50 transition-colors hover:bg-white/5 hover:text-white"
+          className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/5 hover:text-white"
         >
           <X size={16} strokeWidth={2} />
         </button>
       </div>
 
       <ol className="mt-4 flex flex-col gap-3">
-        <li className="flex items-start gap-3">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
-            <Share size={15} strokeWidth={2} />
-          </span>
-          <div className="flex flex-col gap-0.5 pt-1">
-            <span className="text-[13px] font-semibold text-white">
-              Tocá el botón Compartir
-            </span>
-            <span className="text-[12px] text-white/55">
-              Está en la barra inferior de Safari.
-            </span>
-          </div>
-        </li>
-        <li className="flex items-start gap-3">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
-            <Plus size={15} strokeWidth={2} />
-          </span>
-          <div className="flex flex-col gap-0.5 pt-1">
-            <span className="text-[13px] font-semibold text-white">
-              Elegí “Añadir a pantalla de inicio”
-            </span>
-            <span className="text-[12px] text-white/55">
-              Confirmá el nombre y listo, ya la tenés.
-            </span>
-          </div>
-        </li>
+        {isIOS ? (
+          <>
+            <li className="flex items-start gap-3">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
+                <Share size={15} strokeWidth={2} />
+              </span>
+              <div className="flex flex-col gap-0.5 pt-1">
+                <span className="text-[13px] font-semibold text-white">
+                  Tocá el botón Compartir
+                </span>
+                <span className="text-[12px] text-white/55">
+                  Está en la barra inferior de Safari.
+                </span>
+              </div>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
+                <Plus size={15} strokeWidth={2} />
+              </span>
+              <div className="flex flex-col gap-0.5 pt-1">
+                <span className="text-[13px] font-semibold text-white">
+                  Elegí “Añadir a pantalla de inicio”
+                </span>
+                <span className="text-[12px] text-white/55">
+                  Confirmá el nombre y listo, ya la tenés.
+                </span>
+              </div>
+            </li>
+          </>
+        ) : (
+          <>
+            <li className="flex items-start gap-3">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
+                <MoreVertical size={15} strokeWidth={2} />
+              </span>
+              <div className="flex flex-col gap-0.5 pt-1">
+                <span className="text-[13px] font-semibold text-white">
+                  Abrí el menú del navegador
+                </span>
+                <span className="text-[12px] text-white/55">
+                  Tocá el botón de opciones (los tres puntos `⋮` arriba a la derecha).
+                </span>
+              </div>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
+                <Download size={15} strokeWidth={2} />
+              </span>
+              <div className="flex flex-col gap-0.5 pt-1">
+                <span className="text-[13px] font-semibold text-white">
+                  Elegí “Instalar aplicación” o similar
+                </span>
+                <span className="text-[12px] text-white/55">
+                  También puede figurar como “Agregar a la pantalla principal”.
+                </span>
+              </div>
+            </li>
+          </>
+        )}
       </ol>
 
       <p className="mt-4 text-[11px] text-white/40">
-        Funciona en Safari. Si estás en Chrome para iPhone, abrila primero en
-        Safari.
+        {isIOS
+          ? 'Funciona en Safari. Si estás en Chrome para iPhone, abrila primero en Safari.'
+          : 'Si el botón automático no responde, podés usar esta opción manual de tu navegador.'}
       </p>
     </dialog>
   )
@@ -100,30 +133,26 @@ function IosInstructionsSheet({ onClose }: { onClose: () => void }) {
 
 function useInstallAction() {
   const state = useInstallPrompt()
-  const [showIos, setShowIos] = useState(false)
+  const [showInstructions, setShowInstructions] = useState(false)
 
   const onClick = async () => {
     if (state.canPromptNatively) {
       await state.promptInstall()
       return
     }
-    if (state.isIOS) {
-      setShowIos(true)
-    }
+    setShowInstructions(true)
   }
 
-  const closeIos = () => {
-    setShowIos(false)
-    state.dismiss()
+  const closeInstructions = () => {
+    setShowInstructions(false)
   }
 
   return {
     visible: state.shouldShow,
     isIOS: state.isIOS,
     onClick,
-    onDismiss: state.dismiss,
-    showIos,
-    closeIos,
+    showInstructions,
+    closeInstructions,
   }
 }
 
@@ -144,7 +173,9 @@ export function InstallPWATopbarButton() {
       >
         <Download size={17} strokeWidth={2.3} />
       </button>
-      {action.showIos && <IosInstructionsSheet onClose={action.closeIos} />}
+      {action.showInstructions && (
+        <InstructionsSheet isIOS={action.isIOS} onClose={action.closeInstructions} />
+      )}
     </>
   )
 }
@@ -167,7 +198,9 @@ export function InstallPWAHeroButton() {
         <Download size={16} strokeWidth={2.5} />
         Instalar App
       </button>
-      {action.showIos && <IosInstructionsSheet onClose={action.closeIos} />}
+      {action.showInstructions && (
+        <InstructionsSheet isIOS={action.isIOS} onClose={action.closeInstructions} />
+      )}
     </>
   )
 }
@@ -210,13 +243,6 @@ export function InstallPWASettingsCard({ className }: InstallPWASettingsCardProp
           <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-stretch md:flex-row">
             <button
               type="button"
-              onClick={action.onDismiss}
-              className="cursor-pointer rounded-md border border-white/10 px-4 py-2.5 text-sm text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-            >
-              Ahora no
-            </button>
-            <button
-              type="button"
               onClick={action.onClick}
               className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-light"
             >
@@ -226,7 +252,9 @@ export function InstallPWASettingsCard({ className }: InstallPWASettingsCardProp
           </div>
         </div>
       </section>
-      {action.showIos && <IosInstructionsSheet onClose={action.closeIos} />}
+      {action.showInstructions && (
+        <InstructionsSheet isIOS={action.isIOS} onClose={action.closeInstructions} />
+      )}
     </>
   )
 }
