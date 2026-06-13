@@ -440,6 +440,14 @@ function HtmlPreviewIframe({
 
         {isExpanded && (
           <div className="absolute top-3.5 right-3.5 z-30 flex items-center gap-2">
+            <a
+              href={`/api/apuntes/recursos/${recursoId}/preview?download=1`}
+              download
+              className="cursor-pointer inline-flex items-center justify-center size-[34px] rounded-lg border border-white/10 bg-black/60 text-white/90 backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-black/80 hover:border-white/20 hover:text-white opacity-80 hover:opacity-100"
+              title="Descargar apunte"
+            >
+              <Download className="size-3.5" />
+            </a>
             <button
               type="button"
               onClick={handleReduce}
