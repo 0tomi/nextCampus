@@ -72,7 +72,20 @@ function InstructionsSheet({ isIOS, onClose }: { isIOS: boolean; onClose: () => 
                   Tocá el botón Compartir
                 </span>
                 <span className="text-[12px] text-white/55">
-                  Está en la barra inferior de Safari.
+                  Está en la barra inferior (Safari) o superior (Chrome).
+                </span>
+              </div>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
+                <MoreVertical size={15} strokeWidth={2} />
+              </span>
+              <div className="flex flex-col gap-0.5 pt-1">
+                <span className="text-[13px] font-semibold text-white">
+                  Tocá &ldquo;Ver más&rdquo; (la flecha hacia abajo)
+                </span>
+                <span className="text-[12px] text-white/55">
+                  Se expanden las opciones extra del menú.
                 </span>
               </div>
             </li>
@@ -82,7 +95,7 @@ function InstructionsSheet({ isIOS, onClose }: { isIOS: boolean; onClose: () => 
               </span>
               <div className="flex flex-col gap-0.5 pt-1">
                 <span className="text-[13px] font-semibold text-white">
-                  Elegí “Añadir a pantalla de inicio”
+                  Elegí &ldquo;Añadir a pantalla de inicio&rdquo;
                 </span>
                 <span className="text-[12px] text-white/55">
                   Confirmá el nombre y listo, ya la tenés.
