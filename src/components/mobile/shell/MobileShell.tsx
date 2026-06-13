@@ -307,7 +307,7 @@ function MobileTopbar({ title, subtitle, onBack, onOpenMenu }: MobileTopbarProps
           type="button"
           aria-label={onBack ? 'Volver' : 'Abrir menú'}
           onClick={handleLeadingAction}
-          className="flex size-10 cursor-pointer items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+          className="flex size-11 cursor-pointer items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white"
         >
           {onBack ? <ChevronLeft size={22} strokeWidth={2.5} /> : <Menu size={22} strokeWidth={2} />}
         </button>
@@ -331,7 +331,7 @@ function MobileTopbar({ title, subtitle, onBack, onOpenMenu }: MobileTopbarProps
           </div>
         </Link>
 
-        <div className="size-10 shrink-0" aria-hidden />
+        <div className="size-11 shrink-0" aria-hidden />
       </div>
     </header>
   )
@@ -411,7 +411,7 @@ function DrawerHeader({ careerName, onClose }: { careerName: string; onClose: ()
         type="button"
         aria-label="Cerrar menú"
         onClick={onClose}
-        className="mt-0.5 flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/5 hover:text-white"
+        className="mt-0.5 flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/5 hover:text-white"
       >
         <X size={18} strokeWidth={2} />
       </button>
