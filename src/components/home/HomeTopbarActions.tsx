@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import { Shield } from 'lucide-react'
 import { ConfigButton } from '@/components/shell/ConfigButton'
+import { InstallPWATopbarButton } from '@/components/pwa/InstallPWA'
 
 export function HomeTopbarActions() {
   return (
     <div className="flex items-center gap-2">
+      <InstallPWATopbarButton />
       <ConfigButton />
       <Link
         href="/admin"

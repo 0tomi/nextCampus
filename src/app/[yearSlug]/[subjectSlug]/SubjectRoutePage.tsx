@@ -8,6 +8,7 @@ import {
   Plus,
   Pencil,
 } from 'lucide-react'
+import { InstallPWATopbarButton } from '@/components/pwa/InstallPWA'
 import { MobileSubject } from '@/components/mobile/subject/MobileSubject'
 import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
@@ -244,13 +245,16 @@ function getSubjectSidebarItems({
 
 function SubjectTopbar({ subject }: { subject: SubjectRouteContext['subject'] }) {
   return (
-    <Link
-      href={`/${subject.year.slug}`}
-      className="inline-flex items-center gap-2 text-sm font-semibold text-white/56 transition-colors hover:text-white/80"
-    >
-      <ArrowLeft className="size-4" />
-      {subject.year.nombre}
-    </Link>
+    <div className="flex items-center gap-4">
+      <Link
+        href={`/${subject.year.slug}`}
+        className="inline-flex items-center gap-2 text-sm font-semibold text-white/56 transition-colors hover:text-white/80"
+      >
+        <ArrowLeft className="size-4" />
+        {subject.year.nombre}
+      </Link>
+      <InstallPWATopbarButton />
+    </div>
   )
 }
 

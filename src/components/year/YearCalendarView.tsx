@@ -8,6 +8,7 @@ import { Sidebar } from '@/components/shell/Sidebar'
 import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { MobileCalendar } from '@/components/mobile/calendar/MobileCalendar'
+import { InstallPWATopbarButton } from '@/components/pwa/InstallPWA'
 import {
   filterEventsByPreferredCommission,
   type CommissionOption,
@@ -116,13 +117,16 @@ export function YearCalendarView({
       <div className="hidden lg:block">
         <DashboardShell
           topbar={
-            <Link
-              href={`/${year.slug}`}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-white/56 transition-colors hover:text-white/80"
-            >
-              <ArrowLeft className="size-4" />
-              {year.nombre}
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                href={`/${year.slug}`}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-white/56 transition-colors hover:text-white/80"
+              >
+                <ArrowLeft className="size-4" />
+                {year.nombre}
+              </Link>
+              <InstallPWATopbarButton />
+            </div>
           }
           sidebar={
             <Sidebar
