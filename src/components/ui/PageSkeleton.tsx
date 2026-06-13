@@ -5,7 +5,7 @@
 export function DashboardSkeleton() {
   return (
     <div className="min-h-screen bg-surface-0 text-white">
-      <header className="sticky top-0 z-40 h-16 border-b border-white/5 bg-surface-1">
+      <header className="sticky top-0 z-40 h-[calc(4rem+var(--spacing-safe-top))] pt-safe-top border-b border-white/5 bg-surface-1">
         <div className="flex h-full items-center justify-between gap-4 px-6">
           <div className="flex items-center gap-3">
             <span className="inline-flex size-9 items-center justify-center rounded bg-white/5" />
@@ -16,7 +16,7 @@ export function DashboardSkeleton() {
           </div>
         </div>
       </header>
-      <div className="flex min-h-[calc(100vh-4rem)]">
+      <div className="flex min-h-[calc(100vh-4rem-var(--spacing-safe-top))]">
         <aside className="w-72 shrink-0 border-r border-white/5 bg-surface-2">
           <div className="space-y-3 p-5">
             <div className="h-3 w-24 animate-pulse rounded bg-white/10" />

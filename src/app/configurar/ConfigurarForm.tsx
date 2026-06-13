@@ -437,7 +437,7 @@ function ConfigurarFormInner({
 
       {/* Sticky footer */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-white/5 bg-surface-0/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 p-4 sm:px-6">
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 pt-4 pb-[calc(1rem+var(--spacing-safe-bottom))] sm:px-6">
           <p className="hidden text-xs text-white/30 sm:block">
             {careerName}
           </p>
@@ -592,7 +592,7 @@ function ConfigurarFormSkeleton({ careerName, years }: ConfigurarFormProps) {
 
       {/* Sticky footer */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-white/5 bg-surface-0/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 p-4 sm:px-6">
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 pt-4 pb-[calc(1rem+var(--spacing-safe-bottom))] sm:px-6">
           <p className="hidden text-xs text-white/30 sm:block">
             {careerName}
           </p>

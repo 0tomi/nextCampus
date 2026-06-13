@@ -61,7 +61,7 @@ export function DashboardShell({
 
   return (
     <div className={cn('min-h-screen bg-surface-0 text-white', className)}>
-      <header className="sticky top-0 z-40 h-16 border-b border-white/5 bg-surface-1">
+      <header className="sticky top-0 z-40 h-[calc(4rem+var(--spacing-safe-top))] pt-safe-top border-b border-white/5 bg-surface-1">
         {resolvedHeaderOverlay}
         <div className="flex h-full items-center justify-between gap-4 px-6">
           <div className="flex items-center gap-3">
@@ -113,7 +113,7 @@ export function DashboardShell({
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-white/5 px-5 pb-4 pt-[calc(1rem+var(--spacing-safe-top))]">
           <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38">
             Navegación
           </span>
@@ -131,8 +131,8 @@ export function DashboardShell({
         </div>
       </aside>
 
-      <div className="flex min-h-[calc(100vh-4rem)] items-start">
-        <aside className="sticky top-16 h-[calc(100vh-4rem)] w-72 shrink-0 overflow-hidden border-r border-white/5 bg-surface-2 hidden lg:block">
+      <div className="flex min-h-[calc(100vh-4rem-var(--spacing-safe-top))] items-start">
+        <aside className="sticky top-[calc(4rem+var(--spacing-safe-top))] h-[calc(100vh-4rem-var(--spacing-safe-top))] w-72 shrink-0 overflow-hidden border-r border-white/5 bg-surface-2 hidden lg:block">
           {sidebar}
         </aside>
 

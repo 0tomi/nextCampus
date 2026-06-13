@@ -34,6 +34,9 @@ button:disabled,
   --radius-DEFAULT: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+
+  --spacing-safe-top: env(safe-area-inset-top, 0px);
+  --spacing-safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 * {
