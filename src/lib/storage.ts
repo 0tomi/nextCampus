@@ -278,6 +278,34 @@ export async function readQuizBanks(
   return out
 }
 
+export interface QuizBankContributionRevocation {
+  ownerId: string
+  unitsCount: number
+}
+
+export async function listQuizBankContributionRevocations(
+  yearSlug: string,
+  subjectSlug: string,
+): Promise<QuizBankContributionRevocation[]> {
+  const metas = await listQuizBanksUncached(yearSlug, subjectSlug)
+
+  const revocations = await Promise.all(
+    metas.map(async (meta) => {
+      if (!meta.subidoPorId) return null
+
+      const bank = await readQuizBank(yearSlug, subjectSlug, meta.id)
+      return {
+        ownerId: meta.subidoPorId,
+        unitsCount: bank?.units.length ?? 0,
+      } satisfies QuizBankContributionRevocation
+    }),
+  )
+
+  return revocations.filter(
+    (revocation): revocation is QuizBankContributionRevocation => revocation !== null,
+  )
+}
+
 // Borra: primero el meta (el banco desaparece del listado al instante),
 // luego el banco. Solo toca las keys de ESTE uuid: sin conflicto con otras
 // operaciones concurrentes.

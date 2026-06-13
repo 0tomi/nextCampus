@@ -56,6 +56,24 @@ interface ApuntesFeedProps {
   variant?: 'desktop' | 'mobile'
 }
 
+interface DesktopContentCardData {
+  apunte: ApunteFeedItem
+  apunteHref: string
+  cardId: string
+  col: 0 | 1
+  isFirstOfApunte: boolean
+  showApunteActions: boolean
+  recurso: ApunteFeedItem['recursos'][number]
+  row: number
+}
+
+interface ContentCardNeighbors {
+  sameApunteDown: boolean
+  sameApunteLeft: boolean
+  sameApunteRight: boolean
+  sameApunteUp: boolean
+}
+
 // El estado de paginación (lista, cursor, "hay más", carga y error) cambia
 // siempre en bloque tras cada fetch, así que vive en un reducer: cada
 // transición es una sola acción atómica en lugar de cinco setState sueltos.
@@ -119,6 +137,48 @@ function updateUrl(selectedIds: readonly string[]) {
   url.searchParams.delete('categoria')
   selectedIds.forEach((id) => url.searchParams.append('categoria', id))
   window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`)
+}
+
+function buildDesktopContentCards(
+  items: ApunteFeedItem[],
+  yearSlug: string,
+  subjectSlug: string,
+): DesktopContentCardData[] {
+  let linearIndex = 0
+
+  return items.flatMap((apunte) => {
+    const apunteHref = `/${yearSlug}/${subjectSlug}/apuntes/${apunte.slug}`
+
+    return apunte.recursos.map((recurso, recursoIndex) => {
+      const card: DesktopContentCardData = {
+        apunte,
+        apunteHref,
+        cardId: `${apunte.id}-${recurso.id}`,
+        col: (linearIndex % 2) as 0 | 1,
+        isFirstOfApunte: recursoIndex === 0,
+        showApunteActions: apunte.recursos.length > 1 ? recursoIndex === 1 : recursoIndex === 0,
+        recurso,
+        row: Math.floor(linearIndex / 2),
+      }
+      linearIndex += 1
+      return card
+    })
+  })
+}
+
+function getContentCardNeighbors(
+  cards: DesktopContentCardData[],
+  card: DesktopContentCardData,
+): ContentCardNeighbors {
+  const byPosition = new Map(cards.map((item) => [`${item.row}:${item.col}`, item]))
+  const sameApunte = (candidate: DesktopContentCardData | undefined) => candidate?.apunte.id === card.apunte.id
+
+  return {
+    sameApunteDown: sameApunte(byPosition.get(`${card.row + 1}:${card.col}`)),
+    sameApunteLeft: sameApunte(byPosition.get(`${card.row}:${card.col - 1}`)),
+    sameApunteRight: sameApunte(byPosition.get(`${card.row}:${card.col + 1}`)),
+    sameApunteUp: sameApunte(byPosition.get(`${card.row - 1}:${card.col}`)),
+  }
 }
 
 export function ApuntesFeed({
@@ -224,9 +284,7 @@ export function ApuntesFeed({
     )
   }
 
-  const containerClass = variant === 'desktop'
-    ? 'stagger-children grid gap-4 xl:grid-cols-2'
-    : 'flex flex-col gap-3'
+  const desktopCards = buildDesktopContentCards(items, yearSlug, subjectSlug)
 
   const addApunteButton = variant === 'mobile' ? (
     <AdminControls yearId={yearId} noWrapper>
@@ -285,8 +343,27 @@ export function ApuntesFeed({
         <div className="rounded-lg border border-dashed border-white/10 bg-surface-1 px-6 py-10 text-center text-sm text-white/50">
           No hay apuntes con esas categorías.
         </div>
+      ) : variant === 'desktop' ? (
+        <div className="stagger-children grid items-start gap-4 xl:grid-cols-2">
+          {desktopCards.map((card) => (
+            <DesktopContentCard
+              key={card.cardId}
+              card={card}
+              focusApunteSlug={focusApunteSlug}
+              neighbors={getContentCardNeighbors(desktopCards, card)}
+              subjectSlug={subjectSlug}
+              yearId={yearId}
+              yearSlug={yearSlug}
+              setRef={(node) => {
+                if (!card.isFirstOfApunte) return
+                if (node) getCardRefs().set(card.apunte.slug, node)
+                else getCardRefs().delete(card.apunte.slug)
+              }}
+            />
+          ))}
+        </div>
       ) : (
-        <div className={containerClass}>
+        <div className="flex flex-col gap-3">
           {items.map((apunte) => (
             <ApunteCard
               key={apunte.id}
@@ -311,6 +388,121 @@ export function ApuntesFeed({
       {!hasMore && items.length > 0 ? (
         <p className="py-3 text-center text-xs font-semibold text-white/35">Ya viste todos los apuntes disponibles.</p>
       ) : null}
+    </div>
+  )
+}
+
+function DesktopContentCard({
+  card,
+  focusApunteSlug,
+  neighbors,
+  subjectSlug,
+  yearId,
+  yearSlug,
+  setRef,
+}: {
+  card: DesktopContentCardData
+  focusApunteSlug?: string
+  neighbors: ContentCardNeighbors
+  subjectSlug: string
+  yearId: string
+  yearSlug: string
+  setRef: (node: HTMLDivElement | null) => void
+}) {
+  const { apunte, apunteHref, isFirstOfApunte, recurso, showApunteActions } = card
+  const enfocado = focusApunteSlug === apunte.slug && isFirstOfApunte
+  const wrapperClassName = [
+    'scroll-mt-24',
+    neighbors.sameApunteLeft ? '-ml-4 w-[calc(100%+1rem)]' : '',
+    'h-[500px]',
+  ].filter(Boolean).join(' ')
+  const cardClassName = [
+    'relative flex h-full w-full flex-col overflow-hidden p-5',
+    neighbors.sameApunteLeft ? 'border-l-0' : '',
+    neighbors.sameApunteRight ? 'border-r-0' : '',
+    neighbors.sameApunteDown ? 'border-b-0' : '',
+    neighbors.sameApunteUp ? '-mt-4 h-[calc(100%+1rem)]' : '',
+    neighbors.sameApunteUp ? 'border-t-0' : '',
+    enfocado ? 'ring-1 ring-white/20' : '',
+  ].filter(Boolean).join(' ')
+
+  return (
+    <div ref={setRef} className={wrapperClassName}>
+      <DarkCard className={cardClassName}>
+        {(isFirstOfApunte || neighbors.sameApunteLeft) ? (
+          <div
+            aria-hidden="true"
+            className={[
+              'pointer-events-none absolute top-[112px] z-10 h-px bg-gradient-to-r from-transparent via-cyan-200/20 to-transparent',
+              neighbors.sameApunteLeft ? 'left-0' : 'left-5',
+              neighbors.sameApunteRight ? 'right-0' : 'right-5',
+            ].join(' ')}
+          />
+        ) : null}
+        <div className={['relative shrink-0', isFirstOfApunte ? 'mb-3 h-[92px]' : 'hidden'].join(' ')}>
+          {isFirstOfApunte ? (
+            <div className="h-full">
+              <div className={showApunteActions ? 'pr-[168px]' : ''}>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Apunte</p>
+                <h3
+                  className="mt-2 truncate text-xl font-black tracking-tight text-white transition-all hover:underline"
+                  title={apunte.titulo}
+                >
+                  <Link href={apunteHref}>{apunte.titulo}</Link>
+                </h3>
+                {apunte.categorias.length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {apunte.categorias.map((categoria) => (
+                      <span
+                        key={categoria.id}
+                        className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/45"
+                      >
+                        {categoria.nombre}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                {apunte.descripcionHtml ? (
+                  <SafeHtml
+                    className="mt-2 line-clamp-1 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
+                    html={apunte.descripcionHtml}
+                  />
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {showApunteActions ? (
+          <div className="absolute right-5 top-5 z-20 flex items-center gap-1.5">
+            <AdminControls yearId={yearId} ownerUserId={apunte.createdByUserId} noWrapper>
+              <div className="flex gap-1">
+                <EditApunteButton
+                  apunte={{
+                    id: apunte.id,
+                    titulo: apunte.titulo,
+                    slug: apunte.slug,
+                    descripcionHtml: apunte.descripcionHtml ?? '',
+                    recursos: apunte.recursos,
+                    categorias: apunte.categorias,
+                  }}
+                />
+                <DeleteApunteButton apunteId={apunte.id} subjectSlug={subjectSlug} yearId={yearId} ownerUserId={apunte.createdByUserId} />
+              </div>
+            </AdminControls>
+            <CopyApunteLinkButton
+              yearSlug={yearSlug}
+              subjectSlug={subjectSlug}
+              apunteSlug={apunte.slug}
+              className="px-2.5 py-1.5"
+            />
+          </div>
+        ) : null}
+
+        <div className="relative mt-auto h-[356px] min-h-0">
+          <ApunteRecursoView recurso={recurso} variant="content-card" apunteHref={apunteHref} htmlLoadMode="on-click" />
+        </div>
+      </DarkCard>
     </div>
   )
 }
@@ -425,7 +617,7 @@ function ApunteCard({
   if (variant === 'desktop') {
     return (
       <div ref={setRef} className="scroll-mt-24">
-        <DarkCard className={['flex h-full flex-col p-5', enfocado ? 'ring-1 ring-white/20' : ''].join(' ')}>
+        <DarkCard className={['flex flex-col p-5', enfocado ? 'ring-1 ring-white/20' : ''].join(' ')}>
           {content}
         </DarkCard>
       </div>

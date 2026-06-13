@@ -19,10 +19,19 @@ const recordAuditMock = vi.fn()
 const uploadApunteHtmlMock = vi.fn()
 const deleteApunteHtmlMock = vi.fn()
 const awardApunteCreatedMock = vi.fn()
+const adjustContributionScoreMock = vi.fn()
+const revokeApunteCreatedMock = vi.fn()
+const revokeContributionBatchMock = vi.fn()
+const listQuizBankContributionRevocationsMock = vi.fn()
 
 const prismaMock = {
   subject: {
     findUnique: vi.fn(),
+    delete: vi.fn(),
+  },
+  academicYear: {
+    findUnique: vi.fn(),
+    delete: vi.fn(),
   },
   apunte: {
     create: vi.fn(),
@@ -82,6 +91,7 @@ vi.mock('@/lib/storage', () => ({
   deleteQuizBank: vi.fn(),
   deleteSubjectStorage: vi.fn(),
   deleteYearStorage: vi.fn(),
+  listQuizBankContributionRevocations: listQuizBankContributionRevocationsMock,
   quizBanksCacheTag: vi.fn(() => 'quiz-bank-tag'),
 }))
 
@@ -117,8 +127,13 @@ vi.mock('@/lib/audit', () => ({
 
 vi.mock('@/lib/contributions', () => ({
   awardApunteCreated: awardApunteCreatedMock,
+  adjustContributionScore: adjustContributionScoreMock,
   awardEventoCreated: vi.fn(),
   awardQuizBankCreated: vi.fn(),
+  revokeApunteCreated: revokeApunteCreatedMock,
+  revokeContributionBatch: revokeContributionBatchMock,
+  revokeEventoCreated: vi.fn(),
+  revokeQuizBankCreated: vi.fn(),
 }))
 
 vi.mock('@/lib/domain/quiz-bank', () => ({
@@ -175,6 +190,10 @@ beforeEach(() => {
   uploadApunteHtmlMock.mockResolvedValue('apuntes/primer-anio/calculo/apunte-1/html-1.html')
   deleteApunteHtmlMock.mockResolvedValue(undefined)
   awardApunteCreatedMock.mockResolvedValue(undefined)
+  adjustContributionScoreMock.mockResolvedValue(undefined)
+  revokeApunteCreatedMock.mockResolvedValue(undefined)
+  revokeContributionBatchMock.mockResolvedValue(undefined)
+  listQuizBankContributionRevocationsMock.mockResolvedValue([])
 })
 
 describe('admin apunte actions', () => {
@@ -211,6 +230,7 @@ describe('admin apunte actions', () => {
     prismaMock.apunte.findUnique.mockResolvedValue({
       slug: 'resumen-actual',
       subjectId: 'subject-1',
+      _count: { recursos: 0 },
       recursos: [],
     })
 
@@ -240,6 +260,7 @@ describe('admin apunte actions', () => {
       slug: 'resumen-actual',
       subjectId: 'subject-1',
       createdByUserId: 'admin-1',
+      _count: { recursos: 1 },
       recursos: [
         {
           storageKey: 'apuntes/primer-anio/calculo/apunte-1/old.html',
@@ -291,19 +312,58 @@ describe('admin apunte actions', () => {
     )
   })
 
+  it('ajusta el puntaje del creador cuando cambia la cantidad de recursos', async () => {
+    requireYearAdminForApunteIdMock.mockResolvedValue({
+      subjectSlug: 'calculo',
+      yearSlug: 'primer-anio',
+      yearId: 'year-1',
+      admin: { id: 'admin-2' },
+    })
+    prismaMock.apunte.findUnique.mockResolvedValue({
+      slug: 'resumen-actual',
+      subjectId: 'subject-1',
+      createdByUserId: 'admin-1',
+      _count: { recursos: 1 },
+      recursos: [],
+    })
+
+    const { updateApunteAction } = await import('./actions')
+    const result = await updateApunteAction(
+      { ok: false, message: '' },
+      makeFormData({
+        apunteId: 'apunte-1',
+        titulo: 'Resumen actualizado',
+        descripcionHtml: '<p>Más claro</p>',
+        recursosJson: JSON.stringify([
+          { tipo: 'YOUTUBE', url: 'https://youtube.com/watch?v=abc', orden: 0, nombre: 'Video' },
+          { tipo: 'DRIVE', url: 'https://drive.google.com/file/d/123/view', orden: 1, nombre: 'Guía' },
+        ]),
+      }),
+    )
+
+    expect(result).toEqual({ ok: true, message: 'Apunte actualizado correctamente.' })
+    expect(adjustContributionScoreMock).toHaveBeenCalledWith('admin-1', 1)
+  })
+
   it('revalida latest-apuntes al eliminar un apunte', async () => {
     requireYearAdminForApunteIdMock.mockResolvedValue({
       subjectSlug: 'calculo',
       yearSlug: 'primer-anio',
       admin: { id: 'admin-1' },
     })
-    prismaMock.apunte.findUnique.mockResolvedValue({ titulo: 'Resumen viejo', recursos: [] })
+    prismaMock.apunte.findUnique.mockResolvedValue({
+      titulo: 'Resumen viejo',
+      createdByUserId: 'admin-1',
+      _count: { recursos: 2 },
+      recursos: [],
+    })
     prismaMock.apunte.delete.mockResolvedValue(undefined)
 
     const { deleteApunteAction } = await import('./actions')
     await deleteApunteAction(makeFormData({ id: 'apunte-1' }))
 
     expect(revalidateTagRawMock).toHaveBeenCalledWith('latest-apuntes', 'max')
+    expect(revokeApunteCreatedMock).toHaveBeenCalledWith('admin-1', 2)
   })
 
   it('valida backend antes de subir un apunte interactivo', async () => {
@@ -512,5 +572,36 @@ describe('getSubjectDeleteImpactAction', () => {
 
     expect(requireAcademicManagerMock).toHaveBeenCalledTimes(1)
     expect(result).toEqual(impact)
+  })
+})
+
+describe('deleteSubjectAction', () => {
+  it('revoca tambien los quiz banks al borrar una materia', async () => {
+    requireAcademicManagerMock.mockResolvedValue({ id: 'admin-1' })
+    requireYearAdminForSubjectIdMock.mockResolvedValue({
+      subjectSlug: 'calculo',
+      yearSlug: 'primer-anio',
+      yearId: 'year-1',
+      admin: { id: 'admin-1' },
+    })
+    prismaMock.subject.findUnique.mockResolvedValue({
+      nombre: 'Calculo',
+      apuntes: [],
+      agendas: [],
+    })
+    prismaMock.subject.delete.mockResolvedValue(undefined)
+    listQuizBankContributionRevocationsMock.mockResolvedValue([
+      { ownerId: 'user-1', unitsCount: 3 },
+    ])
+
+    const { deleteSubjectAction } = await import('./actions')
+    await deleteSubjectAction(makeFormData({ id: 'subject-1' }))
+
+    expect(revokeContributionBatchMock).toHaveBeenCalledWith('user-1', {
+      apuntesCreados: 0,
+      eventosCreados: 0,
+      bancosPreguntasCreados: 1,
+      puntaje: 4,
+    })
   })
 })

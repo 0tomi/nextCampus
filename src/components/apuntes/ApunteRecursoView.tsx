@@ -13,7 +13,7 @@ import {
   type DriveKind,
   type RecursoTipo,
 } from '@/lib/recursos'
-import { ExternalLink, FileText, ImageIcon, PlayCircle, Maximize2, Minimize2, Globe } from 'lucide-react'
+import { ExternalLink, FileText, ImageIcon, PlayCircle, Maximize2, Minimize2, Globe, Download } from 'lucide-react'
 
 function Github({ className }: { className?: string }) {
   return (
@@ -33,19 +33,25 @@ function Github({ className }: { className?: string }) {
   )
 }
 
-function driveEmbedClassName(kind: DriveKind, variant: 'card' | 'wide'): string {
+type RecursoViewVariant = 'card' | 'wide' | 'content-card'
+
+function driveEmbedClassName(kind: DriveKind, variant: RecursoViewVariant): string {
   const rounded = variant === 'wide' ? 'rounded-xl' : 'rounded-md'
   const border = variant === 'wide' ? 'border border-white/5' : 'border border-white/10'
   const base = `w-full ${rounded} ${border}`
+
+  if (variant === 'content-card') {
+    return `${base} h-full min-h-0`
+  }
   
   switch (kind) {
     case 'document':
-      return `${base} ${variant === 'wide' ? 'h-[70vh] min-h-[500px] sm:min-h-[750px]' : 'h-[35vh] min-h-[250px] sm:min-h-[375px]'}`
+      return `${base} ${variant === 'wide' ? 'h-[70vh] min-h-[500px] sm:min-h-[750px]' : 'h-[28vh] min-h-[200px] sm:min-h-[300px]'}`
     case 'spreadsheet':
-      return `${base} aspect-video ${variant === 'wide' ? 'h-[55vh] min-h-[400px] sm:min-h-[600px]' : 'h-[27vh] min-h-[200px] sm:min-h-[300px]'}`
+      return `${base} aspect-video ${variant === 'wide' ? 'h-[55vh] min-h-[400px] sm:min-h-[600px]' : 'h-[22vh] min-h-[180px] sm:min-h-[260px]'}`
     case 'presentation':
     case 'file':
-      return `${base} ${variant === 'wide' ? 'h-[65vh] min-h-[450px] sm:min-h-[650px]' : 'h-[32vh] min-h-[225px] sm:min-h-[325px]'}`
+      return `${base} ${variant === 'wide' ? 'h-[65vh] min-h-[450px] sm:min-h-[650px]' : 'h-[25vh] min-h-[180px] sm:min-h-[260px]'}`
   }
 }
 
@@ -60,7 +66,7 @@ interface ApunteRecursoViewProps {
     mimeType?: string | null
     sizeBytes?: number | null
   }
-  variant?: 'card' | 'wide'
+  variant?: RecursoViewVariant
   apunteHref?: string
   htmlLoadMode?: 'auto' | 'on-click'
 }
@@ -115,6 +121,41 @@ export function ApunteRecursoView({ recurso, variant = 'card', apunteHref, htmlL
         </div>
 
         <ApunteRecursoMedia recurso={recurso} titulo={titulo} variant={variant} apunteHref={apunteHref} htmlLoadMode={htmlLoadMode} />
+      </div>
+    )
+  }
+
+  if (variant === 'content-card') {
+    return (
+      <div className="flex h-full min-h-0 flex-col gap-3 rounded-lg border border-white/10 bg-surface-1 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <p className="min-w-0 truncate text-sm font-semibold leading-tight text-white" title={titulo}>
+            {titulo}
+          </p>
+          {recurso.tipo === 'HTML' ? (
+            apunteHref ? (
+              <a
+                href={apunteHref}
+                className="shrink-0 cursor-pointer text-xs font-medium text-white/60 transition-colors hover:text-white/90"
+              >
+                {linkLabel}
+              </a>
+            ) : null
+          ) : (
+            <a
+              href={recurso.url}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="shrink-0 cursor-pointer text-xs font-medium text-white/60 transition-colors hover:text-white/90"
+            >
+              {linkLabel}
+            </a>
+          )}
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-hidden rounded-md">
+          <ApunteRecursoMedia recurso={recurso} titulo={titulo} variant={variant} apunteHref={apunteHref} htmlLoadMode={htmlLoadMode} />
+        </div>
       </div>
     )
   }
@@ -175,7 +216,7 @@ function ApunteRecursoMedia({
       return <HtmlPreviewIframe recursoId={recurso.id} titulo={titulo} />
     }
 
-    return <HtmlPreviewCard href={apunteHref} title={titulo} recursoId={recurso.id} loadMode={htmlLoadMode} />
+    return <HtmlPreviewCard href={apunteHref} title={titulo} recursoId={recurso.id} loadMode={htmlLoadMode} variant={variant} />
   }
 
   if (recurso.tipo === 'YOUTUBE') {
@@ -187,7 +228,9 @@ function ApunteRecursoMedia({
     return (
       <iframe
         src={youtubeEmbedUrl(id)}
-        className="aspect-video w-full rounded-md border border-white/10 bg-black/20"
+        className={variant === 'content-card'
+          ? 'size-full rounded-md border border-white/10 bg-black/20'
+          : 'aspect-video w-full rounded-md border border-white/10 bg-black/20'}
         loading="lazy"
         allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         sandbox="allow-scripts allow-presentation allow-popups allow-same-origin"
@@ -240,30 +283,37 @@ function HtmlPreviewCard({
   title,
   recursoId,
   loadMode,
+  variant,
 }: {
   href?: string
   title: string
   recursoId: string
   loadMode: 'auto' | 'on-click'
+  variant: RecursoViewVariant
 }) {
   const [shouldLoad, setShouldLoad] = useState(loadMode === 'auto')
 
   if (!shouldLoad) {
-    return <HtmlPreviewPlaceholder title={title} onLoad={() => setShouldLoad(true)} />
+    return <HtmlPreviewPlaceholder title={title} onLoad={() => setShouldLoad(true)} variant={variant} />
   }
 
-  return <HtmlPreviewIframe recursoId={recursoId} titulo={title} compact />
+  return <HtmlPreviewIframe recursoId={recursoId} titulo={title} compact tile={variant === 'content-card'} />
 }
 
 function HtmlPreviewPlaceholder({
   title,
   onLoad,
+  variant,
 }: {
   title: string
   onLoad: () => void
+  variant: RecursoViewVariant
 }) {
   return (
-    <div className="relative flex h-[360px] min-h-[360px] w-full flex-col items-center justify-center overflow-hidden rounded-xl border border-cyan-300/10 bg-[radial-gradient(circle_at_top,rgba(103,232,249,0.12),transparent_42%),linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015))] p-5 text-center sm:h-[420px]">
+    <div className={[
+      'relative flex w-full flex-col items-center justify-center overflow-hidden rounded-xl border border-cyan-300/10 bg-[radial-gradient(circle_at_top,rgba(103,232,249,0.12),transparent_42%),linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015))] p-5 text-center',
+      variant === 'content-card' ? 'h-full min-h-0' : 'h-[280px] min-h-[280px] sm:h-[320px]',
+    ].join(' ')}>
       <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/25 to-transparent" />
       <FileText className="size-8 text-cyan-100/70" aria-hidden="true" />
       <p className="mt-4 text-[11px] font-black uppercase tracking-[0.22em] text-cyan-100/55">
@@ -291,10 +341,12 @@ function HtmlPreviewIframe({
   recursoId,
   titulo,
   compact = false,
+  tile = false,
 }: {
   recursoId: string
   titulo: string
   compact?: boolean
+  tile?: boolean
 }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isExpanded, setIsExpanded] = useState(false)
@@ -350,8 +402,10 @@ function HtmlPreviewIframe({
     }
   }, [])
 
-  const collapsedClassName = compact
-    ? 'relative h-[360px] min-h-[360px] w-full overflow-hidden rounded-xl border border-white/5 bg-surface-1 transition-all duration-300 sm:h-[420px]'
+  const collapsedClassName = tile
+    ? 'relative size-full overflow-hidden rounded-xl border border-white/5 bg-surface-1 transition-all duration-300'
+    : compact
+    ? 'relative h-[280px] min-h-[280px] w-full overflow-hidden rounded-xl border border-white/5 bg-surface-1 transition-all duration-300 sm:h-[320px]'
     : 'relative w-full h-[70vh] min-h-[500px] sm:min-h-[750px] rounded-xl overflow-hidden border border-white/5 bg-surface-1 transition-all duration-300'
 
   return (
@@ -385,29 +439,52 @@ function HtmlPreviewIframe({
         )}
 
         {isExpanded && (
-          <button
-            type="button"
-            onClick={handleReduce}
-            className="absolute top-3.5 right-3.5 z-30 cursor-pointer inline-flex items-center justify-center h-[34px] px-2.5 hover:px-3 gap-0 hover:gap-1.5 rounded-lg border border-white/10 bg-black/60 text-xs font-semibold text-white/90 backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-black/80 hover:border-white/20 group select-none"
-            title="Reducir apunte"
-          >
-            <Minimize2 className="size-4 shrink-0" />
-            <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-out group-hover:max-w-[80px] group-hover:opacity-100">
-              Reducir
-            </span>
-          </button>
+          <div className="absolute top-3.5 right-3.5 z-30 flex items-center gap-2">
+            <a
+              href={`/api/apuntes/recursos/${recursoId}/preview`}
+              download
+              className="cursor-pointer inline-flex items-center justify-center h-[34px] px-2.5 hover:px-3 gap-0 hover:gap-1.5 rounded-lg border border-white/10 bg-black/60 text-xs font-semibold text-white/90 backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-black/80 hover:border-white/20 group select-none"
+              title="Descargar apunte"
+            >
+              <Download className="size-4 shrink-0" />
+              <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-out group-hover:max-w-[80px] group-hover:opacity-100">
+                Descargar
+              </span>
+            </a>
+            <button
+              type="button"
+              onClick={handleReduce}
+              className="cursor-pointer inline-flex items-center justify-center h-[34px] px-2.5 hover:px-3 gap-0 hover:gap-1.5 rounded-lg border border-white/10 bg-black/60 text-xs font-semibold text-white/90 backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-black/80 hover:border-white/20 group select-none"
+              title="Reducir apunte"
+            >
+              <Minimize2 className="size-4 shrink-0" />
+              <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-out group-hover:max-w-[80px] group-hover:opacity-100">
+                Reducir
+              </span>
+            </button>
+          </div>
         )}
 
         {!isExpanded && !isLoading && (
-          <button
-            type="button"
-            onClick={handleExpand}
-            className="absolute top-3.5 right-3.5 z-10 cursor-pointer inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/60 px-3 py-2 text-xs font-semibold text-white/90 backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-black/80 hover:border-white/20 hover:text-white"
-            title="Expandir apunte"
-          >
-            <Maximize2 className="size-3.5" />
-            <span>Expandir</span>
-          </button>
+          <div className="absolute top-3.5 right-3.5 z-10 flex items-center gap-2">
+            <a
+              href={`/api/apuntes/recursos/${recursoId}/preview`}
+              download
+              className="cursor-pointer inline-flex items-center justify-center size-[34px] rounded-lg border border-white/10 bg-black/60 text-white/90 backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-black/80 hover:border-white/20 hover:text-white"
+              title="Descargar apunte"
+            >
+              <Download className="size-3.5" />
+            </a>
+            <button
+              type="button"
+              onClick={handleExpand}
+              className="cursor-pointer inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/60 px-3 py-2 text-xs font-semibold text-white/90 backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-black/80 hover:border-white/20 hover:text-white"
+              title="Expandir apunte"
+            >
+              <Maximize2 className="size-3.5" />
+              <span>Expandir</span>
+            </button>
+          </div>
         )}
 
         <div className="size-full">
@@ -436,7 +513,7 @@ function DriveThumbnailPreview({
   href: string
   src: string
   title: string
-  variant: 'card' | 'wide'
+  variant: RecursoViewVariant
 }) {
   const [failed, setFailed] = useState(false)
 
@@ -452,7 +529,7 @@ function DriveThumbnailPreview({
       href={href}
       target="_blank"
       rel="noopener noreferrer nofollow"
-      className={`group relative block aspect-video overflow-hidden ${rounded} border ${border} bg-white/[0.03] cursor-pointer`}
+      className={`group relative block overflow-hidden ${rounded} border ${border} bg-white/[0.03] cursor-pointer ${variant === 'content-card' ? 'size-full' : 'aspect-video'}`}
     >
       <Image
         src={src}
@@ -479,13 +556,13 @@ function DriveFallback({
 }: {
   href: string
   title: string
-  variant?: 'card' | 'wide'
+  variant?: RecursoViewVariant
 }) {
   const isVideo = /\.(mp4|webm|mov|m4v)$/i.test(title)
   const Icon = isVideo ? PlayCircle : FileText
 
   return (
-    <div className="flex flex-col items-start gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-5 sm:flex-row sm:items-center sm:justify-between">
+    <div className={`flex flex-col items-start gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-5 sm:flex-row sm:items-center sm:justify-between ${variant === 'content-card' ? 'h-full' : ''}`}>
       <div className="flex min-w-0 items-center gap-3.5">
         <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-white/5 bg-white/[0.04] text-white/70 shadow-sm">
           <Icon className="size-5.5" />
@@ -519,10 +596,10 @@ function GithubRepositoryPreview({
 }: {
   href: string
   title: string
-  variant?: 'card' | 'wide'
+  variant?: RecursoViewVariant
 }) {
   return (
-    <div className="flex flex-col items-start gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-5 sm:flex-row sm:items-center sm:justify-between transition-colors hover:bg-white/[0.04] hover:border-white/10 group">
+    <div className={`flex flex-col items-start gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-5 transition-colors hover:bg-white/[0.04] hover:border-white/10 group sm:flex-row sm:items-center sm:justify-between ${variant === 'content-card' ? 'h-full' : ''}`}>
       <div className="flex min-w-0 items-center gap-3.5">
         <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-white/5 bg-white/[0.04] text-white/70 shadow-sm transition-colors group-hover:text-white group-hover:bg-white/[0.06]">
           <Github className="size-5.5" />
@@ -556,7 +633,7 @@ function LinkPreview({
 }: {
   href: string
   title: string
-  variant?: 'card' | 'wide'
+  variant?: RecursoViewVariant
 }) {
   const [data, setData] = useState<{ title: string; description: string; image?: string; logo?: string } | null>(null)
   const [loading, setLoading] = useState(true)
@@ -587,7 +664,7 @@ function LinkPreview({
 
   if (loading) {
     return (
-      <div className="flex animate-pulse flex-col items-start gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className={`flex animate-pulse flex-col items-start gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-5 sm:flex-row sm:items-center sm:justify-between ${variant === 'content-card' ? 'h-full' : ''}`}>
         <div className="flex w-full items-center gap-3.5">
           <div className="size-11 shrink-0 rounded-lg bg-white/[0.06]" />
           <div className="flex-1 space-y-2">
@@ -603,6 +680,48 @@ function LinkPreview({
   const previewDesc = data?.description || 'Enlace a recurso externo.'
   const logoSrc = data?.logo
   const imageSrc = data?.image
+
+  if (variant === 'content-card') {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        className="group flex h-full cursor-pointer flex-col justify-between overflow-hidden rounded-xl border border-white/5 bg-white/[0.02] p-5 transition-all duration-300 hover:border-white/10 hover:bg-white/[0.04]"
+      >
+        <div className="space-y-2.5">
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">
+            {logoSrc ? (
+              <Image
+                src={logoSrc}
+                alt="Site logo"
+                width={16}
+                height={16}
+                className="size-4 rounded-sm object-contain"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none'
+                }}
+                unoptimized
+              />
+            ) : (
+              <Globe className="size-3.5 text-white/30" />
+            )}
+            <span className="truncate">{new URL(href).hostname}</span>
+          </div>
+          <h4 className="line-clamp-2 text-sm font-bold leading-snug text-white transition-colors group-hover:text-cyan-200">
+            {previewTitle}
+          </h4>
+          <p className="line-clamp-4 text-xs leading-relaxed text-white/55">
+            {previewDesc}
+          </p>
+        </div>
+        <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-cyan-300 group-hover:text-cyan-200">
+          <span>Visitar sitio</span>
+          <ExternalLink className="size-3 transition-transform duration-300 group-hover:translate-x-0.5" />
+        </div>
+      </a>
+    )
+  }
 
   return (
     <a
