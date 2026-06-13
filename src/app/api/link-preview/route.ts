@@ -30,7 +30,7 @@ function extractMeta(html: string, url: string): { title: string; description: s
                   html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i)
   const twitterImage = html.match(/<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i)
   
-  let rawImage = ogImage?.[1] || twitterImage?.[1]
+  const rawImage = ogImage?.[1] || twitterImage?.[1]
   if (rawImage) {
     result.image = resolveUrl(rawImage.trim(), url)
   }

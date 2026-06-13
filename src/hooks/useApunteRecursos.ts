@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from 'react'
 import {
-  detectRecursoTipo,
   INTERACTIVE_NOTE_FILE_RE,
   makeRecursoDraft,
   type RecursoDraft,
