@@ -26,6 +26,8 @@ import {
   APUNTE_HTML_MIME,
   deleteQuizBank,
   getQuizBankMeta,
+  listQuizBankContributionRevocations,
+  readQuizBank,
   deleteSubjectStorage,
   deleteYearStorage,
   quizBanksCacheTag,
@@ -48,8 +50,13 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
 import {
   awardApunteCreated,
+  adjustContributionScore,
   awardEventoCreated,
   awardQuizBankCreated,
+  revokeApunteCreated,
+  revokeEventoCreated,
+  revokeQuizBankCreated,
+  revokeContributionBatch,
 } from '@/lib/contributions'
 import { isReservedYearSlug, reservedYearSlugSet } from '@/lib/year-slugs'
 import { SUBJECT_LINK_TYPES } from '@/lib/subjectLinks'
@@ -445,6 +452,11 @@ export async function deleteEvento(formData: FormData): Promise<void> {
   ensureCanManageContribution(scope.admin, evento?.createdByUserId)
 
   await prisma.evento.delete({ where: { id } })
+
+  if (evento?.createdByUserId) {
+    await revokeEventoCreated(evento.createdByUserId)
+  }
+
   await revalidateSubjectContent(scope.subjectSlug)
   if (evento) {
     await recordAudit({
@@ -1092,6 +1104,7 @@ export async function updateApunteAction(
       slug: true,
       subjectId: true,
       createdByUserId: true,
+      _count: { select: { recursos: true } },
       recursos: {
         where: { tipo: 'HTML', storageKey: { not: null } },
         select: { storageKey: true, mimeType: true, sizeBytes: true },
@@ -1178,6 +1191,11 @@ export async function updateApunteAction(
     return { ok: false, message: 'No se pudo actualizar el apunte. Intentá de nuevo.' }
   }
 
+  const scoreDelta = built.data.length - apunteActual._count.recursos
+  if (apunteActual.createdByUserId && scoreDelta !== 0) {
+    await adjustContributionScore(apunteActual.createdByUserId, scoreDelta)
+  }
+
   await deleteApunteHtml(storageKeysToDelete)
 
   await revalidateSubjectContent(scope.subjectSlug)
@@ -1211,6 +1229,7 @@ export async function deleteApunteAction(formData: FormData): Promise<void> {
     select: {
       titulo: true,
       createdByUserId: true,
+      _count: { select: { recursos: true } },
       recursos: {
         where: { tipo: 'HTML', storageKey: { not: null } },
         select: { storageKey: true },
@@ -1226,6 +1245,10 @@ export async function deleteApunteAction(formData: FormData): Promise<void> {
       .map((r) => r.storageKey)
       .filter((key): key is string => Boolean(key)) ?? [],
   )
+
+  if (apunte?.createdByUserId) {
+    await revokeApunteCreated(apunte.createdByUserId, apunte._count.recursos)
+  }
 
   await revalidateSubjectContent(scope.subjectSlug)
   if (apunte) {
@@ -1343,7 +1366,17 @@ export async function deleteQuizBankAction(formData: FormData): Promise<void> {
     return
   }
 
+  // Leer el banco completo antes de borrar para obtener el count de units
+  const bank = await readQuizBank(scope.yearSlug, scope.subjectSlug, bankId)
+  const unitsCount = bank?.units.length ?? 0
+  const ownerId = meta?.subidoPorId
+
   await deleteQuizBank(scope.yearSlug, scope.subjectSlug, bankId)
+
+  if (ownerId) {
+    await revokeQuizBankCreated(ownerId, unitsCount)
+  }
+
   revalidateTag(quizBanksCacheTag(scope.yearSlug, scope.subjectSlug))
   await revalidateSubjectContent(scope.subjectSlug)
   await recordAudit({
@@ -1630,10 +1663,83 @@ export async function deleteYearAction(formData: FormData): Promise<void> {
     select: {
       slug: true,
       nombre: true,
-      subjects: { select: { slug: true } },
+      subjects: {
+        select: {
+          slug: true,
+          apuntes: {
+            where: { createdByUserId: { not: null } },
+            select: {
+              createdByUserId: true,
+              _count: { select: { recursos: true } },
+            },
+          },
+          agendas: {
+            select: {
+              eventos: {
+                where: { createdByUserId: { not: null } },
+                select: { createdByUserId: true },
+              },
+            },
+          },
+        },
+      },
     },
   })
   if (!year) return
+
+  // Agrupar contribuciones por usuario antes de borrar
+  const userRevokeMap = new Map<
+    string,
+    { apuntes: number; eventos: number; bancos: number; puntaje: number }
+  >()
+  for (const subject of year.subjects) {
+    for (const apunte of subject.apuntes) {
+      if (!apunte.createdByUserId) continue
+      const prev = userRevokeMap.get(apunte.createdByUserId) ?? {
+        apuntes: 0,
+        eventos: 0,
+        bancos: 0,
+        puntaje: 0,
+      }
+      const recursosCount = apunte._count.recursos
+      prev.apuntes += 1
+      prev.puntaje += 1 + Math.max(0, recursosCount)
+      userRevokeMap.set(apunte.createdByUserId, prev)
+    }
+    for (const agenda of subject.agendas) {
+      for (const evento of agenda.eventos) {
+        if (!evento.createdByUserId) continue
+        const prev = userRevokeMap.get(evento.createdByUserId) ?? {
+          apuntes: 0,
+          eventos: 0,
+          bancos: 0,
+          puntaje: 0,
+        }
+        prev.eventos += 1
+        prev.puntaje += 1
+        userRevokeMap.set(evento.createdByUserId, prev)
+      }
+    }
+  }
+
+  const quizBankRevocationsBySubject = await Promise.all(
+    year.subjects.map((subject) =>
+      listQuizBankContributionRevocations(year.slug, subject.slug),
+    ),
+  )
+  for (const revocations of quizBankRevocationsBySubject) {
+    for (const revocation of revocations) {
+      const prev = userRevokeMap.get(revocation.ownerId) ?? {
+        apuntes: 0,
+        eventos: 0,
+        bancos: 0,
+        puntaje: 0,
+      }
+      prev.bancos += 1
+      prev.puntaje += 1 + Math.max(0, revocation.unitsCount)
+      userRevokeMap.set(revocation.ownerId, prev)
+    }
+  }
 
   const storageTargets = year.subjects.map((s) => ({
     yearSlug: year.slug,
@@ -1648,6 +1754,16 @@ export async function deleteYearAction(formData: FormData): Promise<void> {
   }
 
   await prisma.academicYear.delete({ where: { id } })
+
+  // Revocar contribuciones de usuarios afectados
+  for (const [userId, counts] of userRevokeMap) {
+    await revokeContributionBatch(userId, {
+      apuntesCreados: counts.apuntes,
+      eventosCreados: counts.eventos,
+      bancosPreguntasCreados: counts.bancos,
+      puntaje: counts.puntaje,
+    })
+  }
 
   revalidateTag(queryTags.career)
   revalidateTag(queryTags.year(year.slug))
@@ -2002,8 +2118,76 @@ export async function deleteSubjectAction(formData: FormData): Promise<void> {
 
   const subject = await prisma.subject.findUnique({
     where: { id },
-    select: { nombre: true },
+    select: {
+      nombre: true,
+      apuntes: {
+        where: { createdByUserId: { not: null } },
+        select: {
+          createdByUserId: true,
+          _count: { select: { recursos: true } },
+        },
+      },
+      agendas: {
+        select: {
+          eventos: {
+            where: { createdByUserId: { not: null } },
+            select: { createdByUserId: true },
+          },
+        },
+      },
+    },
   })
+
+  // Agrupar contribuciones por usuario antes de borrar
+  const userRevokeMap = new Map<
+    string,
+    { apuntes: number; eventos: number; bancos: number; puntaje: number }
+  >()
+  if (subject) {
+    for (const apunte of subject.apuntes) {
+      if (!apunte.createdByUserId) continue
+      const prev = userRevokeMap.get(apunte.createdByUserId) ?? {
+        apuntes: 0,
+        eventos: 0,
+        bancos: 0,
+        puntaje: 0,
+      }
+      const recursosCount = apunte._count.recursos
+      prev.apuntes += 1
+      prev.puntaje += 1 + Math.max(0, recursosCount)
+      userRevokeMap.set(apunte.createdByUserId, prev)
+    }
+    for (const agenda of subject.agendas) {
+      for (const evento of agenda.eventos) {
+        if (!evento.createdByUserId) continue
+        const prev = userRevokeMap.get(evento.createdByUserId) ?? {
+          apuntes: 0,
+          eventos: 0,
+          bancos: 0,
+          puntaje: 0,
+        }
+        prev.eventos += 1
+        prev.puntaje += 1
+        userRevokeMap.set(evento.createdByUserId, prev)
+      }
+    }
+  }
+
+  const quizBankRevocations = await listQuizBankContributionRevocations(
+    yearSlug,
+    subjectSlug,
+  )
+  for (const revocation of quizBankRevocations) {
+    const prev = userRevokeMap.get(revocation.ownerId) ?? {
+      apuntes: 0,
+      eventos: 0,
+      bancos: 0,
+      puntaje: 0,
+    }
+    prev.bancos += 1
+    prev.puntaje += 1 + Math.max(0, revocation.unitsCount)
+    userRevokeMap.set(revocation.ownerId, prev)
+  }
 
   // Limpiar Storage ANTES de borrar en BD
   try {
@@ -2013,6 +2197,16 @@ export async function deleteSubjectAction(formData: FormData): Promise<void> {
   }
 
   await prisma.subject.delete({ where: { id } })
+
+  // Revocar contribuciones de usuarios afectados
+  for (const [userId, counts] of userRevokeMap) {
+    await revokeContributionBatch(userId, {
+      apuntesCreados: counts.apuntes,
+      eventosCreados: counts.eventos,
+      bancosPreguntasCreados: counts.bancos,
+      puntaje: counts.puntaje,
+    })
+  }
 
   revalidateTag(queryTags.career)
   revalidateTag(queryTags.year(yearSlug))
