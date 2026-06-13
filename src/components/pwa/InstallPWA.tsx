@@ -193,9 +193,9 @@ export function InstallPWAHeroButton() {
         type="button"
         aria-label="Instalar app"
         onClick={action.onClick}
-        className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 px-4 py-2 text-sm font-bold text-black shadow-[0_0_22px_rgba(251,191,36,0.25)] transition-colors hover:from-amber-300 hover:to-orange-400"
+        className="inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full bg-gradient-to-br from-amber-400 to-orange-500 px-3 text-[12.5px] font-bold leading-none text-black shadow-[0_0_22px_rgba(251,191,36,0.25)] transition-colors hover:from-amber-300 hover:to-orange-400 min-[360px]:gap-2 min-[360px]:px-4 min-[360px]:text-sm"
       >
-        <Download size={16} strokeWidth={2.5} />
+        <Download size={14} strokeWidth={2.5} />
         Instalar App
       </button>
       {action.showInstructions && (
