@@ -114,7 +114,6 @@ function useInstallAction() {
 
   const closeIos = () => {
     setShowIos(false)
-    state.dismiss()
   }
 
   return {
