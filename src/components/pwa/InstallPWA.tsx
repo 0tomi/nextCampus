@@ -72,7 +72,20 @@ function InstructionsSheet({ isIOS, onClose }: { isIOS: boolean; onClose: () => 
                   Tocá el botón Compartir
                 </span>
                 <span className="text-[12px] text-white/55">
-                  Está en la barra inferior de Safari.
+                  Está en la barra inferior (Safari) o superior (Chrome).
+                </span>
+              </div>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/70">
+                <MoreVertical size={15} strokeWidth={2} />
+              </span>
+              <div className="flex flex-col gap-0.5 pt-1">
+                <span className="text-[13px] font-semibold text-white">
+                  Tocá &ldquo;Ver más&rdquo; (la flecha hacia abajo)
+                </span>
+                <span className="text-[12px] text-white/55">
+                  Se expanden las opciones extra del menú.
                 </span>
               </div>
             </li>
@@ -82,7 +95,7 @@ function InstructionsSheet({ isIOS, onClose }: { isIOS: boolean; onClose: () => 
               </span>
               <div className="flex flex-col gap-0.5 pt-1">
                 <span className="text-[13px] font-semibold text-white">
-                  Elegí “Añadir a pantalla de inicio”
+                  Elegí &ldquo;Añadir a pantalla de inicio&rdquo;
                 </span>
                 <span className="text-[12px] text-white/55">
                   Confirmá el nombre y listo, ya la tenés.
@@ -193,10 +206,11 @@ export function InstallPWAHeroButton() {
         type="button"
         aria-label="Instalar app"
         onClick={action.onClick}
-        className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 px-4 py-2 text-sm font-bold text-black shadow-[0_0_22px_rgba(251,191,36,0.25)] transition-colors hover:from-amber-300 hover:to-orange-400"
+        className="inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full bg-gradient-to-br from-amber-400 to-orange-500 px-3 text-[12.5px] font-bold leading-none text-black shadow-[0_0_22px_rgba(251,191,36,0.25)] transition-colors hover:from-amber-300 hover:to-orange-400 min-[360px]:gap-2 min-[360px]:px-4 min-[360px]:text-sm"
       >
-        <Download size={16} strokeWidth={2.5} />
-        Instalar App
+        <Download size={14} strokeWidth={2.5} />
+        <span>Instalar</span>
+        <span className="hidden min-[360px]:inline">App</span>
       </button>
       {action.showInstructions && (
         <InstructionsSheet isIOS={action.isIOS} onClose={action.closeInstructions} />
