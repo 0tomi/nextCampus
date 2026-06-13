@@ -196,7 +196,8 @@ export function InstallPWAHeroButton() {
         className="inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full bg-gradient-to-br from-amber-400 to-orange-500 px-3 text-[12.5px] font-bold leading-none text-black shadow-[0_0_22px_rgba(251,191,36,0.25)] transition-colors hover:from-amber-300 hover:to-orange-400 min-[360px]:gap-2 min-[360px]:px-4 min-[360px]:text-sm"
       >
         <Download size={14} strokeWidth={2.5} />
-        Instalar App
+        <span>Instalar</span>
+        <span className="hidden min-[360px]:inline">App</span>
       </button>
       {action.showInstructions && (
         <InstructionsSheet isIOS={action.isIOS} onClose={action.closeInstructions} />
