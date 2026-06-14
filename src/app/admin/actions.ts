@@ -59,7 +59,7 @@ import {
   revokeContributionBatch,
 } from '@/lib/contributions'
 import { isReservedYearSlug, reservedYearSlugSet } from '@/lib/year-slugs'
-import { SUBJECT_LINK_TYPES } from '@/lib/subjectLinks'
+import { hostnameLabel } from '@/lib/linkFavicon'
 
 // Next 16 exige un perfil de cacheLife como segundo argumento de
 // revalidateTag. Usamos "max" (stale-while-revalidate) en todas las
@@ -1404,31 +1404,6 @@ export interface YearActionState {
 const yearSchema = z.object({
   nombre: z.string().trim().min(1, 'El nombre es obligatorio').max(120),
   descripcion: z.string().trim().max(500).default(''),
-  driveUrl: z
-    .string()
-    .trim()
-    .url('El enlace de Drive debe ser una URL válida')
-    .or(z.literal(''))
-    .nullable()
-    .optional(),
-  playlistUrl: z.string().trim().url().or(z.literal('')).nullable().optional(),
-  playlistEnabled: z.coerce.boolean().default(false),
-  discordUrl: z
-    .string()
-    .trim()
-    .url('El enlace de Discord debe ser una URL válida')
-    .or(z.literal(''))
-    .nullable()
-    .optional(),
-  discordDescripcion: z.string().trim().max(500).or(z.literal('')).nullable().optional(),
-  discordAltUrl: z
-    .string()
-    .trim()
-    .url('El enlace de Discord alternativo debe ser una URL válida')
-    .or(z.literal(''))
-    .nullable()
-    .optional(),
-  discordAltDescripcion: z.string().trim().max(500).or(z.literal('')).nullable().optional(),
   orden: z.coerce
     .number()
     .int('El orden debe ser un número entero')
@@ -1451,40 +1426,15 @@ export async function createYearAction(
   const parsed = yearSchema.safeParse({
     nombre: formData.get('nombre'),
     descripcion: formData.get('descripcion') ?? '',
-    driveUrl: formData.get('driveUrl') ?? '',
-    playlistUrl: formData.get('playlistUrl') ?? '',
-    playlistEnabled: formData.get('playlistEnabled'),
-    discordUrl: formData.get('discordUrl') ?? '',
-    discordDescripcion: formData.get('discordDescripcion') ?? '',
-    discordAltUrl: formData.get('discordAltUrl') ?? '',
-    discordAltDescripcion: formData.get('discordAltDescripcion') ?? '',
     orden: formData.get('orden'),
     color: formData.get('color') ?? '',
   })
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0].message }
   }
-  const {
-    nombre,
-    descripcion,
-    driveUrl,
-    playlistUrl,
-    playlistEnabled,
-    discordUrl,
-    discordDescripcion,
-    discordAltUrl,
-    discordAltDescripcion,
-    orden,
-    color,
-  } = parsed.data
+  const { nombre, descripcion, orden, color } = parsed.data
 
-  const normalizedPlaylistUrl = playlistUrl || null
-  if (normalizedPlaylistUrl) {
-    const detected = detectarRecurso(normalizedPlaylistUrl)
-    if (!detected || detected.tipo !== 'YOUTUBE') {
-      return { ok: false, message: 'La playlist debe ser un enlace de YouTube válido.' }
-    }
-  }
+  const links = parseLinksFromForm(formData)
 
   const career = await prisma.career.findFirst({ select: { id: true } })
   if (!career) {
@@ -1513,16 +1463,10 @@ export async function createYearAction(
       nombre,
       slug,
       descripcion,
-      driveUrl: driveUrl || null,
-      playlistUrl: normalizedPlaylistUrl,
-      playlistEnabled,
-      discordUrl: discordUrl || null,
-      discordDescripcion: discordDescripcion || null,
-      discordAltUrl: discordAltUrl || null,
-      discordAltDescripcion: discordAltDescripcion || null,
       orden,
       color: color || null,
       careerId: career.id,
+      links: links.length > 0 ? { create: links } : undefined,
     },
     select: { id: true },
   })
@@ -1552,40 +1496,15 @@ export async function updateYearAction(
   const parsed = yearSchema.safeParse({
     nombre: formData.get('nombre'),
     descripcion: formData.get('descripcion') ?? '',
-    driveUrl: formData.get('driveUrl') ?? '',
-    playlistUrl: formData.get('playlistUrl') ?? '',
-    playlistEnabled: formData.get('playlistEnabled'),
-    discordUrl: formData.get('discordUrl') ?? '',
-    discordDescripcion: formData.get('discordDescripcion') ?? '',
-    discordAltUrl: formData.get('discordAltUrl') ?? '',
-    discordAltDescripcion: formData.get('discordAltDescripcion') ?? '',
     orden: formData.get('orden'),
     color: formData.get('color') ?? '',
   })
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0].message }
   }
-  const {
-    nombre,
-    descripcion,
-    driveUrl,
-    playlistUrl,
-    playlistEnabled,
-    discordUrl,
-    discordDescripcion,
-    discordAltUrl,
-    discordAltDescripcion,
-    orden,
-    color,
-  } = parsed.data
+  const { nombre, descripcion, orden, color } = parsed.data
 
-  const normalizedPlaylistUrl = playlistUrl || null
-  if (normalizedPlaylistUrl) {
-    const detected = detectarRecurso(normalizedPlaylistUrl)
-    if (!detected || detected.tipo !== 'YOUTUBE') {
-      return { ok: false, message: 'La playlist debe ser un enlace de YouTube válido.' }
-    }
-  }
+  const links = parseLinksFromForm(formData)
 
   const year = await prisma.academicYear.findUnique({
     where: { id },
@@ -1613,22 +1532,24 @@ export async function updateYearAction(
   ])
   const newSlug = uniqueSlug(base, takenSlugs)
 
-  await prisma.academicYear.update({
-    where: { id },
-    data: {
-      nombre,
-      slug: newSlug,
-      descripcion,
-      driveUrl: driveUrl || null,
-      playlistUrl: normalizedPlaylistUrl,
-      playlistEnabled,
-      discordUrl: discordUrl || null,
-      discordDescripcion: discordDescripcion || null,
-      discordAltUrl: discordAltUrl || null,
-      discordAltDescripcion: discordAltDescripcion || null,
-      orden,
-      color: color || null,
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.academicYear.update({
+      where: { id },
+      data: {
+        nombre,
+        slug: newSlug,
+        descripcion,
+        orden,
+        color: color || null,
+      },
+    })
+    // Reemplazo total: borra los links actuales y recrea según el formulario.
+    await tx.yearLink.deleteMany({ where: { yearId: id } })
+    if (links.length > 0) {
+      await tx.yearLink.createMany({
+        data: links.map((l) => ({ yearId: id, ...l })),
+      })
+    }
   })
 
   revalidateTag(queryTags.career)
@@ -1814,8 +1735,9 @@ export interface CommissionActionState {
   message: string
 }
 
-const subjectLinkItemSchema = z.object({
-  tipo: z.string().trim().min(1),
+// Botón de acceso rápido genérico (vale para materias y años). El icono se
+// resuelve del favicon de la URL, así que no hay "tipo": solo texto y enlace.
+const linkItemSchema = z.object({
   label: z.string().trim(),
   url: z
     .string()
@@ -1833,6 +1755,26 @@ const subjectLinkItemSchema = z.object({
       { message: 'El enlace debe empezar con http:// o https://' },
     ),
 })
+
+// Lee el campo `links` (JSON) del form y devuelve la lista normalizada y
+// ordenada. Si falta el texto del botón, usa el dominio del enlace.
+function parseLinksFromForm(formData: FormData): { label: string; url: string; orden: number }[] {
+  let raw: z.infer<typeof linkItemSchema>[] = []
+  try {
+    const linksJson = formData.get('links')
+    if (typeof linksJson === 'string' && linksJson.trim() !== '') {
+      const parsed = z.array(linkItemSchema).safeParse(JSON.parse(linksJson))
+      if (parsed.success) raw = parsed.data
+    }
+  } catch {
+    raw = []
+  }
+  return raw.map((l, i) => ({
+    label: l.label.trim() || hostnameLabel(l.url),
+    url: l.url,
+    orden: i,
+  }))
+}
 
 const subjectSchema = z.object({
   nombre: z.string().trim().min(1, 'El nombre es obligatorio').max(200),
@@ -1866,23 +1808,7 @@ export async function createSubjectAction(
   }
   const { nombre, descripcion } = parsed.data
 
-  // Parse links defensively
-  let rawLinks: z.infer<typeof subjectLinkItemSchema>[] = []
-  try {
-    const linksJson = formData.get('links')
-    if (linksJson && typeof linksJson === 'string' && linksJson.trim() !== '') {
-      const parsed = z.array(subjectLinkItemSchema).safeParse(JSON.parse(linksJson))
-      if (parsed.success) rawLinks = parsed.data
-    }
-  } catch {
-    rawLinks = []
-  }
-  const links = rawLinks.map((l, i) => ({
-    tipo: l.tipo,
-    label: l.label || SUBJECT_LINK_TYPES.find((t) => t.value === l.tipo)?.label || l.tipo,
-    url: l.url,
-    orden: i,
-  }))
+  const links = parseLinksFromForm(formData)
 
   const year = await prisma.academicYear.findUnique({
     where: { id: yearId },
@@ -2035,23 +1961,7 @@ export async function updateSubjectAction(
   }
   const { nombre, descripcion } = parsed.data
 
-  // Parse links defensively
-  let rawLinks: z.infer<typeof subjectLinkItemSchema>[] = []
-  try {
-    const linksJson = formData.get('links')
-    if (linksJson && typeof linksJson === 'string' && linksJson.trim() !== '') {
-      const parsedLinks = z.array(subjectLinkItemSchema).safeParse(JSON.parse(linksJson))
-      if (parsedLinks.success) rawLinks = parsedLinks.data
-    }
-  } catch {
-    rawLinks = []
-  }
-  const links = rawLinks.map((l, i) => ({
-    tipo: l.tipo,
-    label: l.label || SUBJECT_LINK_TYPES.find((t) => t.value === l.tipo)?.label || l.tipo,
-    url: l.url,
-    orden: i,
-  }))
+  const links = parseLinksFromForm(formData)
 
   const oldSlug = scope.subjectSlug
 

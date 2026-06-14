@@ -1,5 +1,6 @@
 import { isSubjectVisible, isYearVisible, type UserPreferences } from '@/lib/preferences'
 import type { SubjectLinkDTO } from '@/lib/subjectLinks'
+import type { YearLinkDTO } from '@/components/year/YearResourceLinks'
 
 export type HomeGridSubject = {
   id: string
@@ -14,9 +15,7 @@ export type HomeGridYear = {
   slug: string
   nombre: string
   descripcion?: string | null
-  driveUrl?: string | null
-  playlistUrl?: string | null
-  playlistEnabled?: boolean
+  links: YearLinkDTO[]
   color?: string | null
   subjects: HomeGridSubject[]
 }

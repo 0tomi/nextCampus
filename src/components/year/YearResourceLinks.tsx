@@ -1,78 +1,35 @@
-import { CirclePlay } from 'lucide-react'
-import { DiscordIcon } from '@/components/ui/DiscordIcon'
-import { GoogleDriveIcon } from '@/components/ui/GoogleDriveIcon'
+import { LinkFavicon } from '@/components/ui/LinkFavicon'
 
-export type YearResourceLinksData = {
-  driveUrl?: string | null
-  playlistUrl?: string | null
-  discordUrl?: string | null
-  discordDescripcion?: string | null
-  discordAltUrl?: string | null
-  discordAltDescripcion?: string | null
+export type YearLinkDTO = {
+  id: string
+  label: string
+  url: string
+  orden: number
 }
 
-export function YearResourceLinks({
-  driveUrl,
-  playlistUrl,
-  discordUrl,
-  discordDescripcion,
-  discordAltUrl,
-  discordAltDescripcion,
-}: YearResourceLinksData) {
-  if (!driveUrl && !playlistUrl && !discordUrl && !discordAltUrl) return null
+// Solo permitimos enlaces http(s): evita vectores como `javascript:` en el href.
+function isSafeUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url.trim())
+}
 
-  const discordLabel = discordDescripcion?.trim() || 'Discord'
-  const discordAltLabel = discordAltDescripcion?.trim() || 'Discord alternativo'
+export function YearResourceLinks({ links }: { links: readonly YearLinkDTO[] }) {
+  const safeLinks = links.filter((link) => isSafeUrl(link.url))
+  if (safeLinks.length === 0) return null
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {driveUrl ? (
+      {safeLinks.map((link) => (
         <a
-          href={driveUrl}
+          key={link.id}
+          href={link.url}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex cursor-pointer items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
         >
-          <GoogleDriveIcon className="size-5" />
-          Drive del año
+          <LinkFavicon url={link.url} className="size-5 rounded-sm" />
+          {link.label}
         </a>
-      ) : null}
-
-      {playlistUrl ? (
-        <a
-          href={playlistUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex cursor-pointer items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-        >
-          <CirclePlay className="size-5 text-red-400" />
-          Playlist del año
-        </a>
-      ) : null}
-
-      {discordUrl ? (
-        <a
-          href={discordUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex cursor-pointer items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-        >
-          <DiscordIcon className="size-5 text-indigo-400" />
-          {discordLabel}
-        </a>
-      ) : null}
-
-      {discordAltUrl ? (
-        <a
-          href={discordAltUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex cursor-pointer items-center gap-2 rounded border border-white/10 bg-surface-1 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-        >
-          <DiscordIcon className="size-5 text-indigo-400" />
-          {discordAltLabel}
-        </a>
-      ) : null}
+      ))}
     </div>
   )
 }
