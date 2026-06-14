@@ -748,12 +748,15 @@ function LinkPreview({
           <div className="space-y-2.5">
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">
               {logoSrc ? (
-                <img
+                <Image
                   src={logoSrc}
                   alt="Site logo"
+                  width={16}
+                  height={16}
+                  unoptimized
                   className="size-4 rounded-sm object-contain"
                   onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none'
+                    e.currentTarget.style.display = 'none'
                   }}
                 />
               ) : (

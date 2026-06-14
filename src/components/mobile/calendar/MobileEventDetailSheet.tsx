@@ -154,7 +154,7 @@ export function MobileEventDetailSheet({
 
             {event.apuntes && event.apuntes.length > 0 ? (
               <div className="space-y-2">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/36">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/50">
                   Apuntes relacionados
                 </p>
                 <RelatedApunteLinks apuntes={event.apuntes} limit={event.apuntes.length} />
@@ -163,7 +163,7 @@ export function MobileEventDetailSheet({
 
             {event.descripcionHtml ? (
               <div className="space-y-2">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/36">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/50">
                   Descripción
                 </p>
                 <SafeHtml
@@ -172,7 +172,7 @@ export function MobileEventDetailSheet({
                 />
               </div>
             ) : (
-              <p className="rounded-xl border border-dashed border-white/8 bg-white/[0.02] px-4 py-3 text-sm text-white/42">
+              <p className="rounded-xl border border-dashed border-white/8 bg-white/[0.02] px-4 py-3 text-sm text-white/50">
                 Sin descripción por ahora.
               </p>
             )}
@@ -276,8 +276,8 @@ function DetailRow({
 
   return (
     <div className="flex items-center justify-between gap-4 rounded-lg bg-white/[0.025] px-3 py-2.5">
-      <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/36">
-        {icon ? <span className="text-white/32">{icon}</span> : null}
+      <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/50">
+        {icon ? <span className="text-white/46">{icon}</span> : null}
         {label}
       </span>
       {href ? (
