@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
-import { CalendarPeriodControls, EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
+import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { AdminControls } from '@/components/admin/AdminControls'
 import {
@@ -139,7 +139,6 @@ export function YearOverviewEvents({
                 Agregar nuevo evento
               </AdminTriggerButton>
             </AdminControls>
-            <CalendarPeriodControls periodos={periodos} showLegend={false} />
           </div>
         </div>
       </div>

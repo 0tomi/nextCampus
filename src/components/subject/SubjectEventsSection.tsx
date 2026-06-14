@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
-import { CalendarPeriodControls, EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
+import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
 import type { EventCalendarEvent } from '@/components/calendar/EventCalendar'
 import { DarkCard } from '@/components/ui/DarkCard'
 import {
@@ -132,7 +132,6 @@ export function SubjectEventsSection({
                 Agregar nuevo evento
               </AdminTriggerButton>
             </AdminControls>
-            <CalendarPeriodControls periodos={periodos} showLegend={false} />
             {!activeCommission ? (
               <>
                 <div className="hidden sm:block h-4 w-px bg-white/10" />

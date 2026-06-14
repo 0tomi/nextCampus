@@ -10,7 +10,13 @@ export function AdminSidebar() {
   const session = useAdminSession()
   const canCreateUsers = session?.admin?.canCreateUsers ?? false
   const canViewAuditHistory = session?.admin?.canViewAuditHistory ?? false
-  const items = buildAdminSidebarItems({ pathname, canCreateUsers, canViewAuditHistory })
+  const canManageCalendar = session?.admin?.canManageAcademicStructure ?? false
+  const items = buildAdminSidebarItems({
+    pathname,
+    canCreateUsers,
+    canViewAuditHistory,
+    canManageCalendar,
+  })
 
   return (
     <Sidebar

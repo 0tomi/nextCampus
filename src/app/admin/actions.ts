@@ -520,7 +520,7 @@ export interface PeriodoActionState {
 }
 
 async function createPeriodo(formData: FormData): Promise<void> {
-  const admin = await requireGeneralAdmin()
+  const admin = await requireAcademicManager()
   const data = parsePeriodoForm(formData)
   const periodo = await prisma.periodoAcademico.create({
     data: {
@@ -550,7 +550,7 @@ export async function createPeriodoAction(
   _prev: PeriodoActionState,
   formData: FormData,
 ): Promise<PeriodoActionState> {
-  await requireGeneralAdmin()
+  await requireAcademicManager()
   try {
     await createPeriodo(formData)
     return { ok: true, message: 'Período creado correctamente.' }
@@ -569,7 +569,7 @@ export async function updatePeriodoAction(
   _prev: PeriodoActionState,
   formData: FormData,
 ): Promise<PeriodoActionState> {
-  const admin = await requireGeneralAdmin()
+  const admin = await requireAcademicManager()
   try {
     const id = z.string().min(1).parse(formData.get('id'))
     const data = parsePeriodoForm(formData)
@@ -608,7 +608,7 @@ export async function updatePeriodoAction(
 }
 
 export async function deletePeriodo(formData: FormData): Promise<void> {
-  const admin = await requireGeneralAdmin()
+  const admin = await requireAcademicManager()
   const id = z.string().min(1).parse(formData.get('id'))
   const periodo = await prisma.periodoAcademico.findUnique({
     where: { id },
