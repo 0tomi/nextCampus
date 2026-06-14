@@ -27,6 +27,11 @@ const nextConfig: NextConfig = {
         hostname: 'drive.google.com',
         pathname: '/thumbnail',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.google.com',
+        pathname: '/s2/favicons',
+      },
     ],
   },
   turbopack: {
