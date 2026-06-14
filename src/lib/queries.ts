@@ -276,11 +276,12 @@ export async function getCareer() {
           slug: true,
           nombre: true,
           descripcion: true,
-          driveUrl: true,
-          playlistUrl: true,
-          playlistEnabled: true,
           orden: true,
           color: true,
+          links: {
+            select: { id: true, label: true, url: true, orden: true },
+            orderBy: { orden: 'asc' },
+          },
           subjects: {
             orderBy: { nombre: 'asc' },
             select: {
@@ -289,7 +290,7 @@ export async function getCareer() {
               nombre: true,
               descripcion: true,
               links: {
-                select: { id: true, tipo: true, label: true, url: true, orden: true },
+                select: { id: true, label: true, url: true, orden: true },
                 orderBy: { orden: 'asc' },
               },
               commissions: {
@@ -316,14 +317,11 @@ export async function getYearBySlug(slug: string) {
       slug: true,
       nombre: true,
       descripcion: true,
-      driveUrl: true,
-      playlistUrl: true,
-      playlistEnabled: true,
-      discordUrl: true,
-      discordDescripcion: true,
-      discordAltUrl: true,
-      discordAltDescripcion: true,
       color: true,
+      links: {
+        select: { id: true, label: true, url: true, orden: true },
+        orderBy: { orden: 'asc' },
+      },
       subjects: {
         orderBy: { nombre: 'asc' },
         select: {
@@ -369,7 +367,7 @@ export async function getSubjectPageBySlug(slug: string) {
       nombre: true,
       descripcion: true,
       links: {
-        select: { id: true, tipo: true, label: true, url: true, orden: true },
+        select: { id: true, label: true, url: true, orden: true },
         orderBy: { orden: 'asc' },
       },
       year: {

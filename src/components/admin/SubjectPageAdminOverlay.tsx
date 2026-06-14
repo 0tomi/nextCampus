@@ -23,7 +23,7 @@ interface SubjectPageAdminOverlayProps {
     slug: string
     nombre: string
     descripcion?: string
-    links?: { tipo: string; label: string; url: string; orden: number }[]
+    links?: { label: string; url: string; orden: number }[]
     commissions: readonly CommissionOption[]
     categoriasDisponibles: Array<{ id: string; nombre: string }>
   }

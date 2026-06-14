@@ -4,7 +4,7 @@
 
 **Un campus estudiantil hecho por estudiantes, para estudiantes.**
 
-Porque el campus que nos da la facultad no alcanza.
+Una forma más cómoda de tener todo lo que necesitás para cursar en un mismo lugar.
 
 [![Next.js](https://img.shields.io/badge/Next.js_16-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -18,9 +18,9 @@ Porque el campus que nos da la facultad no alcanza.
 
 ## ¿De qué se trata?
 
-nextCampus nació de una frustración compartida: el campus virtual que nos provee la facultad no cubre las necesidades reales del día a día como estudiante. Falta organización, faltan herramientas de estudio, falta algo hecho con intención.
+nextCampus nació de una idea simple: como estudiantes, nos dimos cuenta de que nos vendrían bien algunas herramientas nuevas para organizarnos mejor en el día a día. Buena parte de la información que usábamos estaba dispersa en distintos lugares, así que quisimos reunirla en un solo espacio.
 
-Este proyecto es nuestra respuesta. Un campus alternativo construido desde cero por estudiantes, pensado para estudiantes. Es **público, abierto y colaborativo** — cualquiera puede usarlo, y cualquiera puede contribuir.
+Este proyecto es justamente eso: un campus complementario, construido desde cero por estudiantes y pensado para estudiantes. Centraliza todo en un mismo lugar para que estudiar sea más cómodo. Es **público, abierto y colaborativo** — cualquiera puede usarlo, y cualquiera puede contribuir.
 
 ## ¿Qué tiene?
 
@@ -70,5 +70,5 @@ No hay burocracia. Solo ganas de construir algo útil.
 ---
 
 <div align="center">
-  <sub>Hecho con frustración productiva por estudiantes de Licenciatura en Sistemas.</sub>
+  <sub>Hecho con cariño por estudiantes de Licenciatura en Sistemas.</sub>
 </div>
