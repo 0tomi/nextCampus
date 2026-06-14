@@ -8,7 +8,7 @@ import {
   createApunteAction,
   updateApunteAction,
   type ApunteActionState,
-} from '@/app/admin/actions'
+} from '@/app/admin/actions/apuntes'
 import { RichTextEditor } from './RichTextEditor'
 import { RecursoRow } from '@/components/admin/apunte/RecursoRow'
 import { useAutoApunteCategories } from '@/hooks/useAutoApunteCategories'

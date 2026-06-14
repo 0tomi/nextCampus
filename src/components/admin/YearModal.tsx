@@ -6,7 +6,7 @@ import {
   createYearAction,
   updateYearAction,
   type YearActionState,
-} from '@/app/admin/actions'
+} from '@/app/admin/actions/years'
 import { YEAR_COLOR_PRESETS } from '@/lib/yearColors'
 
 interface LinkRow {

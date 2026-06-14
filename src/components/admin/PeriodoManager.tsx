@@ -10,7 +10,7 @@ import {
   updatePeriodoAction,
   deletePeriodo,
   type PeriodoActionState,
-} from '@/app/admin/actions'
+} from '@/app/admin/actions/periodos'
 import {
   CATEGORIAS_PERIODO,
   PERIODO_META,

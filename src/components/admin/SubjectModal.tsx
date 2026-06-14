@@ -7,7 +7,7 @@ import {
   createSubjectAction,
   updateSubjectAction,
   type SubjectActionState,
-} from '@/app/admin/actions'
+} from '@/app/admin/actions/subjects'
 
 // ---------------------------------------------------------------------------
 // Types
