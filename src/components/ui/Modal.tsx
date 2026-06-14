@@ -41,20 +41,32 @@ export function Modal({
     const dialog = dialogRef.current
     if (!dialog || !open) return
 
+    // Cuando el gesto del mouse arranca DENTRO del contenido (por ejemplo, al
+    // subrayar texto) y se suelta sobre el fondo, el `click` resuelve su target
+    // al <dialog>. Para no cerrar en ese caso, solo cerramos cuando el gesto
+    // arranca Y termina sobre el fondo.
+    let pressStartedOnBackdrop = false
+
     const closeFromNativeEvent = (event: Event) => {
       event.preventDefault()
       closeDialog()
     }
+    const trackPressOrigin = (event: globalThis.MouseEvent) => {
+      pressStartedOnBackdrop = event.target === dialog
+    }
     const closeFromBackdrop = (event: globalThis.MouseEvent) => {
-      if (event.target === dialog) closeDialog()
+      if (event.target === dialog && pressStartedOnBackdrop) closeDialog()
+      pressStartedOnBackdrop = false
     }
 
     if (!dialog.open) dialog.showModal()
     dialog.addEventListener('cancel', closeFromNativeEvent)
+    dialog.addEventListener('mousedown', trackPressOrigin)
     dialog.addEventListener('click', closeFromBackdrop)
 
     return () => {
       dialog.removeEventListener('cancel', closeFromNativeEvent)
+      dialog.removeEventListener('mousedown', trackPressOrigin)
       dialog.removeEventListener('click', closeFromBackdrop)
       if (dialog.open) dialog.close()
     }

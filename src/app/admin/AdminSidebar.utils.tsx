@@ -1,7 +1,8 @@
-import { CircleUserRound, History, Users } from 'lucide-react'
+import { CalendarDays, CircleUserRound, History, Users } from 'lucide-react'
 import type { SidebarItem } from '@/components/shell/Sidebar'
 
 const BADGE_PROFILE = 'from-sky-400 to-cyan-500 text-black shadow-[0_0_0_1px_rgba(255,255,255,0.06)]'
+const BADGE_CALENDAR = 'from-emerald-400 to-teal-500 text-black shadow-[0_0_0_1px_rgba(255,255,255,0.06)]'
 const BADGE_USERS = 'from-amber-400 to-orange-500 text-black shadow-[0_0_0_1px_rgba(255,255,255,0.06)]'
 const BADGE_HISTORY = 'from-violet-400 to-fuchsia-500 text-black shadow-[0_0_0_1px_rgba(255,255,255,0.06)]'
 
@@ -9,12 +10,14 @@ interface BuildAdminSidebarItemsInput {
   pathname: string
   canCreateUsers: boolean
   canViewAuditHistory: boolean
+  canManageCalendar: boolean
 }
 
 export function buildAdminSidebarItems({
   pathname,
   canCreateUsers,
   canViewAuditHistory,
+  canManageCalendar,
 }: BuildAdminSidebarItemsInput): SidebarItem[] {
   const items: SidebarItem[] = [
     {
@@ -27,6 +30,18 @@ export function buildAdminSidebarItems({
       active: pathname.startsWith('/admin/perfil'),
     },
   ]
+
+  if (canManageCalendar) {
+    items.push({
+      id: 'calendario',
+      href: '/admin/calendario',
+      label: 'Calendario',
+      meta: 'Feriados y mesas de examen',
+      badge: <CalendarDays className="size-4" />,
+      badgeClassName: BADGE_CALENDAR,
+      active: pathname.startsWith('/admin/calendario'),
+    })
+  }
 
   if (canCreateUsers) {
     items.push({

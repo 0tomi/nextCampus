@@ -7,7 +7,6 @@ import { Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { EventCalendar, type EventCalendarEvent } from './EventCalendar'
 import { EventModal } from '@/components/admin/EventModal'
-import { PeriodoModal } from '@/components/admin/PeriodoModal'
 import { PeriodoLegend } from './PeriodoLegend'
 import { PeriodoDetailSheet } from './PeriodoDetailSheet'
 import { useAdminAccess } from '@/components/admin/adminAccess'
@@ -258,41 +257,23 @@ export function EventCalendarAdmin({
   )
 }
 
+// Solo muestra la leyenda de períodos del calendario. La gestión (alta, edición
+// y baja) vive exclusivamente en la sección Calendario del panel, porque los
+// períodos afectan a todo el campus.
 export function CalendarPeriodControls({
   periodos,
   className,
-  showLegend = true,
 }: {
   periodos?: readonly PeriodoCalendario[]
   className?: string
-  showLegend?: boolean
 }) {
-  // Los períodos son de toda la facultad: gestionarlos exige admin general.
-  const canManagePeriodos = useAdminAccess({ requireGlobal: true }) ?? false
-  const [periodoModalOpen, setPeriodoModalOpen] = useState(false)
   const activePeriodos = periodos ?? EMPTY_PERIODOS
 
-  if (activePeriodos.length === 0 && !canManagePeriodos) return null
+  if (activePeriodos.length === 0) return null
 
   return (
     <div className={cn('flex flex-wrap items-center gap-3', className)}>
-      {showLegend ? <PeriodoLegend periodos={activePeriodos} /> : null}
-      {canManagePeriodos ? (
-        <>
-          <button
-            type="button"
-            onClick={() => setPeriodoModalOpen(true)}
-            className="inline-flex cursor-pointer items-center justify-center rounded border border-white/10 bg-surface-1 px-3 py-1.5 text-xs font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            Administrar períodos
-          </button>
-          <PeriodoModal
-            open={periodoModalOpen}
-            periodos={activePeriodos}
-            onClose={() => setPeriodoModalOpen(false)}
-          />
-        </>
-      ) : null}
+      <PeriodoLegend periodos={activePeriodos} />
     </div>
   )
 }
