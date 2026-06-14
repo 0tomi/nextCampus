@@ -1,7 +1,9 @@
 import { revalidatePath, revalidateTag as revalidateTagRaw } from 'next/cache'
+import { z } from 'zod'
 import { requireGeneralAdmin, requireAcademicManager, requireAnyAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { queryTags } from '@/lib/queries'
+import { hostnameLabel } from '@/lib/linkFavicon'
 
 // Next 16 exige un perfil de cacheLife como segundo argumento de
 // revalidateTag. Usamos "max" (stale-while-revalidate) en todas las
@@ -54,3 +56,44 @@ export class ActionInputError extends Error {}
 
 // "YYYY-MM-DD" → Date a medianoche UTC para guardar en la columna `@db.Date`.
 export const fechaToDbDate = (fecha: string): Date => new Date(`${fecha}T00:00:00.000Z`)
+
+// Botón de acceso rápido genérico (vale para materias y años). El icono se
+// resuelve del favicon de la URL, así que no hay "tipo": solo texto y enlace.
+const linkItemSchema = z.object({
+  label: z.string().trim(),
+  url: z
+    .string()
+    .trim()
+    .url()
+    .refine(
+      (u) => {
+        try {
+          const protocol = new URL(u).protocol
+          return protocol === 'https:' || protocol === 'http:'
+        } catch {
+          return false
+        }
+      },
+      { message: 'El enlace debe empezar con http:// o https://' },
+    ),
+})
+
+// Lee el campo `links` (JSON) del form y devuelve la lista normalizada y
+// ordenada. Si falta el texto del botón, usa el dominio del enlace.
+export function parseLinksFromForm(formData: FormData): { label: string; url: string; orden: number }[] {
+  let raw: z.infer<typeof linkItemSchema>[] = []
+  try {
+    const linksJson = formData.get('links')
+    if (typeof linksJson === 'string' && linksJson.trim() !== '') {
+      const parsed = z.array(linkItemSchema).safeParse(JSON.parse(linksJson))
+      if (parsed.success) raw = parsed.data
+    }
+  } catch {
+    raw = []
+  }
+  return raw.map((l, i) => ({
+    label: l.label.trim() || hostnameLabel(l.url),
+    url: l.url,
+    orden: i,
+  }))
+}
