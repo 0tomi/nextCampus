@@ -299,11 +299,12 @@ function AboutText({ visibleOnMobile }: { visibleOnMobile: boolean }) {
   return (
     <div className={cn(visibleOnMobile ? 'block' : 'hidden', 'space-y-5 lg:block')}>
       <p className="text-sm leading-relaxed text-white/70">
-        Somos estudiantes de la carrera de Licenciatura en Sistemas. Vimos que el campus no suple algunas necesidades
-        que tenemos, por lo que decidimos actuar implementando nuestra propia visión de un campus universitario
-        inteligente. En este campus podés encontrar diversas herramientas como un{' '}
+        Somos estudiantes de la Licenciatura en Sistemas. Mientras cursábamos nos dimos cuenta de que nos vendrían
+        bien algunas herramientas nuevas para el día a día, así que decidimos construirlas. Mucha de la información
+        que usábamos estaba dispersa en distintos lugares, y con nextCampus la reunimos en un mismo espacio para que
+        todo quede más a mano. Acá vas a encontrar un{' '}
         <strong className="font-bold text-white">Calendario</strong> con eventos por materia,{' '}
-        <strong className="font-bold text-white">Quiz</strong> para autoevaluarse, y{' '}
+        <strong className="font-bold text-white">Quiz</strong> para autoevaluarte, y{' '}
         <strong className="font-bold text-white">Apuntes interactivos</strong>.
       </p>
       <p className="text-sm leading-relaxed text-white/70">
