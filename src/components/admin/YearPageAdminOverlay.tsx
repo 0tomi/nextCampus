@@ -7,6 +7,7 @@ import { EventModal } from './EventModal'
 import { YearModal } from './YearModal'
 import { ConfirmDeleteYearModal } from './ConfirmDeleteModal'
 import type { CommissionOption } from '@/lib/commission-preferences'
+import type { YearLinkDTO } from '@/components/year/YearResourceLinks'
 
 interface TipoEvento {
   id: string
@@ -27,13 +28,7 @@ interface YearData {
   slug: string
   nombre: string
   descripcion?: string | null
-  driveUrl?: string | null
-  playlistUrl?: string | null
-  playlistEnabled?: boolean
-  discordUrl?: string | null
-  discordDescripcion?: string | null
-  discordAltUrl?: string | null
-  discordAltDescripcion?: string | null
+  links?: YearLinkDTO[]
   orden: number
   color?: string | null
 }
@@ -105,13 +100,7 @@ export function YearPageAdminOverlay({
                 id: year.id,
                 nombre: year.nombre,
                 descripcion: year.descripcion,
-                driveUrl: year.driveUrl,
-                playlistUrl: year.playlistUrl,
-                playlistEnabled: year.playlistEnabled,
-                discordUrl: year.discordUrl,
-                discordDescripcion: year.discordDescripcion,
-                discordAltUrl: year.discordAltUrl,
-                discordAltDescripcion: year.discordAltDescripcion,
+                links: year.links,
                 orden: year.orden,
                 color: year.color,
               }}

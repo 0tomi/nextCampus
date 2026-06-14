@@ -8,13 +8,14 @@ import {
   ConfirmDeleteYearModal,
   ConfirmDeleteSubjectModal,
 } from '@/components/admin/ConfirmDeleteModal'
+import type { YearLinkDTO } from '@/components/year/YearResourceLinks'
 
 interface SubjectData {
   id: string
   slug: string
   nombre: string
   descripcion?: string | null
-  links?: { tipo: string; label: string; url: string; orden: number }[]
+  links?: { label: string; url: string; orden: number }[]
 }
 
 interface YearData {
@@ -22,9 +23,7 @@ interface YearData {
   slug: string
   nombre: string
   descripcion?: string | null
-  driveUrl?: string | null
-  playlistUrl?: string | null
-  playlistEnabled?: boolean
+  links?: YearLinkDTO[]
   orden: number
   subjects: SubjectData[]
 }
@@ -88,9 +87,7 @@ function YearAdminBar({ year }: { year: YearData }) {
           id: year.id,
           nombre: year.nombre,
           descripcion: year.descripcion,
-          driveUrl: year.driveUrl,
-          playlistUrl: year.playlistUrl,
-          playlistEnabled: year.playlistEnabled,
+          links: year.links,
           orden: year.orden,
         }}
       />

@@ -145,14 +145,7 @@ function YearHero({ year }: { year: YearRouteContext['year'] }) {
         ) : null}
       </div>
 
-      <YearResourceLinks
-        driveUrl={year.driveUrl}
-        playlistUrl={year.playlistUrl}
-        discordUrl={year.discordUrl}
-        discordDescripcion={year.discordDescripcion}
-        discordAltUrl={year.discordAltUrl}
-        discordAltDescripcion={year.discordAltDescripcion}
-      />
+      <YearResourceLinks links={year.links} />
     </section>
   )
 }

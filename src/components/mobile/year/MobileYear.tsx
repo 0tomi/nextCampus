@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { ArrowRight, ChevronRight, Calendar, Layers, Pencil, Trash2, Plus, CirclePlay } from 'lucide-react'
+import { ArrowRight, ChevronRight, Calendar, Layers, Pencil, Trash2, Plus } from 'lucide-react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
 import { getYearColorClasses } from '@/lib/yearColors'
@@ -16,21 +16,15 @@ import {
 } from '@/lib/commission-preferences'
 import { usePreferredCommissionMap } from '@/components/commissions/usePreferredCommission'
 import { formatDescription } from '@/lib/text'
-import { GoogleDriveIcon } from '@/components/ui/GoogleDriveIcon'
-import { DiscordIcon } from '@/components/ui/DiscordIcon'
+import { LinkFavicon } from '@/components/ui/LinkFavicon'
+import type { YearLinkDTO } from '@/components/year/YearResourceLinks'
 
 interface YearForMobile {
   id: string
   slug: string
   nombre: string
   descripcion?: string | null
-  driveUrl?: string | null
-  playlistUrl?: string | null
-  playlistEnabled?: boolean
-  discordUrl?: string | null
-  discordDescripcion?: string | null
-  discordAltUrl?: string | null
-  discordAltDescripcion?: string | null
+  links: YearLinkDTO[]
   color?: string | null
   subjects: Array<{
     id: string
@@ -253,14 +247,7 @@ function MobileYearHero({
               {formatDescription(year.descripcion.trim())}
             </p>
           ) : null}
-          <MobileYearResourceLinks
-            driveUrl={year.driveUrl}
-            playlistUrl={year.playlistUrl}
-            discordUrl={year.discordUrl}
-            discordDescripcion={year.discordDescripcion}
-            discordAltUrl={year.discordAltUrl}
-            discordAltDescripcion={year.discordAltDescripcion}
-          />
+          <MobileYearResourceLinks links={year.links} />
         </div>
       </div>
     </section>
@@ -315,72 +302,24 @@ function MobileYearStats({ eventCount, subjectsCount }: { eventCount: number; su
   )
 }
 
-function MobileYearResourceLinks({
-  driveUrl,
-  playlistUrl,
-  discordUrl,
-  discordDescripcion,
-  discordAltUrl,
-  discordAltDescripcion,
-}: {
-  driveUrl?: string | null
-  playlistUrl?: string | null
-  discordUrl?: string | null
-  discordDescripcion?: string | null
-  discordAltUrl?: string | null
-  discordAltDescripcion?: string | null
-}) {
-  if (!driveUrl && !playlistUrl && !discordUrl && !discordAltUrl) return null
-
-  const discordLabel = discordDescripcion?.trim() || 'Discord'
-  const discordAltLabel = discordAltDescripcion?.trim() || 'Discord alternativo'
+function MobileYearResourceLinks({ links }: { links: readonly YearLinkDTO[] }) {
+  const safeLinks = links.filter((link) => /^https?:\/\//i.test(link.url.trim()))
+  if (safeLinks.length === 0) return null
 
   return (
     <div className="mt-4 flex flex-col gap-2">
-      {driveUrl ? (
+      {safeLinks.map((link) => (
         <a
-          href={driveUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-white/15 bg-black/20 text-sm font-bold text-white transition-colors hover:bg-black/30"
-        >
-          <GoogleDriveIcon className="size-5" />
-          Drive del año
-        </a>
-      ) : null}
-      {playlistUrl ? (
-        <a
-          href={playlistUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-white/15 bg-black/20 text-sm font-bold text-white transition-colors hover:bg-black/30"
-        >
-          <CirclePlay className="size-5 text-red-100" />
-          Playlist del año
-        </a>
-      ) : null}
-      {discordUrl ? (
-        <a
-          href={discordUrl}
+          key={link.id}
+          href={link.url}
           target="_blank"
           rel="noopener noreferrer"
           className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-white/15 bg-black/20 px-3 text-sm font-bold text-white transition-colors hover:bg-black/30"
         >
-          <DiscordIcon className="size-5 shrink-0 text-indigo-300" />
-          <span className="truncate">{discordLabel}</span>
+          <LinkFavicon url={link.url} className="size-5 shrink-0 rounded-sm" />
+          <span className="truncate">{link.label}</span>
         </a>
-      ) : null}
-      {discordAltUrl ? (
-        <a
-          href={discordAltUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-white/15 bg-black/20 px-3 text-sm font-bold text-white transition-colors hover:bg-black/30"
-        >
-          <DiscordIcon className="size-5 shrink-0 text-indigo-300" />
-          <span className="truncate">{discordAltLabel}</span>
-        </a>
-      ) : null}
+      ))}
     </div>
   )
 }

@@ -8,14 +8,12 @@ import {
   updateSubjectAction,
   type SubjectActionState,
 } from '@/app/admin/actions'
-import { SUBJECT_LINK_TYPES } from '@/lib/subjectLinks'
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 interface LinkRow {
-  tipo: string
   label: string
   url: string
 }
@@ -30,7 +28,7 @@ type LinksAction =
 function linksReducer(state: LinkRow[], action: LinksAction): LinkRow[] {
   switch (action.type) {
     case 'ADD':
-      return [...state, { tipo: SUBJECT_LINK_TYPES[0].value, label: '', url: '' }]
+      return [...state, { label: '', url: '' }]
     case 'REMOVE':
       return state.filter((_, i) => i !== action.index)
     case 'UPDATE_FIELD': {
@@ -67,7 +65,7 @@ interface SubjectModalProps {
     id: string
     nombre: string
     descripcion?: string
-    links?: { tipo: string; label: string; url: string; orden: number }[]
+    links?: { label: string; url: string; orden: number }[]
   }
   /** ID del año al que pertenece la materia (requerido para crear). */
   yearId?: string
@@ -93,7 +91,7 @@ export function SubjectModal({
   const initialLinks: LinkRow[] = subject?.links
     ? subject.links
         .toSorted((a, b) => a.orden - b.orden)
-        .map(({ tipo, label, url }) => ({ tipo, label, url }))
+        .map(({ label, url }) => ({ label, url }))
     : []
 
   const [links, dispatch] = useReducer(linksReducer, initialLinks)
@@ -225,25 +223,6 @@ export function SubjectModal({
                     Eliminar
                   </button>
                 </div>
-              </div>
-
-              {/* Tipo */}
-              <div className="space-y-1">
-                <label htmlFor={`link-${index}-tipo`} className="block text-xs text-white/40">Tipo</label>
-                <select
-                  id={`link-${index}-tipo`}
-                  value={link.tipo}
-                  onChange={(e) =>
-                    dispatch({ type: 'UPDATE_FIELD', index, field: 'tipo', value: e.target.value })
-                  }
-                  className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/20 focus:outline-none cursor-pointer"
-                >
-                  {SUBJECT_LINK_TYPES.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               {/* Texto del botón */}

@@ -34,6 +34,7 @@ function makeYears() {
       id: 'year-1',
       slug: 'primer-anio',
       nombre: 'Primer año',
+      links: [],
       subjects: [
         {
           id: 'subject-1',
@@ -48,6 +49,7 @@ function makeYears() {
       id: 'year-2',
       slug: 'segundo-anio',
       nombre: 'Segundo año',
+      links: [],
       subjects: [
         {
           id: 'subject-2',
