@@ -17,7 +17,7 @@ actualizar su fila al terminar.
 | [003](003-dx-quick-wins.md) | Quick wins DX (`pnpm verify`, README, archivar yamls) | P2 | S | — | DONE (2026-06-12, commit `3f8a743`) |
 | [004](004-rate-limit-fail-closed.md) | Rate limit de login admin fail-closed en producción | P1 | S | 001 (rec.) | TODO |
 | [005](005-ranked-server-side-guards.md) | Techo de duración server-side en el ranked | P2 | S | 001 (rec.) | DONE (2026-06-12, commit `dea28fc`) |
-| [006](006-split-admin-actions.md) | Partir `admin/actions.ts` por dominio | P2 | L | 001 | TODO |
+| [006](006-split-admin-actions.md) | Partir `admin/actions.ts` por dominio | P2 | L | 001 | DONE (2026-06-14, commits `fe56369`, `c69cc0c`, `ca253f5`, `9491c07`, `f015e66`, `115600c`) |
 | [007](007-cache-invalidation-policy.md) | Política de invalidación de cache | P2 | M | 006 | TODO |
 | [008](008-mapa-shared-state-hook.md) | Estado derivado compartido del mapa | P3 | M | 001 | TODO |
 | [009](009-design-personal-quiz-stats.md) | (Diseño) Estadísticas personales de quiz | P3 | M | — | TODO |
@@ -87,6 +87,15 @@ Valores de estado: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED (motivo en una lí
   `vi.useFakeTimers({ toFake: ['Date'] })` (mismo patrón del registro 001).
   Diferido conocido: limpieza de intentos `IN_PROGRESS` abandonados (este
   techo define qué es "abandonado").
+- **006 (2026-06-14)**: implementado en la serie `fe56369` → `115600c`.
+  `src/app/admin/actions.ts` quedó como barrel de 49 líneas con re-exports; la
+  lógica quedó distribuida en `actions/{eventos,periodos,apuntes,quiz,years,subjects,session}.ts`
+  más `actions/shared.ts`. Durante el cierre se corrigió una desviación del
+  split parcial: `periodos.ts` había cambiado permisos a admin general y volvió
+  a `requireAcademicManager()`, como en el archivo original. Verificado con
+  `pnpm typecheck`, `pnpm lint`, `pnpm test src/app/admin/actions.test.ts` y
+  `pnpm test`. No se corrió `pnpm build` por la regla local vigente de no
+  ejecutar build salvo pedido explícito.
 
 ## Hallazgos auditados y NO seleccionados (sin plan, registrados para no re-auditar)
 
