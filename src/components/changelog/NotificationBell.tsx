@@ -131,6 +131,7 @@ function NotificationPanelContent({
       ) : (
         <ChangelogFeed
           compact
+          linkEntries
           entries={entries}
           emptyCopy="Ya estás al día."
         />

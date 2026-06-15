@@ -2,6 +2,7 @@ export type ChangelogAudienceView = 'PUBLIC' | 'AYUDANTE' | 'SUPERVISOR' | 'ADMI
 
 export interface ChangelogEntryView {
   id: string
+  changelogId: string
   title: string
   summary: string
   description: string

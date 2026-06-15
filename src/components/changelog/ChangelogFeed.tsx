@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { BookOpen, Sparkles } from 'lucide-react'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { formatDate } from '@/lib/utils'
@@ -7,6 +8,7 @@ interface ChangelogFeedProps {
   entries: ChangelogEntryView[]
   emptyCopy?: string
   compact?: boolean
+  linkEntries?: boolean
 }
 
 function audienceLabel(audience: ChangelogEntryView['audience']): string {
@@ -26,6 +28,7 @@ export function ChangelogFeed({
   entries,
   emptyCopy = 'Todavía no hay novedades para mostrar.',
   compact = false,
+  linkEntries = false,
 }: ChangelogFeedProps) {
   if (entries.length === 0) {
     return (
@@ -37,8 +40,9 @@ export function ChangelogFeed({
 
   return (
     <div className={compact ? 'space-y-2' : 'stagger-children space-y-4'}>
-      {entries.map((entry) => (
-        <DarkCard key={entry.id} className={compact ? 'p-4' : 'p-5 sm:p-6'}>
+      {entries.map((entry) => {
+        const card = (
+          <DarkCard className={compact ? 'p-4' : 'p-5 sm:p-6'}>
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
@@ -69,7 +73,16 @@ export function ChangelogFeed({
             </span>
           </div>
         </DarkCard>
-      ))}
+        )
+
+        if (!linkEntries) return <div key={entry.id}>{card}</div>
+
+        return (
+          <Link key={entry.id} href={`/admin/changelog/${encodeURIComponent(entry.changelogId)}`} className="block cursor-pointer transition-opacity hover:opacity-90">
+            {card}
+          </Link>
+        )
+      })}
     </div>
   )
 }

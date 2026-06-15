@@ -2,12 +2,12 @@ import Link from 'next/link'
 import { ArrowLeft, Bell } from 'lucide-react'
 import { ChangelogPageClient } from './ChangelogPageClient'
 import { getAdminUser } from '@/lib/auth'
-import { getVisibleChangelogEntries } from '@/lib/changelog'
+import { getVisibleChangelogEntriesPage } from '@/lib/changelog'
 import { DarkCard } from '@/components/ui/DarkCard'
 
 export default async function AdminChangelogPage() {
   const admin = await getAdminUser()
-  const entries = await getVisibleChangelogEntries(admin)
+  const page = await getVisibleChangelogEntriesPage(admin)
 
   if (!admin) {
     return (
@@ -21,7 +21,7 @@ export default async function AdminChangelogPage() {
             Volver al campus
           </Link>
           <ChangelogHero isAdmin={false} />
-          <ChangelogPageClient entries={entries} />
+          <ChangelogPageClient entries={page.entries} nextCursor={page.nextCursor} />
         </div>
       </main>
     )
@@ -30,7 +30,7 @@ export default async function AdminChangelogPage() {
   return (
     <div className="space-y-8">
       <ChangelogHero isAdmin />
-      <ChangelogPageClient entries={entries} />
+      <ChangelogPageClient entries={page.entries} nextCursor={page.nextCursor} />
     </div>
   )
 }
