@@ -39,7 +39,15 @@ function supportsDesktopHover(): boolean {
   return window.matchMedia('(hover: hover) and (pointer: fine)').matches
 }
 
-export function useSeenApuntes() {
+interface UseSeenApuntesOptions {
+  markOnHover?: boolean
+  markOnViewport?: boolean
+}
+
+export function useSeenApuntes({
+  markOnHover = true,
+  markOnViewport = true,
+}: UseSeenApuntesOptions = {}) {
   const [state, dispatch] = useReducer(seenApuntesReducer, { ready: false, seenIds: [] })
   const nodesRef = useRef(new Map<string, HTMLElement>())
   const observerRef = useRef<IntersectionObserver | null>(null)
@@ -61,7 +69,7 @@ export function useSeenApuntes() {
 
     if (node) {
       nodesRef.current.set(id, node)
-      if (readyRef.current && !seenSetRef.current.has(id)) {
+      if (markOnViewport && readyRef.current && !seenSetRef.current.has(id)) {
         observerRef.current?.observe(node)
       }
       return
@@ -71,10 +79,10 @@ export function useSeenApuntes() {
     const timer = viewportTimersRef.current.get(id)
     if (timer) window.clearTimeout(timer)
     viewportTimersRef.current.delete(id)
-  }, [])
+  }, [markOnViewport])
 
   const startHoverTimer = useCallback((id: string) => {
-    if (!state.ready || seenSet.has(id) || !supportsDesktopHover()) return
+    if (!markOnHover || !state.ready || seenSet.has(id) || !supportsDesktopHover()) return
     const existing = hoverTimersRef.current.get(id)
     if (existing) window.clearTimeout(existing)
     const timer = window.setTimeout(() => {
@@ -82,7 +90,7 @@ export function useSeenApuntes() {
       markSeen(id)
     }, 800)
     hoverTimersRef.current.set(id, timer)
-  }, [markSeen, seenSet, state.ready])
+  }, [markOnHover, markSeen, seenSet, state.ready])
 
   const clearHoverTimer = useCallback((id: string) => {
     const timer = hoverTimersRef.current.get(id)
@@ -105,7 +113,7 @@ export function useSeenApuntes() {
   }, [state.ready, state.seenIds])
 
   useEffect(() => {
-    if (!state.ready) return
+    if (!markOnViewport || !state.ready) return
     const viewportTimers = viewportTimersRef.current
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
@@ -140,7 +148,7 @@ export function useSeenApuntes() {
       viewportTimers.forEach((timer) => window.clearTimeout(timer))
       viewportTimers.clear()
     }
-  }, [markSeen, seenSet, state.ready])
+  }, [markOnViewport, markSeen, seenSet, state.ready])
 
   useEffect(() => {
     const hoverTimers = hoverTimersRef.current

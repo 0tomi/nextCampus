@@ -93,7 +93,7 @@ function HomeLatestApuntesDesktop({
   notes: readonly HomeLatestApunte[]
   hasAnyNotes: boolean
 }) {
-  const newBadges = useSeenApuntes()
+  const newBadges = useSeenApuntes({ markOnViewport: false })
 
   return (
     <section className="space-y-4">
@@ -235,7 +235,7 @@ function HomeLatestApuntesMobile({
   notes: readonly HomeLatestApunte[]
   hasAnyNotes: boolean
 }) {
-  const newBadges = useSeenApuntes()
+  const newBadges = useSeenApuntes({ markOnHover: false })
 
   return (
     <section className="flex flex-col gap-3">
