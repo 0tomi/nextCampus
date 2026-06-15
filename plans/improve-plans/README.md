@@ -19,7 +19,7 @@ actualizar su fila al terminar.
 | [005](005-ranked-server-side-guards.md) | Techo de duración server-side en el ranked | P2 | S | 001 (rec.) | DONE (2026-06-12, commit `dea28fc`) |
 | [006](006-split-admin-actions.md) | Partir `admin/actions.ts` por dominio | P2 | L | 001 | DONE (2026-06-14, commits `fe56369`, `c69cc0c`, `ca253f5`, `9491c07`, `f015e66`, `115600c`) |
 | [007](007-cache-invalidation-policy.md) | Política de invalidación de cache | P2 | M | 006 | DONE (2026-06-15, commits `08fbe5a` + `776b768`) |
-| [008](008-mapa-shared-state-hook.md) | Estado derivado compartido del mapa | P3 | M | 001 | TODO |
+| [008](008-mapa-shared-state-hook.md) | Estado derivado compartido del mapa | P3 | M | 001 | WORKING |
 | [009](009-design-personal-quiz-stats.md) | (Diseño) Estadísticas personales de quiz | P3 | M | — | TODO |
 | [010](010-design-global-apunte-search.md) | (Diseño) Búsqueda global de apuntes | P3 | M | — | TODO |
 
