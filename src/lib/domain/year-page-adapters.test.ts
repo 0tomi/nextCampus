@@ -4,6 +4,7 @@ import {
   buildMobileYear,
   buildYearCalendarEvents,
   buildYearDrawerYears,
+  buildYearLatestApuntes,
   buildYearModalSubjects,
   buildYearOverviewEvents,
   buildYearSidebarItems,
@@ -136,6 +137,38 @@ describe('year-page-adapters', () => {
   it('calcula el índice visual del año con fallback seguro', () => {
     expect(getYearDisplayIndex(makeCareer(), 'year-1')).toBe(1)
     expect(getYearDisplayIndex(makeCareer(), 'missing')).toBe(1)
+  })
+
+  it('adapta los últimos apuntes del año al shape de UI', () => {
+    expect(
+      buildYearLatestApuntes([
+        {
+          id: 'apunte-1',
+          titulo: 'Resumen unidad 1',
+          slug: 'resumen-unidad-1',
+          createdAt: '2026-06-10T12:00:00.000Z',
+          subject: {
+            slug: 'calculo',
+            nombre: 'Cálculo',
+            year: {
+              slug: 'primer-anio',
+              nombre: 'Primer año',
+            },
+          },
+        },
+      ]),
+    ).toEqual([
+      {
+        id: 'apunte-1',
+        titulo: 'Resumen unidad 1',
+        slug: 'resumen-unidad-1',
+        createdAt: '2026-06-10T12:00:00.000Z',
+        subjectSlug: 'calculo',
+        subjectNombre: 'Cálculo',
+        yearSlug: 'primer-anio',
+        yearNombre: 'Primer año',
+      },
+    ])
   })
 
   it('proyecta eventos de overview, calendario y próximos sin duplicar lógica', () => {

@@ -874,6 +874,47 @@ export async function getLatestApuntes() {
   }))
 }
 
+export async function getLatestApuntesByYear(yearSlug: string, limit = 6) {
+  'use cache'
+  cacheTag(TAGS.year(yearSlug))
+  cacheLife({ revalidate: 300 })
+
+  const rows = await prisma.apunte.findMany({
+    where: {
+      subject: {
+        year: {
+          slug: yearSlug,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+    select: {
+      id: true,
+      titulo: true,
+      slug: true,
+      createdAt: true,
+      subject: {
+        select: {
+          slug: true,
+          nombre: true,
+          year: {
+            select: {
+              slug: true,
+              nombre: true,
+            },
+          },
+        },
+      },
+    },
+  })
+
+  return rows.map((apunte) => ({
+    ...apunte,
+    createdAt: apunte.createdAt.toISOString(),
+  }))
+}
+
 // ---------------------------------------------------------------------------
 // Impacto de eliminación — usado por ConfirmDeleteModal para mostrar conteos
 // reales antes de que el admin confirme el borrado. Sin cache: el admin

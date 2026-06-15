@@ -17,6 +17,8 @@ import {
 import { usePreferredCommissionMap } from '@/components/commissions/usePreferredCommission'
 import { formatDescription } from '@/lib/text'
 import { LinkFavicon } from '@/components/ui/LinkFavicon'
+import { YearLatestApuntes } from '@/components/year/YearLatestApuntes'
+import type { YearLatestApunteItem } from '@/lib/domain/year-page-adapters'
 import type { YearLinkDTO } from '@/components/year/YearResourceLinks'
 
 interface YearForMobile {
@@ -129,12 +131,14 @@ function toEventDetail(event: NextEvent, year: YearForMobile): MobileCalendarEve
 export function MobileYear({
   year,
   allYears,
+  latestApuntes,
   nextEvents,
   careerName,
   tiposEvento,
 }: {
   year: YearForMobile
   allYears: AllYear[]
+  latestApuntes: readonly YearLatestApunteItem[]
   nextEvents: NextEvent[]
   careerName: string
   tiposEvento: readonly TipoEvento[]
@@ -209,6 +213,7 @@ export function MobileYear({
           year={year}
           onOpenEvent={(event) => setDetailEvent(toEventDetail(event, year))}
         />
+        <YearLatestApuntes variant="mobile" notes={latestApuntes} />
         <MobileYearSubjectsSection colors={colors} subjects={filteredSubjects} yearSlug={year.slug} />
       </div>
       <MobileEventDetailSheet
