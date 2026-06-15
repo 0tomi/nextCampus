@@ -20,7 +20,7 @@ actualizar su fila al terminar.
 | [006](006-split-admin-actions.md) | Partir `admin/actions.ts` por dominio | P2 | L | 001 | DONE (2026-06-14, commits `fe56369`, `c69cc0c`, `ca253f5`, `9491c07`, `f015e66`, `115600c`) |
 | [007](007-cache-invalidation-policy.md) | Política de invalidación de cache | P2 | M | 006 | DONE (2026-06-15, commits `08fbe5a` + `776b768`) |
 | [008](008-mapa-shared-state-hook.md) | Estado derivado compartido del mapa | P3 | M | 001 | DONE (2026-06-15, commits `e7752a0` + `41d99de`) |
-| [009](009-design-personal-quiz-stats.md) | (Diseño) Estadísticas personales de quiz | P3 | M | — | WORKING |
+| [009](009-design-personal-quiz-stats.md) | (Diseño) Estadísticas personales de quiz | P3 | M | — | DONE (2026-06-15, commits `39c365e` + `721c4ec`) |
 | [010](010-design-global-apunte-search.md) | (Diseño) Búsqueda global de apuntes | P3 | M | — | TODO |
 
 Valores de estado: `TODO` | `WORKING` | `DONE` | `BLOCKED (motivo en una línea)` | `REJECTED (razón en una línea)`
@@ -114,6 +114,13 @@ Valores de estado: `TODO` | `WORKING` | `DONE` | `BLOCKED (motivo en una línea)
   en desktop y 5 en mobile). Los 5 tests nuevos de `deriveMapaState`, los
   recorridos manuales en ambos viewports, `pnpm typecheck`, `pnpm lint`, los
   230 tests y React Doctor (100/100) pasaron.
+- **009 (2026-06-15)**: spike completado (`721c4ec`) en
+  `docs/plans/personal-quiz-stats-design.md`. Se confirmó que el nombre Ranked
+  persiste en el navegador y se diseñaron historial, resumen de progreso y
+  posición personal sin sumar auth de alumnos. Las queries se validaron con
+  datos temporales dentro de una transacción revertida. El `EXPLAIN` reveló
+  que el índice actual no sirve directamente el historial; el documento
+  incluye un índice parcial propuesto, también probado y revertido.
 
 ## Hallazgos auditados y NO seleccionados (sin plan, registrados para no re-auditar)
 
