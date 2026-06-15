@@ -41,6 +41,7 @@ describe('YearLatestApuntes', () => {
 
     const markup = renderToStaticMarkup(<YearLatestApuntes variant="mobile" notes={[]} />)
 
-    expect(markup).toContain('Todavía no hay apuntes cargados en este año.')
+    expect(markup).toContain('Todavía no hay apuntes cargados')
+    expect(markup).toContain('Cuando aparezcan materiales nuevos de este año, los vas a ver acá.')
   })
 })

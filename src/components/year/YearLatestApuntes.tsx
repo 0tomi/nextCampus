@@ -1,5 +1,3 @@
-'use client'
-
 import Link from 'next/link'
 import { FileText } from 'lucide-react'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
@@ -51,21 +49,18 @@ function YearLatestApuntesDesktop({ notes }: { notes: readonly YearLatestApunteI
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {notes.length === 0 ? (
-          <DarkCard className="col-span-full flex flex-col items-center justify-center gap-2 border-dashed p-6 py-16 text-center text-sm leading-6 text-white/50">
-            <FileText className="size-6 opacity-40" />
-            <span>Todavía no hay apuntes cargados en este año.</span>
-          </DarkCard>
+          <YearLatestApuntesDesktopEmpty />
         ) : (
           notes.map((note) => (
             <DarkCard
               key={note.id}
               variant="interactive"
-              className="group relative flex min-h-[176px] flex-col justify-between rounded-lg border border-white/5 bg-surface-1/60 p-4 backdrop-blur-sm"
+              className="group relative flex min-h-[176px] flex-col justify-between p-4"
             >
               <Link
                 href={buildLatestApunteHref(note)}
                 aria-label={`Abrir ${note.titulo}`}
-                className="absolute inset-0 z-10 block cursor-pointer rounded-lg no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                className="absolute inset-0 z-10 block cursor-pointer no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               />
 
               <div className="space-y-3">
@@ -99,6 +94,24 @@ function YearLatestApuntesDesktop({ notes }: { notes: readonly YearLatestApunteI
   )
 }
 
+function YearLatestApuntesDesktopEmpty() {
+  return (
+    <DarkCard className="col-span-full flex flex-col items-center justify-center gap-4 border-dashed px-6 py-16 text-center">
+      <span className="inline-flex size-11 items-center justify-center rounded-md border border-white/10 bg-white/[0.03] text-white/70">
+        <FileText className="size-5" />
+      </span>
+      <div className="space-y-2">
+        <h3 className="text-2xl font-black tracking-tight text-white">
+          Todavía no hay apuntes cargados
+        </h3>
+        <p className="max-w-xl text-sm leading-6 text-white/55">
+          Cuando se sumen materiales nuevos para este año, van a aparecer acá para que los tengas a mano.
+        </p>
+      </div>
+    </DarkCard>
+  )
+}
+
 function YearLatestApuntesMobile({ notes }: { notes: readonly YearLatestApunteItem[] }) {
   return (
     <section className="flex flex-col gap-3">
@@ -112,16 +125,28 @@ function YearLatestApuntesMobile({ notes }: { notes: readonly YearLatestApunteIt
 
       <div className="flex flex-col gap-2.5 px-[18px]">
         {notes.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-white/10 bg-[#1a1a1a] p-4 text-center text-sm text-white/45">
-            Todavía no hay apuntes cargados en este año.
-          </div>
+          <DarkCard className="flex flex-col items-start gap-4 border-dashed p-4">
+            <span className="inline-flex size-10 items-center justify-center rounded-md border border-white/10 bg-white/[0.03] text-white/70">
+              <FileText className="size-4" />
+            </span>
+            <div className="space-y-1.5">
+              <h3 className="text-base font-black text-white">
+                Todavía no hay apuntes cargados
+              </h3>
+              <p className="text-sm leading-relaxed text-white/55">
+                Cuando aparezcan materiales nuevos de este año, los vas a ver acá.
+              </p>
+            </div>
+          </DarkCard>
         ) : (
           notes.map((note) => (
-            <Link
-              key={note.id}
-              href={buildLatestApunteHref(note)}
-              className="group flex cursor-pointer flex-col gap-3 rounded-[10px] border border-white/5 bg-[#1a1a1a] px-4 py-3 no-underline transition-colors hover:bg-[#1f1f1f]"
-            >
+            <DarkCard key={note.id} variant="interactive" className="group relative flex flex-col gap-3 p-4">
+              <Link
+                href={buildLatestApunteHref(note)}
+                aria-label={`Abrir ${note.titulo}`}
+                className="absolute inset-0 z-10 block cursor-pointer no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+              />
+
               <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-[0.15em] text-white/35">
                 <span className="rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[8px] tracking-wider text-white/65">
                   {note.subjectNombre}
@@ -137,7 +162,7 @@ function YearLatestApuntesMobile({ notes }: { notes: readonly YearLatestApunteIt
                   {note.subjectNombre}
                 </p>
               </div>
-            </Link>
+            </DarkCard>
           ))
         )}
       </div>
