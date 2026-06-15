@@ -1,6 +1,6 @@
 # Diseño: estadísticas personales del examen Ranked
 
-Fecha: 2026-06-15  
+Fecha: 2026-06-15
 Estado: spike validado, listo para decidir si se implementa
 
 ## 1. Problema y usuario

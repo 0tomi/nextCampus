@@ -1,6 +1,6 @@
 # Política de invalidación de cache
 
-**Fecha:** 2026-06-15  
+**Fecha:** 2026-06-15
 **Estado:** Implementado
 
 ## Objetivo
