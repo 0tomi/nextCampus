@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -25,53 +25,30 @@ import {
 } from '@/lib/domain/mapa/mapaConstants';
 import {
   canOpenSubjectPage,
-  filterSubjects,
-  getSuggestedSubjects,
-  groupSubjectsByYear,
   getMissingCorrelatives,
   getSubjectName,
   getUnlocks,
-  resolveSubjectSlugs,
-  type SubjectsByYear,
 } from '@/lib/domain/mapa/subjectQueries';
 import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
-import { useMapaProgress } from '@/hooks/useMapaProgress';
-import { useSubjectSelection } from '@/hooks/useSubjectSelection';
-import { useSuggestedYear } from '@/hooks/useSuggestedYear';
+import {
+  useMapaState,
+  type MapaActions,
+  type MapaDerivedState,
+  type StatusFilter,
+} from '@/hooks/useMapaState';
 import { cn } from '@/lib/utils';
 import { yearSlugFromNumber } from '@/lib/slug';
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes';
 import { MapaResetDialog } from './MapaResetDialog';
 
-type StatusFilter = 'ALL' | SubjectStatus;
-
 type MapaCorrelativasProps = {
   availableSubjectSlugs?: string[];
 };
 
-type MapaProgressState = ReturnType<typeof useMapaProgress>;
+type MapaProgressState = ReturnType<typeof useMapaState>['progress'];
 
-type MapaDerivedState = {
-  availableSlugs: Set<string>;
-  filteredSubjects: SubjectNode[];
-  selectedDirectUnlocks: SubjectNode[];
-  selectedMissing: string[];
-  selectedMissingSubjects: SubjectNode[];
-  selectedStatus: SubjectStatus;
-  selectedSubject: SubjectNode;
-  selectedUnlocks: SubjectNode[];
-  subjectsByYear: SubjectsByYear;
-  suggestedSubjects: SubjectNode[];
-  suggestedYearToComplete: MapaYear | null;
-};
-
-type MapaActions = {
-  autocompleteYear: (year: number) => void;
+type DesktopMapaActions = MapaActions & {
   onAskReset: () => void;
-  onSearchTermChange: (value: string) => void;
-  onSelectSubject: (slug: string) => void;
-  onStatusFilterChange: (filter: StatusFilter) => void;
-  onToggleSubject: (subject: SubjectNode) => void;
 };
 
 const EMPTY_AVAILABLE_SUBJECT_SLUGS: string[] = [];
@@ -81,27 +58,21 @@ const STATUS_FILTERS: readonly StatusFilter[] = ['ALL', 'UNLOCKED', 'LOCKED', 'C
 export function MapaCorrelativas({
   availableSubjectSlugs = EMPTY_AVAILABLE_SUBJECT_SLUGS,
 }: MapaCorrelativasProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
-  const progress = useMapaProgress();
-  const selection = useSubjectSelection(progress);
-  const derived = useMapaDerivedState({
-    availableSubjectSlugs,
-    completed: progress.completed,
-    searchTerm,
+  const {
+    actions: sharedActions,
+    derived,
+    filters: { searchTerm, statusFilter },
+    progress,
     selection,
-    statusFilter,
-    subjectStatuses: progress.subjectStatuses,
+  } = useMapaState({
+    availableSubjectSlugs,
+    suggestedSubjectsLimit: 4,
   });
 
-  const actions: MapaActions = {
-    autocompleteYear: progress.autocompleteYear,
+  const actions: DesktopMapaActions = {
+    ...sharedActions,
     onAskReset: () => setConfirmResetOpen(true),
-    onSearchTermChange: setSearchTerm,
-    onSelectSubject: selection.selectSubject,
-    onStatusFilterChange: setStatusFilter,
-    onToggleSubject: selection.toggleSubject,
   };
 
   const confirmReset = () => {
@@ -137,46 +108,6 @@ export function MapaCorrelativas({
   );
 }
 
-function useMapaDerivedState({
-  availableSubjectSlugs,
-  completed,
-  searchTerm,
-  selection,
-  statusFilter,
-  subjectStatuses,
-}: {
-  availableSubjectSlugs: string[];
-  completed: string[];
-  searchTerm: string;
-  selection: ReturnType<typeof useSubjectSelection>;
-  statusFilter: StatusFilter;
-  subjectStatuses: Record<string, SubjectStatus>;
-}): MapaDerivedState {
-  const availableSlugs = useMemo(() => new Set(availableSubjectSlugs), [availableSubjectSlugs]);
-  const suggestedYearToComplete = useSuggestedYear(completed) as MapaYear | null;
-  const filteredSubjects = filterSubjects({ searchTerm, statusFilter, subjectStatuses });
-  const {
-    selectedMissing,
-    selectedStatus,
-    selectedSubject,
-    selectedUnlocks,
-  } = selection;
-
-  return {
-    availableSlugs,
-    filteredSubjects,
-    selectedDirectUnlocks: selectedUnlocks.slice(0, 4),
-    selectedMissing,
-    selectedMissingSubjects: resolveSubjectSlugs(selectedMissing).slice(0, 5),
-    selectedStatus,
-    selectedSubject,
-    selectedUnlocks,
-    subjectsByYear: groupSubjectsByYear(filteredSubjects),
-    suggestedSubjects: getSuggestedSubjects(subjectStatuses, 4),
-    suggestedYearToComplete,
-  };
-}
-
 function MapaLoadingState() {
   return (
     <div className="flex h-96 items-center justify-center">
@@ -195,7 +126,7 @@ function MapaOverviewSection({
   searchTerm,
   statusFilter,
 }: {
-  actions: MapaActions;
+  actions: DesktopMapaActions;
   derived: MapaDerivedState;
   progress: MapaProgressState;
   searchTerm: string;
@@ -407,7 +338,7 @@ function StatusFilterButtons({
   );
 }
 
-function MapaQuickPanels({ actions, derived }: { actions: MapaActions; derived: MapaDerivedState }) {
+function MapaQuickPanels({ actions, derived }: { actions: DesktopMapaActions; derived: MapaDerivedState }) {
   return (
     <div className="mt-5 grid gap-3 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
       <SuggestedSubjectsPanel
@@ -593,7 +524,7 @@ function SubjectDetailPanel({
   completed,
   derived,
 }: {
-  actions: MapaActions;
+  actions: DesktopMapaActions;
   completed: string[];
   derived: MapaDerivedState;
 }) {
@@ -615,7 +546,7 @@ function SubjectDetailHeader({
   completed,
   derived,
 }: {
-  actions: MapaActions;
+  actions: DesktopMapaActions;
   completed: string[];
   derived: MapaDerivedState;
 }) {
@@ -640,7 +571,7 @@ function SubjectDetailActions({
   completed,
   derived,
 }: {
-  actions: MapaActions;
+  actions: DesktopMapaActions;
   completed: string[];
   derived: MapaDerivedState;
 }) {
@@ -796,7 +727,7 @@ function MapaYearGrid({
   selectedSubjectSlug,
   subjectStatuses,
 }: {
-  actions: MapaActions;
+  actions: DesktopMapaActions;
   completed: string[];
   derived: MapaDerivedState;
   selectedSubjectSlug: string;
@@ -833,7 +764,7 @@ function MapaYearColumn({
   subjects,
   year,
 }: {
-  actions: MapaActions;
+  actions: DesktopMapaActions;
   availableSlugs: Set<string>;
   completed: string[];
   selectedSubject: SubjectNode;
