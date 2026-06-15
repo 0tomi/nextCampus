@@ -13,7 +13,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
 
   return (
-    <DashboardShell sidebar={<AdminSidebar />} mainClassName="p-6 sm:p-8" showNotifications>
+    <DashboardShell sidebar={<AdminSidebar />} mainClassName="p-6 sm:p-8">
       {children}
     </DashboardShell>
   )

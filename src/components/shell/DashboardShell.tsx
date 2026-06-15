@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { AdminControls } from '@/components/admin/AdminControls'
+import { useAdminSessionContext } from '@/components/admin/AdminSessionProvider'
 import { SignOutButton } from '@/components/admin/SignOutButton'
 import { NotificationBell } from '@/components/changelog/NotificationBell'
 import { CampusHeaderBrand } from '@/components/shell/CampusHeaderBrand'
@@ -23,7 +24,6 @@ interface DashboardShellProps {
   headerOverlay?: ReactNode
   className?: string
   mainClassName?: string
-  showNotifications?: boolean
 }
 
 export function DashboardShell({
@@ -34,8 +34,8 @@ export function DashboardShell({
   headerOverlay,
   className,
   mainClassName,
-  showNotifications = false,
 }: DashboardShellProps) {
+  const session = useAdminSessionContext()
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const [isAboutOpen, setIsAboutOpen] = useState(false)
@@ -86,6 +86,7 @@ export function DashboardShell({
       <Mascot size={60} />
     </div>
   ) : headerOverlay
+  const shouldShowNotifications = session?.isAdmin === true
 
   return (
     <div className={cn('min-h-screen bg-surface-0 text-white', className)}>
@@ -115,7 +116,7 @@ export function DashboardShell({
                 Nosotros
               </button>
             ) : null}
-            {showNotifications ? <NotificationBell target="all" /> : null}
+            {shouldShowNotifications ? <NotificationBell target="all" /> : null}
             {topbar}
             <AdminControls>
               <SignOutButton />

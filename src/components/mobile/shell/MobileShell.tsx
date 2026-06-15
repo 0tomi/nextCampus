@@ -15,6 +15,8 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAdminSessionContext } from '@/components/admin/AdminSessionProvider'
+import { NotificationBell } from '@/components/changelog/NotificationBell'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { usePreferences } from '@/hooks/usePreferences'
 import { isYearVisible, isSubjectVisible, type UserPreferences } from '@/lib/preferences'
@@ -67,6 +69,7 @@ interface MobileTopbarProps {
   subtitle?: string
   onBack?: boolean | string
   onOpenMenu: () => void
+  showNotifications: boolean
 }
 
 interface MobileDrawerProps {
@@ -123,6 +126,7 @@ export function MobileShell({
   children,
   mainClassName,
 }: MobileShellProps) {
+  const session = useAdminSessionContext()
   const pathname = usePathname()
   const { prefs } = usePreferences()
   const yearsWithFilteredSubjects = useVisibleDrawerYears(drawerYears, prefs)
@@ -137,6 +141,7 @@ export function MobileShell({
         subtitle={subtitle}
         onBack={onBack}
         onOpenMenu={openDrawer}
+        showNotifications={session?.isAdmin === true}
       />
       <MobileDrawer
         open={open}
@@ -292,7 +297,7 @@ function countVisibleSubjects(years: MobileShellDrawerYear[]) {
   return years.reduce((sum, year) => sum + (year.subjects?.length ?? 0), 0)
 }
 
-function MobileTopbar({ title, subtitle, onBack, onOpenMenu }: MobileTopbarProps) {
+function MobileTopbar({ title, subtitle, onBack, onOpenMenu, showNotifications }: MobileTopbarProps) {
   const { push, back } = useRouter()
   const handleLeadingAction = onBack
     ? typeof onBack === 'string'
@@ -331,7 +336,13 @@ function MobileTopbar({ title, subtitle, onBack, onOpenMenu }: MobileTopbarProps
           </div>
         </Link>
 
-        <div className="size-11 shrink-0" aria-hidden />
+        {showNotifications ? (
+          <div className="flex size-11 shrink-0 items-center justify-center">
+            <NotificationBell target="mobile" />
+          </div>
+        ) : (
+          <div className="size-11 shrink-0" aria-hidden />
+        )}
       </div>
     </header>
   )

@@ -157,7 +157,6 @@ function SubjectDesktopView({
   return (
     <div className="hidden lg:block" style={colors.style}>
       <DashboardShell
-        topbar={<SubjectTopbar subject={subject} />}
         sidebar={<Sidebar eyebrow="Materia" title={subject.nombre} items={sectionItems} />}
         mainClassName="space-y-10"
       >
@@ -240,18 +239,6 @@ function getSubjectSidebarItems({
       badgeClassName: 'from-cyan-400 to-blue-500 text-white',
     },
   ]
-}
-
-function SubjectTopbar({ subject }: { subject: SubjectRouteContext['subject'] }) {
-  return (
-    <Link
-      href={`/${subject.year.slug}`}
-      className="inline-flex items-center gap-2 text-sm font-semibold text-white/56 transition-colors hover:text-white/80"
-    >
-      <ArrowLeft className="size-4" />
-      {subject.year.nombre}
-    </Link>
-  )
 }
 
 function SubjectHeroBlock({
