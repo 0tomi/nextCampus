@@ -27,7 +27,7 @@ import {
   adjustContributionScore,
   revokeApunteCreated,
 } from '@/lib/contributions'
-import { requireAuth, revalidateSubjectContent } from './shared'
+import { requireAuth, revalidateSubjectApuntes } from './shared'
 
 // Wrapper para useActionState en modal cliente
 export interface ApunteActionState {
@@ -427,7 +427,7 @@ export async function createApunteAction(
     return { ok: false, message: 'No se pudo crear el apunte. Intentá de nuevo.' }
   }
 
-  await revalidateSubjectContent(scope.subjectSlug)
+  revalidateSubjectApuntes(scope)
   await recordAudit({
     userId: scope.admin.id,
     action: AUDIT_ACTIONS.APUNTE_CREATED,
@@ -596,7 +596,7 @@ export async function updateApunteAction(
 
   await deleteApunteHtml(storageKeysToDelete)
 
-  await revalidateSubjectContent(scope.subjectSlug)
+  revalidateSubjectApuntes(scope)
   await recordAudit({
     userId: scope.admin.id,
     action: AUDIT_ACTIONS.APUNTE_UPDATED,
@@ -648,7 +648,7 @@ export async function deleteApunteAction(formData: FormData): Promise<void> {
     await revokeApunteCreated(apunte.createdByUserId, apunte._count.recursos)
   }
 
-  await revalidateSubjectContent(scope.subjectSlug)
+  revalidateSubjectApuntes(scope)
   if (apunte) {
     await recordAudit({
       userId: scope.admin.id,

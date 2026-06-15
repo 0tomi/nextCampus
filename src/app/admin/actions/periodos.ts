@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireAcademicManager } from '@/lib/auth'
@@ -21,15 +20,9 @@ const periodoSchema = z
     path: ['fechaFin'],
   })
 
-// Períodos globales: invalida el tag dedicado, el home y el calendario de cada año.
-async function revalidatePeriodos(): Promise<void> {
+// Todas las vistas públicas consumen los períodos mediante este tag compartido.
+function revalidatePeriodos(): void {
   revalidateTag(queryTags.periodos)
-  revalidatePath('/')
-  const years = await prisma.academicYear.findMany({ select: { slug: true } })
-  for (const year of years) {
-    revalidateTag(queryTags.year(year.slug))
-    revalidatePath(`/${year.slug}/calendario`)
-  }
 }
 
 function parsePeriodoForm(formData: FormData) {
@@ -58,7 +51,7 @@ async function createPeriodo(formData: FormData): Promise<void> {
       createdByUserId: admin.id,
     },
   })
-  await revalidatePeriodos()
+  revalidatePeriodos()
   await recordAudit({
     userId: admin.id,
     action: AUDIT_ACTIONS.PERIODO_CREATED,
@@ -109,7 +102,7 @@ export async function updatePeriodoAction(
         fechaFin: fechaToDbDate(data.fechaFin),
       },
     })
-    await revalidatePeriodos()
+    revalidatePeriodos()
     await recordAudit({
       userId: admin.id,
       action: AUDIT_ACTIONS.PERIODO_UPDATED,
@@ -143,7 +136,7 @@ export async function deletePeriodo(formData: FormData): Promise<void> {
   })
   if (!periodo) return
   await prisma.periodoAcademico.delete({ where: { id } })
-  await revalidatePeriodos()
+  revalidatePeriodos()
   await recordAudit({
     userId: admin.id,
     action: AUDIT_ACTIONS.PERIODO_DELETED,

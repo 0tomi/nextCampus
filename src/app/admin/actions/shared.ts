@@ -1,7 +1,6 @@
 import { revalidatePath, revalidateTag as revalidateTagRaw } from 'next/cache'
 import { z } from 'zod'
 import { requireGeneralAdmin, requireAcademicManager, requireAnyAdmin } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
 import { queryTags } from '@/lib/queries'
 import { hostnameLabel } from '@/lib/linkFavicon'
 
@@ -23,33 +22,33 @@ export async function requireAuth(scope: AdminAuthScope = 'any') {
   return requireAnyAdmin()
 }
 
-export async function revalidateSubjectContent(subjectSlug: string): Promise<void> {
-  // Invalida los caches granulares por tag. Los revalidatePath quedan como
-  // red de seguridad para las rutas afectadas.
-  revalidateTag(queryTags.subject(subjectSlug))
-  revalidateTag(queryTags.upcomingEvents)
-  revalidateTag(queryTags.latestApuntes)
+export type SubjectRevalidationContext = {
+  subjectSlug: string
+  yearSlug: string
+  commissionSlugs: readonly string[]
+}
 
-  const subject = await prisma.subject.findUnique({
-    where: { slug: subjectSlug },
-    select: {
-      year: { select: { slug: true } },
-      commissions: {
-        select: { slug: true },
-      },
-    },
-  })
-  if (subject?.year?.slug) {
-    revalidateTag(queryTags.year(subject.year.slug))
-    revalidatePath(`/${subject.year.slug}`)
-    revalidatePath(`/${subject.year.slug}/calendario`)
-    revalidatePath(`/${subject.year.slug}/${subjectSlug}`)
-    revalidatePath(`/${subject.year.slug}/${subjectSlug}/quiz`)
+export function revalidateSubjectContent(ctx: SubjectRevalidationContext): void {
+  revalidateTag(queryTags.subject(ctx.subjectSlug))
+  revalidateTag(queryTags.year(ctx.yearSlug))
+  revalidatePath(`/${ctx.yearSlug}`)
+  revalidatePath(`/${ctx.yearSlug}/calendario`)
+  revalidatePath(`/${ctx.yearSlug}/${ctx.subjectSlug}`)
 
-    for (const commission of subject.commissions) {
-      revalidatePath(`/${subject.year.slug}/${subjectSlug}/${commission.slug}`)
-    }
+  for (const commissionSlug of ctx.commissionSlugs) {
+    revalidatePath(`/${ctx.yearSlug}/${ctx.subjectSlug}/${commissionSlug}`)
   }
+}
+
+export function revalidateSubjectEvents(ctx: SubjectRevalidationContext): void {
+  revalidateSubjectContent(ctx)
+  revalidateTag(queryTags.upcomingEvents)
+}
+
+export function revalidateSubjectApuntes(ctx: SubjectRevalidationContext): void {
+  revalidateSubjectContent(ctx)
+  revalidateTag(queryTags.latestApuntes)
+  revalidateTag(queryTags.upcomingEvents)
 }
 
 export class ActionInputError extends Error {}

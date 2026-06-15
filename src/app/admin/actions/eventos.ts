@@ -14,7 +14,7 @@ import { awardEventoCreated, revokeEventoCreated } from '@/lib/contributions'
 import {
   requireAuth,
   ActionInputError,
-  revalidateSubjectContent,
+  revalidateSubjectEvents,
   fechaToDbDate,
 } from './shared'
 
@@ -164,7 +164,7 @@ export async function createEvento(formData: FormData): Promise<void> {
     },
   })
   await awardEventoCreated(scope.admin.id)
-  await revalidateSubjectContent(scope.subjectSlug)
+  revalidateSubjectEvents(scope)
   await recordAudit({
     userId: scope.admin.id,
     action: AUDIT_ACTIONS.EVENTO_CREATED,
@@ -236,7 +236,7 @@ export async function updateEventoFechaAction(
     data: { fecha: fechaToDbDate(validFecha) },
     select: { titulo: true },
   })
-  await revalidateSubjectContent(scope.subjectSlug)
+  revalidateSubjectEvents(scope)
   await recordAudit({
     userId: scope.admin.id,
     action: AUDIT_ACTIONS.EVENTO_DATE_UPDATED,
@@ -314,7 +314,7 @@ export async function updateEventoAction(
         })
       }
     })
-    await revalidateSubjectContent(currentScope.subjectSlug)
+    revalidateSubjectEvents(currentScope)
     await recordAudit({
       userId: currentScope.admin.id,
       action: AUDIT_ACTIONS.EVENTO_UPDATED,
@@ -362,7 +362,7 @@ export async function deleteEvento(formData: FormData): Promise<void> {
     await revokeEventoCreated(evento.createdByUserId)
   }
 
-  await revalidateSubjectContent(scope.subjectSlug)
+  revalidateSubjectEvents(scope)
   if (evento) {
     await recordAudit({
       userId: scope.admin.id,

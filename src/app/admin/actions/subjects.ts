@@ -184,7 +184,10 @@ export async function createCommissionAction(
   })
 
   revalidateTag(queryTags.career)
-  await revalidateSubjectContent(scope.subjectSlug)
+  revalidateSubjectContent({
+    ...scope,
+    commissionSlugs: [...scope.commissionSlugs, commission.slug],
+  })
   await recordAudit({
     userId: scope.admin.id,
     action: AUDIT_ACTIONS.COMMISSION_CREATED,

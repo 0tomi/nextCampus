@@ -4,7 +4,11 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getYearDeleteImpact, queryTags, type YearDeleteImpact } from '@/lib/queries'
-import { deleteYearStorage, listQuizBankContributionRevocations } from '@/lib/storage'
+import {
+  deleteYearStorage,
+  listQuizBankContributionRevocations,
+  quizBanksCacheTag,
+} from '@/lib/storage'
 import { uniqueSlug, yearSlugFromNumber } from '@/lib/slug'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
 import { revokeContributionBatch } from '@/lib/contributions'
@@ -305,6 +309,7 @@ export async function deleteYearAction(formData: FormData): Promise<void> {
   revalidateTag(queryTags.year(year.slug))
   for (const s of year.subjects) {
     revalidateTag(queryTags.subject(s.slug))
+    revalidateTag(quizBanksCacheTag(year.slug, s.slug))
   }
   revalidatePath('/')
   revalidatePath(`/${year.slug}`)
