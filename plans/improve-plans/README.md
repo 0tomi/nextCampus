@@ -21,7 +21,7 @@ actualizar su fila al terminar.
 | [007](007-cache-invalidation-policy.md) | Política de invalidación de cache | P2 | M | 006 | DONE (2026-06-15, commits `08fbe5a` + `776b768`) |
 | [008](008-mapa-shared-state-hook.md) | Estado derivado compartido del mapa | P3 | M | 001 | DONE (2026-06-15, commits `e7752a0` + `41d99de`) |
 | [009](009-design-personal-quiz-stats.md) | (Diseño) Estadísticas personales de quiz | P3 | M | — | DONE (2026-06-15, commits `39c365e` + `721c4ec`) |
-| [010](010-design-global-apunte-search.md) | (Diseño) Búsqueda global de apuntes | P3 | M | — | WORKING |
+| [010](010-design-global-apunte-search.md) | (Diseño) Búsqueda global de apuntes | P3 | M | — | DONE (2026-06-15, commits `d0e99b7` + `58618fd`) |
 
 Valores de estado: `TODO` | `WORKING` | `DONE` | `BLOCKED (motivo en una línea)` | `REJECTED (razón en una línea)`
 
@@ -121,6 +121,14 @@ Valores de estado: `TODO` | `WORKING` | `DONE` | `BLOCKED (motivo en una línea)
   datos temporales dentro de una transacción revertida. El `EXPLAIN` reveló
   que el índice actual no sirve directamente el historial; el documento
   incluye un índice parcial propuesto, también probado y revertido.
+- **010 (2026-06-15)**: spike completado (`58618fd`) en
+  `docs/plans/global-apunte-search-design.md`. El corpus real tiene 52
+  apuntes; `unaccent` está habilitado y `pg_trgm` disponible pero no
+  habilitado. Se compararon `ILIKE` y FTS español con cinco búsquedas reales:
+  FTS encontró variaciones como “calcular”/“cálculo” que el baseline perdió.
+  La recomendación es FTS dinámico sin migración para v1 y GIN recién cuando
+  el volumen o la latencia lo justifiquen. El benchmark ampliado usó solo
+  tablas e índices temporales.
 
 ## Hallazgos auditados y NO seleccionados (sin plan, registrados para no re-auditar)
 
