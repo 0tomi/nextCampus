@@ -8,6 +8,7 @@ export interface ChangelogEntryDTO {
   id: string
   title: string
   summary: string
+  description: string
   audience: ChangelogAudience
   visibleAt: string
   createdAt: string
@@ -20,6 +21,7 @@ const changelogEntrySelect = {
   id: true,
   title: true,
   summary: true,
+  description: true,
   audience: true,
   visibleAt: true,
   createdAt: true,

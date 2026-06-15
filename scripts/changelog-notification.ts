@@ -29,6 +29,7 @@ async function main() {
   try {
     const title = required(await rl.question('Nombre de la notificación: '), 'El nombre')
     const summary = required(await rl.question('Descripción corta: '), 'La descripción')
+    const description = required(await rl.question('Descripción completa: '), 'La descripción completa')
     const changelogId = required(await rl.question('ID del changelog: '), 'El ID del changelog')
     const audience = parseAudience(await rl.question(`Rol objetivo (${AUDIENCES.join('/')}): `))
 
@@ -36,8 +37,8 @@ async function main() {
     try {
       const entry = await prisma.changelogEntry.upsert({
         where: { changelogId },
-        create: { changelogId, title, summary, audience, visibleAt: new Date() },
-        update: { title, summary, audience, visibleAt: new Date() },
+        create: { changelogId, title, summary, description, audience, visibleAt: new Date() },
+        update: { title, summary, description, audience, visibleAt: new Date() },
         select: { changelogId: true, title: true, audience: true },
       })
 

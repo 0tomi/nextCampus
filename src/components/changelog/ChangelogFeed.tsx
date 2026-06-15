@@ -59,8 +59,8 @@ export function ChangelogFeed({
                 <h3 className={compact ? 'text-sm font-black tracking-tight text-white' : 'text-xl font-black tracking-tight text-white'}>
                   {entry.title}
                 </h3>
-                <p className={compact ? 'mt-1 text-xs leading-5 text-white/55' : 'mt-2 max-w-2xl text-sm leading-6 text-white/60'}>
-                  {entry.summary}
+                <p className={compact ? 'mt-1 text-xs leading-5 text-white/55' : 'mt-2 max-w-2xl whitespace-pre-line text-sm leading-6 text-white/60'}>
+                  {compact ? entry.summary : entry.description}
                 </p>
               </div>
             </div>

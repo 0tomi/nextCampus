@@ -104,6 +104,7 @@ model ChangelogEntry {
   changelogId String            @unique
   title       String
   summary     String
+  description String
   audience    ChangelogAudience @default(PUBLIC)
   visibleAt   DateTime          @default(now())
   createdAt   DateTime          @default(now())
