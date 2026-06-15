@@ -18,12 +18,12 @@ actualizar su fila al terminar.
 | [004](004-rate-limit-fail-closed.md) | Rate limit de login admin fail-closed en producción | P1 | S | 001 (rec.) | TODO |
 | [005](005-ranked-server-side-guards.md) | Techo de duración server-side en el ranked | P2 | S | 001 (rec.) | DONE (2026-06-12, commit `dea28fc`) |
 | [006](006-split-admin-actions.md) | Partir `admin/actions.ts` por dominio | P2 | L | 001 | DONE (2026-06-14, commits `fe56369`, `c69cc0c`, `ca253f5`, `9491c07`, `f015e66`, `115600c`) |
-| [007](007-cache-invalidation-policy.md) | Política de invalidación de cache | P2 | M | 006 | WORKING |
+| [007](007-cache-invalidation-policy.md) | Política de invalidación de cache | P2 | M | 006 | DONE (2026-06-15, commits `08fbe5a` + `776b768`) |
 | [008](008-mapa-shared-state-hook.md) | Estado derivado compartido del mapa | P3 | M | 001 | TODO |
 | [009](009-design-personal-quiz-stats.md) | (Diseño) Estadísticas personales de quiz | P3 | M | — | TODO |
 | [010](010-design-global-apunte-search.md) | (Diseño) Búsqueda global de apuntes | P3 | M | — | TODO |
 
-Valores de estado: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED (motivo en una línea)` | `REJECTED (razón en una línea)`
+Valores de estado: `TODO` | `WORKING` | `DONE` | `BLOCKED (motivo en una línea)` | `REJECTED (razón en una línea)`
 
 ## Notas de dependencias
 
@@ -96,6 +96,17 @@ Valores de estado: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED (motivo en una lí
   `pnpm typecheck`, `pnpm lint`, `pnpm test src/app/admin/actions.test.ts` y
   `pnpm test`. No se corrió `pnpm build` por la regla local vigente de no
   ejecutar build salvo pedido explícito.
+- **007 (2026-06-15)**: implementado (`776b768`). La matriz completa de las
+  23 actions y todas las lecturas con `cacheTag` quedó documentada en
+  `docs/decisiones/2026-06-15-politica-invalidacion-cache.md`.
+  `revalidateSubjectContent` ya no consulta la base: los scopes de
+  autorización entregan año y comisiones en la misma lectura. Se separaron
+  las invalidaciones de eventos y apuntes, los períodos dejaron de recorrer
+  todos los años, los bancos ya no invalidan contenido ajeno y el borrado de
+  año invalida también sus caches de Storage. Smoke test real de
+  crear/editar/borrar evento y apunte validado en materia, calendario anual e
+  inicio; la cuenta y los datos temporales se eliminaron. Pasaron
+  `pnpm typecheck`, `pnpm lint`, 225 tests y `pnpm build`.
 
 ## Hallazgos auditados y NO seleccionados (sin plan, registrados para no re-auditar)
 
