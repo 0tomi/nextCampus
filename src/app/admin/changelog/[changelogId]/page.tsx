@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
-import { ChangelogEntryReadMarker } from './ChangelogEntryReadMarker'
 import { getAdminUser } from '@/lib/auth'
 import { getVisibleChangelogEntryByChangelogId } from '@/lib/changelog'
 import { ChangelogFeed } from '@/components/changelog/ChangelogFeed'
@@ -21,7 +20,6 @@ export default async function ChangelogEntryPage({ params }: { params: Promise<{
         <ArrowLeft className="size-4" />
         Volver a novedades
       </Link>
-      <ChangelogEntryReadMarker entryId={entry.id} unread={entry.unread} />
       <ChangelogFeed entries={[entry]} />
     </div>
   )
