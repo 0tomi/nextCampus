@@ -22,7 +22,14 @@ Roles válidos:
 
 El comando usa `DIRECT_URL` si está disponible. Si no existe, usa `DATABASE_URL`.
 
-Si se vuelve a ejecutar con el mismo `ID del changelog`, actualiza la novedad existente en lugar de crear una duplicada.
+## Creación o actualización
+
+El `ID del changelog` define si el comando crea una novedad nueva o actualiza una existente:
+
+- Si el `ID del changelog` no existe, crea una nueva entrada en el changelog.
+- Si el `ID del changelog` ya existe, actualiza esa entrada con el nuevo nombre, descripción, rol objetivo y fecha de visibilidad.
+
+Esto evita duplicar novedades cuando necesitás corregir el texto o cambiar el público objetivo.
 
 Ejemplo de carga:
 
