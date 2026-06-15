@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, User } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -107,20 +107,23 @@ export function DashboardShell({
             )}
           </div>
           <div className="flex items-center gap-3">
+            {shouldShowNotifications ? <NotificationBell target="all" /> : null}
+            {topbar}
             {pathname === '/' ? (
               <button
                 type="button"
                 onClick={openAbout}
                 className="hidden lg:inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
               >
+                <User className="size-4" />
                 Nosotros
               </button>
             ) : null}
-            {shouldShowNotifications ? <NotificationBell target="all" /> : null}
-            {topbar}
-            <AdminControls>
-              <SignOutButton />
-            </AdminControls>
+            {pathname === '/admin' || pathname.startsWith('/admin/') ? (
+              <AdminControls>
+                <SignOutButton />
+              </AdminControls>
+            ) : null}
           </div>
         </div>
       </header>
