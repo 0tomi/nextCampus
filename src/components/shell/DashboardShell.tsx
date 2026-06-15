@@ -23,6 +23,7 @@ interface DashboardShellProps {
   headerOverlay?: ReactNode
   className?: string
   mainClassName?: string
+  showNotifications?: boolean
 }
 
 export function DashboardShell({
@@ -33,6 +34,7 @@ export function DashboardShell({
   headerOverlay,
   className,
   mainClassName,
+  showNotifications = false,
 }: DashboardShellProps) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
@@ -113,7 +115,7 @@ export function DashboardShell({
                 Nosotros
               </button>
             ) : null}
-            <NotificationBell target="desktop" />
+            {showNotifications ? <NotificationBell target="all" /> : null}
             {topbar}
             <AdminControls>
               <SignOutButton />

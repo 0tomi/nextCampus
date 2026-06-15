@@ -1,12 +1,9 @@
-'use client'
-
 import Link from 'next/link'
 import { FileText } from 'lucide-react'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { DarkCard } from '@/components/ui/DarkCard'
 import type { YearLatestApunteItem } from '@/lib/domain/year-page-adapters'
 import { formatDate } from '@/lib/utils'
-import { useSeenApuntes } from '@/hooks/useSeenApuntes'
 
 interface YearLatestApuntesProps {
   notes: readonly YearLatestApunteItem[]
@@ -34,8 +31,6 @@ export function YearLatestApuntes({
 }
 
 function YearLatestApuntesDesktop({ notes }: { notes: readonly YearLatestApunteItem[] }) {
-  const newBadges = useSeenApuntes()
-
   return (
     <section className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -61,10 +56,6 @@ function YearLatestApuntesDesktop({ notes }: { notes: readonly YearLatestApunteI
               key={note.id}
               variant="interactive"
               className="group relative flex min-h-[176px] flex-col justify-between p-4"
-              data-apunte-id={note.id}
-              ref={(node) => newBadges.registerNode(note.id, node)}
-              onPointerEnter={() => newBadges.startHoverTimer(note.id)}
-              onPointerLeave={() => newBadges.clearHoverTimer(note.id)}
             >
               <Link
                 href={buildLatestApunteHref(note)}
@@ -80,7 +71,6 @@ function YearLatestApuntesDesktop({ notes }: { notes: readonly YearLatestApunteI
                   <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[8px] tracking-wider text-emerald-300">
                     {formatDate(note.createdAt)}
                   </span>
-                  {newBadges.isNew(note.id) ? <NewLatestApunteBadge /> : null}
                 </div>
 
                 <div className="space-y-2">
@@ -123,8 +113,6 @@ function YearLatestApuntesDesktopEmpty() {
 }
 
 function YearLatestApuntesMobile({ notes }: { notes: readonly YearLatestApunteItem[] }) {
-  const newBadges = useSeenApuntes()
-
   return (
     <section className="flex flex-col gap-3">
       <div className="px-[18px]">
@@ -156,10 +144,6 @@ function YearLatestApuntesMobile({ notes }: { notes: readonly YearLatestApunteIt
               key={note.id}
               variant="interactive"
               className="group relative flex flex-col gap-3 p-4"
-              data-apunte-id={note.id}
-              ref={(node) => newBadges.registerNode(note.id, node)}
-              onPointerEnter={() => newBadges.startHoverTimer(note.id)}
-              onPointerLeave={() => newBadges.clearHoverTimer(note.id)}
             >
               <Link
                 href={buildLatestApunteHref(note)}
@@ -174,7 +158,6 @@ function YearLatestApuntesMobile({ notes }: { notes: readonly YearLatestApunteIt
                 <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[8px] tracking-wider text-emerald-300">
                   {formatDate(note.createdAt)}
                 </span>
-                {newBadges.isNew(note.id) ? <NewLatestApunteBadge /> : null}
               </div>
 
               <div className="space-y-1.5">
@@ -188,14 +171,5 @@ function YearLatestApuntesMobile({ notes }: { notes: readonly YearLatestApunteIt
         )}
       </div>
     </section>
-  )
-}
-
-function NewLatestApunteBadge() {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.14em] text-amber-200">
-      <span className="size-1.5 rounded-full bg-orange-400" aria-hidden />
-      Nuevo
-    </span>
   )
 }

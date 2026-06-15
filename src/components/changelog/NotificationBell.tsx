@@ -1,16 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore, useState } from 'react'
 import { Bell, ArrowRight } from 'lucide-react'
 import { Sheet } from '@/components/ui/Sheet'
 import { ChangelogFeed } from './ChangelogFeed'
 import { useChangelogEntries } from './useChangelogEntries'
 
-type NotificationBellTarget = 'desktop' | 'mobile'
+type NotificationBellTarget = 'all' | 'desktop' | 'mobile'
 
 export function NotificationBell({ target }: { target: NotificationBellTarget }) {
-  const enabled = useNotificationBellEnabled(target)
+  const { enabled, isDesktop } = useNotificationBellViewport(target)
   const { entries, loading, error, markRead } = useChangelogEntries({ enabled })
   const [open, setOpen] = useState(false)
   const unreadEntries = entries.filter((entry) => entry.unread)
@@ -41,7 +41,7 @@ export function NotificationBell({ target }: { target: NotificationBellTarget })
         ) : null}
       </button>
 
-      {panelOpen && target === 'desktop' ? (
+      {panelOpen && isDesktop ? (
         <div className="absolute right-0 top-[calc(100%+0.75rem)] z-50 hidden w-[min(420px,calc(100vw-2rem))] border border-white/8 bg-surface-1 shadow-[0_24px_80px_rgba(0,0,0,0.45)] lg:block">
           <NotificationPanelContent
             entries={recentEntries}
@@ -52,7 +52,7 @@ export function NotificationBell({ target }: { target: NotificationBellTarget })
         </div>
       ) : null}
 
-      {target === 'mobile' ? (
+      {!isDesktop ? (
         <Sheet open={panelOpen} onClose={() => setOpen(false)} title="Novedades">
           <NotificationPanelContent
             entries={recentEntries}
@@ -66,18 +66,31 @@ export function NotificationBell({ target }: { target: NotificationBellTarget })
   )
 }
 
-function useNotificationBellEnabled(target: NotificationBellTarget) {
-  const [enabled, setEnabled] = useState(false)
+function useNotificationBellViewport(target: NotificationBellTarget) {
+  const isDesktop = useSyncExternalStore(subscribeToDesktopMedia, getDesktopSnapshot, getServerDesktopSnapshot)
 
-  useEffect(() => {
-    const media = window.matchMedia('(min-width: 1024px)')
-    const sync = () => setEnabled(target === 'desktop' ? media.matches : !media.matches)
-    sync()
-    media.addEventListener('change', sync)
-    return () => media.removeEventListener('change', sync)
-  }, [target])
+  return {
+    enabled: target === 'all' || (target === 'desktop' ? isDesktop : !isDesktop),
+    isDesktop,
+  }
+}
 
-  return enabled
+function getDesktopMedia() {
+  return window.matchMedia('(min-width: 1024px)')
+}
+
+function getDesktopSnapshot() {
+  return getDesktopMedia().matches
+}
+
+function getServerDesktopSnapshot() {
+  return false
+}
+
+function subscribeToDesktopMedia(onChange: () => void) {
+  const media = getDesktopMedia()
+  media.addEventListener('change', onChange)
+  return () => media.removeEventListener('change', onChange)
 }
 
 function NotificationPanelContent({

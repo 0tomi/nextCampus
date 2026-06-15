@@ -90,7 +90,6 @@ function YearDesktopView({
   return (
     <div className="hidden lg:block" style={colors.style}>
       <DashboardShell
-        topbar={<YearTopbar careerName={year.career.nombre} yearName={year.nombre} />}
         sidebar={
           <Sidebar
             eyebrow="Navegación"
@@ -116,18 +115,6 @@ function YearDesktopView({
 
         <YearSubjectsGrid colors={colors} subjects={year.subjects} yearSlug={year.slug} />
       </DashboardShell>
-    </div>
-  )
-}
-
-function YearTopbar({ careerName, yearName }: { careerName: string; yearName: string }) {
-  return (
-    <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/42">
-      <Link href="/" className="transition-colors hover:text-white/72">
-        {careerName}
-      </Link>
-      <span>/</span>
-      <span className="text-white/72">{yearName}</span>
     </div>
   )
 }

@@ -18,7 +18,6 @@ import { cn } from '@/lib/utils'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { usePreferences } from '@/hooks/usePreferences'
 import { isYearVisible, isSubjectVisible, type UserPreferences } from '@/lib/preferences'
-import { NotificationBell } from '@/components/changelog/NotificationBell'
 
 const SWIPE_EDGE_PX = 28
 const SWIPE_OPEN_PX = 70
@@ -332,9 +331,7 @@ function MobileTopbar({ title, subtitle, onBack, onOpenMenu }: MobileTopbarProps
           </div>
         </Link>
 
-        <div className="flex size-11 shrink-0 items-center justify-center">
-          <NotificationBell target="mobile" />
-        </div>
+        <div className="size-11 shrink-0" aria-hidden />
       </div>
     </header>
   )
