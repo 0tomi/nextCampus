@@ -11,6 +11,7 @@ import { DarkCard } from '@/components/ui/DarkCard'
 import { SafeHtml } from '@/components/ui/SafeHtml'
 import { EditApunteButton } from '@/components/admin/EditApunteButton'
 import type { RecursoTipo } from '@/lib/recursos'
+import { useSeenApuntes } from '@/hooks/useSeenApuntes'
 
 export interface CategoriaItem {
   id: string
@@ -204,6 +205,7 @@ export function ApuntesFeed({
   const sentinelRef = useRef<HTMLDivElement | null>(null)
   const cardRefs = useRef<Map<string, HTMLDivElement | null> | null>(null)
   const firstRunRef = useRef(true)
+  const newBadges = useSeenApuntes()
   const getCardRefs = useCallback(() => {
     if (cardRefs.current === null) {
       cardRefs.current = new Map()
@@ -358,7 +360,11 @@ export function ApuntesFeed({
                 if (!card.isFirstOfApunte) return
                 if (node) getCardRefs().set(card.apunte.slug, node)
                 else getCardRefs().delete(card.apunte.slug)
+                newBadges.registerNode(card.apunte.id, node)
               }}
+              isNew={newBadges.isNew(card.apunte.id)}
+              onPointerEnter={() => newBadges.startHoverTimer(card.apunte.id)}
+              onPointerLeave={() => newBadges.clearHoverTimer(card.apunte.id)}
             />
           ))}
         </div>
@@ -376,7 +382,11 @@ export function ApuntesFeed({
               setRef={(node) => {
                 if (node) getCardRefs().set(apunte.slug, node)
                 else getCardRefs().delete(apunte.slug)
+                newBadges.registerNode(apunte.id, node)
               }}
+              isNew={newBadges.isNew(apunte.id)}
+              onPointerEnter={() => newBadges.startHoverTimer(apunte.id)}
+              onPointerLeave={() => newBadges.clearHoverTimer(apunte.id)}
             />
           ))}
         </div>
@@ -400,6 +410,9 @@ function DesktopContentCard({
   yearId,
   yearSlug,
   setRef,
+  isNew,
+  onPointerEnter,
+  onPointerLeave,
 }: {
   card: DesktopContentCardData
   focusApunteSlug?: string
@@ -408,6 +421,9 @@ function DesktopContentCard({
   yearId: string
   yearSlug: string
   setRef: (node: HTMLDivElement | null) => void
+  isNew: boolean
+  onPointerEnter: () => void
+  onPointerLeave: () => void
 }) {
   const { apunte, apunteHref, isFirstOfApunte, recurso, showApunteActions } = card
   const enfocado = focusApunteSlug === apunte.slug && isFirstOfApunte
@@ -427,7 +443,13 @@ function DesktopContentCard({
   ].filter(Boolean).join(' ')
 
   return (
-    <div ref={setRef} className={wrapperClassName}>
+    <div
+      ref={setRef}
+      data-apunte-id={isFirstOfApunte ? apunte.id : undefined}
+      className={wrapperClassName}
+      onPointerEnter={isFirstOfApunte ? onPointerEnter : undefined}
+      onPointerLeave={isFirstOfApunte ? onPointerLeave : undefined}
+    >
       <DarkCard className={cardClassName}>
         {(isFirstOfApunte || neighbors.sameApunteLeft) ? (
           <div
@@ -443,7 +465,10 @@ function DesktopContentCard({
           {isFirstOfApunte ? (
             <div className="h-full">
               <div className={showApunteActions ? 'pr-[168px]' : ''}>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Apunte</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Apunte</p>
+                  {isNew ? <NewApunteBadge /> : null}
+                </div>
                 <h3
                   className="mt-2 truncate text-xl font-black tracking-tight text-white transition-all hover:underline"
                   title={apunte.titulo}
@@ -515,6 +540,9 @@ function ApunteCard({
   focusApunteSlug,
   variant,
   setRef,
+  isNew,
+  onPointerEnter,
+  onPointerLeave,
 }: {
   apunte: ApunteFeedItem
   yearId: string
@@ -523,6 +551,9 @@ function ApunteCard({
   focusApunteSlug?: string
   variant: 'desktop' | 'mobile'
   setRef: (node: HTMLDivElement | null) => void
+  isNew: boolean
+  onPointerEnter: () => void
+  onPointerLeave: () => void
 }) {
   const enfocado = focusApunteSlug === apunte.slug
   const apunteHref = `/${yearSlug}/${subjectSlug}/apuntes/${apunte.slug}`
@@ -530,7 +561,10 @@ function ApunteCard({
     <>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Apunte</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Apunte</p>
+            {isNew ? <NewApunteBadge /> : null}
+          </div>
           <h3 className={variant === 'desktop'
             ? 'mt-2 text-xl font-black tracking-tight text-white transition-all hover:underline'
             : 'mt-1 text-base font-black leading-tight text-white transition-all hover:underline'}>
@@ -616,7 +650,13 @@ function ApunteCard({
 
   if (variant === 'desktop') {
     return (
-      <div ref={setRef} className="scroll-mt-24">
+      <div
+        ref={setRef}
+        data-apunte-id={apunte.id}
+        className="scroll-mt-24"
+        onPointerEnter={onPointerEnter}
+        onPointerLeave={onPointerLeave}
+      >
         <DarkCard className={['flex flex-col p-5', enfocado ? 'ring-1 ring-white/20' : ''].join(' ')}>
           {content}
         </DarkCard>
@@ -627,6 +667,9 @@ function ApunteCard({
   return (
     <div
       ref={setRef}
+      data-apunte-id={apunte.id}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
       className={[
         'relative flex flex-col gap-3 rounded-xl border bg-[#1a1a1a] p-5 transition-colors',
         enfocado ? 'border-white/20' : 'border-white/5',
@@ -634,5 +677,14 @@ function ApunteCard({
     >
       {content}
     </div>
+  )
+}
+
+function NewApunteBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] text-amber-200">
+      <span className="size-1.5 rounded-full bg-orange-400" aria-hidden />
+      Nuevo
+    </span>
   )
 }

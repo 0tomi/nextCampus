@@ -17,6 +17,7 @@
     "test:watch": "node_modules/.bin/vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "changelog:notify": "tsx scripts/changelog-notification.ts",
     "backfill:contributions": "tsx prisma/backfill-contributions.ts",
     "backfill:banco-author": "tsx prisma/backfill-banco-subido-por-id.ts",
     "doctor": "npx react-doctor@latest"

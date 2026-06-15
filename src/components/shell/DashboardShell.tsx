@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback, type ReactNode } from 'react'
+import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import { Menu, X } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { SignOutButton } from '@/components/admin/SignOutButton'
+import { NotificationBell } from '@/components/changelog/NotificationBell'
 import { CampusHeaderBrand } from '@/components/shell/CampusHeaderBrand'
 
 const Mascot = dynamic(() => import('@/components/ui/Mascot').then((module) => module.Mascot))
@@ -37,6 +38,7 @@ export function DashboardShell({
   const [isOpen, setIsOpen] = useState(false)
   const [isAboutOpen, setIsAboutOpen] = useState(false)
   const [hasOpenedAbout, setHasOpenedAbout] = useState(false)
+  const drawerRef = useRef<HTMLDialogElement>(null)
 
   function openAbout() {
     setHasOpenedAbout(true)
@@ -45,18 +47,35 @@ export function DashboardShell({
 
   const closeDrawer = useCallback(() => setIsOpen(false), [])
 
-  // Bloquear scroll y atrapar Escape cuando el drawer móvil está abierto
+  useEffect(() => {
+    const drawer = drawerRef.current
+    if (!drawer) return
+
+    const handleCancel = (event: Event) => {
+      event.preventDefault()
+      setIsOpen(false)
+    }
+    const handleBackdropClick = (event: MouseEvent) => {
+      if (event.target === drawer) setIsOpen(false)
+    }
+
+    if (isOpen && !drawer.open) drawer.showModal()
+    if (!isOpen && drawer.open) drawer.close()
+
+    drawer.addEventListener('cancel', handleCancel)
+    drawer.addEventListener('click', handleBackdropClick)
+    return () => {
+      drawer.removeEventListener('cancel', handleCancel)
+      drawer.removeEventListener('click', handleBackdropClick)
+    }
+  }, [isOpen])
+
   useEffect(() => {
     if (!isOpen) return
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false)
-    }
-    document.addEventListener('keydown', handleKey)
     return () => {
       document.body.style.overflow = prev
-      document.removeEventListener('keydown', handleKey)
     }
   }, [isOpen])
 
@@ -94,6 +113,7 @@ export function DashboardShell({
                 Nosotros
               </button>
             ) : null}
+            <NotificationBell />
             {topbar}
             <AdminControls>
               <SignOutButton />
@@ -102,24 +122,11 @@ export function DashboardShell({
         </div>
       </header>
 
-      {/* Drawer móvil - Backdrop */}
-      <button
-        type="button"
-        aria-label="Cerrar menú"
-        onClick={closeDrawer}
-        className={cn(
-          'fixed inset-0 z-50 cursor-pointer bg-black/60 backdrop-blur-sm transition-opacity duration-240 lg:hidden',
-          isOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
-        )}
-      />
-
-      {/* Drawer móvil - Panel */}
-      <aside
-        role="dialog"
-        aria-modal={isOpen ? true : undefined}
+      <dialog
+        ref={drawerRef}
         aria-label="Menú de navegación"
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-white/5 bg-[#141414] shadow-2xl transition-transform duration-300 ease-out lg:hidden',
+          'fixed inset-y-0 left-0 z-50 m-0 flex h-full max-h-none w-72 max-w-none flex-col border-r border-white/5 bg-[#141414] p-0 text-white shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm transition-transform duration-300 ease-out lg:hidden',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
@@ -139,7 +146,7 @@ export function DashboardShell({
         <div className="flex-1 overflow-y-auto">
           {sidebar}
         </div>
-      </aside>
+      </dialog>
 
       <div className="flex min-h-[calc(100vh-4rem-var(--spacing-safe-top))] items-start">
         <aside className="sticky top-[calc(4rem+var(--spacing-safe-top))] h-[calc(100vh-4rem-var(--spacing-safe-top))] w-72 shrink-0 overflow-hidden border-r border-white/5 bg-surface-2 hidden lg:block">

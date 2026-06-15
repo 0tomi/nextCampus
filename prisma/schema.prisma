@@ -67,6 +67,13 @@ enum UserStatus {
   DISABLED
 }
 
+enum ChangelogAudience {
+  PUBLIC
+  AYUDANTE
+  SUPERVISOR
+  ADMIN
+}
+
 model UserAccount {
   id                     String               @id @default(cuid())
   authUserId             String               @unique
@@ -74,6 +81,7 @@ model UserAccount {
   role                   UserRole
   status                 UserStatus           @default(ACTIVE)
   yearPermissions        UserYearPermission[]
+  changelogReads         ChangelogRead[]
   nombreUsuario          String
   puntaje                Int                  @default(0)
   eventosCreados         Int                  @default(0)
@@ -89,6 +97,33 @@ model UserAccount {
   @@index([role])
   @@index([status])
   @@index([puntaje])
+}
+
+model ChangelogEntry {
+  id          String            @id @default(cuid())
+  changelogId String            @unique
+  title       String
+  summary     String
+  audience    ChangelogAudience @default(PUBLIC)
+  visibleAt   DateTime          @default(now())
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  reads       ChangelogRead[]
+
+  @@index([audience, visibleAt, id])
+  @@index([visibleAt, id])
+}
+
+model ChangelogRead {
+  user             UserAccount    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  changelogEntry   ChangelogEntry @relation(fields: [changelogEntryId], references: [id], onDelete: Cascade)
+  changelogEntryId String
+  readAt           DateTime       @default(now())
+
+  @@id([userId, changelogEntryId])
+  @@index([userId, readAt])
+  @@index([changelogEntryId])
 }
 
 model UserYearPermission {

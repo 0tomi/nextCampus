@@ -5,7 +5,7 @@ vi.mock('next/navigation', () => ({
 }))
 
 describe('AdminSidebar navigation helpers', () => {
-  it('incluye perfil, calendario, usuarios e historial para admins', async () => {
+  it('incluye perfil, calendario, novedades, usuarios e historial para admins', async () => {
     const { buildAdminSidebarItems } = await import('./AdminSidebar.utils')
 
     const items = buildAdminSidebarItems({
@@ -15,10 +15,11 @@ describe('AdminSidebar navigation helpers', () => {
       canManageCalendar: true,
     })
 
-    expect(items.map((item) => item.id)).toEqual(['perfil', 'calendario', 'users', 'historial'])
+    expect(items.map((item) => item.id)).toEqual(['perfil', 'calendario', 'changelog', 'users', 'historial'])
     expect(items.map((item) => item.href)).toEqual([
       '/admin/perfil',
       '/admin/calendario',
+      '/admin/changelog',
       '/admin/users',
       '/admin/historial',
     ])
@@ -34,8 +35,8 @@ describe('AdminSidebar navigation helpers', () => {
       canManageCalendar: true,
     })
 
-    expect(items.map((item) => item.id)).toEqual(['perfil', 'calendario', 'historial'])
-    expect(items[2]).toMatchObject({
+    expect(items.map((item) => item.id)).toEqual(['perfil', 'calendario', 'changelog', 'historial'])
+    expect(items[3]).toMatchObject({
       id: 'historial',
       href: '/admin/historial',
       active: true,
@@ -52,7 +53,7 @@ describe('AdminSidebar navigation helpers', () => {
       canManageCalendar: true,
     })
 
-    expect(items.map((item) => item.id)).toEqual(['perfil', 'calendario'])
+    expect(items.map((item) => item.id)).toEqual(['perfil', 'calendario', 'changelog'])
     expect(items[1]).toMatchObject({
       id: 'calendario',
       href: '/admin/calendario',
@@ -60,7 +61,7 @@ describe('AdminSidebar navigation helpers', () => {
     })
   })
 
-  it('deja solo perfil para ayudantes sin permisos', async () => {
+  it('deja perfil y novedades para ayudantes sin permisos', async () => {
     const { buildAdminSidebarItems } = await import('./AdminSidebar.utils')
 
     const items = buildAdminSidebarItems({
@@ -70,11 +71,15 @@ describe('AdminSidebar navigation helpers', () => {
       canManageCalendar: false,
     })
 
-    expect(items).toHaveLength(1)
+    expect(items).toHaveLength(2)
     expect(items[0]).toMatchObject({
       id: 'perfil',
       href: '/admin/perfil',
       active: true,
+    })
+    expect(items[1]).toMatchObject({
+      id: 'changelog',
+      href: '/admin/changelog',
     })
   })
 })
