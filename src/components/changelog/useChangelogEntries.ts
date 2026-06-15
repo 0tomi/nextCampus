@@ -35,14 +35,23 @@ function changelogReducer(state: ChangelogState, action: ChangelogAction): Chang
   }
 }
 
-export function useChangelogEntries(initialEntries: ChangelogEntryView[] = []) {
+interface UseChangelogEntriesOptions {
+  enabled?: boolean
+  initialEntries?: ChangelogEntryView[]
+}
+
+export function useChangelogEntries({
+  enabled = true,
+  initialEntries = [],
+}: UseChangelogEntriesOptions = {}) {
   const [state, dispatch] = useReducer(changelogReducer, {
     entries: initialEntries,
-    loading: initialEntries.length === 0,
+    loading: enabled && initialEntries.length === 0,
     error: '',
   })
 
   const refresh = useCallback(async () => {
+    if (!enabled) return
     dispatch({ type: 'load-start' })
     try {
       const response = await fetch('/api/changelog/notifications')
@@ -52,7 +61,7 @@ export function useChangelogEntries(initialEntries: ChangelogEntryView[] = []) {
     } catch {
       dispatch({ type: 'load-error' })
     }
-  }, [])
+  }, [enabled])
 
   const markRead = useCallback(async (entryIds: string[]) => {
     const uniqueIds = [...new Set(entryIds.filter(Boolean))]
@@ -66,9 +75,9 @@ export function useChangelogEntries(initialEntries: ChangelogEntryView[] = []) {
   }, [])
 
   useEffect(() => {
-    if (initialEntries.length > 0) return
+    if (!enabled || initialEntries.length > 0) return
     void refresh()
-  }, [initialEntries.length, refresh])
+  }, [enabled, initialEntries.length, refresh])
 
   return { ...state, refresh, markRead }
 }

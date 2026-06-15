@@ -1,34 +1,25 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Bell, ArrowRight } from 'lucide-react'
 import { Sheet } from '@/components/ui/Sheet'
-import { cn } from '@/lib/utils'
 import { ChangelogFeed } from './ChangelogFeed'
 import { useChangelogEntries } from './useChangelogEntries'
 
-export function NotificationBell() {
-  const { entries, loading, error, markRead } = useChangelogEntries()
+type NotificationBellTarget = 'desktop' | 'mobile'
+
+export function NotificationBell({ target }: { target: NotificationBellTarget }) {
+  const enabled = useNotificationBellEnabled(target)
+  const { entries, loading, error, markRead } = useChangelogEntries({ enabled })
   const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
   const unreadEntries = entries.filter((entry) => entry.unread)
   const recentEntries = entries.slice(0, 5)
   const hasUnread = unreadEntries.length > 0
-
-  useEffect(() => {
-    if (!open) return
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target
-      if (target instanceof Node && !rootRef.current?.contains(target)) {
-        setOpen(false)
-      }
-    }
-    document.addEventListener('pointerdown', handlePointerDown)
-    return () => document.removeEventListener('pointerdown', handlePointerDown)
-  }, [open])
+  const panelOpen = enabled && open
 
   function openPanel() {
+    if (!enabled) return
     setOpen(true)
     if (unreadEntries.length > 0) {
       void markRead(unreadEntries.map((entry) => entry.id))
@@ -36,13 +27,13 @@ export function NotificationBell() {
   }
 
   return (
-    <div ref={rootRef} className="relative">
+    <div className="relative">
       <button
         type="button"
-        onClick={() => (open ? setOpen(false) : openPanel())}
+        onClick={() => (panelOpen ? setOpen(false) : openPanel())}
         className="relative inline-flex size-10 cursor-pointer items-center justify-center rounded-md border border-white/10 bg-transparent text-white/62 transition-colors hover:bg-white/5 hover:text-white"
         aria-label="Abrir novedades"
-        aria-expanded={open}
+        aria-expanded={panelOpen}
       >
         <Bell className="size-4" />
         {hasUnread ? (
@@ -50,34 +41,43 @@ export function NotificationBell() {
         ) : null}
       </button>
 
-      <div
-        className={cn(
-          'absolute right-0 top-[calc(100%+0.75rem)] z-50 hidden w-[min(420px,calc(100vw-2rem))] border border-white/8 bg-surface-1 shadow-[0_24px_80px_rgba(0,0,0,0.45)] lg:block',
-          open ? 'opacity-100' : 'pointer-events-none opacity-0',
-        )}
-      >
-        <NotificationPanelContent
-          entries={recentEntries}
-          error={error}
-          loading={loading}
-          onClose={() => setOpen(false)}
-          onMarkRead={markRead}
-        />
-      </div>
-
-      <div className="lg:hidden">
-        <Sheet open={open} onClose={() => setOpen(false)} title="Novedades">
+      {panelOpen && target === 'desktop' ? (
+        <div className="absolute right-0 top-[calc(100%+0.75rem)] z-50 hidden w-[min(420px,calc(100vw-2rem))] border border-white/8 bg-surface-1 shadow-[0_24px_80px_rgba(0,0,0,0.45)] lg:block">
           <NotificationPanelContent
             entries={recentEntries}
             error={error}
             loading={loading}
             onClose={() => setOpen(false)}
-            onMarkRead={markRead}
+          />
+        </div>
+      ) : null}
+
+      {target === 'mobile' ? (
+        <Sheet open={panelOpen} onClose={() => setOpen(false)} title="Novedades">
+          <NotificationPanelContent
+            entries={recentEntries}
+            error={error}
+            loading={loading}
+            onClose={() => setOpen(false)}
           />
         </Sheet>
-      </div>
+      ) : null}
     </div>
   )
+}
+
+function useNotificationBellEnabled(target: NotificationBellTarget) {
+  const [enabled, setEnabled] = useState(false)
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1024px)')
+    const sync = () => setEnabled(target === 'desktop' ? media.matches : !media.matches)
+    sync()
+    media.addEventListener('change', sync)
+    return () => media.removeEventListener('change', sync)
+  }, [target])
+
+  return enabled
 }
 
 function NotificationPanelContent({
@@ -85,13 +85,11 @@ function NotificationPanelContent({
   error,
   loading,
   onClose,
-  onMarkRead,
 }: {
   entries: ReturnType<typeof useChangelogEntries>['entries']
   error: string
   loading: boolean
   onClose: () => void
-  onMarkRead: (entryIds: string[]) => void
 }) {
   return (
     <div className="space-y-4 p-4 lg:p-5">
@@ -122,7 +120,6 @@ function NotificationPanelContent({
           compact
           entries={entries}
           emptyCopy="Ya estás al día."
-          onMarkRead={(entryIds) => void onMarkRead(entryIds)}
         />
       )}
     </div>

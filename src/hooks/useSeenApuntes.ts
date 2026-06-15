@@ -30,6 +30,11 @@ function readSeenIds(): string[] {
   return parseSeenApunteIds(window.localStorage.getItem(STORAGE_KEY))
 }
 
+function writeSeenIds(ids: string[]) {
+  const merged = limitSeenApunteIds([...readSeenIds(), ...ids])
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
+}
+
 function supportsDesktopHover(): boolean {
   return window.matchMedia('(hover: hover) and (pointer: fine)').matches
 }
@@ -96,7 +101,7 @@ export function useSeenApuntes() {
 
   useEffect(() => {
     if (!state.ready) return
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.seenIds))
+    writeSeenIds(state.seenIds)
   }, [state.ready, state.seenIds])
 
   useEffect(() => {

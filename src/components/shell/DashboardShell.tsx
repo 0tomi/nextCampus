@@ -113,7 +113,7 @@ export function DashboardShell({
                 Nosotros
               </button>
             ) : null}
-            <NotificationBell />
+            <NotificationBell target="desktop" />
             {topbar}
             <AdminControls>
               <SignOutButton />
@@ -126,7 +126,7 @@ export function DashboardShell({
         ref={drawerRef}
         aria-label="Menú de navegación"
         className={cn(
-          'fixed inset-y-0 left-0 z-50 m-0 flex h-full max-h-none w-72 max-w-none flex-col border-r border-white/5 bg-[#141414] p-0 text-white shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm transition-transform duration-300 ease-out lg:hidden',
+          'dashboard-drawer-dialog fixed inset-y-0 left-0 z-50 m-0 h-full max-h-none w-72 max-w-none flex-col border-r border-white/5 bg-[#141414] p-0 text-white shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm transition-transform duration-300 ease-out lg:hidden',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >

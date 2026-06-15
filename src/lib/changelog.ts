@@ -1,5 +1,4 @@
 import 'server-only'
-import { cache } from 'react'
 import type { Prisma } from '../../prisma/generated/client/client'
 import { prisma } from '@/lib/prisma'
 import type { AdminUser } from '@/lib/auth'
@@ -7,7 +6,6 @@ import { getVisibleChangelogAudiences, isChangelogUnread, type ChangelogAudience
 
 export interface ChangelogEntryDTO {
   id: string
-  changelogId: string
   title: string
   summary: string
   audience: ChangelogAudience
@@ -20,7 +18,6 @@ export interface ChangelogEntryDTO {
 
 const changelogEntrySelect = {
   id: true,
-  changelogId: true,
   title: true,
   summary: true,
   audience: true,
@@ -68,10 +65,6 @@ export async function getVisibleChangelogEntries(admin: Pick<AdminUser, 'id' | '
 
   return entries.map((entry) => serializeChangelogEntry(entry, readAtByEntryId.get(entry.id) ?? null))
 }
-
-export const getPublicChangelogEntries = cache(async (): Promise<ChangelogEntryDTO[]> => {
-  return getVisibleChangelogEntries(null)
-})
 
 export async function markChangelogEntriesRead(userId: string, entryIds: string[]): Promise<void> {
   const uniqueEntryIds = [...new Set(entryIds.filter(Boolean))]

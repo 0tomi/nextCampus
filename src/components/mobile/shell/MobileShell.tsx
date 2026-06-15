@@ -333,7 +333,7 @@ function MobileTopbar({ title, subtitle, onBack, onOpenMenu }: MobileTopbarProps
         </Link>
 
         <div className="flex size-11 shrink-0 items-center justify-center">
-          <NotificationBell />
+          <NotificationBell target="mobile" />
         </div>
       </div>
     </header>

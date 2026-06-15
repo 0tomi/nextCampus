@@ -147,6 +147,14 @@ body {
   transform: translateX(0);
 }
 
+.dashboard-drawer-dialog:not([open]) {
+  display: none;
+}
+
+.dashboard-drawer-dialog[open] {
+  display: flex;
+}
+
 @starting-style {
   .sheet-dialog[open] {
     opacity: 0;
