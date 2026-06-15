@@ -21,7 +21,7 @@ actualizar su fila al terminar.
 | [007](007-cache-invalidation-policy.md) | Política de invalidación de cache | P2 | M | 006 | DONE (2026-06-15, commits `08fbe5a` + `776b768`) |
 | [008](008-mapa-shared-state-hook.md) | Estado derivado compartido del mapa | P3 | M | 001 | DONE (2026-06-15, commits `e7752a0` + `41d99de`) |
 | [009](009-design-personal-quiz-stats.md) | (Diseño) Estadísticas personales de quiz | P3 | M | — | DONE (2026-06-15, commits `39c365e` + `721c4ec`) |
-| [010](010-design-global-apunte-search.md) | (Diseño) Búsqueda global de apuntes | P3 | M | — | TODO |
+| [010](010-design-global-apunte-search.md) | (Diseño) Búsqueda global de apuntes | P3 | M | — | WORKING |
 
 Valores de estado: `TODO` | `WORKING` | `DONE` | `BLOCKED (motivo en una línea)` | `REJECTED (razón en una línea)`
 
