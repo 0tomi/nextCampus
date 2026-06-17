@@ -14,6 +14,7 @@ export interface HomeLatestApunte {
   titulo: string
   slug: string
   createdAt: Date | string
+  updatedAt: Date | string
   subjectSlug: string
   subjectNombre: string
   yearSlug: string
@@ -115,15 +116,17 @@ function HomeLatestApuntesDesktop({
         {notes.length === 0 ? (
           <HomeLatestApuntesDesktopEmpty hasAnyNotes={hasAnyNotes} />
         ) : (
-          notes.map((note) => (
+          notes.map((note) => {
+            const seenApunteKey = `${note.id}:${note.updatedAt}`
+            return (
             <DarkCard
               key={note.id}
               variant="interactive"
               className="group relative flex min-h-[176px] flex-col justify-between rounded-lg border border-white/5 bg-surface-1/60 p-4 backdrop-blur-sm"
-              data-apunte-id={note.id}
-              ref={(node) => newBadges.registerNode(note.id, node)}
-              onPointerEnter={() => newBadges.startHoverTimer(note.id)}
-              onPointerLeave={() => newBadges.clearHoverTimer(note.id)}
+              data-apunte-id={seenApunteKey}
+              ref={(node) => newBadges.registerNode(seenApunteKey, node)}
+              onPointerEnter={() => newBadges.startHoverTimer(seenApunteKey)}
+              onPointerLeave={() => newBadges.clearHoverTimer(seenApunteKey)}
             >
               <Link
                 href={buildLatestApunteHref(note)}
@@ -137,9 +140,9 @@ function HomeLatestApuntesDesktop({
                     {note.yearNombre}
                   </span>
                   <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[8px] tracking-wider text-emerald-300">
-                    {formatDate(note.createdAt)}
+                    {formatDate(note.updatedAt)}
                   </span>
-                  {newBadges.isNew(note.id) ? <NewApunteBadge /> : null}
+                  {newBadges.isNew(seenApunteKey) ? <NewApunteBadge /> : null}
                 </div>
 
                 <div className="space-y-2">
@@ -156,7 +159,8 @@ function HomeLatestApuntesDesktop({
                 Material nuevo para repasar
               </p>
             </DarkCard>
-          ))
+            )
+          })
         )}
       </div>
     </section>
@@ -251,14 +255,16 @@ function HomeLatestApuntesMobile({
             {getEmptyStateMessage(hasAnyNotes)}
           </div>
         ) : (
-          notes.map((note) => (
+          notes.map((note) => {
+            const seenApunteKey = `${note.id}:${note.updatedAt}`
+            return (
             <Link
               key={note.id}
               href={buildLatestApunteHref(note)}
-              data-apunte-id={note.id}
-              ref={(node) => newBadges.registerNode(note.id, node)}
-              onPointerEnter={() => newBadges.startHoverTimer(note.id)}
-              onPointerLeave={() => newBadges.clearHoverTimer(note.id)}
+              data-apunte-id={seenApunteKey}
+              ref={(node) => newBadges.registerNode(seenApunteKey, node)}
+              onPointerEnter={() => newBadges.startHoverTimer(seenApunteKey)}
+              onPointerLeave={() => newBadges.clearHoverTimer(seenApunteKey)}
               className="group flex cursor-pointer flex-col gap-3 rounded-[10px] border border-white/5 bg-[#1a1a1a] px-4 py-3 no-underline transition-colors hover:bg-[#1f1f1f]"
             >
               <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-[0.15em] text-white/35">
@@ -266,9 +272,9 @@ function HomeLatestApuntesMobile({
                   {note.yearNombre}
                 </span>
                 <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[8px] tracking-wider text-emerald-300">
-                  {formatDate(note.createdAt)}
+                  {formatDate(note.updatedAt)}
                 </span>
-                {newBadges.isNew(note.id) ? <NewApunteBadge /> : null}
+                {newBadges.isNew(seenApunteKey) ? <NewApunteBadge /> : null}
               </div>
 
               <div className="space-y-1.5">
@@ -280,7 +286,8 @@ function HomeLatestApuntesMobile({
                 </p>
               </div>
             </Link>
-          ))
+            )
+          })
         )}
       </div>
     </section>
