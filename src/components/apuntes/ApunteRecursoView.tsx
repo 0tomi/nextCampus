@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
+import { Suspense, use, useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
 import Image from 'next/image'
 import {
   driveEmbedUrl,
@@ -627,6 +627,41 @@ function GithubRepositoryPreview({
   )
 }
 
+type LinkPreviewData = { title: string; description: string; image?: string; logo?: string }
+
+// Caché de promesas a nivel de módulo: estabiliza la promesa entre renders (lo
+// que `use()` necesita) y deduplica el pedido de metadatos por URL.
+const linkPreviewCache = new Map<string, Promise<LinkPreviewData | null>>()
+
+function loadLinkPreview(href: string): Promise<LinkPreviewData | null> {
+  const cached = linkPreviewCache.get(href)
+  if (cached) return cached
+
+  const promise = fetch(`/api/link-preview?url=${encodeURIComponent(href)}`)
+    .then((res) => {
+      if (!res.ok) throw new Error()
+      return res.json() as Promise<LinkPreviewData>
+    })
+    .catch(() => null)
+
+  linkPreviewCache.set(href, promise)
+  return promise
+}
+
+function LinkPreviewSkeleton({ variant }: { variant: RecursoViewVariant }) {
+  return (
+    <div className={`flex animate-pulse flex-col items-start gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-5 sm:flex-row sm:items-center sm:justify-between ${variant === 'content-card' ? 'h-full' : ''}`}>
+      <div className="flex w-full items-center gap-3.5">
+        <div className="size-11 shrink-0 rounded-lg bg-white/[0.06]" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 w-1/3 rounded bg-white/[0.06]" />
+          <div className="h-3 w-2/3 rounded bg-white/[0.06]" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function LinkPreview({
   href,
   title,
@@ -636,46 +671,23 @@ function LinkPreview({
   title: string
   variant?: RecursoViewVariant
 }) {
-  const [data, setData] = useState<{ title: string; description: string; image?: string; logo?: string } | null>(null)
-  const [loading, setLoading] = useState(true)
+  return (
+    <Suspense fallback={<LinkPreviewSkeleton variant={variant} />}>
+      <LinkPreviewContent href={href} title={title} variant={variant} />
+    </Suspense>
+  )
+}
 
-  useEffect(() => {
-    let active = true
-    fetch(`/api/link-preview?url=${encodeURIComponent(href)}`)
-      .then((res) => {
-        if (!res.ok) throw new Error()
-        return res.json()
-      })
-      .then((json) => {
-        if (active) {
-          setData(json)
-          setLoading(false)
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setLoading(false)
-        }
-      })
-
-    return () => {
-      active = false
-    }
-  }, [href])
-
-  if (loading) {
-    return (
-      <div className={`flex animate-pulse flex-col items-start gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-5 sm:flex-row sm:items-center sm:justify-between ${variant === 'content-card' ? 'h-full' : ''}`}>
-        <div className="flex w-full items-center gap-3.5">
-          <div className="size-11 shrink-0 rounded-lg bg-white/[0.06]" />
-          <div className="flex-1 space-y-2">
-            <div className="h-4 w-1/3 rounded bg-white/[0.06]" />
-            <div className="h-3 w-2/3 rounded bg-white/[0.06]" />
-          </div>
-        </div>
-      </div>
-    )
-  }
+function LinkPreviewContent({
+  href,
+  title,
+  variant,
+}: {
+  href: string
+  title: string
+  variant: RecursoViewVariant
+}) {
+  const data = use(loadLinkPreview(href))
 
   const previewTitle = data?.title || title || new URL(href).hostname
   const previewDesc = data?.description || 'Enlace a recurso externo.'
