@@ -488,10 +488,10 @@ function HtmlPreviewIframe({
           </div>
         )}
 
-        <div className="size-full">
+        <div className={isExpanded ? 'flex-1 min-h-0 w-full' : 'size-full'}>
           <iframe
             src={`/api/apuntes/recursos/${recursoId}/preview`}
-            className={`size-full rounded-xl bg-black/20 transition-opacity duration-300 ${
+            className={`block size-full rounded-xl bg-black/20 transition-opacity duration-300 ${
               isExpanded ? 'border-none' : 'border border-white/5'
             } ${isLoading ? 'opacity-0' : 'opacity-100'}`}
             loading="lazy"
