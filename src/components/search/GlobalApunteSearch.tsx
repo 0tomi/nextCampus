@@ -104,7 +104,7 @@ export function GlobalApunteSearch({ variant }: { variant: GlobalApunteSearchVar
   const scheduleSearch = useCallback((query: string) => {
     clearPendingSearch()
     const nextQuery = query.trim()
-    if (nextQuery.length < 2 || nextQuery.length > 120) return
+    if (nextQuery.length < 3 || nextQuery.length > 120) return
 
     const controller = new AbortController()
     searchControllerRef.current = controller
@@ -281,11 +281,11 @@ function SearchContent({
     )
   }
 
-  if (query.length < 2) {
+  if (query.length < 3) {
     return (
       <SearchMessage
         titleId={titleId}
-        title="Escribí al menos 2 caracteres."
+        title="Escribí al menos 3 caracteres."
         description="Con una palabra un poco más completa podemos encontrar mejores resultados."
       />
     )

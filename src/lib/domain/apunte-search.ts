@@ -2,9 +2,9 @@ import 'server-only'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 
-export const APUNTE_SEARCH_LIMIT = 20
+export const APUNTE_SEARCH_LIMIT = 5
 export const apunteSearchQuerySchema = z.object({
-  q: z.string().trim().min(2).max(120),
+  q: z.string().trim().min(3).max(120),
 })
 
 export type ApunteSearchInput = z.infer<typeof apunteSearchQuerySchema>
@@ -89,6 +89,8 @@ export async function searchApuntes(input: ApunteSearchInput): Promise<ApunteSea
         y.slug AS year_slug,
         coalesce(nc.categories, ARRAY[]::text[]) AS categories,
         coalesce(nr.resource_types, ARRAY[]::text[]) AS resource_types,
+        coalesce(nc.category_text, '') AS category_text,
+        coalesce(nr.resource_text, '') AS resource_text,
         nullif(
           trim(
             regexp_replace(
@@ -123,8 +125,29 @@ export async function searchApuntes(input: ApunteSearchInput): Promise<ApunteSea
       LEFT JOIN note_categories nc ON nc."apunteId" = a.id
       LEFT JOIN note_resources nr ON nr."apunteId" = a.id
     ),
+    search_input AS (
+      SELECT unaccent(${input.q}) AS raw
+    ),
+    prefix_query AS (
+      SELECT
+        si.raw,
+        '%' || lower(si.raw) || '%' AS pattern,
+        nullif(string_agg(clean_term || ':*', ' & '), '') AS value
+      FROM search_input si
+      LEFT JOIN LATERAL (
+        SELECT regexp_replace(term, '[^[:alnum:]]+', '', 'g') AS clean_term
+        FROM regexp_split_to_table(si.raw, '\\s+') AS term
+      ) terms ON char_length(terms.clean_term) >= 3
+      GROUP BY si.raw
+    ),
     query AS (
-      SELECT websearch_to_tsquery('spanish', unaccent(${input.q})) AS value
+      SELECT
+        CASE
+          WHEN pq.value IS NULL THEN NULL
+          ELSE to_tsquery('spanish', pq.value)
+        END AS value,
+        pq.pattern
+      FROM prefix_query pq
     )
     SELECT
       d.id,
@@ -141,16 +164,30 @@ export async function searchApuntes(input: ApunteSearchInput): Promise<ApunteSea
       d.subject_slug AS "subjectSlug",
       d.year_name AS "yearName",
       d.year_slug AS "yearSlug",
-      ts_rank(d.document, q.value) AS rank,
+      (
+        CASE WHEN q.value IS NULL THEN 0 ELSE ts_rank(d.document, q.value) END
+        + CASE WHEN lower(unaccent(d.subject_name)) LIKE q.pattern THEN 2.0 ELSE 0 END
+        + CASE WHEN lower(unaccent(d.title)) LIKE q.pattern THEN 1.5 ELSE 0 END
+        + CASE WHEN lower(unaccent(d.year_name)) LIKE q.pattern THEN 0.75 ELSE 0 END
+        + CASE
+            WHEN lower(unaccent(d.category_text || ' ' || d.resource_text)) LIKE q.pattern THEN 0.5
+            ELSE 0
+          END
+      ) AS rank,
       d."updatedAt"
     FROM documents d
     CROSS JOIN query q
-    WHERE d.document @@ q.value
+    WHERE
+      (q.value IS NOT NULL AND d.document @@ q.value)
+      OR lower(unaccent(d.subject_name)) LIKE q.pattern
+      OR lower(unaccent(d.title)) LIKE q.pattern
+      OR lower(unaccent(d.year_name)) LIKE q.pattern
+      OR lower(unaccent(d.category_text || ' ' || d.resource_text)) LIKE q.pattern
     ORDER BY rank DESC, d."updatedAt" DESC, d.id DESC
     LIMIT ${APUNTE_SEARCH_LIMIT};
   `
 
-  return rows.map((row) => ({
+  return rows.slice(0, APUNTE_SEARCH_LIMIT).map((row) => ({
     id: row.id,
     title: row.title,
     slug: row.slug,

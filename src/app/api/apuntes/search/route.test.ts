@@ -18,11 +18,11 @@ beforeEach(() => {
 describe('GET /api/apuntes/search', () => {
   it('rechaza búsquedas demasiado cortas', async () => {
     const { GET } = await import('./route')
-    const response = await GET(new Request('http://campus.test/api/apuntes/search?q=a'))
+    const response = await GET(new Request('http://campus.test/api/apuntes/search?q=ab'))
     const body = await response.json()
 
     expect(response.status).toBe(400)
-    expect(body).toEqual({ error: 'Escribí al menos 2 caracteres.', items: [] })
+    expect(body).toEqual({ error: 'Escribí al menos 3 caracteres.', items: [] })
     expect(queryRawMock).not.toHaveBeenCalled()
   })
 

@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   if (!parsed.success) {
     const message = q.length > 120
       ? 'Probá con una búsqueda más corta.'
-      : 'Escribí al menos 2 caracteres.'
+      : 'Escribí al menos 3 caracteres.'
 
     return NextResponse.json(
       { error: message, items: [] },
