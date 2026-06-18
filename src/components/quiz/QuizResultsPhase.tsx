@@ -1,9 +1,11 @@
 'use client'
 
 import { RotateCcw } from 'lucide-react'
+import { AnimateIn } from '@/components/ui/AnimateIn'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { cn } from '@/lib/utils'
 import { AnswerSummary } from './AnswerSummary'
+import { RankedProgressCard } from './RankedHistory'
 import { UnitBreakdown } from './UnitBreakdown'
 import { useQuiz } from './QuizProvider'
 
@@ -17,6 +19,11 @@ export function QuizResultsPhase() {
   return (
     <div className="space-y-4">
       <ResultsSummaryCard correctas={correctas} pct={pct} total={total} />
+      {state.mode === 'ranked' ? (
+        <AnimateIn delay={80}>
+          <RankedProgressCard />
+        </AnimateIn>
+      ) : null}
       <UnitBreakdown resultados={resultados} />
       <QuestionReviewList />
     </div>

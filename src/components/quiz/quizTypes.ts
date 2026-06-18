@@ -46,6 +46,34 @@ export interface RankedTopItem {
   durationSeconds: number
 }
 
+export type RankedHistoryTrend = 'improved' | 'declined' | 'equal' | 'first' | 'empty'
+
+export interface RankedHistoryAttemptView {
+  correctAnswers: number
+  totalQuestions: number
+  percentage: number
+  durationSeconds: number
+  finishedAt: string
+}
+
+export interface RankedHistorySummaryView {
+  totalAttempts: number
+  bestPercentage: number
+  bestDurationSeconds: number
+  latestPercentage: number
+  latestDurationSeconds: number
+  changeVsPrevious: number | null
+  trend: RankedHistoryTrend
+  position: number | null
+  message: string
+}
+
+export interface RankedHistory {
+  participantName: string
+  summary: RankedHistorySummaryView
+  attempts: RankedHistoryAttemptView[]
+}
+
 export interface RankedSummary {
   validForRanking: boolean
   invalidReason?: string | null
