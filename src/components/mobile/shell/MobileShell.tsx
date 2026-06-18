@@ -6,7 +6,6 @@ import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type
 import { usePathname, useRouter } from 'next/navigation'
 import {
   Menu,
-  Search,
   ChevronLeft,
   Shield,
   SlidersHorizontal,
@@ -18,6 +17,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAdminSessionContext } from '@/components/admin/AdminSessionProvider'
 import { NotificationBell } from '@/components/changelog/NotificationBell'
+import { GlobalApunteSearch } from '@/components/search/GlobalApunteSearch'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { usePreferences } from '@/hooks/usePreferences'
 import { isYearVisible, isSubjectVisible, type UserPreferences } from '@/lib/preferences'
@@ -338,13 +338,7 @@ function MobileTopbar({ title, subtitle, onBack, onOpenMenu, showNotifications }
         </Link>
 
         <div className="flex shrink-0 items-center gap-1">
-          <Link
-            href="/buscar"
-            aria-label="Buscar apuntes"
-            className="flex size-10 cursor-pointer items-center justify-center rounded-lg border border-white/8 bg-white/[0.03] text-white/66 transition-colors hover:bg-white/7 hover:text-white"
-          >
-            <Search size={17} strokeWidth={2.2} />
-          </Link>
+          <GlobalApunteSearch variant="mobile" />
           {showNotifications ? (
             <NotificationBell target="mobile" />
           ) : null}
