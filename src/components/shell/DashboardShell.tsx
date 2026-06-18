@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
-import { Menu, X, User } from 'lucide-react'
+import { Menu, Search, X, User } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { AdminControls } from '@/components/admin/AdminControls'
@@ -15,6 +16,25 @@ const Mascot = dynamic(() => import('@/components/ui/Mascot').then((module) => m
 const NosotrosModal = dynamic(() =>
   import('@/components/ui/NosotrosModal').then((module) => module.NosotrosModal),
 )
+
+
+function GlobalSearchHeaderLink({ active }: { active: boolean }) {
+  return (
+    <Link
+      href="/buscar"
+      aria-label="Buscar apuntes"
+      className={cn(
+        'absolute left-1/2 top-1/2 hidden h-10 w-[min(360px,32vw)] -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center gap-3 rounded-full border px-4 text-sm font-semibold transition-colors lg:flex',
+        active
+          ? 'border-white/16 bg-white/8 text-white'
+          : 'border-white/10 bg-black/12 text-white/58 hover:bg-white/5 hover:text-white',
+      )}
+    >
+      <Search className="size-4 shrink-0" />
+      <span className="truncate">Buscar apuntes</span>
+    </Link>
+  )
+}
 
 interface DashboardShellProps {
   brand?: ReactNode
@@ -92,7 +112,8 @@ export function DashboardShell({
     <div className={cn('min-h-screen bg-surface-0 text-white', className)}>
       <header className="sticky top-0 z-40 h-[calc(4rem+var(--spacing-safe-top))] pt-safe-top border-b border-white/5 bg-surface-1">
         {resolvedHeaderOverlay}
-        <div className="flex h-full items-center justify-between gap-4 px-6">
+        <div className="relative flex h-full items-center justify-between gap-4 px-6">
+          <GlobalSearchHeaderLink active={pathname === '/buscar'} />
           <div className="flex items-center gap-3">
             <button
               type="button"
