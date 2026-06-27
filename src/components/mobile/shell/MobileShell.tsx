@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAdminSessionContext } from '@/components/admin/AdminSessionProvider'
 import { NotificationBell } from '@/components/changelog/NotificationBell'
+import { GlobalApunteSearch } from '@/components/search/GlobalApunteSearch'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { usePreferences } from '@/hooks/usePreferences'
 import { isYearVisible, isSubjectVisible, type UserPreferences } from '@/lib/preferences'
@@ -336,13 +337,12 @@ function MobileTopbar({ title, subtitle, onBack, onOpenMenu, showNotifications }
           </div>
         </Link>
 
-        {showNotifications ? (
-          <div className="flex size-11 shrink-0 items-center justify-center">
+        <div className="flex shrink-0 items-center gap-1">
+          <GlobalApunteSearch variant="mobile" />
+          {showNotifications ? (
             <NotificationBell target="mobile" />
-          </div>
-        ) : (
-          <div className="size-11 shrink-0" aria-hidden />
-        )}
+          ) : null}
+        </div>
       </div>
     </header>
   )

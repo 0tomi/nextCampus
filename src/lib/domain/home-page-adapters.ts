@@ -53,6 +53,7 @@ export type HomeLatestApunteItem = {
   titulo: string
   slug: string
   createdAt: string
+  updatedAt: string
   subjectSlug: string
   subjectNombre: string
   yearSlug: string
@@ -173,6 +174,7 @@ export function buildHomeLatestApuntes(
       titulo: apunte.titulo,
       slug: apunte.slug,
       createdAt: apunte.createdAt,
+      updatedAt: apunte.updatedAt,
       subjectSlug: apunte.subject.slug,
       subjectNombre: apunte.subject.nombre,
       yearSlug: apunte.subject.year.slug,

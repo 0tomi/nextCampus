@@ -16,6 +16,7 @@ function makeApunte(overrides: Partial<HomeLatestApunte> = {}): HomeLatestApunte
     titulo: 'Parcial 1 resuelto',
     slug: 'parcial-1-resuelto',
     createdAt: new Date('2026-05-20T12:00:00.000Z'),
+    updatedAt: new Date('2026-05-20T12:00:00.000Z'),
     subjectSlug: 'calculo',
     subjectNombre: 'Cálculo',
     yearSlug: 'primer-anio',

@@ -393,7 +393,7 @@ export async function getSubjectPageBySlug(slug: string) {
       },
       _count: { select: { apuntes: true } },
       apuntes: {
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
         take: APUNTES_PAGE_SIZE + 1,
         select: apunteCardSelect,
       },
@@ -538,7 +538,7 @@ export async function getApuntesPage(input: {
 
   const rows = await prisma.apunte.findMany({
     where,
-    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
     take: pageSize + 1,
     ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
     select: apunteCardSelect,
@@ -640,7 +640,7 @@ export function getAdminSubjectBySlug(slug: string) {
         },
       },
       apuntes: {
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
         include: {
           recursos: { orderBy: { orden: 'asc' } },
           categorias: {
@@ -848,12 +848,13 @@ export async function getLatestApuntes() {
   // limitáramos acá, un año podría quedarse sin apuntes en el home solo
   // porque sus apuntes no entran en los más nuevos del campus entero.
   const rows = await prisma.apunte.findMany({
-    orderBy: { createdAt: 'desc' },
+    orderBy: { updatedAt: 'desc' },
     select: {
       id: true,
       titulo: true,
       slug: true,
       createdAt: true,
+      updatedAt: true,
       subject: {
         select: {
           slug: true,
@@ -871,6 +872,7 @@ export async function getLatestApuntes() {
   return rows.map((apunte) => ({
     ...apunte,
     createdAt: apunte.createdAt.toISOString(),
+    updatedAt: apunte.updatedAt.toISOString(),
   }))
 }
 
@@ -887,13 +889,14 @@ export async function getLatestApuntesByYear(yearSlug: string, limit = 6) {
         },
       },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { updatedAt: 'desc' },
     take: limit,
     select: {
       id: true,
       titulo: true,
       slug: true,
       createdAt: true,
+      updatedAt: true,
       subject: {
         select: {
           slug: true,
@@ -912,6 +915,7 @@ export async function getLatestApuntesByYear(yearSlug: string, limit = 6) {
   return rows.map((apunte) => ({
     ...apunte,
     createdAt: apunte.createdAt.toISOString(),
+    updatedAt: apunte.updatedAt.toISOString(),
   }))
 }
 

@@ -10,11 +10,13 @@ import { useAdminSessionContext } from '@/components/admin/AdminSessionProvider'
 import { SignOutButton } from '@/components/admin/SignOutButton'
 import { NotificationBell } from '@/components/changelog/NotificationBell'
 import { CampusHeaderBrand } from '@/components/shell/CampusHeaderBrand'
+import { GlobalApunteSearch } from '@/components/search/GlobalApunteSearch'
 
 const Mascot = dynamic(() => import('@/components/ui/Mascot').then((module) => module.Mascot))
 const NosotrosModal = dynamic(() =>
   import('@/components/ui/NosotrosModal').then((module) => module.NosotrosModal),
 )
+
 
 interface DashboardShellProps {
   brand?: ReactNode
@@ -92,7 +94,8 @@ export function DashboardShell({
     <div className={cn('min-h-screen bg-surface-0 text-white', className)}>
       <header className="sticky top-0 z-40 h-[calc(4rem+var(--spacing-safe-top))] pt-safe-top border-b border-white/5 bg-surface-1">
         {resolvedHeaderOverlay}
-        <div className="flex h-full items-center justify-between gap-4 px-6">
+        <div className="relative flex h-full items-center justify-between gap-4 px-6">
+          <GlobalApunteSearch variant="desktop" />
           <div className="flex items-center gap-3">
             <button
               type="button"

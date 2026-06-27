@@ -16,6 +16,7 @@ function makeApunte(overrides: Partial<YearLatestApunteItem> = {}): YearLatestAp
     titulo: 'Resumen unidad 1',
     slug: 'resumen-unidad-1',
     createdAt: '2026-06-10T12:00:00.000Z',
+    updatedAt: '2026-06-10T12:00:00.000Z',
     subjectSlug: 'calculo',
     subjectNombre: 'Cálculo',
     yearSlug: 'primer-anio',

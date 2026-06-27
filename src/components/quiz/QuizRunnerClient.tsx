@@ -6,6 +6,7 @@ import { QuizProvider, useQuiz } from './QuizProvider'
 import { QuizReadyPhase } from './QuizReadyPhase'
 import { QuizResultsPhase } from './QuizResultsPhase'
 import { QuizRunningPhase } from './QuizRunningPhase'
+import { RankedHistoryModal } from './RankedHistory'
 import type { BancoInfo } from './quizTypes'
 
 export function QuizRunnerClient({
@@ -32,6 +33,7 @@ export function QuizRunnerClient({
     <QuizProvider bancos={bancos} subjectSlug={subjectSlug} yearId={yearId}>
       <QuizHeader subjectNombre={subjectNombre} />
       <QuizPhaseSwitch />
+      <RankedHistoryModal />
     </QuizProvider>
   )
 }

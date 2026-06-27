@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { CONTROL, CONTROL_ACTIVE } from './quizStyles'
 import { allowOnlyPositiveIntegerKeys, formatQuizTime } from './quizFormat'
 import { isRankedBankEligible } from '@/lib/domain/ranked-quiz'
+import { RankedHistoryLink } from './RankedHistory'
 import { useQuiz } from './QuizProvider'
 import type { BancoInfo, RankedTopItem } from './quizTypes'
 
@@ -234,7 +235,12 @@ function RankedInfoSection() {
         </div>
       </div>
       {rankedSelectedBank && !eligible ? <p className="border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">Este banco todavía no llega al mínimo para ranked.</p> : null}
-      {rankedSelectedBank ? <RankedTop items={state.rankedTop} loading={state.rankedTopLoading} /> : null}
+      {rankedSelectedBank ? (
+        <>
+          <RankedTop items={state.rankedTop} loading={state.rankedTopLoading} />
+          <RankedHistoryLink />
+        </>
+      ) : null}
     </section>
   )
 }

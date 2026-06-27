@@ -266,18 +266,21 @@ opcional y guiado por evidencia.
 
 ### Acceso
 
-- Botón con texto accesible “Buscar apuntes” en el shell de escritorio.
-- Acción equivalente en la navegación mobile.
-- Página pública compartida: `/buscar?q=<consulta>`.
+- Botón con texto accesible “Buscar apuntes” en el centro del shell de escritorio.
+- Acción equivalente en mobile, ubicada junto a la campana de notificaciones.
+- La búsqueda se despliega desde la propia barra superior, sin página exclusiva.
 
-No cambia ningún slug existente. La página de resultados es responsive; no
-se necesitan dos implementaciones de la lógica.
+No cambia ningún slug existente. La UI comparte la misma lógica de resultados
+en desktop y mobile, ajustando solo el punto de entrada del shell.
 
 ### Wireframe
 
 ```text
-Buscar apuntes
-[ parcial de algoritmos                         ] [Buscar]
+Navbar
+                [ 🔎 Buscar apuntes ]
+
+Overlay de búsqueda
+[ Buscar apuntes por tema o materia             ]
 
 10 resultados
 

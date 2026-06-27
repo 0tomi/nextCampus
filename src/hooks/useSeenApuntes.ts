@@ -52,7 +52,6 @@ export function useSeenApuntes({
   const nodesRef = useRef(new Map<string, HTMLElement>())
   const observerRef = useRef<IntersectionObserver | null>(null)
   const viewportTimersRef = useRef(new Map<string, number>())
-  const hoverTimersRef = useRef(new Map<string, number>())
   const readyRef = useRef(false)
   const seenSetRef = useRef(new Set<string>())
   const seenSet = useMemo(() => new Set(state.seenIds), [state.seenIds])
@@ -83,19 +82,11 @@ export function useSeenApuntes({
 
   const startHoverTimer = useCallback((id: string) => {
     if (!markOnHover || !state.ready || seenSet.has(id) || !supportsDesktopHover()) return
-    const existing = hoverTimersRef.current.get(id)
-    if (existing) window.clearTimeout(existing)
-    const timer = window.setTimeout(() => {
-      hoverTimersRef.current.delete(id)
-      markSeen(id)
-    }, 800)
-    hoverTimersRef.current.set(id, timer)
+    markSeen(id)
   }, [markOnHover, markSeen, seenSet, state.ready])
 
   const clearHoverTimer = useCallback((id: string) => {
-    const timer = hoverTimersRef.current.get(id)
-    if (timer) window.clearTimeout(timer)
-    hoverTimersRef.current.delete(id)
+    void id
   }, [])
 
   useEffect(() => {
@@ -149,14 +140,6 @@ export function useSeenApuntes({
       viewportTimers.clear()
     }
   }, [markOnViewport, markSeen, seenSet, state.ready])
-
-  useEffect(() => {
-    const hoverTimers = hoverTimersRef.current
-    return () => {
-      hoverTimers.forEach((timer) => window.clearTimeout(timer))
-      hoverTimers.clear()
-    }
-  }, [])
 
   return { isNew, registerNode, startHoverTimer, clearHoverTimer }
 }

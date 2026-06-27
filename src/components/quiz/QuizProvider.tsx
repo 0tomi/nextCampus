@@ -4,17 +4,21 @@ import { createContext, use, useCallback, useEffect, useMemo, useReducer } from 
 import type { ReactNode } from 'react'
 import { getRankedQuestionCount, isRankedBankEligible, RANKED_NAME_STORAGE_KEY, validateParticipantName, type RankedInvalidationReason } from '@/lib/domain/ranked-quiz'
 import { createInitialQuizState, quizReducer, type QuizState } from './quizReducer'
+import { fetchRankedHistory } from './rankedHistoryClient'
 import type { BancoInfo, PublicQuestion, RankedSummary, RankedTopItem, Resultado, UserAnswer } from './quizTypes'
 import { useExamTimer } from './useExamTimer'
 import { useQuizKeyboardShortcuts } from './useQuizKeyboardShortcuts'
 
 type QuizActions = {
   closeExitDialog: () => void
+  closeHistory: () => void
   closeSubmitDialog: () => void
   enterRanked: () => void
   finish: () => void
+  loadHistory: (name: string) => void
   next: () => void
   openExitDialog: () => void
+  openHistory: () => void
   openSubmitDialog: () => void
   previous: () => void
   reset: () => void
@@ -139,6 +143,26 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
     [subjectSlug],
   )
 
+  // Progreso con la identidad guardada: alimenta la tarjeta del resultado y la
+  // vista por defecto del modal. La consulta de "otro nombre" vive local en el
+  // modal y no toca este estado, así la tarjeta nunca muestra datos ajenos.
+  const loadRankedHistory = useCallback(
+    async (name: string) => {
+      const bankId = state.selectedBancos[0]
+      const lookupName = name.trim()
+      if (!bankId || !lookupName) return
+
+      dispatch({ type: 'RANKED_HISTORY_REQUEST', name: lookupName })
+      try {
+        const history = await fetchRankedHistory(subjectSlug, bankId, lookupName)
+        dispatch({ type: 'RANKED_HISTORY_SUCCESS', history })
+      } catch {
+        dispatch({ type: 'RANKED_HISTORY_FAILURE' })
+      }
+    },
+    [state.selectedBancos, subjectSlug],
+  )
+
   const invalidateRankedAttempt = useCallback(
     (reason: RankedInvalidationReason, delivery: 'fetch' | 'beacon' = 'fetch') => {
       const attemptId = state.rankedAttemptId
@@ -196,6 +220,14 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
       void document.exitFullscreen()
     }
   }, [state.mode, state.phase])
+
+  // Al terminar un ranked, traemos el progreso con el nombre guardado para
+  // mostrar la tarjeta de comparación sin pedir otra acción.
+  useEffect(() => {
+    if (state.phase === 'done' && state.mode === 'ranked' && state.rankedName) {
+      void loadRankedHistory(state.rankedName)
+    }
+  }, [loadRankedHistory, state.mode, state.phase, state.rankedName])
 
   const start = useCallback(async () => {
     if (state.selectedBancos.length === 0) {
@@ -358,14 +390,26 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
     if (shouldRefreshTop) void loadRankedTop(bankId)
   }, [invalidateRankedAttempt, loadRankedTop, state.mode, state.phase, state.selectedBancos])
 
+  const openRankedHistory = useCallback(() => {
+    dispatch({ type: 'OPEN_HISTORY' })
+    // Recargamos con el banco y nombre actuales; mantenemos los datos previos
+    // visibles mientras refresca para no parpadear a un esqueleto.
+    if (!state.rankedHistoryLoading) {
+      void loadRankedHistory(state.rankedHistoryName || state.rankedName)
+    }
+  }, [loadRankedHistory, state.rankedHistoryLoading, state.rankedHistoryName, state.rankedName])
+
   const actions = useMemo<QuizActions>(
     () => ({
       closeExitDialog: () => dispatch({ type: 'CLOSE_EXIT_DIALOG' }),
+      closeHistory: () => dispatch({ type: 'CLOSE_HISTORY' }),
       closeSubmitDialog: () => dispatch({ type: 'CLOSE_SUBMIT_DIALOG' }),
       enterRanked: () => void enterRanked(),
       finish: () => void finish(),
+      loadHistory: (name) => void loadRankedHistory(name),
       next,
       openExitDialog: () => dispatch({ type: 'OPEN_EXIT_DIALOG' }),
+      openHistory: openRankedHistory,
       openSubmitDialog: () => dispatch({ type: 'OPEN_SUBMIT_DIALOG' }),
       previous: () => dispatch({ type: 'PREV_INDEX' }),
       reset,
@@ -386,7 +430,7 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
       toggleUnit: (nombre) => dispatch({ type: 'TOGGLE_UNIT', nombre }),
       verify: () => void verify(),
     }),
-    [enterRanked, finish, loadRankedTop, next, reset, setAnswer, start, state.mode, state.selectedBancos, verify],
+    [enterRanked, finish, loadRankedHistory, loadRankedTop, next, openRankedHistory, reset, setAnswer, start, state.mode, state.selectedBancos, verify],
   )
 
   useExamTimer({

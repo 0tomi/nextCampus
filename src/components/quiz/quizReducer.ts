@@ -1,4 +1,4 @@
-import type { PublicQuestion, QuizMode, QuizPhase, RankedSummary, RankedTopItem, Resultado, UserAnswer } from './quizTypes'
+import type { PublicQuestion, QuizMode, QuizPhase, RankedHistory, RankedSummary, RankedTopItem, Resultado, UserAnswer } from './quizTypes'
 
 export type QuizState = {
   phase: QuizPhase
@@ -23,6 +23,11 @@ export type QuizState = {
   rankedSummary: RankedSummary | null
   rankedTop: RankedTopItem[]
   rankedTopLoading: boolean
+  rankedHistory: RankedHistory | null
+  rankedHistoryName: string
+  rankedHistoryLoading: boolean
+  rankedHistoryError: boolean
+  showHistory: boolean
 }
 
 export type QuizAction =
@@ -43,6 +48,11 @@ export type QuizAction =
   | { type: 'RANKED_TOP_REQUEST' }
   | { type: 'RANKED_TOP_SUCCESS'; items: RankedTopItem[] }
   | { type: 'RANKED_TOP_FAILURE' }
+  | { type: 'RANKED_HISTORY_REQUEST'; name: string }
+  | { type: 'RANKED_HISTORY_SUCCESS'; history: RankedHistory }
+  | { type: 'RANKED_HISTORY_FAILURE' }
+  | { type: 'OPEN_HISTORY' }
+  | { type: 'CLOSE_HISTORY' }
   | { type: 'VERIFY_REQUEST' }
   | { type: 'VERIFY_SUCCESS'; resultado: Resultado }
   | { type: 'FINISH_REQUEST' }
@@ -82,6 +92,11 @@ export function createInitialQuizState(defaultBancoIds: string[]): QuizState {
     rankedSummary: null,
     rankedTop: [],
     rankedTopLoading: false,
+    rankedHistory: null,
+    rankedHistoryName: '',
+    rankedHistoryLoading: false,
+    rankedHistoryError: false,
+    showHistory: false,
   }
 }
 
@@ -175,6 +190,16 @@ export function quizReducer(state: QuizState, action: QuizAction): QuizState {
       return { ...state, rankedTop: action.items, rankedTopLoading: false }
     case 'RANKED_TOP_FAILURE':
       return { ...state, rankedTop: [], rankedTopLoading: false }
+    case 'RANKED_HISTORY_REQUEST':
+      return { ...state, rankedHistoryName: action.name, rankedHistoryLoading: true, rankedHistoryError: false }
+    case 'RANKED_HISTORY_SUCCESS':
+      return { ...state, rankedHistory: action.history, rankedHistoryLoading: false, rankedHistoryError: false }
+    case 'RANKED_HISTORY_FAILURE':
+      return { ...state, rankedHistory: null, rankedHistoryLoading: false, rankedHistoryError: true }
+    case 'OPEN_HISTORY':
+      return { ...state, showHistory: true }
+    case 'CLOSE_HISTORY':
+      return { ...state, showHistory: false }
     case 'VERIFY_SUCCESS':
       return {
         ...state,
@@ -228,6 +253,11 @@ export function quizReducer(state: QuizState, action: QuizAction): QuizState {
         rankedAttemptId: null,
         rankedInvalidated: false,
         rankedSummary: null,
+        rankedHistory: null,
+        rankedHistoryName: '',
+        rankedHistoryLoading: false,
+        rankedHistoryError: false,
+        showHistory: false,
       }
   }
 }
