@@ -10,9 +10,9 @@ import { eventDateToLocal } from '@/lib/utils'
 import type { CommissionOption } from '@/lib/commission-preferences'
 import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import {
-  PERIODO_META,
   PERIODO_TONE_BG,
   type PeriodoCalendario,
+  type PeriodoTone,
 } from '@/lib/periodos'
 
 /** "YYYY-MM-DD" (o ISO) → Date local. Evita el off-by-one de `new Date(string)`. */
@@ -443,7 +443,7 @@ function DayButton({
   // el día NO está seleccionado (ahí manda el accent).
   const periodoBg =
     cobertura && !isSelected
-      ? PERIODO_TONE_BG[PERIODO_META[cobertura.periodo.categoria].tone]
+      ? PERIODO_TONE_BG[cobertura.periodo.categoria.tone as PeriodoTone] || PERIODO_TONE_BG.sky
       : null
 
   return (
@@ -500,7 +500,9 @@ function EventDots({ dayEvents, isSelected }: { dayEvents: MobileCalendarEvent[]
 
 function CalendarLegend({ periodos }: { periodos: readonly PeriodoCalendario[] }) {
   // Solo mostramos las categorías de período que realmente hay cargadas.
-  const categoriasPresentes = [...new Set(periodos.map((p) => p.categoria))]
+  const categoriasPresentes = Array.from(
+    new Map(periodos.map((p) => [p.categoria.id, p.categoria])).values()
+  )
 
   return (
     <div
@@ -520,12 +522,12 @@ function CalendarLegend({ periodos }: { periodos: readonly PeriodoCalendario[] }
         </span>
       ))}
       {categoriasPresentes.map((categoria) => (
-        <span key={categoria} className="inline-flex items-center gap-1.5">
+        <span key={categoria.id} className="inline-flex items-center gap-1.5">
           <span
             className="h-1.5 w-3 rounded-[2px]"
-            style={{ background: PERIODO_TONE_BG[PERIODO_META[categoria].tone] }}
+            style={{ background: PERIODO_TONE_BG[categoria.tone as PeriodoTone] || PERIODO_TONE_BG.sky }}
           />
-          {PERIODO_META[categoria].label}
+          {categoria.label}
         </span>
       ))}
     </div>
@@ -567,10 +569,10 @@ function MobileCalendarEventList({
             <div
               key={periodo.id}
               className="flex items-center gap-2 rounded-[10px] px-3 py-2 text-[12.5px] font-semibold text-white/85"
-              style={{ background: PERIODO_TONE_BG[PERIODO_META[periodo.categoria].tone] }}
+              style={{ background: PERIODO_TONE_BG[periodo.categoria.tone as PeriodoTone] || PERIODO_TONE_BG.sky }}
             >
               <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/55">
-                {PERIODO_META[periodo.categoria].label}
+                {periodo.categoria.label}
               </span>
               <span className="truncate">{periodo.titulo}</span>
             </div>

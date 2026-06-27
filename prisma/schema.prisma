@@ -233,18 +233,22 @@ model Evento {
   @@index([fecha, hora])
 }
 
-/// Categoría de período académico. Define el color por código (ver src/lib/periodos.ts).
-/// Expandible para el resto del calendario FCYT (feriados, inscripciones, etc.).
-enum CategoriaPeriodo {
-  SUSPENSION_CLASES
-  MESAS_EXAMEN
+/// Categoría de período académico. Define el color y la etiqueta amigable.
+model CategoriaPeriodo {
+  id        String             @id
+  label     String             @unique
+  tone      String             // 'sky' | 'yellow' | 'emerald' | 'rose' | 'violet' | 'orange'
+  periodos  PeriodoAcademico[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
 }
 
 /// Período académico de la facultad (global, no cuelga de ninguna materia).
 /// Se renderiza pintando el fondo de los días del calendario, no como evento.
 model PeriodoAcademico {
   id              String           @id @default(cuid())
-  categoria       CategoriaPeriodo
+  categoriaId     String
+  categoria       CategoriaPeriodo @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
   titulo          String
   /// Solo fecha (sin hora). Medianoche UTC, igual que Evento.fecha.
   fechaInicio     DateTime         @db.Date
@@ -257,6 +261,7 @@ model PeriodoAcademico {
 
   @@index([fechaInicio, fechaFin])
   @@index([createdByUserId])
+  @@index([categoriaId])
 }
 
 enum RankedQuizAttemptStatus {

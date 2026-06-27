@@ -3,6 +3,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 import type { Prisma } from '../../prisma/generated/client/client'
 import { prisma } from './prisma'
 import { countSubjectQuizBanks } from './storage'
+import { isPeriodoTone } from './periodos'
 
 // Una fecha "calendario" (sin hora) no es un instante: serializarla como Date
 // arrastra el bug de zona horaria (medianoche UTC se ve como el día anterior en
@@ -693,7 +694,14 @@ export async function getPeriodos() {
     orderBy: { fechaInicio: 'asc' },
     select: {
       id: true,
-      categoria: true,
+      categoriaId: true,
+      categoria: {
+        select: {
+          id: true,
+          label: true,
+          tone: true,
+        },
+      },
       titulo: true,
       fechaInicio: true,
       fechaFin: true,
@@ -701,8 +709,32 @@ export async function getPeriodos() {
   })
   return rows.map((row) => ({
     ...row,
+    categoria: {
+      ...row.categoria,
+      tone: isPeriodoTone(row.categoria.tone) ? row.categoria.tone : 'sky',
+    },
     fechaInicio: toDateKey(row.fechaInicio),
     fechaFin: toDateKey(row.fechaFin),
+  }))
+}
+
+// Categorías de períodos académicos ordenadas por etiqueta.
+export async function getCategoriasPeriodo() {
+  'use cache'
+  cacheTag(TAGS.periodos)
+  cacheLife({ revalidate: 3600 })
+
+  const rows = await prisma.categoriaPeriodo.findMany({
+    orderBy: { label: 'asc' },
+    select: {
+      id: true,
+      label: true,
+      tone: true,
+    },
+  })
+  return rows.map((row) => ({
+    ...row,
+    tone: isPeriodoTone(row.tone) ? row.tone : 'sky',
   }))
 }
 

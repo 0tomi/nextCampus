@@ -2,7 +2,7 @@
 
 import { Sheet } from '@/components/ui/Sheet'
 import { eventDateToLocal } from '@/lib/utils'
-import { PERIODO_META, type PeriodoCalendario } from '@/lib/periodos'
+import { type PeriodoCalendario } from '@/lib/periodos'
 
 function formatRango(periodo: PeriodoCalendario): string {
   const inicio = eventDateToLocal(periodo.fechaInicio).toLocaleDateString('es-AR', {
@@ -31,7 +31,7 @@ export function PeriodoDetailSheet({
   periodo: PeriodoCalendario | null
   onClose: () => void
 }) {
-  const meta = periodo ? PERIODO_META[periodo.categoria] : null
+  const meta = periodo ? periodo.categoria : null
 
   return (
     <Sheet open={Boolean(periodo)} onClose={onClose} title="Período del calendario">

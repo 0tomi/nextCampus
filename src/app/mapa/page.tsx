@@ -11,6 +11,7 @@ import { MapaCorrelativas } from '@/components/mapa/MapaCorrelativas';
 import { MapaCorrelativasMobile } from '@/components/mapa/MapaCorrelativasMobile';
 import { MapaSidebar } from '@/components/mapa/MapaSidebar';
 import { CampusHeaderBrand } from '@/components/shell/CampusHeaderBrand';
+import { InstallPWATopbarButton } from '@/components/pwa/InstallPWA';
 
 export const metadata: Metadata = {
   title: 'Mapa de correlativas | NextCampus',
@@ -34,13 +35,16 @@ export default async function MapaPage() {
       <DashboardShell
         brand={<DashboardBrand />}
         topbar={
-          <Link
-            href="/admin"
-            className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-          >
-            <Shield className="size-4" />
-            Admin
-          </Link>
+          <div className="flex items-center gap-2">
+            <InstallPWATopbarButton />
+            <Link
+              href="/admin"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              <Shield className="size-4" />
+              Admin
+            </Link>
+          </div>
         }
         sidebar={
           <Sidebar
@@ -96,13 +100,16 @@ export default async function MapaPage() {
         <DashboardShell
           brand={<DashboardBrand />}
           topbar={
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-            >
-              <Shield className="size-4" />
-              Admin
-            </Link>
+            <div className="flex items-center gap-2">
+              <InstallPWATopbarButton />
+              <Link
+                href="/admin"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+              >
+                <Shield className="size-4" />
+                Admin
+              </Link>
+            </div>
           }
           sidebar={
             <MapaSidebar />

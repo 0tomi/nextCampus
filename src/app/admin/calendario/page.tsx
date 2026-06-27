@@ -1,10 +1,13 @@
 import { requireAcademicManager } from '@/lib/auth'
-import { getPeriodos } from '@/lib/queries'
+import { getPeriodos, getCategoriasPeriodo } from '@/lib/queries'
 import { PeriodoManager } from '@/components/admin/PeriodoManager'
 
 export default async function AdminCalendarioPage() {
   await requireAcademicManager()
-  const periodos = await getPeriodos()
+  const [periodos, categorias] = await Promise.all([
+    getPeriodos(),
+    getCategoriasPeriodo(),
+  ])
 
   return (
     <div className="mx-auto w-full max-w-3xl">
@@ -16,7 +19,8 @@ export default async function AdminCalendarioPage() {
         </p>
       </div>
 
-      <PeriodoManager periodos={periodos} />
+      <PeriodoManager periodos={periodos} categorias={categorias} />
     </div>
   )
 }
+

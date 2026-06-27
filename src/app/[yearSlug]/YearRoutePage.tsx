@@ -10,6 +10,7 @@ import { DarkCard } from '@/components/ui/DarkCard'
 import { YearLatestApuntes } from '@/components/year/YearLatestApuntes'
 import { YearOverviewEvents } from '@/components/year/YearOverviewEvents'
 import { YearResourceLinks } from '@/components/year/YearResourceLinks'
+import { InstallPWATopbarButton } from '@/components/pwa/InstallPWA'
 import { buildYearSidebarItems } from '@/lib/domain/year-page-adapters'
 import { formatDescription } from '@/lib/text'
 import { getYearColorClasses } from '@/lib/yearColors'
@@ -90,6 +91,7 @@ function YearDesktopView({
   return (
     <div className="hidden lg:block" style={colors.style}>
       <DashboardShell
+        topbar={<YearTopbar careerName={year.career.nombre} yearName={year.nombre} />}
         sidebar={
           <Sidebar
             eyebrow="Navegación"
@@ -119,6 +121,20 @@ function YearDesktopView({
   )
 }
 
+function YearTopbar({ careerName, yearName }: { careerName: string; yearName: string }) {
+  return (
+    <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/42">
+        <Link href="/" className="transition-colors hover:text-white/72">
+          {careerName}
+        </Link>
+        <span>/</span>
+        <span className="text-white/72">{yearName}</span>
+      </div>
+      <InstallPWATopbarButton />
+    </div>
+  )
+}
 function YearHero({ year }: { year: YearRouteContext['year'] }) {
   return (
     <section className="space-y-5">
