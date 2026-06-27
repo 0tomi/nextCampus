@@ -19,6 +19,7 @@ export const AUDIT_ACTIONS = {
   PERIODO_CREATED: 'PERIODO_CREATED',
   PERIODO_UPDATED: 'PERIODO_UPDATED',
   PERIODO_DELETED: 'PERIODO_DELETED',
+  PERIODO_CATEGORIA_CREATED: 'PERIODO_CATEGORIA_CREATED',
 
   YEAR_CREATED: 'YEAR_CREATED',
   YEAR_UPDATED: 'YEAR_UPDATED',
@@ -51,6 +52,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   [AUDIT_ACTIONS.PERIODO_CREATED]: 'Período académico creado',
   [AUDIT_ACTIONS.PERIODO_UPDATED]: 'Período académico actualizado',
   [AUDIT_ACTIONS.PERIODO_DELETED]: 'Período académico eliminado',
+  [AUDIT_ACTIONS.PERIODO_CATEGORIA_CREATED]: 'Tipo de período creado',
   [AUDIT_ACTIONS.YEAR_CREATED]: 'Año creado',
   [AUDIT_ACTIONS.YEAR_UPDATED]: 'Año actualizado',
   [AUDIT_ACTIONS.YEAR_DELETED]: 'Año eliminado',
@@ -66,6 +68,7 @@ export type AuditEntityType =
   | 'apunte'
   | 'evento'
   | 'periodo'
+  | 'periodoCategoria'
   | 'year'
   | 'user'
   | 'quizBank'

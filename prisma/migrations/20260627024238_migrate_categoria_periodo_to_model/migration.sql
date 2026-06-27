@@ -34,3 +34,6 @@ ALTER TABLE "PeriodoAcademico" ADD CONSTRAINT "PeriodoAcademico_categoriaId_fkey
 
 -- Enable Row Level Security
 ALTER TABLE "CategoriaPeriodo" ENABLE ROW LEVEL SECURITY;
+
+-- AlterTable: drop default from updatedAt to let Prisma handle it
+ALTER TABLE "CategoriaPeriodo" ALTER COLUMN "updatedAt" DROP DEFAULT;

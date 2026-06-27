@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAcademicManager } from '@/lib/auth'
 import { queryTags } from '@/lib/queries'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
-import { PERIODO_TONES } from '@/lib/periodos'
+import { PERIODO_TONES, type CategoriaPeriodoDto, type PeriodoTone } from '@/lib/periodos'
 import { revalidateTag, ActionInputError, fechaToDbDate } from './shared'
 
 const periodoSchema = z
@@ -158,10 +158,10 @@ export async function deletePeriodo(formData: FormData): Promise<void> {
 }
 
 export async function createCategoriaAction(
-  _prev: PeriodoActionState & { data?: { id: string; label: string; tone: string } },
+  _prev: PeriodoActionState & { data?: CategoriaPeriodoDto },
   formData: FormData,
-): Promise<PeriodoActionState & { data?: { id: string; label: string; tone: string } }> {
-  await requireAcademicManager()
+): Promise<PeriodoActionState & { data?: CategoriaPeriodoDto }> {
+  const admin = await requireAcademicManager()
   try {
     const data = categoriaSchema.parse({
       label: formData.get('label'),
@@ -194,13 +194,24 @@ export async function createCategoriaAction(
 
     revalidatePeriodos()
 
+    await recordAudit({
+      userId: admin.id,
+      action: AUDIT_ACTIONS.PERIODO_CATEGORIA_CREATED,
+      entityType: 'periodoCategoria',
+      entityId: categoria.id,
+      detail: {
+        label: categoria.label,
+        tone: categoria.tone,
+      },
+    })
+
     return {
       ok: true,
       message: 'Tipo de período creado correctamente.',
       data: {
         id: categoria.id,
         label: categoria.label,
-        tone: categoria.tone,
+        tone: categoria.tone as PeriodoTone,
       },
     }
   } catch (err) {

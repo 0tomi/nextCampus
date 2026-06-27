@@ -7,7 +7,11 @@ export type PeriodoTone = (typeof PERIODO_TONES)[number]
 export interface CategoriaPeriodoDto {
   id: string
   label: string
-  tone: string
+  tone: PeriodoTone
+}
+
+export function isPeriodoTone(value: unknown): value is PeriodoTone {
+  return typeof value === 'string' && (PERIODO_TONES as readonly string[]).includes(value)
 }
 
 // Color de fondo (rgba) por tono. Una sola fuente para FullCalendar y mobile.
