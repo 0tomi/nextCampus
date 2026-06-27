@@ -2,20 +2,22 @@
 
 import { useActionState, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { AlertDialog } from '@/components/ui/AlertDialog'
 import {
   createPeriodoAction,
   updatePeriodoAction,
   deletePeriodo,
+  createCategoriaAction,
   type PeriodoActionState,
 } from '@/app/admin/actions/periodos'
 import {
-  CATEGORIAS_PERIODO,
-  PERIODO_META,
+  PERIODO_TONES,
   PERIODO_TONE_BG,
   type PeriodoCalendario,
+  type CategoriaPeriodoDto,
+  type PeriodoTone,
 } from '@/lib/periodos'
 import { eventDateToLocal } from '@/lib/utils'
 
@@ -31,15 +33,21 @@ function formatRange(fechaInicio: string, fechaFin: string): string {
 
 interface PeriodoManagerProps {
   periodos: readonly PeriodoCalendario[]
+  categorias: readonly CategoriaPeriodoDto[]
 }
 
-export function PeriodoManager({ periodos }: PeriodoManagerProps) {
+export function PeriodoManager({ periodos, categorias }: PeriodoManagerProps) {
   const [editing, setEditing] = useState<PeriodoCalendario | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [localCategorias, setLocalCategorias] = useState<readonly CategoriaPeriodoDto[]>(categorias)
 
   const closeForm = () => {
     setEditing(null)
     setShowForm(false)
+  }
+
+  const handleNewCategoriaAdded = (nuevaCat: CategoriaPeriodoDto) => {
+    setLocalCategorias((prev) => [...prev, nuevaCat].sort((a, b) => a.label.localeCompare(b.label)))
   }
 
   if (showForm) {
@@ -51,8 +59,10 @@ export function PeriodoManager({ periodos }: PeriodoManagerProps) {
         <PeriodoForm
           key={editing?.id ?? 'new'}
           periodo={editing}
+          categorias={localCategorias}
           onDone={closeForm}
           onCancel={closeForm}
+          onCategoriaAdded={handleNewCategoriaAdded}
         />
       </div>
     )
@@ -124,7 +134,7 @@ function PeriodoRow({
   const router = useRouter()
   const [isDeleting, startTransition] = useTransition()
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const meta = PERIODO_META[periodo.categoria]
+  const meta = periodo.categoria
 
   const handleDelete = () => {
     setConfirmOpen(false)
@@ -146,7 +156,7 @@ function PeriodoRow({
       <span
         aria-hidden="true"
         className="h-9 w-1.5 shrink-0 rounded-full"
-        style={{ background: PERIODO_TONE_BG[meta.tone] }}
+        style={{ background: PERIODO_TONE_BG[meta.tone as PeriodoTone] || PERIODO_TONE_BG.sky }}
       />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold text-white">{periodo.titulo}</p>
@@ -187,14 +197,26 @@ function PeriodoRow({
 
 function PeriodoForm({
   periodo,
+  categorias,
   onDone,
   onCancel,
+  onCategoriaAdded,
 }: {
   periodo: PeriodoCalendario | null
+  categorias: readonly CategoriaPeriodoDto[]
   onDone: () => void
   onCancel: () => void
+  onCategoriaAdded: (nuevaCat: CategoriaPeriodoDto) => void
 }) {
   const router = useRouter()
+  const [selectedCategoriaId, setSelectedCategoriaId] = useState(periodo?.categoriaId ?? '')
+  const [showNewCatForm, setShowNewCatForm] = useState(false)
+
+  // Creador inline de categorías
+  const [newCatLabel, setNewCatLabel] = useState('')
+  const [newCatTone, setNewCatTone] = useState<PeriodoTone>('sky')
+  const [catPending, startCatTransition] = useTransition()
+
   const action = periodo ? updatePeriodoAction : createPeriodoAction
   const submit = async (prev: PeriodoActionState, formData: FormData) => {
     const next = await action(prev, formData)
@@ -209,98 +231,212 @@ function PeriodoForm({
   }
   const [state, formAction, pending] = useActionState(submit, emptyState)
 
+  const handleSaveCategoria = () => {
+    if (!newCatLabel.trim()) {
+      toast.error('Poné un nombre para el tipo de período.')
+      return
+    }
+    startCatTransition(async () => {
+      const formData = new FormData()
+      formData.append('label', newCatLabel)
+      formData.append('tone', newCatTone)
+      const res = await createCategoriaAction({ ok: false, message: '' }, formData)
+
+      if (res.ok && res.data) {
+        toast.success(res.message)
+        onCategoriaAdded(res.data)
+        setSelectedCategoriaId(res.data.id)
+        setShowNewCatForm(false)
+        setNewCatLabel('')
+        setNewCatTone('sky')
+      } else {
+        toast.error(res.message || 'No pudimos crear el tipo de período.')
+      }
+    })
+  }
+
   return (
-    <form action={formAction} className="space-y-4">
-      {periodo ? <input type="hidden" name="id" value={periodo.id} /> : null}
+    <div className="space-y-4">
+      {/* Subformulario Inline para crear nueva categoría */}
+      {showNewCatForm ? (
+        <div className="rounded border border-white/10 bg-surface-0 p-4 space-y-3">
+          <h3 className="text-xs font-black tracking-tight text-white uppercase">
+            Crear nuevo tipo de período
+          </h3>
+          <div className="space-y-1">
+            <label htmlFor="new-cat-label" className="block text-[11px] font-semibold uppercase tracking-widest text-white/40">
+              Nombre del tipo
+            </label>
+            <input
+              id="new-cat-label"
+              type="text"
+              value={newCatLabel}
+              onChange={(e) => setNewCatLabel(e.target.value)}
+              placeholder="Ej: Feriado puente, Inscripciones, etc."
+              className="w-full rounded border border-white/10 bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
+            />
+          </div>
 
-      <div className="space-y-1">
-        <label htmlFor="periodo-categoria" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
-          Tipo de período
-        </label>
-        <select
-          id="periodo-categoria"
-          name="categoria"
-          required
-          defaultValue={periodo?.categoria ?? ''}
-          className="w-full cursor-pointer rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
-        >
-          <option value="" disabled>
-            Seleccioná un tipo
-          </option>
-          {CATEGORIAS_PERIODO.map((categoria) => (
-            <option key={categoria} value={categoria}>
-              {PERIODO_META[categoria].label}
-            </option>
-          ))}
-        </select>
-      </div>
+          <div className="space-y-1.5">
+            <span className="block text-[11px] font-semibold uppercase tracking-widest text-white/40">
+              Color asignado
+            </span>
+            <div className="flex flex-wrap gap-2.5">
+              {PERIODO_TONES.map((tone) => {
+                const isSelected = newCatTone === tone
+                return (
+                  <button
+                    key={tone}
+                    type="button"
+                    onClick={() => setNewCatTone(tone)}
+                    className={`group relative flex size-7 cursor-pointer items-center justify-center rounded-full border transition-all duration-[120ms] ${
+                      isSelected
+                        ? 'border-white bg-white/15 scale-110 shadow-lg'
+                        : 'border-white/10 bg-transparent hover:border-white/30 hover:scale-105'
+                    }`}
+                  >
+                    <span
+                      className="size-3.5 rounded-full"
+                      style={{ background: PERIODO_TONE_BG[tone] }}
+                    />
+                    {isSelected && (
+                      <span className="absolute inset-0 flex items-center justify-center text-white">
+                        <Check className="size-3" />
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
 
-      <div className="space-y-1">
-        <label htmlFor="periodo-titulo" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
-          Título
-        </label>
-        <input
-          id="periodo-titulo"
-          type="text"
-          name="titulo"
-          required
-          defaultValue={periodo?.titulo ?? ''}
-          placeholder="Ej: Mesas de examen de mayo"
-          className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <label htmlFor="periodo-inicio" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
-            Desde
-          </label>
-          <input
-            id="periodo-inicio"
-            type="date"
-            name="fechaInicio"
-            required
-            defaultValue={periodo?.fechaInicio ?? ''}
-            className="w-full cursor-pointer rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
-          />
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              disabled={catPending}
+              onClick={() => {
+                setShowNewCatForm(false)
+                setSelectedCategoriaId('')
+              }}
+              className="cursor-pointer rounded border border-white/10 px-3 py-1.5 text-xs text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              disabled={catPending}
+              onClick={handleSaveCategoria}
+              className="cursor-pointer rounded bg-white px-3 py-1.5 text-xs font-semibold text-black transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {catPending ? 'Guardando...' : 'Guardar tipo'}
+            </button>
+          </div>
         </div>
-        <div className="space-y-1">
-          <label htmlFor="periodo-fin" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
-            Hasta
-          </label>
-          <input
-            id="periodo-fin"
-            type="date"
-            name="fechaFin"
-            required
-            defaultValue={periodo?.fechaFin ?? ''}
-            className="w-full cursor-pointer rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
-          />
-        </div>
-      </div>
-
-      {state.message && !state.ok ? (
-        <p className="rounded border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
-          {state.message}
-        </p>
       ) : null}
 
-      <div className="flex justify-end gap-2 pt-1">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="cursor-pointer rounded border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={pending}
-          className="cursor-pointer rounded bg-white px-4 py-2 text-sm font-semibold text-black transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {pending ? 'Guardando…' : periodo ? 'Guardar cambios' : 'Crear período'}
-        </button>
-      </div>
-    </form>
+      <form action={formAction} className={`space-y-4 ${showNewCatForm ? 'pointer-events-none opacity-40' : ''}`}>
+        {periodo ? <input type="hidden" name="id" value={periodo.id} /> : null}
+
+        <div className="space-y-1">
+          <label htmlFor="periodo-categoria" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
+            Tipo de período
+          </label>
+          <select
+            id="periodo-categoria"
+            name="categoriaId"
+            required
+            value={selectedCategoriaId}
+            onChange={(e) => {
+              const val = e.target.value
+              if (val === 'NEW_CATEGORY') {
+                setShowNewCatForm(true)
+              } else {
+                setSelectedCategoriaId(val)
+              }
+            }}
+            className="w-full cursor-pointer rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
+          >
+            <option value="" disabled>
+              Seleccioná un tipo
+            </option>
+            {categorias.map((categoria) => (
+              <option key={categoria.id} value={categoria.id}>
+                {categoria.label}
+              </option>
+            ))}
+            <option value="NEW_CATEGORY" className="font-bold text-emerald-400">
+              + Crear nuevo tipo...
+            </option>
+          </select>
+        </div>
+
+        <div className="space-y-1">
+          <label htmlFor="periodo-titulo" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
+            Título
+          </label>
+          <input
+            id="periodo-titulo"
+            type="text"
+            name="titulo"
+            required
+            defaultValue={periodo?.titulo ?? ''}
+            placeholder="Ej: Mesas de examen de mayo"
+            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label htmlFor="periodo-inicio" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
+              Desde
+            </label>
+            <input
+              id="periodo-inicio"
+              type="date"
+              name="fechaInicio"
+              required
+              defaultValue={periodo?.fechaInicio ?? ''}
+              className="w-full cursor-pointer rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
+            />
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="periodo-fin" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
+              Hasta
+            </label>
+            <input
+              id="periodo-fin"
+              type="date"
+              name="fechaFin"
+              required
+              defaultValue={periodo?.fechaFin ?? ''}
+              className="w-full cursor-pointer rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        {state.message && !state.ok ? (
+          <p className="rounded border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
+            {state.message}
+          </p>
+        ) : null}
+
+        <div className="flex justify-end gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="cursor-pointer rounded border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={pending}
+            className="cursor-pointer rounded bg-white px-4 py-2 text-sm font-semibold text-black transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {pending ? 'Guardando…' : periodo ? 'Guardar cambios' : 'Crear período'}
+          </button>
+        </div>
+      </form>
+    </div>
   )
 }

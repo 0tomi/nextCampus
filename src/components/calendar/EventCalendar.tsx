@@ -7,7 +7,7 @@ import interactionPlugin, { type DateClickArg } from '@fullcalendar/interaction'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { cn, slugify } from '@/lib/utils'
 import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
-import { PERIODO_META, PERIODO_TONE_BG, type PeriodoCalendario } from '@/lib/periodos'
+import { PERIODO_TONE_BG, type PeriodoCalendario, type PeriodoTone } from '@/lib/periodos'
 
 type EventCalendarDateInput = string | Date
 
@@ -234,7 +234,7 @@ export function EventCalendar({
     display: 'background' as const,
     // El color va inline (FullCalendar lo aplica como style en el bg event;
     // una clase CSS no podría pisarlo). La clase solo ajusta opacidad/cursor.
-    backgroundColor: PERIODO_TONE_BG[PERIODO_META[periodo.categoria].tone],
+    backgroundColor: PERIODO_TONE_BG[periodo.categoria.tone as PeriodoTone] || PERIODO_TONE_BG.sky,
     classNames: ['fc-bg-periodo'],
   }))
 

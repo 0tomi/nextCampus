@@ -1,4 +1,4 @@
-import { PERIODO_META, PERIODO_TONE_BG, type PeriodoCalendario } from '@/lib/periodos'
+import { PERIODO_TONE_BG, type PeriodoCalendario, type PeriodoTone } from '@/lib/periodos'
 
 /**
  * Leyenda de colores de los períodos académicos. Solo muestra las categorías
@@ -11,7 +11,9 @@ export function PeriodoLegend({
   periodos: readonly PeriodoCalendario[]
   className?: string
 }) {
-  const categoriasPresentes = [...new Set(periodos.map((p) => p.categoria))]
+  const categoriasPresentes = Array.from(
+    new Map(periodos.map((p) => [p.categoria.id, p.categoria])).values()
+  )
   if (categoriasPresentes.length === 0) return null
 
   return (
@@ -21,16 +23,17 @@ export function PeriodoLegend({
     >
       {categoriasPresentes.map((categoria) => (
         <span
-          key={categoria}
+          key={categoria.id}
           className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-white/55"
         >
           <span
             className="h-2 w-4 rounded-[3px]"
-            style={{ background: PERIODO_TONE_BG[PERIODO_META[categoria].tone] }}
+            style={{ background: PERIODO_TONE_BG[categoria.tone as PeriodoTone] || PERIODO_TONE_BG.sky }}
           />
-          {PERIODO_META[categoria].label}
+          {categoria.label}
         </span>
       ))}
     </div>
   )
 }
+

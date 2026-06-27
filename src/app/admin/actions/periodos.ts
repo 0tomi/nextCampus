@@ -5,11 +5,12 @@ import { prisma } from '@/lib/prisma'
 import { requireAcademicManager } from '@/lib/auth'
 import { queryTags } from '@/lib/queries'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
+import { PERIODO_TONES } from '@/lib/periodos'
 import { revalidateTag, ActionInputError, fechaToDbDate } from './shared'
 
 const periodoSchema = z
   .object({
-    categoria: z.enum(['SUSPENSION_CLASES', 'MESAS_EXAMEN']),
+    categoriaId: z.string().min(1, 'Elegí un tipo de período.'),
     titulo: z.string().trim().min(1, 'Poné un título.').max(200),
     fechaInicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha de inicio no es válida.'),
     fechaFin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha de fin no es válida.'),
@@ -20,6 +21,11 @@ const periodoSchema = z
     path: ['fechaFin'],
   })
 
+const categoriaSchema = z.object({
+  label: z.string().trim().min(1, 'El nombre del tipo es obligatorio.').max(100),
+  tone: z.enum(PERIODO_TONES),
+})
+
 // Todas las vistas públicas consumen los períodos mediante este tag compartido.
 function revalidatePeriodos(): void {
   revalidateTag(queryTags.periodos)
@@ -27,7 +33,7 @@ function revalidatePeriodos(): void {
 
 function parsePeriodoForm(formData: FormData) {
   return periodoSchema.parse({
-    categoria: formData.get('categoria'),
+    categoriaId: formData.get('categoriaId') || formData.get('categoria'),
     titulo: formData.get('titulo'),
     fechaInicio: formData.get('fechaInicio'),
     fechaFin: formData.get('fechaFin'),
@@ -44,7 +50,7 @@ async function createPeriodo(formData: FormData): Promise<void> {
   const data = parsePeriodoForm(formData)
   const periodo = await prisma.periodoAcademico.create({
     data: {
-      categoria: data.categoria,
+      categoriaId: data.categoriaId,
       titulo: data.titulo,
       fechaInicio: fechaToDbDate(data.fechaInicio),
       fechaFin: fechaToDbDate(data.fechaFin),
@@ -58,7 +64,7 @@ async function createPeriodo(formData: FormData): Promise<void> {
     entityType: 'periodo',
     entityId: periodo.id,
     detail: {
-      categoria: data.categoria,
+      categoriaId: data.categoriaId,
       titulo: data.titulo,
       fechaInicio: data.fechaInicio,
       fechaFin: data.fechaFin,
@@ -96,7 +102,7 @@ export async function updatePeriodoAction(
     await prisma.periodoAcademico.update({
       where: { id },
       data: {
-        categoria: data.categoria,
+        categoriaId: data.categoriaId,
         titulo: data.titulo,
         fechaInicio: fechaToDbDate(data.fechaInicio),
         fechaFin: fechaToDbDate(data.fechaFin),
@@ -109,7 +115,7 @@ export async function updatePeriodoAction(
       entityType: 'periodo',
       entityId: id,
       detail: {
-        categoria: data.categoria,
+        categoriaId: data.categoriaId,
         titulo: data.titulo,
         fechaInicio: data.fechaInicio,
         fechaFin: data.fechaFin,
@@ -132,7 +138,7 @@ export async function deletePeriodo(formData: FormData): Promise<void> {
   const id = z.string().min(1).parse(formData.get('id'))
   const periodo = await prisma.periodoAcademico.findUnique({
     where: { id },
-    select: { categoria: true, titulo: true, fechaInicio: true, fechaFin: true },
+    select: { categoriaId: true, titulo: true, fechaInicio: true, fechaFin: true },
   })
   if (!periodo) return
   await prisma.periodoAcademico.delete({ where: { id } })
@@ -143,10 +149,65 @@ export async function deletePeriodo(formData: FormData): Promise<void> {
     entityType: 'periodo',
     entityId: id,
     detail: {
-      categoria: periodo.categoria,
+      categoriaId: periodo.categoriaId,
       titulo: periodo.titulo,
       fechaInicio: periodo.fechaInicio.toISOString().slice(0, 10),
       fechaFin: periodo.fechaFin.toISOString().slice(0, 10),
     },
   })
 }
+
+export async function createCategoriaAction(
+  _prev: PeriodoActionState & { data?: { id: string; label: string; tone: string } },
+  formData: FormData,
+): Promise<PeriodoActionState & { data?: { id: string; label: string; tone: string } }> {
+  await requireAcademicManager()
+  try {
+    const data = categoriaSchema.parse({
+      label: formData.get('label'),
+      tone: formData.get('tone'),
+    })
+
+    const id = data.label
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/(^_|_$)/g, '')
+      .toUpperCase()
+
+    const existing = await prisma.categoriaPeriodo.findUnique({
+      where: { id },
+    })
+
+    if (existing) {
+      return { ok: false, message: 'Ya existe un tipo de período con este nombre o uno muy similar.' }
+    }
+
+    const categoria = await prisma.categoriaPeriodo.create({
+      data: {
+        id,
+        label: data.label,
+        tone: data.tone,
+      },
+    })
+
+    revalidatePeriodos()
+
+    return {
+      ok: true,
+      message: 'Tipo de período creado correctamente.',
+      data: {
+        id: categoria.id,
+        label: categoria.label,
+        tone: categoria.tone,
+      },
+    }
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return { ok: false, message: err.issues[0].message }
+    }
+    return { ok: false, message: 'No se pudo crear el tipo de período. Intentá de nuevo.' }
+  }
+}
+

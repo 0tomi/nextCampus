@@ -693,7 +693,14 @@ export async function getPeriodos() {
     orderBy: { fechaInicio: 'asc' },
     select: {
       id: true,
-      categoria: true,
+      categoriaId: true,
+      categoria: {
+        select: {
+          id: true,
+          label: true,
+          tone: true,
+        },
+      },
       titulo: true,
       fechaInicio: true,
       fechaFin: true,
@@ -704,6 +711,22 @@ export async function getPeriodos() {
     fechaInicio: toDateKey(row.fechaInicio),
     fechaFin: toDateKey(row.fechaFin),
   }))
+}
+
+// Categorías de períodos académicos ordenadas por etiqueta.
+export async function getCategoriasPeriodo() {
+  'use cache'
+  cacheTag(TAGS.periodos)
+  cacheLife({ revalidate: 3600 })
+
+  return prisma.categoriaPeriodo.findMany({
+    orderBy: { label: 'asc' },
+    select: {
+      id: true,
+      label: true,
+      tone: true,
+    },
+  })
 }
 
 // Cacheado 60s: el filtro "fecha >= ahora" se mueve con el reloj, pero a
