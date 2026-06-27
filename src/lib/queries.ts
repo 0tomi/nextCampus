@@ -276,11 +276,12 @@ export async function getCareer() {
           slug: true,
           nombre: true,
           descripcion: true,
-          driveUrl: true,
-          playlistUrl: true,
-          playlistEnabled: true,
           orden: true,
           color: true,
+          links: {
+            select: { id: true, label: true, url: true, orden: true },
+            orderBy: { orden: 'asc' },
+          },
           subjects: {
             orderBy: { nombre: 'asc' },
             select: {
@@ -289,7 +290,7 @@ export async function getCareer() {
               nombre: true,
               descripcion: true,
               links: {
-                select: { id: true, tipo: true, label: true, url: true, orden: true },
+                select: { id: true, label: true, url: true, orden: true },
                 orderBy: { orden: 'asc' },
               },
               commissions: {
@@ -316,14 +317,11 @@ export async function getYearBySlug(slug: string) {
       slug: true,
       nombre: true,
       descripcion: true,
-      driveUrl: true,
-      playlistUrl: true,
-      playlistEnabled: true,
-      discordUrl: true,
-      discordDescripcion: true,
-      discordAltUrl: true,
-      discordAltDescripcion: true,
       color: true,
+      links: {
+        select: { id: true, label: true, url: true, orden: true },
+        orderBy: { orden: 'asc' },
+      },
       subjects: {
         orderBy: { nombre: 'asc' },
         select: {
@@ -369,7 +367,7 @@ export async function getSubjectPageBySlug(slug: string) {
       nombre: true,
       descripcion: true,
       links: {
-        select: { id: true, tipo: true, label: true, url: true, orden: true },
+        select: { id: true, label: true, url: true, orden: true },
         orderBy: { orden: 'asc' },
       },
       year: {
@@ -870,6 +868,47 @@ export async function getLatestApuntes() {
       },
     },
   })
+  return rows.map((apunte) => ({
+    ...apunte,
+    createdAt: apunte.createdAt.toISOString(),
+  }))
+}
+
+export async function getLatestApuntesByYear(yearSlug: string, limit = 6) {
+  'use cache'
+  cacheTag(TAGS.year(yearSlug))
+  cacheLife({ revalidate: 300 })
+
+  const rows = await prisma.apunte.findMany({
+    where: {
+      subject: {
+        year: {
+          slug: yearSlug,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+    select: {
+      id: true,
+      titulo: true,
+      slug: true,
+      createdAt: true,
+      subject: {
+        select: {
+          slug: true,
+          nombre: true,
+          year: {
+            select: {
+              slug: true,
+              nombre: true,
+            },
+          },
+        },
+      },
+    },
+  })
+
   return rows.map((apunte) => ({
     ...apunte,
     createdAt: apunte.createdAt.toISOString(),

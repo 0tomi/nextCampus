@@ -2,16 +2,15 @@
 
 import { useActionState, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { Modal } from '@/components/ui/Modal'
 import { AlertDialog } from '@/components/ui/AlertDialog'
 import {
   createPeriodoAction,
   updatePeriodoAction,
   deletePeriodo,
   type PeriodoActionState,
-} from '@/app/admin/actions'
+} from '@/app/admin/actions/periodos'
 import {
   CATEGORIAS_PERIODO,
   PERIODO_META,
@@ -30,60 +29,64 @@ function formatRange(fechaInicio: string, fechaFin: string): string {
   return `${inicio} – ${fin}`
 }
 
-interface PeriodoModalProps {
-  open: boolean
-  onClose: () => void
+interface PeriodoManagerProps {
   periodos: readonly PeriodoCalendario[]
 }
 
-export function PeriodoModal({ open, onClose, periodos }: PeriodoModalProps) {
-  if (!open) return null
-  return <PeriodoModalContent open={open} onClose={onClose} periodos={periodos} />
-}
-
-function PeriodoModalContent({ open, onClose, periodos }: PeriodoModalProps) {
+export function PeriodoManager({ periodos }: PeriodoManagerProps) {
   const [editing, setEditing] = useState<PeriodoCalendario | null>(null)
-  const [showForm, setShowForm] = useState(periodos.length === 0)
+  const [showForm, setShowForm] = useState(false)
+
+  const closeForm = () => {
+    setEditing(null)
+    setShowForm(false)
+  }
+
+  if (showForm) {
+    return (
+      <div className="max-w-xl rounded border border-white/8 bg-surface-1 p-5">
+        <h2 className="mb-4 text-sm font-black tracking-tight text-white">
+          {editing ? 'Editar período' : 'Nuevo período'}
+        </h2>
+        <PeriodoForm
+          key={editing?.id ?? 'new'}
+          periodo={editing}
+          onDone={closeForm}
+          onCancel={closeForm}
+        />
+      </div>
+    )
+  }
 
   return (
-    <Modal open={open} onClose={onClose} title="Períodos académicos">
-      <div className="space-y-5">
-        {showForm ? (
-          <PeriodoForm
-            key={editing?.id ?? 'new'}
-            periodo={editing}
-            onDone={() => {
-              setEditing(null)
-              setShowForm(false)
-            }}
-            onCancel={() => {
-              setEditing(null)
-              setShowForm(false)
-            }}
-          />
-        ) : (
-          <>
-            <PeriodoList
-              periodos={periodos}
-              onEdit={(periodo) => {
-                setEditing(periodo)
-                setShowForm(true)
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => {
-                setEditing(null)
-                setShowForm(true)
-              }}
-              className="w-full cursor-pointer rounded border border-white/10 bg-white/[0.03] px-3 py-2 text-sm font-bold text-white/70 transition-colors hover:bg-white/8 hover:text-white"
-            >
-              + Agregar período
-            </button>
-          </>
-        )}
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-white/55">
+          {periodos.length === 0
+            ? 'Todavía no cargaste ningún período.'
+            : `${periodos.length} ${periodos.length === 1 ? 'período cargado' : 'períodos cargados'}.`}
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(null)
+            setShowForm(true)
+          }}
+          className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded bg-white px-3 py-2 text-sm font-semibold text-black transition-opacity hover:opacity-90"
+        >
+          <Plus className="size-4" />
+          Agregar período
+        </button>
       </div>
-    </Modal>
+
+      <PeriodoList
+        periodos={periodos}
+        onEdit={(periodo) => {
+          setEditing(periodo)
+          setShowForm(true)
+        }}
+      />
+    </div>
   )
 }
 
@@ -96,14 +99,14 @@ function PeriodoList({
 }) {
   if (periodos.length === 0) {
     return (
-      <p className="rounded border border-dashed border-white/10 bg-white/[0.02] px-3 py-4 text-center text-sm text-white/42">
-        Todavía no cargaste ningún período.
+      <p className="rounded border border-dashed border-white/10 bg-white/[0.02] px-3 py-8 text-center text-sm text-white/42">
+        Cuando agregues un período (feriados, mesas de examen, suspensión de clases) va a aparecer acá y se va a pintar en el calendario de todos los años.
       </p>
     )
   }
 
   return (
-    <div className="flex max-h-72 flex-col gap-2 overflow-y-auto pr-1">
+    <div className="flex flex-col gap-2">
       {periodos.map((periodo) => (
         <PeriodoRow key={periodo.id} periodo={periodo} onEdit={onEdit} />
       ))}
@@ -139,10 +142,10 @@ function PeriodoRow({
   }
 
   return (
-    <div className="flex items-center gap-3 rounded border border-white/8 bg-surface-0 px-3 py-2">
+    <div className="flex items-center gap-3 rounded border border-white/8 bg-surface-0 px-3 py-2.5">
       <span
         aria-hidden="true"
-        className="h-8 w-1.5 shrink-0 rounded-full"
+        className="h-9 w-1.5 shrink-0 rounded-full"
         style={{ background: PERIODO_TONE_BG[meta.tone] }}
       />
       <div className="min-w-0 flex-1">
@@ -174,7 +177,7 @@ function PeriodoRow({
         onClose={() => setConfirmOpen(false)}
         onConfirm={handleDelete}
         title="Eliminar período"
-        description="Esta acción no se puede deshacer. El período se va a quitar del calendario."
+        description="Esta acción no se puede deshacer. El período se va a quitar del calendario de todos los años."
         confirmText="Eliminar"
         variant="destructive"
       />

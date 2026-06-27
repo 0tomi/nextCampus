@@ -17,13 +17,13 @@ actualizar su fila al terminar.
 | [003](003-dx-quick-wins.md) | Quick wins DX (`pnpm verify`, README, archivar yamls) | P2 | S | — | DONE (2026-06-12, commit `3f8a743`) |
 | [004](004-rate-limit-fail-closed.md) | Rate limit de login admin fail-closed en producción | P1 | S | 001 (rec.) | TODO |
 | [005](005-ranked-server-side-guards.md) | Techo de duración server-side en el ranked | P2 | S | 001 (rec.) | DONE (2026-06-12, commit `dea28fc`) |
-| [006](006-split-admin-actions.md) | Partir `admin/actions.ts` por dominio | P2 | L | 001 | TODO |
-| [007](007-cache-invalidation-policy.md) | Política de invalidación de cache | P2 | M | 006 | TODO |
-| [008](008-mapa-shared-state-hook.md) | Estado derivado compartido del mapa | P3 | M | 001 | TODO |
-| [009](009-design-personal-quiz-stats.md) | (Diseño) Estadísticas personales de quiz | P3 | M | — | TODO |
-| [010](010-design-global-apunte-search.md) | (Diseño) Búsqueda global de apuntes | P3 | M | — | TODO |
+| [006](006-split-admin-actions.md) | Partir `admin/actions.ts` por dominio | P2 | L | 001 | DONE (2026-06-14, commits `fe56369`, `c69cc0c`, `ca253f5`, `9491c07`, `f015e66`, `115600c`) |
+| [007](007-cache-invalidation-policy.md) | Política de invalidación de cache | P2 | M | 006 | DONE (2026-06-15, commits `08fbe5a` + `776b768`) |
+| [008](008-mapa-shared-state-hook.md) | Estado derivado compartido del mapa | P3 | M | 001 | DONE (2026-06-15, commits `e7752a0` + `41d99de`) |
+| [009](009-design-personal-quiz-stats.md) | (Diseño) Estadísticas personales de quiz | P3 | M | — | DONE (2026-06-15, commits `39c365e` + `721c4ec`) |
+| [010](010-design-global-apunte-search.md) | (Diseño) Búsqueda global de apuntes | P3 | M | — | DONE (2026-06-15, commits `d0e99b7` + `58618fd`) |
 
-Valores de estado: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED (motivo en una línea)` | `REJECTED (razón en una línea)`
+Valores de estado: `TODO` | `WORKING` | `DONE` | `BLOCKED (motivo en una línea)` | `REJECTED (razón en una línea)`
 
 ## Notas de dependencias
 
@@ -87,6 +87,48 @@ Valores de estado: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED (motivo en una lí
   `vi.useFakeTimers({ toFake: ['Date'] })` (mismo patrón del registro 001).
   Diferido conocido: limpieza de intentos `IN_PROGRESS` abandonados (este
   techo define qué es "abandonado").
+- **006 (2026-06-14)**: implementado en la serie `fe56369` → `115600c`.
+  `src/app/admin/actions.ts` quedó como barrel de 49 líneas con re-exports; la
+  lógica quedó distribuida en `actions/{eventos,periodos,apuntes,quiz,years,subjects,session}.ts`
+  más `actions/shared.ts`. Durante el cierre se corrigió una desviación del
+  split parcial: `periodos.ts` había cambiado permisos a admin general y volvió
+  a `requireAcademicManager()`, como en el archivo original. Verificado con
+  `pnpm typecheck`, `pnpm lint`, `pnpm test src/app/admin/actions.test.ts` y
+  `pnpm test`. No se corrió `pnpm build` por la regla local vigente de no
+  ejecutar build salvo pedido explícito.
+- **007 (2026-06-15)**: implementado (`776b768`). La matriz completa de las
+  23 actions y todas las lecturas con `cacheTag` quedó documentada en
+  `docs/decisiones/2026-06-15-politica-invalidacion-cache.md`.
+  `revalidateSubjectContent` ya no consulta la base: los scopes de
+  autorización entregan año y comisiones en la misma lectura. Se separaron
+  las invalidaciones de eventos y apuntes, los períodos dejaron de recorrer
+  todos los años, los bancos ya no invalidan contenido ajeno y el borrado de
+  año invalida también sus caches de Storage. Smoke test real de
+  crear/editar/borrar evento y apunte validado en materia, calendario anual e
+  inicio; la cuenta y los datos temporales se eliminaron. Pasaron
+  `pnpm typecheck`, `pnpm lint`, 225 tests y `pnpm build`.
+- **008 (2026-06-15)**: implementado (`41d99de`). Desktop y mobile ahora
+  consumen `useMapaState`, que concentra filtros, selección, progreso y toda
+  la derivación compartida sin mezclar el estado exclusivo de presentación.
+  Se mantuvieron las diferencias intencionales entre variantes (4 sugerencias
+  en desktop y 5 en mobile). Los 5 tests nuevos de `deriveMapaState`, los
+  recorridos manuales en ambos viewports, `pnpm typecheck`, `pnpm lint`, los
+  230 tests y React Doctor (100/100) pasaron.
+- **009 (2026-06-15)**: spike completado (`721c4ec`) en
+  `docs/plans/personal-quiz-stats-design.md`. Se confirmó que el nombre Ranked
+  persiste en el navegador y se diseñaron historial, resumen de progreso y
+  posición personal sin sumar auth de alumnos. Las queries se validaron con
+  datos temporales dentro de una transacción revertida. El `EXPLAIN` reveló
+  que el índice actual no sirve directamente el historial; el documento
+  incluye un índice parcial propuesto, también probado y revertido.
+- **010 (2026-06-15)**: spike completado (`58618fd`) en
+  `docs/plans/global-apunte-search-design.md`. El corpus real tiene 52
+  apuntes; `unaccent` está habilitado y `pg_trgm` disponible pero no
+  habilitado. Se compararon `ILIKE` y FTS español con cinco búsquedas reales:
+  FTS encontró variaciones como “calcular”/“cálculo” que el baseline perdió.
+  La recomendación es FTS dinámico sin migración para v1 y GIN recién cuando
+  el volumen o la latencia lo justifiquen. El benchmark ampliado usó solo
+  tablas e índices temporales.
 
 ## Hallazgos auditados y NO seleccionados (sin plan, registrados para no re-auditar)
 

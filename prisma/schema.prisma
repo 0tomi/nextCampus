@@ -24,27 +24,36 @@ model Career {
 }
 
 model AcademicYear {
-  id                    String               @id @default(cuid())
-  career                Career               @relation(fields: [careerId], references: [id], onDelete: Cascade)
-  careerId              String
-  slug                  String               @unique
-  nombre                String
-  descripcion           String               @default("")
-  driveUrl              String?
-  playlistUrl           String?
-  playlistEnabled       Boolean              @default(false)
-  discordUrl            String?
-  discordDescripcion    String?
-  discordAltUrl         String?
-  discordAltDescripcion String?
-  orden                 Int
-  color                 String?
-  subjects              Subject[]
-  adminPermissions      UserYearPermission[]
-  createdAt             DateTime             @default(now())
-  updatedAt             DateTime             @updatedAt
+  id               String               @id @default(cuid())
+  career           Career               @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  careerId         String
+  slug             String               @unique
+  nombre           String
+  descripcion      String               @default("")
+  orden            Int
+  color            String?
+  subjects         Subject[]
+  links            YearLink[]
+  adminPermissions UserYearPermission[]
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
 
   @@index([careerId])
+}
+
+/// Botón de acceso rápido del año (Drive, Discord, playlist, etc.). Dinámico:
+/// se agregan los que se quieran. El icono se resuelve del favicon de la URL.
+model YearLink {
+  id        String       @id @default(cuid())
+  year      AcademicYear @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  yearId    String
+  label     String
+  url       String
+  orden     Int          @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([yearId])
 }
 
 enum UserRole {
@@ -58,6 +67,13 @@ enum UserStatus {
   DISABLED
 }
 
+enum ChangelogAudience {
+  PUBLIC
+  AYUDANTE
+  SUPERVISOR
+  ADMIN
+}
+
 model UserAccount {
   id                     String               @id @default(cuid())
   authUserId             String               @unique
@@ -65,6 +81,7 @@ model UserAccount {
   role                   UserRole
   status                 UserStatus           @default(ACTIVE)
   yearPermissions        UserYearPermission[]
+  changelogReads         ChangelogRead[]
   nombreUsuario          String
   puntaje                Int                  @default(0)
   eventosCreados         Int                  @default(0)
@@ -80,6 +97,32 @@ model UserAccount {
   @@index([role])
   @@index([status])
   @@index([puntaje])
+}
+
+model ChangelogEntry {
+  id          String            @id @default(cuid())
+  changelogId String            @unique
+  title       String
+  summary     String
+  description String
+  audience    ChangelogAudience @default(PUBLIC)
+  visibleAt   DateTime          @default(now())
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  reads       ChangelogRead[]
+
+  @@index([audience, visibleAt, id])
+}
+
+model ChangelogRead {
+  user             UserAccount    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  changelogEntry   ChangelogEntry @relation(fields: [changelogEntryId], references: [id], onDelete: Cascade)
+  changelogEntryId String
+  readAt           DateTime       @default(now())
+
+  @@id([userId, changelogEntryId])
+  @@index([changelogEntryId])
 }
 
 model UserYearPermission {
@@ -116,7 +159,6 @@ model SubjectLink {
   id        String   @id @default(cuid())
   subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   subjectId String
-  tipo      String
   label     String
   url       String
   orden     Int      @default(0)

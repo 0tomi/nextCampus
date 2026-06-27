@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { LogOut } from 'lucide-react'
-import { signOutAction } from '@/app/admin/actions'
+import { signOutAction } from '@/app/admin/actions/session'
 
 /**
  * Botón para cerrar sesión. Solo se monta cuando AdminControls confirma

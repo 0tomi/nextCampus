@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -22,26 +22,24 @@ import { Modal } from '@/components/ui/Modal';
 import { MAPA_YEARS, MOBILE_STATUS_BADGE as STATUS_BADGE, MOBILE_STATUS_CARD as STATUS_CARD, MOBILE_STATUS_LABELS as STATUS_LABELS, YEAR_LABELS, YEAR_SHORT_LABELS } from '@/lib/domain/mapa/mapaConstants';
 import {
   canOpenSubjectPage,
-  filterSubjects,
   getMissingCorrelatives,
   getSubjectName,
-  getSuggestedSubjects,
   getUnlocks,
-  getYearSummaries,
   type YearSummary,
 } from '@/lib/domain/mapa/subjectQueries';
 import type { SubjectNode, SubjectStatus } from '@/lib/domain/mapa/types';
-import { useMapaProgress } from '@/hooks/useMapaProgress';
-import { getSubjectDetails, useSubjectSelection } from '@/hooks/useSubjectSelection';
-import { useSuggestedYear } from '@/hooks/useSuggestedYear';
+import {
+  useMapaState,
+  type StatusFilter,
+  type YearFilter,
+} from '@/hooks/useMapaState';
+import { getSubjectDetails } from '@/hooks/useSubjectSelection';
 import { yearSlugFromNumber } from '@/lib/slug';
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes';
 import { cn } from '@/lib/utils';
 import { MapaResetDialog } from './MapaResetDialog';
 
 type MobileMapaMode = 'plan' | 'ruta';
-type StatusFilter = 'ALL' | SubjectStatus;
-type YearFilter = 'ALL' | 1 | 2 | 3 | 4 | 5;
 
 type MapaCorrelativasMobileProps = {
   careerName: string;
@@ -58,14 +56,19 @@ export function MapaCorrelativasMobile({
   availableSubjectSlugs = EMPTY_AVAILABLE_SUBJECT_SLUGS,
   initialMode = 'plan',
 }: MapaCorrelativasMobileProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
-  const [yearFilter, setYearFilter] = useState<YearFilter>('ALL');
   const [mode, setMode] = useState<MobileMapaMode>(initialMode);
   const [detailSubjectSlug, setDetailSubjectSlug] = useState<string | null>(null);
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
-  const progress = useMapaProgress();
-  const selection = useSubjectSelection(progress);
+  const {
+    actions,
+    derived,
+    filters: { searchTerm, statusFilter, yearFilter },
+    progress,
+    selection,
+  } = useMapaState({
+    availableSubjectSlugs,
+    suggestedSubjectsLimit: 5,
+  });
   const {
     completed,
     completedCount,
@@ -73,21 +76,18 @@ export function MapaCorrelativasMobile({
     lockedCount,
     progressPercentage,
     subjectStatuses,
-    autocompleteYear,
     reset,
     unlockedCount,
   } = progress;
 
-  const availableSlugs = useMemo(() => new Set(availableSubjectSlugs), [availableSubjectSlugs]);
-
   const selectedSubjectSlug = selection.selectedSlug;
-  const selectedSubject = selection.selectedSubject;
-  const selectedStatus = selection.selectedStatus;
-  const selectedUnlocks = selection.selectedUnlocks;
+  const selectedSubject = derived.selectedSubject;
+  const selectedStatus = derived.selectedStatus;
+  const selectedUnlocks = derived.selectedUnlocks;
   const detail = getSubjectDetails(detailSubjectSlug, subjectStatuses, completed);
 
   const openSubjectDetail = (subject: SubjectNode) => {
-    selection.selectSubject(subject.slug);
+    actions.onSelectSubject(subject.slug);
     setDetailSubjectSlug(subject.slug);
   };
 
@@ -97,25 +97,9 @@ export function MapaCorrelativasMobile({
     selection.resetSelection();
   };
 
-  const suggestedYearToComplete = useSuggestedYear(completed);
-
   const handleAutocompleteYear = (year: 2 | 3 | 4 | 5) => {
-    autocompleteYear(year);
+    actions.autocompleteYear(year);
   };
-
-  const filteredSubjects = useMemo(() => {
-    return filterSubjects({ searchTerm, statusFilter, yearFilter, subjectStatuses });
-  }, [searchTerm, statusFilter, subjectStatuses, yearFilter]);
-
-  const recommendedSubjects = useMemo(
-    () => getSuggestedSubjects(subjectStatuses, 5),
-    [subjectStatuses],
-  );
-
-  const yearSummaries = useMemo(
-    () => getYearSummaries(subjectStatuses),
-    [subjectStatuses],
-  );
 
   if (!isHydrated) {
     return (
@@ -162,21 +146,21 @@ export function MapaCorrelativasMobile({
             searchTerm={searchTerm}
             statusFilter={statusFilter}
             yearFilter={yearFilter}
-            onSearchChange={setSearchTerm}
-            onStatusFilterChange={setStatusFilter}
-            onYearFilterChange={setYearFilter}
+            onSearchChange={actions.onSearchTermChange}
+            onStatusFilterChange={actions.onStatusFilterChange}
+            onYearFilterChange={actions.onYearFilterChange}
           />
           <RecommendedSubjects
-            recommendedSubjects={recommendedSubjects}
+            recommendedSubjects={derived.suggestedSubjects}
             selectedSubjectSlug={selectedSubjectSlug}
             onOpenSubject={openSubjectDetail}
           />
 
           {mode === 'plan' ? (
             <MapaMobilePlanList
-              availableSlugs={availableSlugs}
+              availableSlugs={derived.availableSlugs}
               completed={completed}
-              filteredSubjects={filteredSubjects}
+              filteredSubjects={derived.filteredSubjects}
               selectedSubjectSlug={selectedSubjectSlug}
               subjectStatuses={subjectStatuses}
               onOpenSubject={openSubjectDetail}
@@ -190,14 +174,14 @@ export function MapaCorrelativasMobile({
               selectedStatus={selectedStatus}
               selectedUnlocks={selectedUnlocks}
               subjectStatuses={subjectStatuses}
-              yearSummaries={yearSummaries}
+              yearSummaries={derived.yearSummaries}
               onOpenSubject={openSubjectDetail}
             />
           )}
 
           <MapaQuickActions
             completedCount={completed.length}
-            suggestedYearToComplete={suggestedYearToComplete}
+            suggestedYearToComplete={derived.suggestedYearToComplete}
             onAutocompleteYear={handleAutocompleteYear}
             onRequestReset={() => setConfirmResetOpen(true)}
           />
@@ -209,7 +193,7 @@ export function MapaCorrelativasMobile({
         status={detail?.status ?? null}
         missing={detail?.missing ?? []}
         unlocks={detail?.unlocks ?? []}
-        canOpen={detail ? canOpenSubjectPage(availableSlugs, detail.subject.slug) : false}
+        canOpen={detail ? canOpenSubjectPage(derived.availableSlugs, detail.subject.slug) : false}
         onClose={() => setDetailSubjectSlug(null)}
         onToggle={selection.toggleSubject}
       />

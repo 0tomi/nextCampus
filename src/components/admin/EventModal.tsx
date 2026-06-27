@@ -9,7 +9,7 @@ import {
   createEventoAction,
   updateEventoAction,
   type EventoActionState,
-} from '@/app/admin/actions'
+} from '@/app/admin/actions/eventos'
 import type { EventCalendarEvent } from '@/components/calendar/EventCalendar'
 import {
   ALL_COMMISSIONS_VALUE,

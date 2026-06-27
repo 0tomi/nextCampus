@@ -200,9 +200,7 @@ export function HomeYearsGrid({ initialPrefs, years }: HomeYearsGridProps) {
                     slug: year.slug,
                     nombre: year.nombre,
                     descripcion: year.descripcion,
-                    driveUrl: year.driveUrl,
-                    playlistUrl: year.playlistUrl,
-                    playlistEnabled: year.playlistEnabled,
+                    links: year.links,
                     orden: originalIndex + 1,
                     subjects: year.subjects.map((s) => ({
                       id: s.id,
@@ -316,9 +314,7 @@ function HomeYearCardSection({
                 slug: year.slug,
                 nombre: year.nombre,
                 descripcion: year.descripcion,
-                driveUrl: year.driveUrl,
-                playlistUrl: year.playlistUrl,
-                playlistEnabled: year.playlistEnabled,
+                links: year.links,
                 orden: originalIndex + 1,
                 subjects: year.subjects.map((s) => ({
                   id: s.id,

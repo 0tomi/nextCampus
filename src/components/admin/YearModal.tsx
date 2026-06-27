@@ -1,14 +1,53 @@
 'use client'
 
-import { useEffect, useActionState, useState } from 'react'
+import { useEffect, useActionState, useReducer, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import {
   createYearAction,
   updateYearAction,
   type YearActionState,
-} from '@/app/admin/actions'
-import { detectarRecurso } from '@/lib/recursos'
+} from '@/app/admin/actions/years'
 import { YEAR_COLOR_PRESETS } from '@/lib/yearColors'
+
+interface LinkRow {
+  label: string
+  url: string
+}
+
+type LinksAction =
+  | { type: 'ADD' }
+  | { type: 'REMOVE'; index: number }
+  | { type: 'UPDATE_FIELD'; index: number; field: keyof LinkRow; value: string }
+  | { type: 'MOVE_UP'; index: number }
+  | { type: 'MOVE_DOWN'; index: number }
+
+function linksReducer(state: LinkRow[], action: LinksAction): LinkRow[] {
+  switch (action.type) {
+    case 'ADD':
+      return [...state, { label: '', url: '' }]
+    case 'REMOVE':
+      return state.filter((_, i) => i !== action.index)
+    case 'UPDATE_FIELD': {
+      const next = [...state]
+      next[action.index] = { ...next[action.index], [action.field]: action.value }
+      return next
+    }
+    case 'MOVE_UP': {
+      if (action.index === 0) return state
+      const next = [...state]
+      ;[next[action.index - 1], next[action.index]] = [next[action.index], next[action.index - 1]]
+      return next
+    }
+    case 'MOVE_DOWN': {
+      if (action.index === state.length - 1) return state
+      const next = [...state]
+      ;[next[action.index], next[action.index + 1]] = [next[action.index + 1], next[action.index]]
+      return next
+    }
+    default:
+      return state
+  }
+}
 
 interface YearModalProps {
   open: boolean
@@ -18,13 +57,7 @@ interface YearModalProps {
     id: string
     nombre: string
     descripcion?: string | null
-    driveUrl?: string | null
-    playlistUrl?: string | null
-    playlistEnabled?: boolean
-    discordUrl?: string | null
-    discordDescripcion?: string | null
-    discordAltUrl?: string | null
-    discordAltDescripcion?: string | null
+    links?: { label: string; url: string; orden: number }[]
     orden: number
     color?: string | null
   }
@@ -36,7 +69,6 @@ const emptyState: YearActionState = { ok: false, message: '' }
 
 export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
   const isEdit = !!year
-  const [playlistUrlError, setPlaylistUrlError] = useState('')
   const colorScope = year?.id ?? 'new-year'
   const [colorDraft, setColorDraft] = useState(() => ({
     scope: colorScope,
@@ -45,22 +77,12 @@ export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
   const color = colorDraft.scope === colorScope ? colorDraft.value : (year?.color ?? '')
   const setColor = (value: string) => setColorDraft({ scope: colorScope, value })
 
-  const handlePlaylistUrlBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const val = e.target.value.trim()
-    if (!val) {
-      setPlaylistUrlError('')
-      return
-    }
-    const result = detectarRecurso(val)
-    setPlaylistUrlError(
-      !result || result.tipo !== 'YOUTUBE'
-        ? 'El link debe ser de YouTube (youtube.com o youtu.be).'
-        : '',
-    )
-  }
+  const initialLinks: LinkRow[] = year?.links
+    ? year.links.toSorted((a, b) => a.orden - b.orden).map(({ label, url }) => ({ label, url }))
+    : []
+  const [links, dispatch] = useReducer(linksReducer, initialLinks)
 
   const action = isEdit ? updateYearAction : createYearAction
-
   const [state, formAction, pending] = useActionState(action, emptyState)
 
   // Cerrar y avisar cuando la acción termina exitosamente
@@ -73,10 +95,14 @@ export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
 
   const title = isEdit ? 'Editar año' : 'Nuevo año'
 
+  const serializedLinks = JSON.stringify(links.filter((l) => l.url.trim() !== ''))
+
   return (
     <Modal open={open} onClose={onClose} title={title}>
       <form action={formAction} className="space-y-4">
         {isEdit && <input type="hidden" name="id" value={year.id} />}
+        <input type="hidden" name="links" value={serializedLinks} readOnly />
+        <input type="hidden" name="color" value={color} />
 
         <div className="space-y-1">
           <label
@@ -116,113 +142,94 @@ export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
           />
         </div>
 
-        <div className="space-y-1">
-          <label
-            htmlFor="year-driveUrl"
-            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
-          >
-            Enlace de Google Drive{' '}
+        {/* Botones de acceso rápido (Drive, Discord, playlist, etc.) */}
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
+            Botones de acceso rápido{' '}
             <span className="font-normal normal-case tracking-normal text-white/30">
               (opcional)
             </span>
-          </label>
-          <input
-            id="year-driveUrl"
-            type="url"
-            name="driveUrl"
-            defaultValue={year?.driveUrl ?? ''}
-            placeholder="Ej: https://drive.google.com/drive/folders/..."
-            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
-          />
-        </div>
+          </p>
 
-        <div className="space-y-1">
-          <label
-            htmlFor="year-playlistUrl"
-            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
+          {links.map((link, index) => (
+            <div
+              key={index}
+              className="rounded border border-white/10 bg-surface-0 p-3 space-y-2"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-white/30">Enlace {index + 1}</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => dispatch({ type: 'MOVE_UP', index })}
+                    disabled={index === 0}
+                    className="rounded px-1.5 py-0.5 text-xs text-white/40 hover:bg-white/5 hover:text-white disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
+                    title="Subir"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => dispatch({ type: 'MOVE_DOWN', index })}
+                    disabled={index === links.length - 1}
+                    className="rounded px-1.5 py-0.5 text-xs text-white/40 hover:bg-white/5 hover:text-white disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
+                    title="Bajar"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => dispatch({ type: 'REMOVE', index })}
+                    className="rounded px-1.5 py-0.5 text-xs text-rose-400/60 hover:bg-rose-500/10 hover:text-rose-300 cursor-pointer"
+                    title="Eliminar enlace"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor={`year-link-${index}-label`} className="block text-xs text-white/40">
+                  Texto del botón <span className="text-white/20">(opcional)</span>
+                </label>
+                <input
+                  id={`year-link-${index}-label`}
+                  type="text"
+                  aria-label="Texto del botón"
+                  value={link.label}
+                  onChange={(e) =>
+                    dispatch({ type: 'UPDATE_FIELD', index, field: 'label', value: e.target.value })
+                  }
+                  placeholder="Ej: Drive del año"
+                  className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor={`year-link-${index}-url`} className="block text-xs text-white/40">Enlace</label>
+                <input
+                  id={`year-link-${index}-url`}
+                  type="url"
+                  aria-label="Enlace"
+                  value={link.url}
+                  onChange={(e) =>
+                    dispatch({ type: 'UPDATE_FIELD', index, field: 'url', value: e.target.value })
+                  }
+                  placeholder="https://..."
+                  className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
+                />
+              </div>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'ADD' })}
+            className="w-full rounded border border-dashed border-white/15 px-3 py-2 text-sm text-white/40 hover:border-white/25 hover:text-white/60 transition-colors cursor-pointer"
           >
-            Playlist de YouTube{' '}
-            <span className="font-normal normal-case tracking-normal text-white/30">
-              (opcional)
-            </span>
-          </label>
-          <input
-            id="year-playlistUrl"
-            type="url"
-            name="playlistUrl"
-            defaultValue={year?.playlistUrl ?? ''}
-            placeholder="Ej: https://www.youtube.com/playlist?list=..."
-            onBlur={handlePlaylistUrlBlur}
-            className={`w-full rounded border bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none ${
-              playlistUrlError
-                ? 'border-rose-400/50 focus:border-rose-400/70'
-                : 'border-white/10 focus:border-white/20'
-            }`}
-          />
-          {playlistUrlError && (
-            <p className="text-xs text-rose-400">{playlistUrlError}</p>
-          )}
+            + Agregar enlace
+          </button>
         </div>
-
-        <input type="hidden" name="playlistEnabled" value="true" />
-
-        <div className="space-y-1">
-          <label
-            htmlFor="year-discordUrl"
-            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
-          >
-            Enlace de Discord{' '}
-            <span className="font-normal normal-case tracking-normal text-white/30">
-              (opcional)
-            </span>
-          </label>
-          <input
-            id="year-discordUrl"
-            type="url"
-            name="discordUrl"
-            defaultValue={year?.discordUrl ?? ''}
-            placeholder="Ej: https://discord.gg/..."
-            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
-          />
-          <input
-            id="year-discordDescripcion"
-            type="text"
-            name="discordDescripcion"
-            defaultValue={year?.discordDescripcion ?? ''}
-            placeholder="Descripción del Discord (opcional)"
-            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label
-            htmlFor="year-discordAltUrl"
-            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
-          >
-            Enlace de Discord alternativo{' '}
-            <span className="font-normal normal-case tracking-normal text-white/30">
-              (opcional)
-            </span>
-          </label>
-          <input
-            id="year-discordAltUrl"
-            type="url"
-            name="discordAltUrl"
-            defaultValue={year?.discordAltUrl ?? ''}
-            placeholder="Ej: https://discord.gg/..."
-            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
-          />
-          <input
-            id="year-discordAltDescripcion"
-            type="text"
-            name="discordAltDescripcion"
-            defaultValue={year?.discordAltDescripcion ?? ''}
-            placeholder="Descripción del Discord alternativo (opcional)"
-            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
-          />
-        </div>
-
-        <input type="hidden" name="color" value={color} />
 
         <div className="space-y-2">
           <span className="block text-xs font-semibold uppercase tracking-widest text-white/40">

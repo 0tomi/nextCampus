@@ -7,6 +7,7 @@ import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
 import { DarkCard } from '@/components/ui/DarkCard'
+import { YearLatestApuntes } from '@/components/year/YearLatestApuntes'
 import { YearOverviewEvents } from '@/components/year/YearOverviewEvents'
 import { YearResourceLinks } from '@/components/year/YearResourceLinks'
 import { InstallPWATopbarButton } from '@/components/pwa/InstallPWA'
@@ -18,6 +19,7 @@ import type { YearRouteContext } from './year-route-context'
 export function YearRoutePage({
   adminYear,
   allYears,
+  latestApuntes,
   mobileYear,
   modalSubjects,
   nextEvents,
@@ -38,6 +40,7 @@ export function YearRoutePage({
       <YearDesktopView
         colors={colors}
         events={overviewEvents}
+        latestApuntes={latestApuntes}
         modalSubjects={modalSubjects}
         nextEvents={nextEvents}
         periodos={periodos}
@@ -48,6 +51,7 @@ export function YearRoutePage({
       <YearMobileView
         allYears={allYears}
         careerName={year.career.nombre}
+        latestApuntes={latestApuntes}
         mobileYear={mobileYear}
         nextEvents={nextEvents}
         tiposEvento={tiposEvento}
@@ -66,7 +70,7 @@ type YearColorClasses = ReturnType<typeof getYearColorClasses>
 
 type YearDesktopViewProps = Pick<
   YearRouteContext,
-  'modalSubjects' | 'nextEvents' | 'periodos' | 'tiposEvento' | 'year'
+  'latestApuntes' | 'modalSubjects' | 'nextEvents' | 'periodos' | 'tiposEvento' | 'year'
 > & {
   colors: YearColorClasses
   events: YearRouteContext['overviewEvents']
@@ -76,6 +80,7 @@ type YearDesktopViewProps = Pick<
 function YearDesktopView({
   colors,
   events,
+  latestApuntes,
   modalSubjects,
   nextEvents,
   periodos,
@@ -108,6 +113,8 @@ function YearDesktopView({
           periodos={periodos}
         />
 
+        <YearLatestApuntes notes={latestApuntes} />
+
         <YearSubjectsGrid colors={colors} subjects={year.subjects} yearSlug={year.slug} />
       </DashboardShell>
     </div>
@@ -128,7 +135,6 @@ function YearTopbar({ careerName, yearName }: { careerName: string; yearName: st
     </div>
   )
 }
-
 function YearHero({ year }: { year: YearRouteContext['year'] }) {
   return (
     <section className="space-y-5">
@@ -149,14 +155,7 @@ function YearHero({ year }: { year: YearRouteContext['year'] }) {
         ) : null}
       </div>
 
-      <YearResourceLinks
-        driveUrl={year.driveUrl}
-        playlistUrl={year.playlistUrl}
-        discordUrl={year.discordUrl}
-        discordDescripcion={year.discordDescripcion}
-        discordAltUrl={year.discordAltUrl}
-        discordAltDescripcion={year.discordAltDescripcion}
-      />
+      <YearResourceLinks links={year.links} />
     </section>
   )
 }
@@ -246,10 +245,11 @@ function YearSubjectCard({
 function YearMobileView({
   allYears,
   careerName,
+  latestApuntes,
   mobileYear,
   nextEvents,
   tiposEvento,
-}: Pick<YearRouteContext, 'allYears' | 'mobileYear' | 'nextEvents' | 'tiposEvento'> & {
+}: Pick<YearRouteContext, 'allYears' | 'latestApuntes' | 'mobileYear' | 'nextEvents' | 'tiposEvento'> & {
   careerName: string
 }) {
   return (
@@ -257,6 +257,7 @@ function YearMobileView({
       <MobileYear
         year={mobileYear}
         allYears={allYears}
+        latestApuntes={latestApuntes}
         nextEvents={nextEvents}
         careerName={careerName}
         tiposEvento={tiposEvento}

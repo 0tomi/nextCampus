@@ -427,7 +427,10 @@ function DesktopContentCard({
   ].filter(Boolean).join(' ')
 
   return (
-    <div ref={setRef} className={wrapperClassName}>
+    <div
+      ref={setRef}
+      className={wrapperClassName}
+    >
       <DarkCard className={cardClassName}>
         {(isFirstOfApunte || neighbors.sameApunteLeft) ? (
           <div
@@ -443,7 +446,9 @@ function DesktopContentCard({
           {isFirstOfApunte ? (
             <div className="h-full">
               <div className={showApunteActions ? 'pr-[168px]' : ''}>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Apunte</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Apunte</p>
+                </div>
                 <h3
                   className="mt-2 truncate text-xl font-black tracking-tight text-white transition-all hover:underline"
                   title={apunte.titulo}
@@ -530,7 +535,9 @@ function ApunteCard({
     <>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Apunte</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Apunte</p>
+          </div>
           <h3 className={variant === 'desktop'
             ? 'mt-2 text-xl font-black tracking-tight text-white transition-all hover:underline'
             : 'mt-1 text-base font-black leading-tight text-white transition-all hover:underline'}>
@@ -616,7 +623,10 @@ function ApunteCard({
 
   if (variant === 'desktop') {
     return (
-      <div ref={setRef} className="scroll-mt-24">
+      <div
+        ref={setRef}
+        className="scroll-mt-24"
+      >
         <DarkCard className={['flex flex-col p-5', enfocado ? 'ring-1 ring-white/20' : ''].join(' ')}>
           {content}
         </DarkCard>

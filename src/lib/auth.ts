@@ -362,6 +362,7 @@ export interface YearAdminScope {
 export interface SubjectAdminScope extends YearAdminScope {
   subjectId: string
   subjectSlug: string
+  commissionSlugs: string[]
 }
 
 export interface CommissionAdminScope extends SubjectAdminScope {
@@ -408,6 +409,7 @@ export async function requireYearAdminForSubjectId(
     select: {
       id: true,
       slug: true,
+      commissions: { select: { slug: true } },
       year: { select: { id: true, slug: true } },
     },
   })
@@ -418,6 +420,7 @@ export async function requireYearAdminForSubjectId(
       ? {
           subjectId: subject.id,
           subjectSlug: subject.slug,
+          commissionSlugs: subject.commissions.map((commission) => commission.slug),
           yearId: subject.year.id,
           yearSlug: subject.year.slug,
         }
@@ -434,6 +437,7 @@ export async function requireYearAdminForSubjectSlug(
     select: {
       id: true,
       slug: true,
+      commissions: { select: { slug: true } },
       year: { select: { id: true, slug: true } },
     },
   })
@@ -444,6 +448,7 @@ export async function requireYearAdminForSubjectSlug(
       ? {
           subjectId: subject.id,
           subjectSlug: subject.slug,
+          commissionSlugs: subject.commissions.map((commission) => commission.slug),
           yearId: subject.year.id,
           yearSlug: subject.year.slug,
         }
@@ -469,6 +474,7 @@ export async function requireYearAdminForAgendaId(
         select: {
           id: true,
           slug: true,
+          commissions: { select: { slug: true } },
           year: { select: { id: true, slug: true } },
         },
       },
@@ -484,6 +490,7 @@ export async function requireYearAdminForAgendaId(
           commissionSlug: agenda.commission?.slug ?? null,
           subjectId: agenda.subject.id,
           subjectSlug: agenda.subject.slug,
+          commissionSlugs: agenda.subject.commissions.map((commission) => commission.slug),
           yearId: agenda.subject.year.id,
           yearSlug: agenda.subject.year.slug,
         }
@@ -512,6 +519,7 @@ export async function requireYearAdminForEventoId(
             select: {
               id: true,
               slug: true,
+              commissions: { select: { slug: true } },
               year: { select: { id: true, slug: true } },
             },
           },
@@ -530,6 +538,9 @@ export async function requireYearAdminForEventoId(
           commissionSlug: evento.agenda.commission?.slug ?? null,
           subjectId: evento.agenda.subject.id,
           subjectSlug: evento.agenda.subject.slug,
+          commissionSlugs: evento.agenda.subject.commissions.map(
+            (commission) => commission.slug,
+          ),
           yearId: evento.agenda.subject.year.id,
           yearSlug: evento.agenda.subject.year.slug,
         }
@@ -550,6 +561,7 @@ export async function requireYearAdminForCommissionId(
         select: {
           id: true,
           slug: true,
+          commissions: { select: { slug: true } },
           year: { select: { id: true, slug: true } },
         },
       },
@@ -564,6 +576,7 @@ export async function requireYearAdminForCommissionId(
           commissionSlug: commission.slug,
           subjectId: commission.subject.id,
           subjectSlug: commission.subject.slug,
+          commissionSlugs: commission.subject.commissions.map((item) => item.slug),
           yearId: commission.subject.year.id,
           yearSlug: commission.subject.year.slug,
         }
@@ -583,6 +596,7 @@ export async function requireYearAdminForApunteId(
         select: {
           id: true,
           slug: true,
+          commissions: { select: { slug: true } },
           year: { select: { id: true, slug: true } },
         },
       },
@@ -596,6 +610,7 @@ export async function requireYearAdminForApunteId(
           apunteId: apunte.id,
           subjectId: apunte.subject.id,
           subjectSlug: apunte.subject.slug,
+          commissionSlugs: apunte.subject.commissions.map((commission) => commission.slug),
           yearId: apunte.subject.year.id,
           yearSlug: apunte.subject.year.slug,
         }

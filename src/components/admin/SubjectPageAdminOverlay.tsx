@@ -8,7 +8,8 @@ import { EventModal } from './EventModal'
 import { ApunteModal } from './ApunteModal'
 import { QuizBankModal } from './QuizBankModal'
 import { CommissionModal } from './CommissionModal'
-import { deleteEvento, deleteApunteAction } from '@/app/admin/actions'
+import { deleteApunteAction } from '@/app/admin/actions/apuntes'
+import { deleteEvento } from '@/app/admin/actions/eventos'
 import type { ApunteFull } from './ApunteModal'
 import type { CommissionOption } from '@/lib/commission-preferences'
 
@@ -23,7 +24,7 @@ interface SubjectPageAdminOverlayProps {
     slug: string
     nombre: string
     descripcion?: string
-    links?: { tipo: string; label: string; url: string; orden: number }[]
+    links?: { label: string; url: string; orden: number }[]
     commissions: readonly CommissionOption[]
     categoriasDisponibles: Array<{ id: string; nombre: string }>
   }

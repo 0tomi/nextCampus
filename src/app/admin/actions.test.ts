@@ -201,6 +201,7 @@ describe('admin apunte actions', () => {
     requireYearAdminForSubjectIdMock.mockResolvedValue({
       subjectSlug: 'calculo',
       yearSlug: 'primer-anio',
+      commissionSlugs: [],
       admin: { id: 'admin-1' },
     })
     prismaMock.apunte.create.mockResolvedValue({ id: 'apunte-1' })
@@ -218,6 +219,9 @@ describe('admin apunte actions', () => {
 
     expect(result).toMatchObject({ ok: true, message: 'Apunte creado correctamente.' })
     expect(revalidateTagRawMock).toHaveBeenCalledWith('latest-apuntes', 'max')
+    expect(revalidateTagRawMock).toHaveBeenCalledWith('upcoming-events', 'max')
+    expect(revalidateTagRawMock).toHaveBeenCalledWith('year:primer-anio', 'max')
+    expect(prismaMock.subject.findUnique).not.toHaveBeenCalled()
   })
 
   it('revalida latest-apuntes al editar un apunte', async () => {
@@ -225,6 +229,7 @@ describe('admin apunte actions', () => {
       subjectSlug: 'calculo',
       yearSlug: 'primer-anio',
       yearId: 'year-1',
+      commissionSlugs: [],
       admin: { id: 'admin-1' },
     })
     prismaMock.apunte.findUnique.mockResolvedValue({
@@ -254,6 +259,7 @@ describe('admin apunte actions', () => {
       subjectSlug: 'calculo',
       yearSlug: 'primer-anio',
       yearId: 'year-1',
+      commissionSlugs: [],
       admin: { id: 'admin-1' },
     })
     prismaMock.apunte.findUnique.mockResolvedValue({
@@ -317,6 +323,7 @@ describe('admin apunte actions', () => {
       subjectSlug: 'calculo',
       yearSlug: 'primer-anio',
       yearId: 'year-1',
+      commissionSlugs: [],
       admin: { id: 'admin-2' },
     })
     prismaMock.apunte.findUnique.mockResolvedValue({
@@ -349,6 +356,7 @@ describe('admin apunte actions', () => {
     requireYearAdminForApunteIdMock.mockResolvedValue({
       subjectSlug: 'calculo',
       yearSlug: 'primer-anio',
+      commissionSlugs: [],
       admin: { id: 'admin-1' },
     })
     prismaMock.apunte.findUnique.mockResolvedValue({
@@ -370,6 +378,7 @@ describe('admin apunte actions', () => {
     requireYearAdminForSubjectIdMock.mockResolvedValue({
       subjectSlug: 'calculo',
       yearSlug: 'primer-anio',
+      commissionSlugs: [],
       admin: { id: 'admin-1' },
     })
     prismaMock.apunte.create.mockResolvedValue({ id: 'apunte-1' })
@@ -396,6 +405,7 @@ describe('admin apunte actions', () => {
     requireYearAdminForSubjectIdMock.mockResolvedValue({
       subjectSlug: 'calculo',
       yearSlug: 'primer-anio',
+      commissionSlugs: [],
       admin: { id: 'admin-1' },
     })
     prismaMock.apunte.create.mockResolvedValue({ id: 'apunte-1' })
@@ -436,6 +446,7 @@ describe('admin apunte actions', () => {
     requireYearAdminForSubjectIdMock.mockResolvedValue({
       subjectSlug: 'calculo',
       yearSlug: 'primer-anio',
+      commissionSlugs: [],
       admin: { id: 'admin-1' },
     })
     prismaMock.apunte.create.mockResolvedValue({ id: 'apunte-1' })
@@ -496,6 +507,7 @@ describe('admin apunte actions', () => {
     requireYearAdminForSubjectIdMock.mockResolvedValue({
       subjectSlug: 'calculo',
       yearSlug: 'primer-anio',
+      commissionSlugs: [],
       admin: { id: 'admin-1' },
     })
     prismaMock.apunte.create.mockResolvedValue({ id: 'apunte-1' })
@@ -603,5 +615,28 @@ describe('deleteSubjectAction', () => {
       bancosPreguntasCreados: 1,
       puntaje: 4,
     })
+  })
+})
+
+describe('deleteYearAction', () => {
+  it('invalida los bancos de cada materia eliminada', async () => {
+    requireGeneralAdminMock.mockResolvedValue({ id: 'admin-1' })
+    prismaMock.academicYear.findUnique.mockResolvedValue({
+      slug: 'primer-anio',
+      nombre: 'Primer año',
+      subjects: [
+        {
+          slug: 'calculo',
+          apuntes: [],
+          agendas: [],
+        },
+      ],
+    })
+    prismaMock.academicYear.delete.mockResolvedValue(undefined)
+
+    const { deleteYearAction } = await import('./actions')
+    await deleteYearAction(makeFormData({ id: 'year-1' }))
+
+    expect(revalidateTagRawMock).toHaveBeenCalledWith('quiz-bank-tag', 'max')
   })
 })

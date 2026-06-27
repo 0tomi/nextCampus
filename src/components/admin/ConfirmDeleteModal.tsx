@@ -5,10 +5,12 @@ import { Trash2, AlertTriangle } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import {
   deleteYearAction,
-  deleteSubjectAction,
   getYearDeleteImpactAction,
+} from '@/app/admin/actions/years'
+import {
+  deleteSubjectAction,
   getSubjectDeleteImpactAction,
-} from '@/app/admin/actions'
+} from '@/app/admin/actions/subjects'
 import type { YearDeleteImpact, SubjectDeleteImpact } from '@/lib/queries'
 
 // ---------------------------------------------------------------------------

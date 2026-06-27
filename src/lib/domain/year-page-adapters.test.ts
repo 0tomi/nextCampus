@@ -4,6 +4,7 @@ import {
   buildMobileYear,
   buildYearCalendarEvents,
   buildYearDrawerYears,
+  buildYearLatestApuntes,
   buildYearModalSubjects,
   buildYearOverviewEvents,
   buildYearSidebarItems,
@@ -47,13 +48,7 @@ function makeYear(): YearPageYear {
     slug: 'primer-anio',
     nombre: 'Primer año',
     descripcion: 'Descripción',
-    driveUrl: 'https://drive.example.com',
-    playlistUrl: null,
-    playlistEnabled: true,
-    discordUrl: null,
-    discordDescripcion: null,
-    discordAltUrl: null,
-    discordAltDescripcion: null,
+    links: [{ id: 'year-link-1', label: 'Drive del año', url: 'https://drive.example.com', orden: 0 }],
     color: 'orange',
     career: { nombre: 'Tecnicatura' },
     subjects: [
@@ -108,9 +103,7 @@ function makeCareer(): YearPageCareer {
         slug: 'primer-anio',
         nombre: 'Primer año',
         descripcion: '',
-        driveUrl: '',
-        playlistUrl: null,
-        playlistEnabled: true,
+        links: [],
         orden: 1,
         color: null,
         subjects: [{ id: 'subject-1', slug: 'calculo', nombre: 'Cálculo', descripcion: '', links: [], commissions: [] }],
@@ -144,6 +137,38 @@ describe('year-page-adapters', () => {
   it('calcula el índice visual del año con fallback seguro', () => {
     expect(getYearDisplayIndex(makeCareer(), 'year-1')).toBe(1)
     expect(getYearDisplayIndex(makeCareer(), 'missing')).toBe(1)
+  })
+
+  it('adapta los últimos apuntes del año al shape de UI', () => {
+    expect(
+      buildYearLatestApuntes([
+        {
+          id: 'apunte-1',
+          titulo: 'Resumen unidad 1',
+          slug: 'resumen-unidad-1',
+          createdAt: '2026-06-10T12:00:00.000Z',
+          subject: {
+            slug: 'calculo',
+            nombre: 'Cálculo',
+            year: {
+              slug: 'primer-anio',
+              nombre: 'Primer año',
+            },
+          },
+        },
+      ]),
+    ).toEqual([
+      {
+        id: 'apunte-1',
+        titulo: 'Resumen unidad 1',
+        slug: 'resumen-unidad-1',
+        createdAt: '2026-06-10T12:00:00.000Z',
+        subjectSlug: 'calculo',
+        subjectNombre: 'Cálculo',
+        yearSlug: 'primer-anio',
+        yearNombre: 'Primer año',
+      },
+    ])
   })
 
   it('proyecta eventos de overview, calendario y próximos sin duplicar lógica', () => {

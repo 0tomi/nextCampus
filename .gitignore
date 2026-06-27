@@ -1,6 +1,10 @@
 # Agents
 /.antigravitycli
 /openspec
+/.claude
+/.codex
+CLAUDE.md
+GEMINI.md
 
 # dependencies
 /node_modules

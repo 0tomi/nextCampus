@@ -6,7 +6,7 @@ import { Modal } from '@/components/ui/Modal'
 import {
   uploadQuizBankAction,
   type QuizBankActionState,
-} from '@/app/admin/actions'
+} from '@/app/admin/actions/quiz'
 import { parseQuizBank } from '@/lib/domain/quiz-bank'
 
 // ---- Prompt para la IA (autocontenido, sin skill) ---------------------------

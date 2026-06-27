@@ -6,7 +6,7 @@ import { Modal } from '@/components/ui/Modal'
 import {
   createCommissionAction,
   type CommissionActionState,
-} from '@/app/admin/actions'
+} from '@/app/admin/actions/subjects'
 import type { CommissionOption } from '@/lib/commission-preferences'
 
 interface CommissionModalProps {

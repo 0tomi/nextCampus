@@ -5,6 +5,7 @@ import { FileText, SlidersHorizontal } from 'lucide-react'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { usePreferences } from '@/hooks/usePreferences'
+import { useSeenApuntes } from '@/hooks/useSeenApuntes'
 import { isSubjectVisible, type UserPreferences } from '@/lib/preferences'
 import { formatDate } from '@/lib/utils'
 
@@ -92,6 +93,8 @@ function HomeLatestApuntesDesktop({
   notes: readonly HomeLatestApunte[]
   hasAnyNotes: boolean
 }) {
+  const newBadges = useSeenApuntes({ markOnViewport: false })
+
   return (
     <section className="space-y-4">
       <div className="flex flex-col gap-3 px-1 lg:flex-row lg:items-end lg:justify-between">
@@ -117,6 +120,10 @@ function HomeLatestApuntesDesktop({
               key={note.id}
               variant="interactive"
               className="group relative flex min-h-[176px] flex-col justify-between rounded-lg border border-white/5 bg-surface-1/60 p-4 backdrop-blur-sm"
+              data-apunte-id={note.id}
+              ref={(node) => newBadges.registerNode(note.id, node)}
+              onPointerEnter={() => newBadges.startHoverTimer(note.id)}
+              onPointerLeave={() => newBadges.clearHoverTimer(note.id)}
             >
               <Link
                 href={buildLatestApunteHref(note)}
@@ -132,6 +139,7 @@ function HomeLatestApuntesDesktop({
                   <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[8px] tracking-wider text-emerald-300">
                     {formatDate(note.createdAt)}
                   </span>
+                  {newBadges.isNew(note.id) ? <NewApunteBadge /> : null}
                 </div>
 
                 <div className="space-y-2">
@@ -227,6 +235,8 @@ function HomeLatestApuntesMobile({
   notes: readonly HomeLatestApunte[]
   hasAnyNotes: boolean
 }) {
+  const newBadges = useSeenApuntes({ markOnHover: false })
+
   return (
     <section className="flex flex-col gap-3">
       <div className="px-[18px]">
@@ -245,6 +255,10 @@ function HomeLatestApuntesMobile({
             <Link
               key={note.id}
               href={buildLatestApunteHref(note)}
+              data-apunte-id={note.id}
+              ref={(node) => newBadges.registerNode(note.id, node)}
+              onPointerEnter={() => newBadges.startHoverTimer(note.id)}
+              onPointerLeave={() => newBadges.clearHoverTimer(note.id)}
               className="group flex cursor-pointer flex-col gap-3 rounded-[10px] border border-white/5 bg-[#1a1a1a] px-4 py-3 no-underline transition-colors hover:bg-[#1f1f1f]"
             >
               <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-[0.15em] text-white/35">
@@ -254,6 +268,7 @@ function HomeLatestApuntesMobile({
                 <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[8px] tracking-wider text-emerald-300">
                   {formatDate(note.createdAt)}
                 </span>
+                {newBadges.isNew(note.id) ? <NewApunteBadge /> : null}
               </div>
 
               <div className="space-y-1.5">
@@ -269,6 +284,15 @@ function HomeLatestApuntesMobile({
         )}
       </div>
     </section>
+  )
+}
+
+function NewApunteBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.14em] text-amber-200">
+      <span className="size-1.5 rounded-full bg-orange-400" aria-hidden />
+      Nuevo
+    </span>
   )
 }
 

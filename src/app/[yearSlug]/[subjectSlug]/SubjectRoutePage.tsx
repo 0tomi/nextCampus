@@ -257,7 +257,6 @@ function SubjectTopbar({ subject }: { subject: SubjectRouteContext['subject'] })
     </div>
   )
 }
-
 function SubjectHeroBlock({
   activeCommission,
   colors,

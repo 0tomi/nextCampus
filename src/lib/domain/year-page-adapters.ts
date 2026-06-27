@@ -1,4 +1,9 @@
-import type { getCareer, getCategoriasApunte, getYearBySlug } from '@/lib/queries'
+import type {
+  getCareer,
+  getCategoriasApunte,
+  getLatestApuntesByYear,
+  getYearBySlug,
+} from '@/lib/queries'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import {
   getSubjectVisibleEvents,
@@ -11,6 +16,18 @@ export type YearPageCareer = Awaited<ReturnType<typeof getCareer>>
 export type YearPageCategorias = Awaited<ReturnType<typeof getCategoriasApunte>>
 export type YearPageSubject = YearPageYear['subjects'][number]
 export type YearPageEvent = YearPageSubject['agendas'][number]['eventos'][number]
+export type RawYearLatestApunte = Awaited<ReturnType<typeof getLatestApuntesByYear>>[number]
+
+export type YearLatestApunteItem = {
+  id: string
+  titulo: string
+  slug: string
+  createdAt: string
+  subjectSlug: string
+  subjectNombre: string
+  yearSlug: string
+  yearNombre: string
+}
 
 export function buildYearDrawerYears(career: YearPageCareer) {
   return (career?.years ?? []).map((year) => ({
@@ -24,6 +41,21 @@ export function buildYearDrawerYears(career: YearPageCareer) {
       slug: subject.slug,
       nombre: subject.nombre,
     })),
+  }))
+}
+
+export function buildYearLatestApuntes(
+  apuntes: readonly RawYearLatestApunte[],
+): YearLatestApunteItem[] {
+  return apuntes.map((apunte) => ({
+    id: apunte.id,
+    titulo: apunte.titulo,
+    slug: apunte.slug,
+    createdAt: apunte.createdAt,
+    subjectSlug: apunte.subject.slug,
+    subjectNombre: apunte.subject.nombre,
+    yearSlug: apunte.subject.year.slug,
+    yearNombre: apunte.subject.year.nombre,
   }))
 }
 
@@ -199,13 +231,7 @@ export function buildYearAdminData({
     slug: year.slug,
     nombre: year.nombre,
     descripcion: year.descripcion,
-    driveUrl: year.driveUrl,
-    playlistUrl: year.playlistUrl,
-    playlistEnabled: year.playlistEnabled,
-    discordUrl: year.discordUrl,
-    discordDescripcion: year.discordDescripcion,
-    discordAltUrl: year.discordAltUrl,
-    discordAltDescripcion: year.discordAltDescripcion,
+    links: year.links,
     orden: displayIndex,
     color: year.color,
   }
