@@ -4,6 +4,7 @@ import type { Prisma } from '../../prisma/generated/client/client'
 import { prisma } from './prisma'
 import { countSubjectQuizBanks } from './storage'
 import { isPeriodoTone } from './periodos'
+import { todayKeyAR } from './utils'
 
 // Una fecha "calendario" (sin hora) no es un instante: serializarla como Date
 // arrastra el bug de zona horaria (medianoche UTC se ve como el día anterior en
@@ -1063,6 +1064,17 @@ export async function getYearDeleteImpact(
     recursosCount,
     bancosCount,
   }
+}
+
+// La clave "hoy" (zona AR) para filtrar próximos eventos en páginas prerendereadas.
+// Un Server Component estático no puede llamar new Date() directo (error
+// next-prerender-current-time), pero dentro de 'use cache' sí: el valor queda
+// cacheado y se refresca por revalidate/expire, con desfase máximo de 1h tras
+// la medianoche.
+export async function getTodayKeyAR(): Promise<string> {
+  'use cache'
+  cacheLife({ revalidate: 900, expire: 3600 })
+  return todayKeyAR()
 }
 
 // Enumera los slugs existentes (años, materias, comisiones y apuntes) para que las
