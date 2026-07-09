@@ -360,56 +360,56 @@ export async function getSubjectPageBySlug(slug: string) {
   cacheTag(TAGS.subject(slug))
   cacheLife({ revalidate: 3600 })
 
-  const subject = await prisma.subject.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      slug: true,
-      nombre: true,
-      descripcion: true,
-      links: {
-        select: { id: true, label: true, url: true, orden: true },
-        orderBy: { orden: 'asc' },
-      },
-      year: {
-        select: {
-          id: true,
-          slug: true,
-          nombre: true,
-          color: true,
-          career: { select: { nombre: true } },
+  const [subject, categorias] = await Promise.all([
+    prisma.subject.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        slug: true,
+        nombre: true,
+        descripcion: true,
+        links: {
+          select: { id: true, label: true, url: true, orden: true },
+          orderBy: { orden: 'asc' },
+        },
+        year: {
+          select: {
+            id: true,
+            slug: true,
+            nombre: true,
+            color: true,
+            career: { select: { nombre: true } },
+          },
+        },
+        agendas: {
+          orderBy: { createdAt: 'asc' },
+          select: agendaWithEventosSelect,
+        },
+        commissions: {
+          orderBy: { nombre: 'asc' },
+          select: {
+            id: true,
+            slug: true,
+            nombre: true,
+          },
+        },
+        _count: { select: { apuntes: true } },
+        apuntes: {
+          orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+          take: APUNTES_PAGE_SIZE + 1,
+          select: apunteCardSelect,
         },
       },
-      agendas: {
-        orderBy: { createdAt: 'asc' },
-        select: agendaWithEventosSelect,
-      },
-      commissions: {
-        orderBy: { nombre: 'asc' },
-        select: {
-          id: true,
-          slug: true,
-          nombre: true,
-        },
-      },
-      _count: { select: { apuntes: true } },
-      apuntes: {
-        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-        take: APUNTES_PAGE_SIZE + 1,
-        select: apunteCardSelect,
-      },
-    },
-  })
+    }),
+    prisma.categoria.findMany({ orderBy: { nombre: 'asc' }, select: categoriaSelect }),
+  ])
 
   if (!subject) return null
 
-  const [categorias, base] = await Promise.all([
-    prisma.categoria.findMany({ orderBy: { nombre: 'asc' }, select: categoriaSelect }),
-    Promise.resolve(attachCommissionMetadataToSubject({
-      ...subject,
-      apuntes: subject.apuntes.slice(0, APUNTES_PAGE_SIZE).map(serializeApunteCard),
-    })),
-  ])
+  const base = attachCommissionMetadataToSubject({
+    ...subject,
+    apuntes: subject.apuntes.slice(0, APUNTES_PAGE_SIZE).map(serializeApunteCard),
+  })
 
   return {
     ...base,
@@ -1063,4 +1063,22 @@ export async function getYearDeleteImpact(
     recursosCount,
     bancosCount,
   }
+}
+
+// Enumera los slugs existentes (años, materias, comisiones y apuntes) para que las
+// rutas públicas se pre-rendericen en build time vía generateStaticParams. Corre solo
+// durante el build, por eso NO usa 'use cache' (esa directiva es para request time).
+export async function getContentSlugsForStaticParams() {
+  return prisma.academicYear.findMany({
+    select: {
+      slug: true,
+      subjects: {
+        select: {
+          slug: true,
+          commissions: { select: { slug: true } },
+          apuntes: { select: { slug: true } },
+        },
+      },
+    },
+  })
 }

@@ -5,7 +5,7 @@ import { ArrowLeft, BookOpen } from 'lucide-react'
 import { ApunteRecursoView } from '@/components/apuntes/ApunteRecursoView'
 import { CopyApunteLinkButton } from '@/components/apuntes/CopyApunteLinkButton'
 import { DarkCard } from '@/components/ui/DarkCard'
-import { getApuntePageBySlug } from '@/lib/queries'
+import { getApuntePageBySlug, getContentSlugsForStaticParams } from '@/lib/queries'
 import { SafeHtml } from '@/components/ui/SafeHtml'
 import { UploaderByline } from '@/components/ui/UploaderByline'
 
@@ -14,6 +14,21 @@ type ApuntePageParams = {
   yearSlug: string
   subjectSlug: string
   apunteSlug: string
+}
+
+// Pre-renderiza todas las páginas de apunte existentes en build time.
+export async function generateStaticParams() {
+  const years = await getContentSlugsForStaticParams()
+
+  return years.flatMap((year) =>
+    year.subjects.flatMap((subject) =>
+      subject.apuntes.map((apunte) => ({
+        yearSlug: year.slug,
+        subjectSlug: subject.slug,
+        apunteSlug: apunte.slug,
+      })),
+    ),
+  )
 }
 
 export async function generateMetadata({
