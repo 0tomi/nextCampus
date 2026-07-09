@@ -13,16 +13,6 @@ import { todayKeyAR } from './utils'
 // `toISOString().slice(0,10)` extrae el día correcto sin tocar zonas horarias.
 const toDateKey = (d: Date): string => d.toISOString().slice(0, 10)
 
-// Inicio del día calendario ACTUAL en zona AR, expresado como Date a medianoche
-// UTC para comparar contra una columna `@db.Date`. Evita que los eventos de hoy
-// "desaparezcan" de próximos al avanzar la hora del reloj.
-function arTodayBoundary(): Date {
-  const ar = new Date().toLocaleDateString('en-CA', {
-    timeZone: 'America/Argentina/Buenos_Aires',
-  })
-  return new Date(`${ar}T00:00:00.000Z`)
-}
-
 // Orden canónico de eventos: por día y, dentro del día, por hora. Los eventos
 // sin hora van PRIMERO (nulls first).
 const eventoOrderBy: Prisma.EventoOrderByWithRelationInput[] = [
@@ -574,108 +564,6 @@ export async function getSubjectQuizMeta(slug: string) {
   })
 }
 
-// Sin cache: usa includes para campos de edición que cambian con cada
-// mutación admin. La lectura es del admin panel, no del frontend público.
-export function getAdminSubjectBySlug(slug: string) {
-  return prisma.subject.findUnique({
-    where: { slug },
-    include: {
-      year: { select: { slug: true } },
-      agendas: {
-        orderBy: { createdAt: 'asc' },
-        include: {
-          commission: true,
-          eventos: {
-            orderBy: eventoOrderBy,
-            include: {
-              tipoEvento: true,
-              createdBy: { select: { nombreUsuario: true } },
-              apuntes: {
-                orderBy: { createdAt: 'asc' },
-                select: {
-                  apunte: {
-                    select: {
-                      id: true,
-                      titulo: true,
-                      slug: true,
-                      subject: {
-                        select: { slug: true, year: { select: { slug: true } } },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      commissions: {
-        orderBy: { nombre: 'asc' },
-        include: {
-          agenda: {
-            include: {
-              commission: true,
-              eventos: {
-                orderBy: eventoOrderBy,
-                include: {
-                  tipoEvento: true,
-                  createdBy: { select: { nombreUsuario: true } },
-                  apuntes: {
-                    orderBy: { createdAt: 'asc' },
-                    select: {
-                      apunte: {
-                        select: {
-                          id: true,
-                          titulo: true,
-                          slug: true,
-                          subject: {
-                            select: { slug: true, year: { select: { slug: true } } },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      apuntes: {
-        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-        include: {
-          recursos: { orderBy: { orden: 'asc' } },
-          categorias: {
-            include: { categoria: true },
-            orderBy: { categoria: { nombre: 'asc' } },
-          },
-        },
-      },
-    },
-  }).then((subject) => {
-    if (!subject) return null
-
-    const agendas = subject.agendas.map((agenda) => attachCommissionMetadataToAgenda(agenda))
-    const agendaGeneral = agendas.find((agenda) => agenda.commissionId === null) ?? null
-    const agendasByCommissionId = new Map(
-      agendas
-        .filter((agenda) => agenda.commissionId !== null)
-        .map((agenda) => [agenda.commissionId, agenda] as const),
-    )
-
-    return {
-      ...subject,
-      agenda: agendaGeneral,
-      agendaGeneral,
-      agendas,
-      commissions: subject.commissions.map((commission) => ({
-        ...commission,
-        agenda: agendasByCommissionId.get(commission.id) ?? commission.agenda ?? null,
-      })),
-    }
-  })
-}
-
 export async function getTiposEvento() {
   'use cache'
   cacheTag(TAGS.tiposEvento)
@@ -736,66 +624,6 @@ export async function getCategoriasPeriodo() {
   return rows.map((row) => ({
     ...row,
     tone: isPeriodoTone(row.tone) ? row.tone : 'sky',
-  }))
-}
-
-// Cacheado 60s: el filtro "fecha >= ahora" se mueve con el reloj, pero a
-// nivel de la home con revalidate=300 ya estábamos sirviendo datos hasta
-// 5 min viejos. 60s es un buen balance entre frescura y carga a la DB.
-export async function getUpcomingEventsCrossYear(limit = 6) {
-  'use cache'
-  cacheTag(TAGS.upcomingEvents)
-  cacheLife({ revalidate: 60, expire: 3600 })
-
-  const rows = await prisma.evento.findMany({
-    // "Próximo" es por DÍA, no por instante: un evento de hoy sigue
-    // apareciendo todo el día (incluido uno sin hora). Comparamos contra
-    // el inicio del día calendario de AR.
-    where: { fecha: { gte: arTodayBoundary() } },
-    orderBy: eventoOrderBy,
-    take: limit,
-    select: {
-      id: true,
-      titulo: true,
-      fecha: true,
-      hora: true,
-      tipoEvento: { select: { nombre: true } },
-      apuntes: {
-        orderBy: { createdAt: 'asc' },
-        select: {
-          apunte: {
-            select: {
-              id: true,
-              titulo: true,
-              slug: true,
-              subject: {
-                select: { slug: true, year: { select: { slug: true } } },
-              },
-            },
-          },
-        },
-      },
-      agenda: {
-        select: {
-          commissionId: true,
-          commission: {
-            select: {
-              id: true,
-              slug: true,
-              nombre: true,
-            },
-          },
-          subject: {
-            select: { slug: true, nombre: true },
-          },
-        },
-      },
-    },
-  })
-  return rows.map((row) => ({
-    ...row,
-    fecha: toDateKey(row.fecha),
-    apuntes: row.apuntes.map(({ apunte }) => apunte),
   }))
 }
 

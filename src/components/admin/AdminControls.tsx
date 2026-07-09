@@ -25,7 +25,7 @@ interface AdminControlsProps {
  * permisos requeridos. La sesión llega resuelta desde el server (provider
  * en el root layout), así que no hay flash ni fetch en cliente.
  *
- * Todas las mutaciones reales están protegidas server-side por requireAdmin()
+ * Todas las mutaciones reales están protegidas server-side por requireAnyAdmin()
  * en las server actions; esto es estrictamente cosmético.
  */
 export function AdminControls({

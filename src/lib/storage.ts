@@ -278,7 +278,7 @@ export async function readQuizBanks(
   return out
 }
 
-export interface QuizBankContributionRevocation {
+interface QuizBankContributionRevocation {
   ownerId: string
   unitsCount: number
 }

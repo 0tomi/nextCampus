@@ -247,10 +247,6 @@ export async function requireAnyAdmin(): Promise<AdminUser> {
   return admin
 }
 
-// Alias compatible con las llamadas existentes. F2 reemplazará los checks amplios
-// por helpers más específicos según la mutación.
-export const requireAdmin = requireAnyAdmin
-
 export async function requireGeneralAdmin(): Promise<AdminUser> {
   const admin = await requireAnyAdmin()
   if (admin.role !== USER_ROLES.ADMIN) {
@@ -321,8 +317,6 @@ export async function getAdminClientSession(): Promise<AdminClientSession> {
 export function adminCanManageYear(admin: AdminUser, yearId: string): boolean {
   return admin.canManageAllYears || admin.yearIds.includes(yearId)
 }
-
-export const canAdminManageYear = adminCanManageYear
 
 export function adminCanManageAcademicStructure(admin: AdminUser): boolean {
   return admin.canManageAcademicStructure

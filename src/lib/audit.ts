@@ -10,7 +10,7 @@ import {
 export { AUDIT_ACTIONS, AUDIT_ACTION_LABELS }
 export type { AuditAction, AuditDetail, AuditEntityType }
 
-export interface RecordAuditInput {
+interface RecordAuditInput {
   userId: string
   action: AuditAction
   entityType?: AuditEntityType

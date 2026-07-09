@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import type { AdminUser } from '@/lib/auth'
 import { getVisibleChangelogAudiences, isChangelogUnread, type ChangelogAudience } from '@/lib/changelog-rules'
 
-export interface ChangelogEntryDTO {
+interface ChangelogEntryDTO {
   id: string
   changelogId: string
   title: string
@@ -18,7 +18,7 @@ export interface ChangelogEntryDTO {
   unread: boolean
 }
 
-export interface ChangelogPageDTO {
+interface ChangelogPageDTO {
   entries: ChangelogEntryDTO[]
   nextCursor: string | null
 }
