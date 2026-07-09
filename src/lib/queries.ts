@@ -263,7 +263,7 @@ function serializeApunteCard(apunte: Prisma.ApunteGetPayload<{ select: typeof ap
 export async function getCareer() {
   'use cache'
   cacheTag(TAGS.career)
-  cacheLife({ revalidate: 3600 })
+  cacheLife({ revalidate: 3600, expire: 86400 })
 
   return prisma.career.findFirst({
     select: {
@@ -309,7 +309,7 @@ export async function getCareer() {
 export async function getYearBySlug(slug: string) {
   'use cache'
   cacheTag(TAGS.year(slug), TAGS.career)
-  cacheLife({ revalidate: 3600 })
+  cacheLife({ revalidate: 3600, expire: 86400 })
 
   const year = await prisma.academicYear.findUnique({
     where: { slug },
@@ -358,7 +358,7 @@ export async function getYearBySlug(slug: string) {
 export async function getSubjectPageBySlug(slug: string) {
   'use cache'
   cacheTag(TAGS.subject(slug))
-  cacheLife({ revalidate: 3600 })
+  cacheLife({ revalidate: 3600, expire: 86400 })
 
   const [subject, categorias] = await Promise.all([
     prisma.subject.findUnique({
@@ -426,7 +426,7 @@ export async function getSubjectPageBySlug(slug: string) {
 export async function getApuntePageBySlug(subjectSlug: string, apunteSlug: string) {
   'use cache'
   cacheTag(TAGS.subject(subjectSlug))
-  cacheLife({ revalidate: 3600 })
+  cacheLife({ revalidate: 3600, expire: 86400 })
 
   const subject = await prisma.subject.findUnique({
     where: { slug: subjectSlug },
@@ -518,7 +518,7 @@ export async function getUserNamesByAccountId(
 export async function getCategoriasApunte(): Promise<CategoriaListItem[]> {
   'use cache'
   cacheTag(TAGS.categorias)
-  cacheLife({ revalidate: 3600 })
+  cacheLife({ revalidate: 3600, expire: 86400 })
 
   return prisma.categoria.findMany({ orderBy: { nombre: 'asc' }, select: categoriaSelect })
 }
@@ -560,7 +560,7 @@ export async function getApuntesPage(input: {
 export async function getSubjectQuizMeta(slug: string) {
   'use cache'
   cacheTag(TAGS.subject(slug))
-  cacheLife({ revalidate: 3600 })
+  cacheLife({ revalidate: 3600, expire: 86400 })
 
   return prisma.subject.findUnique({
     where: { slug },
@@ -678,7 +678,7 @@ export function getAdminSubjectBySlug(slug: string) {
 export async function getTiposEvento() {
   'use cache'
   cacheTag(TAGS.tiposEvento)
-  cacheLife({ revalidate: 86400 })
+  cacheLife({ revalidate: 86400, expire: 604800 })
 
   return prisma.tipoEvento.findMany({ orderBy: { nombre: 'asc' } })
 }
@@ -688,7 +688,7 @@ export async function getTiposEvento() {
 export async function getPeriodos() {
   'use cache'
   cacheTag(TAGS.periodos)
-  cacheLife({ revalidate: 3600 })
+  cacheLife({ revalidate: 3600, expire: 86400 })
 
   const rows = await prisma.periodoAcademico.findMany({
     orderBy: { fechaInicio: 'asc' },
@@ -722,7 +722,7 @@ export async function getPeriodos() {
 export async function getCategoriasPeriodo() {
   'use cache'
   cacheTag(TAGS.periodos)
-  cacheLife({ revalidate: 3600 })
+  cacheLife({ revalidate: 3600, expire: 86400 })
 
   const rows = await prisma.categoriaPeriodo.findMany({
     orderBy: { label: 'asc' },
@@ -744,7 +744,7 @@ export async function getCategoriasPeriodo() {
 export async function getUpcomingEventsCrossYear(limit = 6) {
   'use cache'
   cacheTag(TAGS.upcomingEvents)
-  cacheLife({ revalidate: 60 })
+  cacheLife({ revalidate: 60, expire: 3600 })
 
   const rows = await prisma.evento.findMany({
     // "Próximo" es por DÍA, no por instante: un evento de hoy sigue
@@ -801,7 +801,7 @@ export async function getUpcomingEventsCrossYear(limit = 6) {
 export async function getHomeCalendarEvents() {
   'use cache'
   cacheTag(TAGS.upcomingEvents, TAGS.career)
-  cacheLife({ revalidate: 300 })
+  cacheLife({ revalidate: 300, expire: 3600 })
 
   const rows = await prisma.evento.findMany({
     orderBy: eventoOrderBy,
@@ -873,7 +873,7 @@ export async function getHomeCalendarEvents() {
 export async function getLatestApuntes() {
   'use cache'
   cacheTag(TAGS.latestApuntes, TAGS.career)
-  cacheLife({ revalidate: 300 })
+  cacheLife({ revalidate: 300, expire: 3600 })
 
   // Traemos todos los apuntes ordenados por fecha y dejamos que el cliente
   // filtre según los años/materias elegidos y recorte a los últimos. Si
@@ -911,7 +911,7 @@ export async function getLatestApuntes() {
 export async function getLatestApuntesByYear(yearSlug: string, limit = 6) {
   'use cache'
   cacheTag(TAGS.year(yearSlug))
-  cacheLife({ revalidate: 300 })
+  cacheLife({ revalidate: 300, expire: 3600 })
 
   const rows = await prisma.apunte.findMany({
     where: {

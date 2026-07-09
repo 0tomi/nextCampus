@@ -1,15 +1,16 @@
-import { revalidatePath, revalidateTag as revalidateTagRaw } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { z } from 'zod'
 import { requireGeneralAdmin, requireAcademicManager, requireAnyAdmin } from '@/lib/auth'
 import { queryTags } from '@/lib/queries'
 import { hostnameLabel } from '@/lib/linkFavicon'
 
-// Next 16 exige un perfil de cacheLife como segundo argumento de
-// revalidateTag. Usamos "max" (stale-while-revalidate) en todas las
-// invalidaciones admin: el siguiente request sirve la versión vieja y
-// dispara la regeneración en background.
+// updateTag (a diferencia de revalidateTag) invalida en el momento y da
+// semántica read-your-own-writes: el propio request de la server action ya
+// ve los datos frescos, en vez de servir una versión vieja mientras
+// revalida en background. Next 16 solo permite llamarlo dentro de una
+// Server Action, que es el único contexto desde el que se usa este wrapper.
 export function revalidateTag(tag: string): void {
-  revalidateTagRaw(tag, 'max')
+  updateTag(tag)
 }
 
 // Toda escritura: auth específico (general o por año) -> Zod -> sanitize.

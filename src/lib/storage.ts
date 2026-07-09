@@ -164,7 +164,7 @@ export async function listQuizBanks(
 ): Promise<QuizBankMeta[]> {
   'use cache'
   cacheTag(quizBanksCacheTag(yearSlug, subjectSlug))
-  cacheLife({ revalidate: 3600 })
+  cacheLife({ revalidate: 3600, expire: 86400 })
 
   return listQuizBanksUncached(yearSlug, subjectSlug)
 }
