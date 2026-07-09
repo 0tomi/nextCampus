@@ -13,6 +13,7 @@ export function ConfigButton({ iconOnly = false, className }: ConfigButtonProps)
       <Link
         href="/configurar"
         aria-label="Configurar"
+        prefetch={false}
         className={cn(
           'inline-flex size-9 cursor-pointer items-center justify-center rounded-md border border-white/10 bg-transparent text-white/70 transition-colors hover:bg-white/5 hover:text-white',
           className,
@@ -26,6 +27,7 @@ export function ConfigButton({ iconOnly = false, className }: ConfigButtonProps)
   return (
     <Link
       href="/configurar"
+      prefetch={false}
       className={cn(
         'inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white',
         className,

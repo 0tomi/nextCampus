@@ -9,10 +9,10 @@ import {
   extraerYoutubeId,
   inferDrivePreviewMode,
   nombreFallbackRecurso,
-  youtubeEmbedUrl,
   type DriveKind,
   type RecursoTipo,
 } from '@/lib/recursos'
+import { YouTubeFacade } from '@/components/media/YouTubeFacade'
 import { ExternalLink, FileText, ImageIcon, PlayCircle, Maximize2, Minimize2, Globe, Download } from 'lucide-react'
 
 function Github({ className }: { className?: string }) {
@@ -222,20 +222,13 @@ function ApunteRecursoMedia({
   if (recurso.tipo === 'YOUTUBE') {
     const id = extraerYoutubeId(recurso.url)
     if (!id) return null
-    // Embed cross-origin (youtube-nocookie.com): allow-same-origin es seguro acá
-    // —la Same-Origin Policy impide que el player toque el DOM de la página— y el
-    // reproductor lo necesita para acceder a su propio storage.
     return (
-      <iframe
-        src={youtubeEmbedUrl(id)}
+      <YouTubeFacade
+        videoId={id}
+        title={titulo}
         className={variant === 'content-card'
           ? 'size-full rounded-md border border-white/10 bg-black/20'
           : 'aspect-video w-full rounded-md border border-white/10 bg-black/20'}
-        loading="lazy"
-        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        sandbox="allow-scripts allow-presentation allow-popups allow-same-origin"
-        allowFullScreen
-        title={titulo}
       />
     )
   }

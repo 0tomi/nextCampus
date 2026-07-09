@@ -114,6 +114,7 @@ function NotificationPanelContent({
         <Link
           href="/admin/changelog"
           onClick={onClose}
+          prefetch={false}
           className="inline-flex cursor-pointer items-center gap-1.5 rounded border border-white/10 px-2.5 py-1.5 text-xs font-semibold text-white/60 transition-colors hover:bg-white/5 hover:text-white"
         >
           Ver todo

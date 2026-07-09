@@ -287,6 +287,7 @@ export function MobileHome({
           <section className="px-[18px]">
             <Link
               href="/configurar"
+              prefetch={false}
               className="relative block group overflow-hidden rounded-[24px] border border-white/6 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.01))] hover:bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-6 text-center cursor-pointer transition-all duration-300"
             >
               <div className="pointer-events-none absolute -right-6 -bottom-6 size-20 rounded-full bg-primary/10 blur-2xl group-hover:bg-primary/15 transition-colors duration-300" />
@@ -381,6 +382,7 @@ function ConfigureAgendaNotice() {
       </div>
       <Link
         href="/configurar"
+        prefetch={false}
         className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-light"
       >
         <SlidersHorizontal className="size-4" />
