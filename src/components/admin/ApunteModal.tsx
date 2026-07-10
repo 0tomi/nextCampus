@@ -15,8 +15,8 @@ import {
 } from '@/app/admin/actions/apuntes'
 import { RichTextEditor } from './RichTextEditor'
 import { RecursoRow } from '@/components/admin/apunte/RecursoRow'
-import { useAutoApunteCategories } from '@/hooks/useAutoApunteCategories'
-import { useApunteRecursos } from '@/hooks/useApunteRecursos'
+import { useAutoApunteCategories } from '@/components/admin/apunte/useAutoApunteCategories'
+import { useApunteRecursos } from '@/components/admin/apunte/useApunteRecursos'
 import {
   getApunteFormValidationError,
   serializeRecursos,
