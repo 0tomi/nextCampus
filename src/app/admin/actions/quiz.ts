@@ -1,7 +1,7 @@
 'use server'
 
 import { z } from 'zod'
-import { requireYearAdminForSubjectSlug } from '@/lib/auth'
+import { requireAnyAdmin, requireYearAdminForSubjectSlug } from '@/lib/auth'
 import {
   uploadQuizBank,
   deleteQuizBank,
@@ -31,6 +31,7 @@ export async function uploadQuizBankAction(
   _prev: QuizBankActionState,
   formData: FormData,
 ): Promise<QuizBankActionState> {
+  await requireAnyAdmin()
   const parsedForm = uploadBankSchema.safeParse({
     subjectSlug: formData.get('subjectSlug'),
     json: formData.get('json'),
@@ -93,6 +94,7 @@ export async function uploadQuizBankAction(
 }
 
 export async function deleteQuizBankAction(formData: FormData): Promise<void> {
+  await requireAnyAdmin()
   const subjectSlug = z.string().min(1).parse(formData.get('subjectSlug'))
   const bankId = z.uuid().parse(formData.get('bankId'))
   const scope = await requireYearAdminForSubjectSlug(subjectSlug)
