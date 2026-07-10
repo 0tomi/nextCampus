@@ -6,7 +6,10 @@
 > los retome. Al terminar cada fix: `pnpm typecheck && pnpm test`, y commit Conventional
 > Commits sin atribución a IA. Antes de mergear a main: `pnpm build`.
 
-## Prioridad 1 — Corregir (hardening de auth)
+## Prioridad 1 — ✅ CORREGIDO en commit `3d998a8` (hardening de auth)
+
+> Ya resuelto: se restauró `await requireAnyAdmin()` como primera sentencia en las 5
+> actions listadas abajo. Typecheck + 268 tests en verde. Se deja el detalle como registro.
 
 ### 1. Validación Zod corre antes del check de auth en 5 server actions
 
