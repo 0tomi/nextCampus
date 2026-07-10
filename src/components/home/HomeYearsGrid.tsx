@@ -353,7 +353,8 @@ function HomeYearCardSection({
                 <div>
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38 flex items-center gap-2">
+                      {/* div y no p: SubjectAdminRow renderiza <div>s adentro (HTML invalido en <p>, rompe hidratacion) */}
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38 flex items-center gap-2">
                         <span>Materia {String(index + 1).padStart(2, '0')}</span>
                         <AdminControls requireAcademicStructure noWrapper>
                           <span
@@ -375,7 +376,7 @@ function HomeYearCardSection({
                             />
                           </span>
                         </AdminControls>
-                      </p>
+                      </div>
                     </div>
 
                     <span
