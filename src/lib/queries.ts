@@ -20,6 +20,33 @@ const eventoOrderBy: Prisma.EventoOrderByWithRelationInput[] = [
   { hora: { sort: 'asc', nulls: 'first' } },
 ]
 
+// Select del pivot ApunteEvento → apunte relacionado (id/titulo/slug + su
+// materia/año). Repetido en cualquier query que traiga eventos con sus
+// apuntes vinculados.
+const relatedApunteSelect = {
+  orderBy: { createdAt: 'asc' },
+  select: {
+    apunte: {
+      select: {
+        id: true,
+        titulo: true,
+        slug: true,
+        subject: {
+          select: {
+            slug: true,
+            year: { select: { slug: true } },
+          },
+        },
+      },
+    },
+  },
+} as const
+
+// Desenvuelve el pivot ApunteEvento → [{ apunte }] al apunte plano.
+function unwrapRelatedApuntes(apuntes: readonly { apunte: RelatedApunte }[]): RelatedApunte[] {
+  return apuntes.map(({ apunte }) => apunte)
+}
+
 const eventoSelect = {
   id: true,
   titulo: true,
@@ -30,24 +57,7 @@ const eventoSelect = {
   createdBy: { select: { nombreUsuario: true } },
   tipoEventoId: true,
   tipoEvento: { select: { nombre: true } },
-  apuntes: {
-    orderBy: { createdAt: 'asc' },
-    select: {
-      apunte: {
-        select: {
-          id: true,
-          titulo: true,
-          slug: true,
-          subject: {
-            select: {
-              slug: true,
-              year: { select: { slug: true } },
-            },
-          },
-        },
-      },
-    },
-  },
+  apuntes: relatedApunteSelect,
 } as const
 
 const agendaWithEventosSelect = {
@@ -154,7 +164,7 @@ function attachCommissionMetadataToAgenda(
       ...evento,
       fecha: toDateKey(evento.fecha),
       createdByNombre: evento.createdBy?.nombreUsuario ?? null,
-      apuntes: evento.apuntes.map(({ apunte }) => apunte),
+      apuntes: unwrapRelatedApuntes(evento.apuntes),
       commissionId: agenda.commissionId,
       commission,
     })),
@@ -254,6 +264,38 @@ function serializeApunteCard(apunte: Prisma.ApunteGetPayload<{ select: typeof ap
     ...apunte,
     createdAt: apunte.createdAt.toISOString(),
     categorias: apunte.categorias.map(({ categoria }) => categoria),
+  }
+}
+
+// Shape mínimo de "apunte reciente" usado por los listados del home y del año
+// (sin recursos/categorías: solo lo necesario para armar el link + metadata).
+const latestApunteSelect = {
+  id: true,
+  titulo: true,
+  slug: true,
+  createdAt: true,
+  updatedAt: true,
+  subject: {
+    select: {
+      slug: true,
+      nombre: true,
+      year: {
+        select: {
+          slug: true,
+          nombre: true,
+        },
+      },
+    },
+  },
+} as const
+
+function serializeLatestApunte(
+  apunte: Prisma.ApunteGetPayload<{ select: typeof latestApunteSelect }>,
+) {
+  return {
+    ...apunte,
+    createdAt: apunte.createdAt.toISOString(),
+    updatedAt: apunte.updatedAt.toISOString(),
   }
 }
 
@@ -649,21 +691,7 @@ export async function getHomeCalendarEvents() {
       tipoEventoId: true,
       tipoEvento: { select: { nombre: true } },
       createdByUserId: true,
-      apuntes: {
-        orderBy: { createdAt: 'asc' },
-        select: {
-          apunte: {
-            select: {
-              id: true,
-              titulo: true,
-              slug: true,
-              subject: {
-                select: { slug: true, year: { select: { slug: true } } },
-              },
-            },
-          },
-        },
-      },
+      apuntes: relatedApunteSelect,
       agenda: {
         select: {
           id: true,
@@ -701,7 +729,7 @@ export async function getHomeCalendarEvents() {
   return rows.map((row) => ({
     ...row,
     fecha: toDateKey(row.fecha),
-    apuntes: row.apuntes.map(({ apunte }) => apunte),
+    apuntes: unwrapRelatedApuntes(row.apuntes),
   }))
 }
 
@@ -716,31 +744,9 @@ export async function getLatestApuntes() {
   // porque sus apuntes no entran en los más nuevos del campus entero.
   const rows = await prisma.apunte.findMany({
     orderBy: { updatedAt: 'desc' },
-    select: {
-      id: true,
-      titulo: true,
-      slug: true,
-      createdAt: true,
-      updatedAt: true,
-      subject: {
-        select: {
-          slug: true,
-          nombre: true,
-          year: {
-            select: {
-              slug: true,
-              nombre: true,
-            },
-          },
-        },
-      },
-    },
+    select: latestApunteSelect,
   })
-  return rows.map((apunte) => ({
-    ...apunte,
-    createdAt: apunte.createdAt.toISOString(),
-    updatedAt: apunte.updatedAt.toISOString(),
-  }))
+  return rows.map(serializeLatestApunte)
 }
 
 export async function getLatestApuntesByYear(yearSlug: string, limit = 6) {
@@ -758,32 +764,10 @@ export async function getLatestApuntesByYear(yearSlug: string, limit = 6) {
     },
     orderBy: { updatedAt: 'desc' },
     take: limit,
-    select: {
-      id: true,
-      titulo: true,
-      slug: true,
-      createdAt: true,
-      updatedAt: true,
-      subject: {
-        select: {
-          slug: true,
-          nombre: true,
-          year: {
-            select: {
-              slug: true,
-              nombre: true,
-            },
-          },
-        },
-      },
-    },
+    select: latestApunteSelect,
   })
 
-  return rows.map((apunte) => ({
-    ...apunte,
-    createdAt: apunte.createdAt.toISOString(),
-    updatedAt: apunte.updatedAt.toISOString(),
-  }))
+  return rows.map(serializeLatestApunte)
 }
 
 // ---------------------------------------------------------------------------

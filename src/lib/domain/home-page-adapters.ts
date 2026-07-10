@@ -80,37 +80,66 @@ export function isHomeEventVisibleForPrefs(
   )
 }
 
-export function buildHomeUpcomingEvents(
+type HomeEventCore = {
+  id: string
+  titulo: string
+  descripcionHtml: string | null
+  fecha: string
+  hora: string | null
+  tipo: string
+  tipoId: string
+  subjectId: string
+  subjectSlug: string
+  subjectNombre: string
+  materiaNombre: string
+  yearId: string
+  yearSlug: string
+  yearNombre: string
+  agendaId: string
+  commissionId: string | null
+  commissionSlug: string | null
+  commissionNombre: string | null
+  apuntes: RawHomeCalendarEvent['apuntes']
+}
+
+function mapHomeEvent(event: RawHomeCalendarEvent): HomeEventCore | null {
+  const subject = event.agenda?.subject
+  const year = subject?.year
+  if (!subject || !year) return null
+
+  return {
+    id: event.id,
+    titulo: event.titulo,
+    descripcionHtml: event.descripcionHtml,
+    fecha: event.fecha,
+    hora: event.hora,
+    tipo: event.tipoEvento.nombre,
+    tipoId: event.tipoEventoId,
+    subjectId: subject.id,
+    subjectSlug: subject.slug,
+    subjectNombre: subject.nombre,
+    materiaNombre: subject.nombre,
+    yearId: year.id,
+    yearSlug: year.slug,
+    yearNombre: year.nombre,
+    agendaId: event.agenda.id,
+    commissionId: event.agenda.commissionId,
+    commissionSlug: event.agenda.commission?.slug ?? null,
+    commissionNombre: event.agenda.commission?.nombre ?? null,
+    apuntes: event.apuntes,
+  }
+}
+
+function buildVisibleHomeEvents(
   events: readonly RawHomeCalendarEvent[],
   prefs: UserPreferences | null,
-  todayKey: string,
-  limit = 50,
-): HomeUpcomingEvent[] {
-  const visibleEvents = events.reduce<HomeUpcomingEvent[]>((acc, event) => {
-    if (!isUpcomingEvent(event, todayKey)) return acc
+  includeEvent: (event: RawHomeCalendarEvent) => boolean,
+): HomeEventCore[] {
+  return events.reduce<HomeEventCore[]>((acc, event) => {
+    if (!includeEvent(event)) return acc
 
-    const subject = event.agenda?.subject
-    const year = subject?.year
-    if (!subject || !year) return acc
-
-    const mappedEvent: HomeUpcomingEvent = {
-      id: event.id,
-      titulo: event.titulo,
-      descripcionHtml: event.descripcionHtml,
-      fecha: event.fecha,
-      hora: event.hora,
-      tipo: event.tipoEvento.nombre,
-      tipoId: event.tipoEventoId,
-      subjectId: subject.id,
-      subjectSlug: subject.slug,
-      subjectNombre: subject.nombre,
-      yearId: year.id,
-      yearSlug: year.slug,
-      commissionId: event.agenda.commissionId,
-      commissionSlug: event.agenda.commission?.slug ?? null,
-      commissionNombre: event.agenda.commission?.nombre ?? null,
-      apuntes: event.apuntes,
-    }
+    const mappedEvent = mapHomeEvent(event)
+    if (!mappedEvent) return acc
 
     if (isHomeEventVisibleForPrefs(mappedEvent, prefs)) {
       acc.push(mappedEvent)
@@ -118,6 +147,17 @@ export function buildHomeUpcomingEvents(
 
     return acc
   }, [])
+}
+
+export function buildHomeUpcomingEvents(
+  events: readonly RawHomeCalendarEvent[],
+  prefs: UserPreferences | null,
+  todayKey: string,
+  limit = 50,
+): HomeUpcomingEvent[] {
+  const visibleEvents = buildVisibleHomeEvents(events, prefs, (event) =>
+    isUpcomingEvent(event, todayKey),
+  )
 
   return sortEventsByDateTime(visibleEvents).slice(0, limit)
 }
@@ -126,37 +166,7 @@ export function buildHomeCalendarEvents(
   events: readonly RawHomeCalendarEvent[],
   prefs: UserPreferences | null,
 ): HomeCalendarPageEvent[] {
-  return events.reduce<HomeCalendarPageEvent[]>((acc, event) => {
-    const subject = event.agenda?.subject
-    const year = subject?.year
-    if (!subject || !year) return acc
-
-    const mappedEvent: HomeCalendarPageEvent = {
-      id: event.id,
-      titulo: event.titulo,
-      fecha: event.fecha,
-      hora: event.hora,
-      tipo: event.tipoEvento.nombre,
-      tipoId: event.tipoEventoId,
-      yearNombre: year.nombre,
-      yearSlug: year.slug,
-      subjectSlug: subject.slug,
-      subjectId: subject.id,
-      materiaNombre: subject.nombre,
-      descripcionHtml: event.descripcionHtml,
-      commissionSlug: event.agenda.commission?.slug ?? null,
-      commissionNombre: event.agenda.commission?.nombre ?? null,
-      agendaId: event.agenda.id,
-      yearId: year.id,
-      apuntes: event.apuntes,
-    }
-
-    if (isHomeEventVisibleForPrefs(mappedEvent, prefs)) {
-      acc.push(mappedEvent)
-    }
-
-    return acc
-  }, [])
+  return buildVisibleHomeEvents(events, prefs, () => true)
 }
 
 export function buildHomeLatestApuntes(

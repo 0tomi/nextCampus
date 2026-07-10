@@ -11,14 +11,32 @@ import {
 import {
   buildMobileYear,
   buildYearLatestApuntes,
-  buildYearAdminData,
   buildYearCalendarEvents,
   buildYearDrawerYears,
   buildYearModalSubjects,
   buildYearOverviewEvents,
   buildYearUpcomingEvents,
   getYearDisplayIndex,
+  type YearPageYear,
 } from '@/lib/domain/year-page-adapters'
+
+function buildYearAdminData({
+  displayIndex,
+  year,
+}: {
+  displayIndex: number
+  year: YearPageYear
+}) {
+  return {
+    id: year.id,
+    slug: year.slug,
+    nombre: year.nombre,
+    descripcion: year.descripcion,
+    links: year.links,
+    orden: displayIndex,
+    color: year.color,
+  }
+}
 
 export async function getYearRouteContext(yearSlug: string) {
   const [year, tiposEvento, career, categoriasDisponibles, periodos, latestApuntesRaw, todayKey] = await Promise.all([

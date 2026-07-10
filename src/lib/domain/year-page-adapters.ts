@@ -134,32 +134,29 @@ function toYearOverviewEvent({
   }
 }
 
-export function buildYearOverviewEvents(subjects: readonly YearPageSubject[]) {
+function buildYearEventsWithTitle(
+  subjects: readonly YearPageSubject[],
+  formatTitle: (event: YearPageEvent, subject: YearPageSubject) => string,
+) {
   return sortEventsByDateTime(
     subjects.flatMap((subject) =>
       getSubjectVisibleEvents(subject).map((event) =>
         toYearOverviewEvent({
           event,
           subject,
-          title: `${event.titulo} (${subject.nombre})`,
+          title: formatTitle(event, subject),
         }),
       ),
     ),
   )
 }
 
+export function buildYearOverviewEvents(subjects: readonly YearPageSubject[]) {
+  return buildYearEventsWithTitle(subjects, (event, subject) => `${event.titulo} (${subject.nombre})`)
+}
+
 export function buildYearCalendarEvents(subjects: readonly YearPageSubject[]) {
-  return sortEventsByDateTime(
-    subjects.flatMap((subject) =>
-      getSubjectVisibleEvents(subject).map((event) =>
-        toYearOverviewEvent({
-          event,
-          subject,
-          title: `${event.titulo} · ${subject.nombre}`,
-        }),
-      ),
-    ),
-  )
+  return buildYearEventsWithTitle(subjects, (event, subject) => `${event.titulo} · ${subject.nombre}`)
 }
 
 export function buildYearUpcomingEvents(
@@ -218,23 +215,5 @@ export function buildMobileYear(year: YearPageYear) {
             : null,
       }
     }),
-  }
-}
-
-export function buildYearAdminData({
-  displayIndex,
-  year,
-}: {
-  displayIndex: number
-  year: YearPageYear
-}) {
-  return {
-    id: year.id,
-    slug: year.slug,
-    nombre: year.nombre,
-    descripcion: year.descripcion,
-    links: year.links,
-    orden: displayIndex,
-    color: year.color,
   }
 }
