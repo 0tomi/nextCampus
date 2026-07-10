@@ -2,7 +2,7 @@ import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
 import type { Prisma } from '../../prisma/generated/client/client'
 import { prisma } from './prisma'
-import { countSubjectQuizBanks } from './storage'
+import { countSubjectQuizBanks, quizBanksCacheTag } from './storage'
 import { isPeriodoTone } from './periodos'
 import { todayKeyAR } from './utils'
 
@@ -194,11 +194,17 @@ function attachCommissionMetadataToSubject<
 
 const TAGS = {
   career: 'career',
+  // seed-only: las categorías de apunte se cargan en prisma/seed.ts y ninguna action las escribe en runtime.
   categorias: 'categorias-apunte',
   latestApuntes: 'latest-apuntes',
+  // seed-only: los tipos de evento se cargan en prisma/seed.ts y ninguna action los escribe en runtime.
   tiposEvento: 'tipos-evento',
   year: (slug: string) => `year:${slug}`,
   subject: (slug: string) => `subject:${slug}`,
+  // "quiz-banks:<year>:<subject>". La plantilla vive en storage.ts (que la
+  // cachea en lectura) porque este módulo ya importa storage: definirla acá
+  // y consumirla desde allá crearía un ciclo queries <-> storage.
+  quizBanks: quizBanksCacheTag,
   upcomingEvents: 'upcoming-events',
   periodos: 'periodos',
 } as const

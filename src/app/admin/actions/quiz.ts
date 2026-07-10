@@ -7,12 +7,12 @@ import {
   deleteQuizBank,
   getQuizBankMeta,
   readQuizBank,
-  quizBanksCacheTag,
 } from '@/lib/storage'
+import { queryTags } from '@/lib/queries'
 import { parseQuizBank } from '@/lib/domain/quiz-bank'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
 import { awardQuizBankCreated, revokeQuizBankCreated } from '@/lib/contributions'
-import { revalidateTag } from './shared'
+import { invalidateTag } from './shared'
 
 export interface QuizBankActionState {
   ok: boolean
@@ -72,7 +72,7 @@ export async function uploadQuizBankAction(
   }
   await awardQuizBankCreated(scope.admin.id, bank.bank.units.length)
 
-  revalidateTag(quizBanksCacheTag(scope.yearSlug, scope.subjectSlug))
+  invalidateTag(queryTags.quizBanks(scope.yearSlug, scope.subjectSlug))
   await recordAudit({
     userId: scope.admin.id,
     action: AUDIT_ACTIONS.QUIZ_BANK_UPLOADED,
@@ -118,7 +118,7 @@ export async function deleteQuizBankAction(formData: FormData): Promise<void> {
     await revokeQuizBankCreated(ownerId, unitsCount)
   }
 
-  revalidateTag(quizBanksCacheTag(scope.yearSlug, scope.subjectSlug))
+  invalidateTag(queryTags.quizBanks(scope.yearSlug, scope.subjectSlug))
   await recordAudit({
     userId: scope.admin.id,
     action: AUDIT_ACTIONS.QUIZ_BANK_DELETED,

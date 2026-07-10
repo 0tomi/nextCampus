@@ -92,7 +92,6 @@ vi.mock('@/lib/storage', () => ({
   deleteSubjectStorage: vi.fn(),
   deleteYearStorage: vi.fn(),
   listQuizBankContributionRevocations: listQuizBankContributionRevocationsMock,
-  quizBanksCacheTag: vi.fn(() => 'quiz-bank-tag'),
 }))
 
 vi.mock('@/lib/queries', () => ({
@@ -103,6 +102,7 @@ vi.mock('@/lib/queries', () => ({
     upcomingEvents: 'upcoming-events',
     year: (slug: string) => `year:${slug}`,
     subject: (slug: string) => `subject:${slug}`,
+    quizBanks: vi.fn(() => 'quiz-bank-tag'),
   },
   getSubjectDeleteImpact: getSubjectDeleteImpactMock,
   getYearDeleteImpact: vi.fn(),

@@ -6,7 +6,7 @@ import { requireAcademicManager } from '@/lib/auth'
 import { queryTags } from '@/lib/queries'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
 import { PERIODO_TONES, type CategoriaPeriodoDto, type PeriodoTone } from '@/lib/periodos'
-import { revalidateTag, actionError, fechaToDbDate } from './shared'
+import { invalidateTag, actionError, fechaToDbDate } from './shared'
 
 const periodoSchema = z
   .object({
@@ -28,7 +28,7 @@ const categoriaSchema = z.object({
 
 // Todas las vistas públicas consumen los períodos mediante este tag compartido.
 function revalidatePeriodos(): void {
-  revalidateTag(queryTags.periodos)
+  invalidateTag(queryTags.periodos)
 }
 
 function parsePeriodoForm(formData: FormData) {
