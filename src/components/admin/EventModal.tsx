@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { CollapsibleFormSection } from '@/components/ui/CollapsibleFormSection'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { FormError } from '@/components/ui/FormError'
 import {
   createEventoAction,
   updateEventoAction,
@@ -238,11 +243,7 @@ function EventModalContent({
 
         <EventDescriptionField defaultValue={eventToEdit?.descripcionHtml ?? ''} />
 
-        {state.message && !state.ok && (
-          <p className="rounded border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
-            {state.message}
-          </p>
-        )}
+        <FormError message={!state.ok ? state.message : ''} />
 
         <EventFormActions editing={Boolean(eventToEdit)} pending={pending} onClose={onClose} />
       </form>
@@ -274,9 +275,7 @@ function EventSubjectSelect({
 }) {
   return (
     <div className="space-y-1">
-      <label htmlFor="evento-subject" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
-        Materia
-      </label>
+      <Label htmlFor="evento-subject">Materia</Label>
       <select
         id="evento-subject"
         required
@@ -308,10 +307,8 @@ function EventTitleField({
 }) {
   return (
     <div className="space-y-1">
-      <label htmlFor="evento-titulo" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
-        Título
-      </label>
-      <input
+      <Label htmlFor="evento-titulo">Título</Label>
+      <Input
         id="evento-titulo"
         type="text"
         name="titulo"
@@ -320,7 +317,7 @@ function EventTitleField({
         onChange={(event) => onChange(event.target.value)}
         onBlur={onBlur}
         placeholder="Ej: Parcial de Estructuras"
-        className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
+        className="focus:border-white/30 focus:ring-1 focus:ring-white/10"
       />
     </div>
   )
@@ -365,13 +362,13 @@ function EventRelatedApuntesSection({
       <div className="space-y-3 pt-1">
         {activeSubjectId ? (
           <>
-            <input
+            <Input
               type="search"
               value={apunteQuery}
               onChange={(event) => onQueryChange(event.target.value)}
               aria-label="Buscar apunte por título"
               placeholder="Buscar apunte por título"
-              className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
+              className="focus:border-white/30 focus:ring-1 focus:ring-white/10"
             />
             <SelectedApuntePills selectedApuntes={selectedApuntes} onRemoveApunte={onRemoveApunte} />
             <ApunteSearchResults
@@ -476,9 +473,7 @@ function EventTypeSelect({
 }) {
   return (
     <div className="space-y-1">
-      <label htmlFor="evento-tipo" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
-        Tipo
-      </label>
+      <Label htmlFor="evento-tipo">Tipo</Label>
       <select
         id="evento-tipo"
         name="tipoEventoId"
@@ -510,29 +505,27 @@ function EventDateTimeFields({
   return (
     <div className="grid grid-cols-2 gap-3">
       <div className="space-y-1">
-        <label htmlFor="evento-fecha" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
-          Fecha
-        </label>
-        <input
+        <Label htmlFor="evento-fecha">Fecha</Label>
+        <Input
           id="evento-fecha"
           type="date"
           name="fecha"
           required
           defaultValue={eventToEdit ? toDateInputValue(eventToEdit.fecha ?? eventToEdit.start ?? eventToEdit.date) : toDateInputValue(initialDate)}
-          className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none cursor-pointer"
+          className="cursor-pointer focus:border-white/30 focus:ring-1 focus:ring-white/10"
         />
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="evento-hora" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
+        <Label htmlFor="evento-hora">
           Hora <span className="font-normal normal-case tracking-normal text-white/30">(opcional)</span>
-        </label>
-        <input
+        </Label>
+        <Input
           id="evento-hora"
           type="time"
           name="hora"
           defaultValue={eventToEdit?.hora ?? ''}
-          className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none cursor-pointer"
+          className="cursor-pointer focus:border-white/30 focus:ring-1 focus:ring-white/10"
         />
       </div>
     </div>
@@ -542,16 +535,16 @@ function EventDateTimeFields({
 function EventDescriptionField({ defaultValue }: { defaultValue: string }) {
   return (
     <div className="space-y-1">
-      <label htmlFor="evento-descripcion" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
+      <Label htmlFor="evento-descripcion">
         Descripción <span className="font-normal normal-case tracking-normal text-white/30">(opcional)</span>
-      </label>
-      <textarea
+      </Label>
+      <Textarea
         id="evento-descripcion"
         name="descripcionHtml"
         rows={3}
         defaultValue={defaultValue}
         placeholder="Detalles del evento"
-        className="w-full resize-none rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
+        className="focus:border-white/30 focus:ring-1 focus:ring-white/10"
       />
     </div>
   )
@@ -568,20 +561,12 @@ function EventFormActions({
 }) {
   return (
     <div className="flex justify-end gap-2 pt-1">
-      <button
-        type="button"
-        onClick={onClose}
-        className="rounded border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white cursor-pointer"
-      >
+      <Button type="button" variant="ghost" onClick={onClose}>
         Cancelar
-      </button>
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded bg-white px-4 py-2 text-sm font-semibold text-black transition-opacity disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-      >
+      </Button>
+      <Button type="submit" variant="primary" disabled={pending}>
         {pending ? 'Guardando…' : editing ? 'Guardar cambios' : 'Crear evento'}
-      </button>
+      </Button>
     </div>
   )
 }
