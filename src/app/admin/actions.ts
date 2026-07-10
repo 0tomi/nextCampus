@@ -13,6 +13,7 @@ export {
   createPeriodoAction,
   updatePeriodoAction,
   deletePeriodo,
+  createCategoriaAction,
 } from './actions/periodos'
 export type { PeriodoActionState } from './actions/periodos'
 

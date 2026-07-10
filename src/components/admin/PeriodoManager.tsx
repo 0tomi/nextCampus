@@ -11,7 +11,7 @@ import {
   deletePeriodo,
   createCategoriaAction,
   type PeriodoActionState,
-} from '@/app/admin/actions/periodos'
+} from '@/app/admin/actions'
 import {
   PERIODO_TONES,
   PERIODO_TONE_BG,

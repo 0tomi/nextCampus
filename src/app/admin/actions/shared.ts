@@ -52,7 +52,9 @@ export function revalidateSubjectApuntes(ctx: SubjectRevalidationContext): void 
   revalidateTag(queryTags.upcomingEvents)
 }
 
-export class ActionInputError extends Error {}
+// Definidos en un módulo hoja sin dependencias server-only para que también
+// puedan importarse desde actions fuera de esta carpeta (ej: perfil, users).
+export { ActionInputError, actionError } from './errors'
 
 // "YYYY-MM-DD" → Date a medianoche UTC para guardar en la columna `@db.Date`.
 export const fechaToDbDate = (fecha: string): Date => new Date(`${fecha}T00:00:00.000Z`)

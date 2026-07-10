@@ -6,7 +6,7 @@ import { requireAcademicManager } from '@/lib/auth'
 import { queryTags } from '@/lib/queries'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
 import { PERIODO_TONES, type CategoriaPeriodoDto, type PeriodoTone } from '@/lib/periodos'
-import { revalidateTag, ActionInputError, fechaToDbDate } from './shared'
+import { revalidateTag, actionError, fechaToDbDate } from './shared'
 
 const periodoSchema = z
   .object({
@@ -81,55 +81,48 @@ export async function createPeriodoAction(
     await createPeriodo(formData)
     return { ok: true, message: 'Período creado correctamente.' }
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return { ok: false, message: err.issues[0].message }
-    }
-    if (err instanceof ActionInputError) {
-      return { ok: false, message: err.message }
-    }
-    return { ok: false, message: 'No se pudo crear el período. Intentá de nuevo.' }
+    return actionError(err, 'No se pudo crear el período. Intentá de nuevo.')
   }
+}
+
+async function updatePeriodo(formData: FormData): Promise<void> {
+  const admin = await requireAcademicManager()
+  const id = z.string().min(1).parse(formData.get('id'))
+  const data = parsePeriodoForm(formData)
+  await prisma.periodoAcademico.update({
+    where: { id },
+    data: {
+      categoriaId: data.categoriaId,
+      titulo: data.titulo,
+      fechaInicio: fechaToDbDate(data.fechaInicio),
+      fechaFin: fechaToDbDate(data.fechaFin),
+    },
+  })
+  revalidatePeriodos()
+  await recordAudit({
+    userId: admin.id,
+    action: AUDIT_ACTIONS.PERIODO_UPDATED,
+    entityType: 'periodo',
+    entityId: id,
+    detail: {
+      categoriaId: data.categoriaId,
+      titulo: data.titulo,
+      fechaInicio: data.fechaInicio,
+      fechaFin: data.fechaFin,
+    },
+  })
 }
 
 export async function updatePeriodoAction(
   _prev: PeriodoActionState,
   formData: FormData,
 ): Promise<PeriodoActionState> {
-  const admin = await requireAcademicManager()
+  await requireAcademicManager()
   try {
-    const id = z.string().min(1).parse(formData.get('id'))
-    const data = parsePeriodoForm(formData)
-    await prisma.periodoAcademico.update({
-      where: { id },
-      data: {
-        categoriaId: data.categoriaId,
-        titulo: data.titulo,
-        fechaInicio: fechaToDbDate(data.fechaInicio),
-        fechaFin: fechaToDbDate(data.fechaFin),
-      },
-    })
-    revalidatePeriodos()
-    await recordAudit({
-      userId: admin.id,
-      action: AUDIT_ACTIONS.PERIODO_UPDATED,
-      entityType: 'periodo',
-      entityId: id,
-      detail: {
-        categoriaId: data.categoriaId,
-        titulo: data.titulo,
-        fechaInicio: data.fechaInicio,
-        fechaFin: data.fechaFin,
-      },
-    })
+    await updatePeriodo(formData)
     return { ok: true, message: 'Período actualizado correctamente.' }
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return { ok: false, message: err.issues[0].message }
-    }
-    if (err instanceof ActionInputError) {
-      return { ok: false, message: err.message }
-    }
-    return { ok: false, message: 'No se pudo actualizar el período. Intentá de nuevo.' }
+    return actionError(err, 'No se pudo actualizar el período. Intentá de nuevo.')
   }
 }
 
@@ -215,10 +208,7 @@ export async function createCategoriaAction(
       },
     }
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return { ok: false, message: err.issues[0].message }
-    }
-    return { ok: false, message: 'No se pudo crear el tipo de período. Intentá de nuevo.' }
+    return actionError(err, 'No se pudo crear el tipo de período. Intentá de nuevo.')
   }
 }
 

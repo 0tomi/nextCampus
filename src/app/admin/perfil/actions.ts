@@ -12,33 +12,7 @@ import {
   updateAdminPasswordSchema,
   type ProfileActionState,
 } from './schemas'
-
-class ProfileActionError extends Error {}
-
-function errorMessage(error: unknown): string {
-  if (error instanceof ProfileActionError) return error.message
-  if (error instanceof z.ZodError) return error.issues[0]?.message ?? 'Revisá los datos e intentá de nuevo.'
-
-  return ''
-}
-
-function profileActionError(error: unknown): ProfileActionState {
-  const message = errorMessage(error)
-
-  return {
-    ok: false,
-    message: message || 'No pudimos actualizar el perfil. Intentá de nuevo.',
-  }
-}
-
-function passwordActionError(error: unknown): ProfileActionState {
-  const message = errorMessage(error)
-
-  return {
-    ok: false,
-    message: message || 'No pudimos actualizar la contraseña. Intentá de nuevo.',
-  }
-}
+import { ActionInputError, actionError } from '../actions/errors'
 
 function revalidateAdminProfileViews() {
   revalidatePath('/admin/perfil')
@@ -53,12 +27,12 @@ async function ensureEmailAvailable(email: string, currentUserId: string) {
   })
 
   if (existing && existing.id !== currentUserId) {
-    throw new ProfileActionError('Ya existe una cuenta con ese correo.')
+    throw new ActionInputError('Ya existe una cuenta con ese correo.')
   }
 }
 
 function mapPasswordUpdateError(error: unknown): never {
-  if (error instanceof z.ZodError || error instanceof ProfileActionError) {
+  if (error instanceof z.ZodError || error instanceof ActionInputError) {
     throw error
   }
 
@@ -66,7 +40,7 @@ function mapPasswordUpdateError(error: unknown): never {
     const message = error.message.toLowerCase()
 
     if (message.includes('same password')) {
-      throw new ProfileActionError('Elegí una contraseña distinta a la actual.')
+      throw new ActionInputError('Elegí una contraseña distinta a la actual.')
     }
 
     if (
@@ -74,7 +48,7 @@ function mapPasswordUpdateError(error: unknown): never {
       message.includes('invalid login credentials') ||
       (message.includes('password') && message.includes('invalid'))
     ) {
-      throw new ProfileActionError('La contraseña actual no coincide.')
+      throw new ActionInputError('La contraseña actual no coincide.')
     }
   }
 
@@ -102,7 +76,7 @@ export async function updateAdminProfileAction(
     })
 
     if (!currentAccount) {
-      throw new ProfileActionError('Usuario no encontrado.')
+      throw new ActionInputError('Usuario no encontrado.')
     }
 
     const emailChanged = data.nextEmail !== currentAccount.email
@@ -174,7 +148,7 @@ export async function updateAdminProfileAction(
 
     return { ok: true, message: 'Perfil actualizado correctamente.' }
   } catch (error) {
-    return profileActionError(error)
+    return actionError(error, 'No pudimos actualizar el perfil. Intentá de nuevo.')
   }
 }
 
@@ -215,6 +189,6 @@ export async function updateAdminPasswordAction(
 
     return { ok: true, message: 'Contraseña actualizada correctamente.' }
   } catch (error) {
-    return passwordActionError(error)
+    return actionError(error, 'No pudimos actualizar la contraseña. Intentá de nuevo.')
   }
 }

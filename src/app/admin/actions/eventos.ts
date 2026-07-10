@@ -14,6 +14,7 @@ import { awardEventoCreated, revokeEventoCreated } from '@/lib/contributions'
 import {
   requireAuth,
   ActionInputError,
+  actionError,
   revalidateSubjectEvents,
   fechaToDbDate,
 } from './shared'
@@ -127,7 +128,6 @@ async function resolveAgendaTarget(input: {
 }
 
 export async function createEvento(formData: FormData): Promise<void> {
-  await requireAuth()
   const data = eventoSchema.parse({
     agendaId: formData.get('agendaId'),
     commissionId: formData.get('commissionId'),
@@ -199,13 +199,7 @@ export async function createEventoAction(
     await createEvento(formData)
     return { ok: true, message: 'Evento creado correctamente.' }
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return { ok: false, message: err.issues[0].message }
-    }
-    if (err instanceof ActionInputError) {
-      return { ok: false, message: err.message }
-    }
-    return { ok: false, message: 'No se pudo crear el evento. Intentá de nuevo.' }
+    return actionError(err, 'No se pudo crear el evento. Intentá de nuevo.')
   }
 }
 
@@ -214,7 +208,6 @@ export async function updateEventoFechaAction(
   nuevaFecha: string,
   _subjectSlug: string,
 ): Promise<{ ok: boolean }> {
-  await requireAuth()
   void _subjectSlug
   const validId = z.string().min(1).parse(id)
   // El drag de calendario manda el día como "YYYY-MM-DD" (sin hora). La hora del
@@ -254,98 +247,97 @@ export async function updateEventoFechaAction(
   return { ok: true }
 }
 
+export async function updateEvento(formData: FormData): Promise<void> {
+  const id = z.string().min(1).parse(formData.get('id'))
+  const data = eventoSchema.parse({
+    agendaId: formData.get('agendaId'),
+    commissionId: formData.get('commissionId'),
+    tipoEventoId: formData.get('tipoEventoId'),
+    titulo: formData.get('titulo'),
+    descripcionHtml: formData.get('descripcionHtml') ?? '',
+    fecha: formData.get('fecha'),
+    hora: formData.get('hora'),
+  })
+  const currentScope = await requireYearAdminForEventoId(id)
+  if (!currentScope) {
+    throw new ActionInputError('No encontramos el evento que querés editar.')
+  }
+  const currentOwner = await prisma.evento.findUnique({
+    where: { id },
+    select: { createdByUserId: true },
+  })
+  ensureCanManageContribution(currentScope.admin, currentOwner?.createdByUserId)
+
+  const targetScope = await resolveAgendaTarget({
+    agendaId: data.agendaId,
+    commissionId: data.commissionId,
+  })
+
+  if (targetScope.subjectId !== currentScope.subjectId) {
+    throw new ActionInputError('No podés mover un evento a otra materia.')
+  }
+  const apunteIds = parseRelatedApunteIds(formData.get('apunteIdsJson'))
+  if (apunteIds === null) {
+    throw new ActionInputError('Revisá los apuntes relacionados.')
+  }
+  if (!(await validateRelatedApunteIds(apunteIds, currentScope.subjectId))) {
+    throw new ActionInputError('Los apuntes relacionados tienen que ser de la misma materia.')
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.evento.update({
+      where: { id },
+      data: {
+        agendaId: targetScope.agendaId,
+        tipoEventoId: data.tipoEventoId,
+        titulo: data.titulo,
+        descripcionHtml: sanitizeRichHtml(data.descripcionHtml),
+        fecha: fechaToDbDate(data.fecha),
+        hora: data.hora,
+      },
+    })
+    await tx.apunteEvento.deleteMany({ where: { eventoId: id } })
+    if (apunteIds.length > 0) {
+      await tx.apunteEvento.createMany({
+        data: apunteIds.map((apunteId) => ({ eventoId: id, apunteId })),
+        skipDuplicates: true,
+      })
+    }
+  })
+  revalidateSubjectEvents(currentScope)
+  await recordAudit({
+    userId: currentScope.admin.id,
+    action: AUDIT_ACTIONS.EVENTO_UPDATED,
+    entityType: 'evento',
+    entityId: id,
+    yearId: currentScope.yearId,
+    yearSlug: currentScope.yearSlug,
+    detail: {
+      titulo: data.titulo,
+      fecha: data.fecha,
+      hora: data.hora,
+      subjectSlug: currentScope.subjectSlug,
+      yearSlug: currentScope.yearSlug,
+      apuntesCount: apunteIds.length,
+      ...(targetScope.commissionSlug ? { commissionSlug: targetScope.commissionSlug } : {}),
+    },
+  })
+}
+
 export async function updateEventoAction(
   _prev: EventoActionState,
   formData: FormData,
 ): Promise<EventoActionState> {
   await requireAuth()
   try {
-    const id = z.string().min(1).parse(formData.get('id'))
-    const data = eventoSchema.parse({
-      agendaId: formData.get('agendaId'),
-      commissionId: formData.get('commissionId'),
-      tipoEventoId: formData.get('tipoEventoId'),
-      titulo: formData.get('titulo'),
-      descripcionHtml: formData.get('descripcionHtml') ?? '',
-      fecha: formData.get('fecha'),
-      hora: formData.get('hora'),
-    })
-    const currentScope = await requireYearAdminForEventoId(id)
-    if (!currentScope) return { ok: false, message: 'No encontramos el evento que querés editar.' }
-    const currentOwner = await prisma.evento.findUnique({
-      where: { id },
-      select: { createdByUserId: true },
-    })
-    ensureCanManageContribution(currentScope.admin, currentOwner?.createdByUserId)
-
-    const targetScope = await resolveAgendaTarget({
-      agendaId: data.agendaId,
-      commissionId: data.commissionId,
-    })
-
-    if (targetScope.subjectId !== currentScope.subjectId) {
-      return { ok: false, message: 'No podés mover un evento a otra materia.' }
-    }
-    const apunteIds = parseRelatedApunteIds(formData.get('apunteIdsJson'))
-    if (apunteIds === null) {
-      return { ok: false, message: 'Revisá los apuntes relacionados.' }
-    }
-    if (!(await validateRelatedApunteIds(apunteIds, currentScope.subjectId))) {
-      return { ok: false, message: 'Los apuntes relacionados tienen que ser de la misma materia.' }
-    }
-
-    await prisma.$transaction(async (tx) => {
-      await tx.evento.update({
-        where: { id },
-        data: {
-          agendaId: targetScope.agendaId,
-          tipoEventoId: data.tipoEventoId,
-          titulo: data.titulo,
-          descripcionHtml: sanitizeRichHtml(data.descripcionHtml),
-          fecha: fechaToDbDate(data.fecha),
-          hora: data.hora,
-        },
-      })
-      await tx.apunteEvento.deleteMany({ where: { eventoId: id } })
-      if (apunteIds.length > 0) {
-        await tx.apunteEvento.createMany({
-          data: apunteIds.map((apunteId) => ({ eventoId: id, apunteId })),
-          skipDuplicates: true,
-        })
-      }
-    })
-    revalidateSubjectEvents(currentScope)
-    await recordAudit({
-      userId: currentScope.admin.id,
-      action: AUDIT_ACTIONS.EVENTO_UPDATED,
-      entityType: 'evento',
-      entityId: id,
-      yearId: currentScope.yearId,
-      yearSlug: currentScope.yearSlug,
-      detail: {
-        titulo: data.titulo,
-        fecha: data.fecha,
-        hora: data.hora,
-        subjectSlug: currentScope.subjectSlug,
-        yearSlug: currentScope.yearSlug,
-        apuntesCount: apunteIds.length,
-        ...(targetScope.commissionSlug ? { commissionSlug: targetScope.commissionSlug } : {}),
-      },
-    })
+    await updateEvento(formData)
     return { ok: true, message: 'Evento actualizado correctamente.' }
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return { ok: false, message: err.issues[0].message }
-    }
-    if (err instanceof ActionInputError) {
-      return { ok: false, message: err.message }
-    }
-    return { ok: false, message: 'No se pudo actualizar el evento. Intentá de nuevo.' }
+    return actionError(err, 'No se pudo actualizar el evento. Intentá de nuevo.')
   }
 }
 
 export async function deleteEvento(formData: FormData): Promise<void> {
-  await requireAuth()
   const id = z.string().min(1).parse(formData.get('id'))
   const scope = await requireYearAdminForEventoId(id)
   if (!scope) return

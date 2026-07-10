@@ -27,7 +27,7 @@ import {
   adjustContributionScore,
   revokeApunteCreated,
 } from '@/lib/contributions'
-import { requireAuth, revalidateSubjectApuntes } from './shared'
+import { revalidateSubjectApuntes } from './shared'
 
 // Wrapper para useActionState en modal cliente
 export interface ApunteActionState {
@@ -318,7 +318,6 @@ export async function createApunteAction(
   _prev: ApunteActionState,
   formData: FormData,
 ): Promise<ApunteActionState> {
-  await requireAuth()
   const subjectId = z.string().min(1).safeParse(formData.get('subjectId'))
   if (!subjectId.success) {
     return { ok: false, message: 'Materia no especificada.' }
@@ -463,7 +462,6 @@ export async function updateApunteAction(
   _prev: ApunteActionState,
   formData: FormData,
 ): Promise<ApunteActionState> {
-  await requireAuth()
   const apunteId = z.string().min(1).safeParse(formData.get('apunteId'))
   if (!apunteId.success) {
     return { ok: false, message: 'Apunte no especificado.' }
@@ -617,7 +615,6 @@ export async function updateApunteAction(
 }
 
 export async function deleteApunteAction(formData: FormData): Promise<void> {
-  await requireAuth()
   const id = z.string().min(1).parse(formData.get('id'))
   const scope = await requireYearAdminForApunteId(id)
   if (!scope) return
