@@ -273,7 +273,7 @@ export async function requireAuditViewer(): Promise<AdminUser> {
 
 // Shape pensada para hidratar el client provider del admin: lo que el
 // cliente necesita para evaluar hasAdminAccess() sin volver a pegarle al
-// server. Idéntico al payload de /api/admin/me, pero resuelto en el render.
+// server. Se resuelve en el render (root layout) y se pasa como prop inicial.
 // Derivado de AdminUser para no restatear campos ni desincronizarse de la fuente.
 export type AdminClientUser = Pick<
   AdminUser,

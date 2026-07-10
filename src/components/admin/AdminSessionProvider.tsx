@@ -4,8 +4,8 @@ import { createContext, use, type ReactNode } from 'react'
 import type { AdminSessionState } from './adminAccess'
 
 // Provider que recibe la sesión ya resuelta en el server (root layout).
-// Evita que cada AdminControls dispare un fetch /api/admin/me en useEffect
-// y elimina el flash visual de "controles que aparecen tarde".
+// Evita que cada AdminControls dispare un fetch en useEffect y elimina
+// el flash visual de "controles que aparecen tarde".
 const AdminSessionContext = createContext<AdminSessionState | null>(null)
 
 interface AdminSessionProviderProps {
