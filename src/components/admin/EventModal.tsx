@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useActionState, useMemo, useState } from 'react'
+import { useEffect, useActionState, useMemo, useReducer, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
@@ -24,7 +24,6 @@ import { CommissionSelectField } from '@/components/commissions/CommissionSelect
 import { ApunteModal } from '@/components/admin/ApunteModal'
 import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import { detectEventType } from '@/lib/domain/eventos/eventType'
-import { useApunteSearch } from '@/hooks/useApunteSearch'
 
 interface TipoEvento {
   id: string
@@ -40,22 +39,32 @@ interface EventModalSubject {
   categoriasDisponibles?: Array<{ id: string; nombre: string }>
 }
 
-interface EventModalProps {
+interface EventModalSharedProps {
   open: boolean
   onClose: () => void
   agendaId?: string
   subjectId?: string
   subjectSlug?: string
   tiposEvento: TipoEvento[]
-  /** Fecha precargada al abrir desde un clic en el calendario (ISO o string YYYY-MM-DDTHH:mm) */
-  initialDate?: string
   onSuccess?: () => void
   subjects?: readonly EventModalSubject[]
   commissions?: readonly CommissionOption[]
-  /** Evento a editar si estamos en modo edición */
-  eventToEdit?: EventCalendarEvent
   categoriasDisponibles?: Array<{ id: string; nombre: string }>
 }
+
+interface EventModalCreateProps extends EventModalSharedProps {
+  /** Fecha precargada al abrir desde un clic en el calendario (ISO o string YYYY-MM-DDTHH:mm) */
+  initialDate?: string
+  eventToEdit?: undefined
+}
+
+interface EventModalEditProps extends EventModalSharedProps {
+  initialDate?: undefined
+  /** Evento a editar: el modal arranca en modo edición. */
+  eventToEdit: EventCalendarEvent
+}
+
+type EventModalProps = EventModalCreateProps | EventModalEditProps
 
 const emptyState: EventoActionState = { ok: false, message: '' }
 const EMPTY_CATEGORIAS_DISPONIBLES: Array<{ id: string; nombre: string }> = []
@@ -67,6 +76,132 @@ function toDateInputValue(dateInput?: string | Date | null): string {
   if (!dateInput) return ''
   if (typeof dateInput === 'string') return dateInput.slice(0, 10)
   return isNaN(dateInput.getTime()) ? '' : dateInput.toISOString().slice(0, 10)
+}
+
+// Hook single-consumer, co-locado acá (era src/hooks/useApunteSearch.ts):
+// busca apuntes por materia con debounce, para el buscador de "Apuntes relacionados".
+function useApunteSearch({
+  query,
+  subjectId,
+}: {
+  query: string
+  subjectId: string
+}) {
+  const [results, setResults] = useState<RelatedApunteLink[]>([])
+  const [searching, setSearching] = useState(false)
+
+  useEffect(() => {
+    if (!subjectId) {
+      const handle = window.setTimeout(() => setResults([]), 0)
+      return () => window.clearTimeout(handle)
+    }
+
+    const controller = new AbortController()
+    const handle = window.setTimeout(async () => {
+      setSearching(true)
+      try {
+        const params = new URLSearchParams({ subjectId })
+        if (query.trim()) params.set('q', query.trim())
+        const response = await fetch(`/api/admin/apuntes/search?${params.toString()}`, {
+          signal: controller.signal,
+        })
+        if (!response.ok) {
+          setResults([])
+          return
+        }
+        const data = (await response.json()) as { items?: RelatedApunteLink[] }
+        setResults(data.items ?? [])
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') setResults([])
+      } finally {
+        setSearching(false)
+      }
+    }, 180)
+
+    return () => {
+      controller.abort()
+      window.clearTimeout(handle)
+    }
+  }, [query, subjectId])
+
+  return { results, searching }
+}
+
+// Draft del evento: agrupa el estado que cambia SIEMPRE en bloque (reset al
+// abrir/editar, cascada subject -> comisión + búsqueda de apuntes). Toggles de
+// UI sin relación entre sí (newApunteOpen, apuntesOpen) quedan como useState.
+interface EventDraftState {
+  titulo: string
+  selectedTipoId: string
+  selectedSubjectId: string
+  selectedCommissionId: string
+  selectedApuntes: RelatedApunteLink[]
+  apunteQuery: string
+}
+
+type EventDraftAction =
+  | { type: 'SET_TITULO'; titulo: string }
+  | { type: 'SET_TIPO'; tipoId: string }
+  | { type: 'SUBJECT_CHANGED'; subjectId: string }
+  | { type: 'SET_COMMISSION'; commissionId: string }
+  | { type: 'SET_APUNTE_QUERY'; query: string }
+  | { type: 'ADD_APUNTE'; apunte: RelatedApunteLink }
+  | { type: 'ADD_APUNTE_IF_NEW'; apunte: RelatedApunteLink }
+  | { type: 'REMOVE_APUNTE'; apunteId: string }
+  | { type: 'FILTER_APUNTES_BY_SUBJECT_SLUG'; subjectSlug: string }
+
+function eventDraftReducer(state: EventDraftState, action: EventDraftAction): EventDraftState {
+  switch (action.type) {
+    case 'SET_TITULO':
+      return { ...state, titulo: action.titulo }
+    case 'SET_TIPO':
+      return { ...state, selectedTipoId: action.tipoId }
+    case 'SUBJECT_CHANGED':
+      return {
+        ...state,
+        selectedSubjectId: action.subjectId,
+        selectedCommissionId: '',
+        apunteQuery: '',
+      }
+    case 'SET_COMMISSION':
+      return { ...state, selectedCommissionId: action.commissionId }
+    case 'SET_APUNTE_QUERY':
+      return { ...state, apunteQuery: action.query }
+    case 'ADD_APUNTE':
+      return { ...state, selectedApuntes: [...state.selectedApuntes, action.apunte] }
+    case 'ADD_APUNTE_IF_NEW':
+      return state.selectedApuntes.some((apunte) => apunte.id === action.apunte.id)
+        ? state
+        : { ...state, selectedApuntes: [...state.selectedApuntes, action.apunte] }
+    case 'REMOVE_APUNTE':
+      return {
+        ...state,
+        selectedApuntes: state.selectedApuntes.filter((apunte) => apunte.id !== action.apunteId),
+      }
+    case 'FILTER_APUNTES_BY_SUBJECT_SLUG':
+      if (!action.subjectSlug) return state
+      return {
+        ...state,
+        selectedApuntes: state.selectedApuntes.filter(
+          (apunte) => apunte.subject.slug === action.subjectSlug,
+        ),
+      }
+    default:
+      return state
+  }
+}
+
+function initEventDraft(eventToEdit: EventCalendarEvent | undefined): EventDraftState {
+  return {
+    titulo: eventToEdit
+      ? (eventToEdit.tituloOriginal ?? eventToEdit.title ?? eventToEdit.titulo ?? '')
+      : '',
+    selectedTipoId: eventToEdit?.tipoId ?? '',
+    selectedSubjectId: eventToEdit?.subjectId ?? '',
+    selectedCommissionId: eventToEdit?.commissionId ?? '',
+    selectedApuntes: eventToEdit?.apuntes ?? [],
+    apunteQuery: '',
+  }
 }
 
 export function EventModal({
@@ -111,22 +246,7 @@ function EventModalContent({
     return nextState
   }
   const [state, formAction, pending] = useActionState(submitEvent, emptyState)
-  const [titulo, setTitulo] = useState(
-    eventToEdit ? (eventToEdit.tituloOriginal ?? eventToEdit.title ?? eventToEdit.titulo ?? '') : ''
-  )
-  const [selectedTipoId, setSelectedTipoId] = useState(
-    eventToEdit?.tipoId ?? ''
-  )
-  const [selectedSubjectId, setSelectedSubjectId] = useState(
-    eventToEdit?.subjectId ?? ''
-  )
-  const [selectedCommissionId, setSelectedCommissionId] = useState(
-    eventToEdit?.commissionId ?? ''
-  )
-  const [selectedApuntes, setSelectedApuntes] = useState<RelatedApunteLink[]>(
-    () => eventToEdit?.apuntes ?? [],
-  )
-  const [apunteQuery, setApunteQuery] = useState('')
+  const [draft, dispatch] = useReducer(eventDraftReducer, eventToEdit, initEventDraft)
   const [newApunteOpen, setNewApunteOpen] = useState(false)
   const [apuntesOpen, setApuntesOpen] = useState(
     () => (eventToEdit?.apuntes && eventToEdit.apuntes.length > 0) ?? false
@@ -135,7 +255,7 @@ function EventModalContent({
   // Determine current active agendaId and subjectSlug
   const isYearMode = subjects && subjects.length > 0
   const currentSubject = isYearMode
-    ? subjects.find((s) => s.id === selectedSubjectId)
+    ? subjects.find((s) => s.id === draft.selectedSubjectId)
     : null
 
   const activeAgendaId = isYearMode ? (currentSubject?.agendaId ?? '') : agendaId
@@ -149,35 +269,32 @@ function EventModalContent({
     [commissions, currentSubject?.commissions, isYearMode],
   )
   const activeCommissionId = availableCommissions.some(
-    (commission) => commission.id === selectedCommissionId,
+    (commission) => commission.id === draft.selectedCommissionId,
   )
-    ? selectedCommissionId
+    ? draft.selectedCommissionId
     : ''
   const { results: apunteResults, searching: searchingApuntes } = useApunteSearch({
-    query: apunteQuery,
+    query: draft.apunteQuery,
     subjectId: activeSubjectId,
   })
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
-      setSelectedApuntes((prev) => {
-        if (!activeSubjectSlug) return prev
-        return prev.filter((apunte) => apunte.subject.slug === activeSubjectSlug)
-      })
+      dispatch({ type: 'FILTER_APUNTES_BY_SUBJECT_SLUG', subjectSlug: activeSubjectSlug })
     }, 0)
     return () => window.clearTimeout(handle)
   }, [activeSubjectSlug])
 
 
   const inferTypeFromTitle = () => {
-    const matchedId = detectEventType(titulo, tiposEvento)
-    if (matchedId) setSelectedTipoId(matchedId)
+    const matchedId = detectEventType(draft.titulo, tiposEvento)
+    if (matchedId) dispatch({ type: 'SET_TIPO', tipoId: matchedId })
   }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    const matchedId = detectEventType(titulo, tiposEvento)
+    const matchedId = detectEventType(draft.titulo, tiposEvento)
     if (matchedId) {
-      setSelectedTipoId(matchedId)
+      dispatch({ type: 'SET_TIPO', tipoId: matchedId })
       const selectEl = e.currentTarget.querySelector('select[name="tipoEventoId"]') as HTMLSelectElement | null
       if (selectEl) {
         selectEl.value = matchedId
@@ -196,48 +313,53 @@ function EventModalContent({
         {isYearMode && subjects ? (
           <EventSubjectSelect
             subjects={subjects}
-            selectedSubjectId={selectedSubjectId}
-            onChange={(nextSubjectId) => {
-              setSelectedSubjectId(nextSubjectId)
-              setSelectedCommissionId('')
-              setApunteQuery('')
-            }}
+            selectedSubjectId={draft.selectedSubjectId}
+            onChange={(nextSubjectId) => dispatch({ type: 'SUBJECT_CHANGED', subjectId: nextSubjectId })}
           />
         ) : null}
 
-        {(isYearMode ? selectedSubjectId !== '' : true) && (
+        {(isYearMode ? draft.selectedSubjectId !== '' : true) && (
           <CommissionSelectField
             id="evento-comision"
             label="Comisión"
             value={activeCommissionId || ALL_COMMISSIONS_VALUE}
             commissions={availableCommissions}
             onChange={(value) =>
-              setSelectedCommissionId(
-                value === ALL_COMMISSIONS_VALUE ? '' : value,
-              )
+              dispatch({
+                type: 'SET_COMMISSION',
+                commissionId: value === ALL_COMMISSIONS_VALUE ? '' : value,
+              })
             }
             helperText="Si la dejás en Todas las comisiones, la fecha queda disponible para toda la materia."
           />
         )}
 
-        <EventTitleField value={titulo} onBlur={inferTypeFromTitle} onChange={setTitulo} />
+        <EventTitleField
+          value={draft.titulo}
+          onBlur={inferTypeFromTitle}
+          onChange={(titulo) => dispatch({ type: 'SET_TITULO', titulo })}
+        />
 
         <EventRelatedApuntesSection
           activeCategorias={activeCategorias}
           activeSubjectId={activeSubjectId}
-          apunteQuery={apunteQuery}
+          apunteQuery={draft.apunteQuery}
           apunteResults={apunteResults}
           open={apuntesOpen}
           searchingApuntes={searchingApuntes}
-          selectedApuntes={selectedApuntes}
-          onAddApunte={(apunte) => setSelectedApuntes((prev) => [...prev, apunte])}
+          selectedApuntes={draft.selectedApuntes}
+          onAddApunte={(apunte) => dispatch({ type: 'ADD_APUNTE', apunte })}
           onCreateApunte={() => setNewApunteOpen(true)}
-          onQueryChange={setApunteQuery}
-          onRemoveApunte={(apunteId) => setSelectedApuntes((prev) => prev.filter((item) => item.id !== apunteId))}
+          onQueryChange={(query) => dispatch({ type: 'SET_APUNTE_QUERY', query })}
+          onRemoveApunte={(apunteId) => dispatch({ type: 'REMOVE_APUNTE', apunteId })}
           onToggle={() => setApuntesOpen(!apuntesOpen)}
         />
 
-        <EventTypeSelect tiposEvento={tiposEvento} value={selectedTipoId} onChange={setSelectedTipoId} />
+        <EventTypeSelect
+          tiposEvento={tiposEvento}
+          value={draft.selectedTipoId}
+          onChange={(tipoId) => dispatch({ type: 'SET_TIPO', tipoId })}
+        />
 
         <EventDateTimeFields eventToEdit={eventToEdit} initialDate={initialDate} />
 
@@ -253,11 +375,7 @@ function EventModalContent({
           onClose={() => setNewApunteOpen(false)}
           subjectId={activeSubjectId}
           categoriasDisponibles={activeCategorias}
-          onCreated={(apunte) => {
-            setSelectedApuntes((prev) =>
-              prev.some((item) => item.id === apunte.id) ? prev : [...prev, apunte],
-            )
-          }}
+          onCreated={(apunte) => dispatch({ type: 'ADD_APUNTE_IF_NEW', apunte })}
         />
       ) : null}
     </Modal>
