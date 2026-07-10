@@ -1,5 +1,7 @@
 import type { SubjectStatus } from './types';
 
+export const EMPTY_STRING_ARRAY: string[] = [];
+
 export const MAPA_YEARS = [1, 2, 3, 4, 5] as const;
 export type MapaYear = (typeof MAPA_YEARS)[number];
 
