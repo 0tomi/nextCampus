@@ -106,6 +106,7 @@ export function RecursoRow({
           type="button"
           onClick={() => onRemove(recurso.localId)}
           title="Eliminar recurso"
+          aria-label="Eliminar recurso"
           className="inline-flex size-8 cursor-pointer items-center justify-center rounded text-rose-400/60 transition-colors hover:bg-rose-500/10 hover:text-rose-300"
         >
           <Trash2 className="size-3.5" />
