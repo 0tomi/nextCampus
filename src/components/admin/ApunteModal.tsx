@@ -3,6 +3,10 @@
 import { useActionState, useState, useCallback, useMemo } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { CollapsibleFormSection } from '@/components/ui/CollapsibleFormSection'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { FormError } from '@/components/ui/FormError'
 import { Plus } from 'lucide-react'
 import {
   createApunteAction,
@@ -11,8 +15,8 @@ import {
 } from '@/app/admin/actions/apuntes'
 import { RichTextEditor } from './RichTextEditor'
 import { RecursoRow } from '@/components/admin/apunte/RecursoRow'
-import { useAutoApunteCategories } from '@/hooks/useAutoApunteCategories'
-import { useApunteRecursos } from '@/hooks/useApunteRecursos'
+import { useAutoApunteCategories } from '@/components/admin/apunte/useAutoApunteCategories'
+import { useApunteRecursos } from '@/components/admin/apunte/useApunteRecursos'
 import {
   getApunteFormValidationError,
   serializeRecursos,
@@ -218,10 +222,8 @@ export function ApunteModal({
 function ApunteTitleField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   return (
     <div className="space-y-1">
-      <label htmlFor="apunte-titulo" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
-        Título
-      </label>
-      <input
+      <Label htmlFor="apunte-titulo">Título</Label>
+      <Input
         id="apunte-titulo"
         type="text"
         name="titulo"
@@ -229,7 +231,6 @@ function ApunteTitleField({ value, onChange }: { value: string; onChange: (value
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Ej: Resumen Unidad 3"
-        className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
       />
     </div>
   )
@@ -355,16 +356,8 @@ function ApunteFormErrors({ actionMessage, validationError }: { actionMessage: s
 
   return (
     <div className="space-y-2">
-      {validationError ? (
-        <p className="rounded border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
-          {validationError}
-        </p>
-      ) : null}
-      {actionMessage ? (
-        <p className="rounded border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
-          {actionMessage}
-        </p>
-      ) : null}
+      <FormError message={validationError} />
+      <FormError message={actionMessage} />
     </div>
   )
 }
@@ -380,20 +373,12 @@ function ApunteFormActions({
 }) {
   return (
     <div className="flex justify-end gap-2 border-t border-white/5 pt-4">
-      <button
-        type="button"
-        onClick={onClose}
-        className="cursor-pointer rounded border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white"
-      >
+      <Button type="button" variant="ghost" onClick={onClose}>
         Cancelar
-      </button>
-      <button
-        type="submit"
-        disabled={pending}
-        className="cursor-pointer rounded bg-white px-4 py-2 text-sm font-semibold text-black transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-      >
+      </Button>
+      <Button type="submit" variant="primary" disabled={pending}>
         {pending ? 'Guardando…' : isEditMode ? 'Guardar cambios' : 'Crear apunte'}
-      </button>
+      </Button>
     </div>
   )
 }

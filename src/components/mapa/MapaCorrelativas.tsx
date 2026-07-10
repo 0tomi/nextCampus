@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import {
   DESKTOP_STATUS_LABELS as STATUS_LABELS,
+  EMPTY_STRING_ARRAY,
   MAPA_YEARS,
   YEAR_ACTION_LABELS,
   YEAR_LABELS as YEAR_NAMES,
@@ -51,12 +52,10 @@ type DesktopMapaActions = MapaActions & {
   onAskReset: () => void;
 };
 
-const EMPTY_AVAILABLE_SUBJECT_SLUGS: string[] = [];
-const EMPTY_RELATION_MISSING_SLUGS: string[] = [];
 const STATUS_FILTERS: readonly StatusFilter[] = ['ALL', 'UNLOCKED', 'LOCKED', 'COMPLETED'];
 
 export function MapaCorrelativas({
-  availableSubjectSlugs = EMPTY_AVAILABLE_SUBJECT_SLUGS,
+  availableSubjectSlugs = EMPTY_STRING_ARRAY,
 }: MapaCorrelativasProps) {
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const {
@@ -1028,7 +1027,7 @@ function RelationList({
   title,
   slugs,
   empty,
-  missing = EMPTY_RELATION_MISSING_SLUGS,
+  missing = EMPTY_STRING_ARRAY,
 }: {
   title: string;
   slugs: string[];

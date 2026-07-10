@@ -1,18 +1,18 @@
 'use server'
 
 import { z } from 'zod'
-import { requireYearAdminForSubjectSlug } from '@/lib/auth'
+import { requireAnyAdmin, requireYearAdminForSubjectSlug } from '@/lib/auth'
 import {
   uploadQuizBank,
   deleteQuizBank,
   getQuizBankMeta,
   readQuizBank,
-  quizBanksCacheTag,
 } from '@/lib/storage'
+import { queryTags } from '@/lib/queries'
 import { parseQuizBank } from '@/lib/domain/quiz-bank'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
 import { awardQuizBankCreated, revokeQuizBankCreated } from '@/lib/contributions'
-import { requireAuth, revalidateTag } from './shared'
+import { invalidateTag } from './shared'
 
 export interface QuizBankActionState {
   ok: boolean
@@ -31,7 +31,7 @@ export async function uploadQuizBankAction(
   _prev: QuizBankActionState,
   formData: FormData,
 ): Promise<QuizBankActionState> {
-  await requireAuth()
+  await requireAnyAdmin()
   const parsedForm = uploadBankSchema.safeParse({
     subjectSlug: formData.get('subjectSlug'),
     json: formData.get('json'),
@@ -73,7 +73,7 @@ export async function uploadQuizBankAction(
   }
   await awardQuizBankCreated(scope.admin.id, bank.bank.units.length)
 
-  revalidateTag(quizBanksCacheTag(scope.yearSlug, scope.subjectSlug))
+  invalidateTag(queryTags.quizBanks(scope.yearSlug, scope.subjectSlug))
   await recordAudit({
     userId: scope.admin.id,
     action: AUDIT_ACTIONS.QUIZ_BANK_UPLOADED,
@@ -94,7 +94,7 @@ export async function uploadQuizBankAction(
 }
 
 export async function deleteQuizBankAction(formData: FormData): Promise<void> {
-  await requireAuth()
+  await requireAnyAdmin()
   const subjectSlug = z.string().min(1).parse(formData.get('subjectSlug'))
   const bankId = z.uuid().parse(formData.get('bankId'))
   const scope = await requireYearAdminForSubjectSlug(subjectSlug)
@@ -120,7 +120,7 @@ export async function deleteQuizBankAction(formData: FormData): Promise<void> {
     await revokeQuizBankCreated(ownerId, unitsCount)
   }
 
-  revalidateTag(quizBanksCacheTag(scope.yearSlug, scope.subjectSlug))
+  invalidateTag(queryTags.quizBanks(scope.yearSlug, scope.subjectSlug))
   await recordAudit({
     userId: scope.admin.id,
     action: AUDIT_ACTIONS.QUIZ_BANK_DELETED,

@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell';
 import { Modal } from '@/components/ui/Modal';
-import { MAPA_YEARS, MOBILE_STATUS_BADGE as STATUS_BADGE, MOBILE_STATUS_CARD as STATUS_CARD, MOBILE_STATUS_LABELS as STATUS_LABELS, YEAR_LABELS, YEAR_SHORT_LABELS } from '@/lib/domain/mapa/mapaConstants';
+import { EMPTY_STRING_ARRAY, MAPA_YEARS, MOBILE_STATUS_BADGE as STATUS_BADGE, MOBILE_STATUS_CARD as STATUS_CARD, MOBILE_STATUS_LABELS as STATUS_LABELS, YEAR_LABELS, YEAR_SHORT_LABELS } from '@/lib/domain/mapa/mapaConstants';
 import {
   canOpenSubjectPage,
   getMissingCorrelatives,
@@ -48,12 +48,10 @@ type MapaCorrelativasMobileProps = {
   initialMode?: MobileMapaMode;
 };
 
-const EMPTY_AVAILABLE_SUBJECT_SLUGS: string[] = [];
-
 export function MapaCorrelativasMobile({
   careerName,
   drawerYears,
-  availableSubjectSlugs = EMPTY_AVAILABLE_SUBJECT_SLUGS,
+  availableSubjectSlugs = EMPTY_STRING_ARRAY,
   initialMode = 'plan',
 }: MapaCorrelativasMobileProps) {
   const [mode, setMode] = useState<MobileMapaMode>(initialMode);

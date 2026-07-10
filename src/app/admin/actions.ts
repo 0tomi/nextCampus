@@ -1,5 +1,6 @@
-'use server'
-
+// IMPORTANTE: este barrel NO debe declarar 'use server'. Turbopack convierte un
+// archivo 'use server' sin funciones locales en un modulo sin exports (app-ssr)
+// y el build de Vercel se rompe. La directiva vive en los archivos de ./actions/*.
 export {
   createEvento,
   createEventoAction,
@@ -13,6 +14,7 @@ export {
   createPeriodoAction,
   updatePeriodoAction,
   deletePeriodo,
+  createCategoriaAction,
 } from './actions/periodos'
 export type { PeriodoActionState } from './actions/periodos'
 

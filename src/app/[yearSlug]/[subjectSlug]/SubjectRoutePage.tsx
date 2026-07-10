@@ -26,6 +26,11 @@ import {
   buildSubjectQuizHref,
 } from '@/components/mobile/shared/subjectRoutes'
 import type { SubjectRouteContext } from './subject-route-context'
+import {
+  toEventSummaryItems,
+  toMobileEvents,
+  toSubjectEvents,
+} from '@/lib/domain/event-adapters'
 import { SubjectEventsSection } from '@/components/subject/SubjectEventsSection'
 import { SubjectEventSummaryCard } from '@/components/subject/SubjectEventSummaryCard'
 import { ApuntesFeed } from '@/components/apuntes/ApuntesFeed'
@@ -34,44 +39,6 @@ import { SubjectLinkButtons } from '@/components/subject/SubjectLinkButtons'
 type YearColorClasses = ReturnType<typeof getYearColorClasses>
 
 type VisibleEvent = SubjectRouteContext['visibleEvents'][number]
-
-function toSubjectEvents(events: readonly VisibleEvent[]) {
-  return events.map((evento) => ({
-    id: evento.id,
-    titulo: evento.titulo,
-    fecha: evento.fecha,
-    hora: evento.hora,
-    descripcionHtml: evento.descripcionHtml,
-    tipoEvento: evento.tipoEvento,
-    tipoEventoId: evento.tipoEventoId,
-    commissionId: evento.commissionId,
-    commissionSlug: evento.commission?.slug ?? null,
-    commissionNombre: evento.commission?.nombre ?? null,
-    createdByNombre: evento.createdByNombre ?? null,
-    apuntes: evento.apuntes,
-  }))
-}
-
-function toMobileEvents(events: readonly VisibleEvent[]) {
-  return events.map((evento) => ({
-    id: evento.id,
-    titulo: evento.titulo,
-    descripcionHtml: evento.descripcionHtml,
-    fecha: evento.fecha,
-    hora: evento.hora,
-    tipoEventoId: evento.tipoEventoId,
-    tipoEvento: evento.tipoEvento,
-    commissionId: evento.commissionId,
-    commissionSlug: evento.commission?.slug ?? null,
-    commissionNombre: evento.commission?.nombre ?? null,
-    createdByUserId: evento.createdByUserId,
-    createdByNombre: evento.createdByNombre ?? null,
-  }))
-}
-
-function toEventSummaryItems(events: readonly VisibleEvent[]) {
-  return events.map((evento) => ({ commissionId: evento.commissionId }))
-}
 
 export function SubjectRoutePage({
   subject,

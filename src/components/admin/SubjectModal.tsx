@@ -3,6 +3,11 @@
 import { useActionState, useReducer } from 'react'
 import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/ui/Modal'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { FormError } from '@/components/ui/FormError'
 import {
   createSubjectAction,
   updateSubjectAction,
@@ -140,41 +145,31 @@ export function SubjectModal({
 
         {/* Nombre */}
         <div className="space-y-1">
-          <label
-            htmlFor="subject-nombre"
-            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
-          >
-            Nombre
-          </label>
-          <input
+          <Label htmlFor="subject-nombre">Nombre</Label>
+          <Input
             id="subject-nombre"
             type="text"
             name="nombre"
             required
             defaultValue={subject?.nombre ?? ''}
             placeholder="Ej: Algoritmos y Estructuras de Datos"
-            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
           />
         </div>
 
         {/* Descripción */}
         <div className="space-y-1">
-          <label
-            htmlFor="subject-descripcion"
-            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
-          >
+          <Label htmlFor="subject-descripcion">
             Descripción{' '}
             <span className="font-normal normal-case tracking-normal text-white/30">
               (opcional)
             </span>
-          </label>
-          <textarea
+          </Label>
+          <Textarea
             id="subject-descripcion"
             name="descripcion"
             rows={3}
             defaultValue={subject?.descripcion ?? ''}
             placeholder="Breve descripción de la materia"
-            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none resize-none"
           />
         </div>
 
@@ -231,7 +226,7 @@ export function SubjectModal({
                   Texto del botón{' '}
                   <span className="text-white/20">(opcional)</span>
                 </label>
-                <input
+                <Input
                   id={`link-${index}-label`}
                   type="text"
                   aria-label="Texto del botón"
@@ -240,14 +235,13 @@ export function SubjectModal({
                     dispatch({ type: 'UPDATE_FIELD', index, field: 'label', value: e.target.value })
                   }
                   placeholder="Ej: Ver apuntes"
-                  className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
                 />
               </div>
 
               {/* Enlace */}
               <div className="space-y-1">
                 <label htmlFor={`link-${index}-url`} className="block text-xs text-white/40">Enlace</label>
-                <input
+                <Input
                   id={`link-${index}-url`}
                   type="url"
                   aria-label="Enlace"
@@ -256,7 +250,6 @@ export function SubjectModal({
                     dispatch({ type: 'UPDATE_FIELD', index, field: 'url', value: e.target.value })
                   }
                   placeholder="https://..."
-                  className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
                 />
               </div>
             </div>
@@ -271,31 +264,19 @@ export function SubjectModal({
           </button>
         </div>
 
-        {state.message && !state.ok && (
-          <p className="rounded border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
-            {state.message}
-          </p>
-        )}
+        <FormError message={!state.ok ? state.message : ''} />
 
         <div className="flex justify-end gap-2 pt-1">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white cursor-pointer"
-          >
+          <Button type="button" variant="ghost" onClick={onClose}>
             Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded bg-white px-4 py-2 text-sm font-semibold text-black transition-opacity disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-          >
+          </Button>
+          <Button type="submit" variant="primary" disabled={pending}>
             {pending
               ? 'Guardando…'
               : isEdit
                 ? 'Guardar cambios'
                 : 'Crear materia'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

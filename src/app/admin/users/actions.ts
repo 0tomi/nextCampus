@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { requireGeneralAdmin as requireAuth } from '@/lib/auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
+import { ActionInputError, actionError } from '../actions/errors'
 
 export interface AdminUserActionState {
   ok: boolean
@@ -52,19 +53,9 @@ async function validateYearIds(yearIds: string[]): Promise<string[]> {
   const uniqueIds = Array.from(new Set(yearIds))
   const count = await prisma.academicYear.count({ where: { id: { in: uniqueIds } } })
   if (count !== uniqueIds.length) {
-    throw new Error('Alguno de los años elegidos ya no está disponible.')
+    throw new ActionInputError('Alguno de los años elegidos ya no está disponible.')
   }
   return uniqueIds
-}
-
-function friendlyError(error: unknown): AdminUserActionState {
-  if (error instanceof z.ZodError) {
-    return { ok: false, message: error.issues[0]?.message ?? 'Revisá los datos ingresados.' }
-  }
-  if (error instanceof Error && error.message) {
-    return { ok: false, message: error.message }
-  }
-  return { ok: false, message: 'No pudimos guardar los cambios. Intentá de nuevo.' }
 }
 
 async function ensureEmailAvailable(email: string, currentUserId?: string): Promise<void> {
@@ -74,7 +65,7 @@ async function ensureEmailAvailable(email: string, currentUserId?: string): Prom
   })
 
   if (existing && existing.id !== currentUserId) {
-    throw new Error('Ya existe una cuenta con ese email.')
+    throw new ActionInputError('Ya existe una cuenta con ese email.')
   }
 }
 
@@ -101,7 +92,7 @@ export async function createAdminCampusAction(
     })
 
     if (createError || !created.user?.id) {
-      throw new Error(createError?.message ?? 'No pudimos crear la cuenta.')
+      throw new ActionInputError(createError?.message ?? 'No pudimos crear la cuenta.')
     }
 
     let createdUserId: string
@@ -148,7 +139,7 @@ export async function createAdminCampusAction(
     })
     return { ok: true, message: 'Ayudante creado correctamente.' }
   } catch (error) {
-    return friendlyError(error)
+    return actionError(error, 'No pudimos guardar los cambios. Intentá de nuevo.')
   }
 }
 
@@ -174,9 +165,9 @@ export async function updateAdminCampusAction(
       select: { id: true, authUserId: true, email: true, role: true },
     })
 
-    if (!current) throw new Error('No encontramos esa cuenta.')
+    if (!current) throw new ActionInputError('No encontramos esa cuenta.')
     if (current.role === UserRole.ADMIN) {
-      throw new Error('Esta cuenta no se puede editar desde esta pantalla.')
+      throw new ActionInputError('Esta cuenta no se puede editar desde esta pantalla.')
     }
 
     await ensureEmailAvailable(data.email, current.id)
@@ -195,7 +186,7 @@ export async function updateAdminCampusAction(
         current.authUserId,
         authUpdates,
       )
-      if (updateError) throw new Error(updateError.message)
+      if (updateError) throw new ActionInputError(updateError.message)
     }
 
     try {
@@ -248,6 +239,6 @@ export async function updateAdminCampusAction(
     })
     return { ok: true, message: 'Cambios guardados correctamente.' }
   } catch (error) {
-    return friendlyError(error)
+    return actionError(error, 'No pudimos guardar los cambios. Intentá de nuevo.')
   }
 }

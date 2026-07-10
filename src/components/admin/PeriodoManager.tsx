@@ -5,13 +5,17 @@ import { useRouter } from 'next/navigation'
 import { Pencil, Plus, Trash2, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { AlertDialog } from '@/components/ui/AlertDialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { FormError } from '@/components/ui/FormError'
 import {
   createPeriodoAction,
   updatePeriodoAction,
   deletePeriodo,
   createCategoriaAction,
   type PeriodoActionState,
-} from '@/app/admin/actions/periodos'
+} from '@/app/admin/actions'
 import {
   PERIODO_TONES,
   PERIODO_TONE_BG,
@@ -76,17 +80,18 @@ export function PeriodoManager({ periodos, categorias }: PeriodoManagerProps) {
             ? 'Todavía no cargaste ningún período.'
             : `${periodos.length} ${periodos.length === 1 ? 'período cargado' : 'períodos cargados'}.`}
         </p>
-        <button
+        <Button
           type="button"
+          variant="primary"
           onClick={() => {
             setEditing(null)
             setShowForm(true)
           }}
-          className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded bg-white px-3 py-2 text-sm font-semibold text-black transition-opacity hover:opacity-90"
+          className="inline-flex shrink-0 items-center gap-1.5 px-3 hover:opacity-90"
         >
           <Plus className="size-4" />
           Agregar período
-        </button>
+        </Button>
       </div>
 
       <PeriodoList
@@ -264,16 +269,16 @@ function PeriodoForm({
             Crear nuevo tipo de período
           </h3>
           <div className="space-y-1">
-            <label htmlFor="new-cat-label" className="block text-[11px] font-semibold uppercase tracking-widest text-white/40">
+            <Label htmlFor="new-cat-label" className="text-[11px]">
               Nombre del tipo
-            </label>
-            <input
+            </Label>
+            <Input
               id="new-cat-label"
               type="text"
               value={newCatLabel}
               onChange={(e) => setNewCatLabel(e.target.value)}
               placeholder="Ej: Feriado puente, Inscripciones, etc."
-              className="w-full rounded border border-white/10 bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
+              className="bg-surface-1 focus:border-white/30 focus:ring-1 focus:ring-white/10"
             />
           </div>
 
@@ -311,25 +316,27 @@ function PeriodoForm({
           </div>
 
           <div className="flex justify-end gap-2 pt-1">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               disabled={catPending}
               onClick={() => {
                 setShowNewCatForm(false)
                 setSelectedCategoriaId('')
               }}
-              className="cursor-pointer rounded border border-white/10 px-3 py-1.5 text-xs text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+              className="px-3 py-1.5 text-xs"
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="primary"
               disabled={catPending}
               onClick={handleSaveCategoria}
-              className="cursor-pointer rounded bg-white px-3 py-1.5 text-xs font-semibold text-black transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="px-3 py-1.5 text-xs hover:opacity-90"
             >
               {catPending ? 'Guardando...' : 'Guardar tipo'}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}
@@ -338,9 +345,7 @@ function PeriodoForm({
         {periodo ? <input type="hidden" name="id" value={periodo.id} /> : null}
 
         <div className="space-y-1">
-          <label htmlFor="periodo-categoria" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
-            Tipo de período
-          </label>
+          <Label htmlFor="periodo-categoria">Tipo de período</Label>
           <select
             id="periodo-categoria"
             name="categoriaId"
@@ -371,70 +376,52 @@ function PeriodoForm({
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="periodo-titulo" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
-            Título
-          </label>
-          <input
+          <Label htmlFor="periodo-titulo">Título</Label>
+          <Input
             id="periodo-titulo"
             type="text"
             name="titulo"
             required
             defaultValue={periodo?.titulo ?? ''}
             placeholder="Ej: Mesas de examen de mayo"
-            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
+            className="focus:border-white/30 focus:ring-1 focus:ring-white/10"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label htmlFor="periodo-inicio" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
-              Desde
-            </label>
-            <input
+            <Label htmlFor="periodo-inicio">Desde</Label>
+            <Input
               id="periodo-inicio"
               type="date"
               name="fechaInicio"
               required
               defaultValue={periodo?.fechaInicio ?? ''}
-              className="w-full cursor-pointer rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
+              className="cursor-pointer focus:border-white/30 focus:ring-1 focus:ring-white/10"
             />
           </div>
           <div className="space-y-1">
-            <label htmlFor="periodo-fin" className="block text-xs font-semibold uppercase tracking-widest text-white/40">
-              Hasta
-            </label>
-            <input
+            <Label htmlFor="periodo-fin">Hasta</Label>
+            <Input
               id="periodo-fin"
               type="date"
               name="fechaFin"
               required
               defaultValue={periodo?.fechaFin ?? ''}
-              className="w-full cursor-pointer rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white focus:border-white/30 focus:ring-1 focus:ring-white/10 focus:outline-none"
+              className="cursor-pointer focus:border-white/30 focus:ring-1 focus:ring-white/10"
             />
           </div>
         </div>
 
-        {state.message && !state.ok ? (
-          <p className="rounded border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
-            {state.message}
-          </p>
-        ) : null}
+        <FormError message={!state.ok ? state.message : ''} />
 
         <div className="flex justify-end gap-2 pt-1">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="cursor-pointer rounded border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white"
-          >
+          <Button type="button" variant="ghost" onClick={onCancel}>
             Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={pending}
-            className="cursor-pointer rounded bg-white px-4 py-2 text-sm font-semibold text-black transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-          >
+          </Button>
+          <Button type="submit" variant="primary" disabled={pending}>
             {pending ? 'Guardando…' : periodo ? 'Guardar cambios' : 'Crear período'}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

@@ -9,6 +9,8 @@ import {
   type QuizBankMeta,
 } from '@/lib/domain/quiz-bank'
 
+// Parte del vocabulario central de tags: expuesta como queryTags.quizBanks
+// (src/lib/queries.ts). Definida acá para evitar el ciclo queries <-> storage.
 export function quizBanksCacheTag(yearSlug: string, subjectSlug: string): string {
   return `quiz-banks:${yearSlug}:${subjectSlug}`
 }
@@ -278,7 +280,7 @@ export async function readQuizBanks(
   return out
 }
 
-export interface QuizBankContributionRevocation {
+interface QuizBankContributionRevocation {
   ownerId: string
   unitsCount: number
 }

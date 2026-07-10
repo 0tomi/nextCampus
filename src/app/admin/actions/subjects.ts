@@ -8,16 +8,16 @@ import { getSubjectDeleteImpact, queryTags, type SubjectDeleteImpact } from '@/l
 import {
   deleteSubjectStorage,
   listQuizBankContributionRevocations,
-  quizBanksCacheTag,
 } from '@/lib/storage'
 import { slugify, uniqueSlug } from '@/lib/slug'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
 import { revokeContributionBatch } from '@/lib/contributions'
 import {
+  invalidateTag,
   parseLinksFromForm,
   requireAuth,
   revalidateSubjectContent,
-  revalidateTag,
+  revalidateYearContent,
 } from './shared'
 
 export type SubjectActionState =
@@ -117,11 +117,7 @@ export async function createSubjectAction(
     return created
   })
 
-  revalidateTag(queryTags.career)
-  revalidateTag(queryTags.year(year.slug))
-  revalidatePath('/')
-  revalidatePath(`/${year.slug}`)
-  revalidatePath(`/${year.slug}/calendario`)
+  revalidateYearContent(year.slug)
   await recordAudit({
     userId: admin.id,
     action: AUDIT_ACTIONS.SUBJECT_CREATED,
@@ -183,7 +179,7 @@ export async function createCommissionAction(
     return created
   })
 
-  revalidateTag(queryTags.career)
+  invalidateTag(queryTags.career)
   revalidateSubjectContent({
     ...scope,
     commissionSlugs: [...scope.commissionSlugs, commission.slug],
@@ -255,10 +251,10 @@ export async function updateSubjectAction(
     }
   })
 
-  revalidateTag(queryTags.career)
-  revalidateTag(queryTags.year(scope.yearSlug))
-  revalidateTag(queryTags.subject(oldSlug))
-  if (newSlug !== oldSlug) revalidateTag(queryTags.subject(newSlug))
+  invalidateTag(queryTags.career)
+  invalidateTag(queryTags.year(scope.yearSlug))
+  invalidateTag(queryTags.subject(oldSlug))
+  if (newSlug !== oldSlug) invalidateTag(queryTags.subject(newSlug))
   revalidatePath('/')
   revalidatePath(`/${scope.yearSlug}`)
   revalidatePath(`/${scope.yearSlug}/calendario`)
@@ -381,10 +377,10 @@ export async function deleteSubjectAction(formData: FormData): Promise<void> {
     })
   }
 
-  revalidateTag(queryTags.career)
-  revalidateTag(queryTags.year(yearSlug))
-  revalidateTag(queryTags.subject(subjectSlug))
-  revalidateTag(quizBanksCacheTag(yearSlug, subjectSlug))
+  invalidateTag(queryTags.career)
+  invalidateTag(queryTags.year(yearSlug))
+  invalidateTag(queryTags.subject(subjectSlug))
+  invalidateTag(queryTags.quizBanks(yearSlug, subjectSlug))
   revalidatePath('/')
   revalidatePath(`/${yearSlug}`)
   revalidatePath(`/${yearSlug}/calendario`)
