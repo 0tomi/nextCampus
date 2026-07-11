@@ -1,7 +1,7 @@
 import 'server-only'
 import { prisma } from '@/lib/prisma'
 
-export interface ContributionBatchRevoke {
+interface ContributionBatchRevoke {
   apuntesCreados?: number
   eventosCreados?: number
   bancosPreguntasCreados?: number

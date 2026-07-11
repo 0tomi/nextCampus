@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const revalidatePathMock = vi.fn()
-const revalidateTagRawMock = vi.fn()
+const updateTagMock = vi.fn()
 const requireGeneralAdminMock = vi.fn()
 const requireAcademicManagerMock = vi.fn()
 const requireAnyAdminMock = vi.fn()
@@ -51,7 +51,7 @@ const prismaMock = {
 
 vi.mock('next/cache', () => ({
   revalidatePath: revalidatePathMock,
-  revalidateTag: revalidateTagRawMock,
+  updateTag: updateTagMock,
 }))
 
 vi.mock('@/lib/auth', () => ({
@@ -92,7 +92,6 @@ vi.mock('@/lib/storage', () => ({
   deleteSubjectStorage: vi.fn(),
   deleteYearStorage: vi.fn(),
   listQuizBankContributionRevocations: listQuizBankContributionRevocationsMock,
-  quizBanksCacheTag: vi.fn(() => 'quiz-bank-tag'),
 }))
 
 vi.mock('@/lib/queries', () => ({
@@ -103,6 +102,7 @@ vi.mock('@/lib/queries', () => ({
     upcomingEvents: 'upcoming-events',
     year: (slug: string) => `year:${slug}`,
     subject: (slug: string) => `subject:${slug}`,
+    quizBanks: vi.fn(() => 'quiz-bank-tag'),
   },
   getSubjectDeleteImpact: getSubjectDeleteImpactMock,
   getYearDeleteImpact: vi.fn(),
@@ -218,9 +218,9 @@ describe('admin apunte actions', () => {
     )
 
     expect(result).toMatchObject({ ok: true, message: 'Apunte creado correctamente.' })
-    expect(revalidateTagRawMock).toHaveBeenCalledWith('latest-apuntes', 'max')
-    expect(revalidateTagRawMock).toHaveBeenCalledWith('upcoming-events', 'max')
-    expect(revalidateTagRawMock).toHaveBeenCalledWith('year:primer-anio', 'max')
+    expect(updateTagMock).toHaveBeenCalledWith('latest-apuntes')
+    expect(updateTagMock).toHaveBeenCalledWith('upcoming-events')
+    expect(updateTagMock).toHaveBeenCalledWith('year:primer-anio')
     expect(prismaMock.subject.findUnique).not.toHaveBeenCalled()
   })
 
@@ -251,7 +251,7 @@ describe('admin apunte actions', () => {
     )
 
     expect(result).toEqual({ ok: true, message: 'Apunte actualizado correctamente.' })
-    expect(revalidateTagRawMock).toHaveBeenCalledWith('latest-apuntes', 'max')
+    expect(updateTagMock).toHaveBeenCalledWith('latest-apuntes')
   })
 
   it('reemplaza un apunte interactivo sin borrar el archivo anterior antes de guardar', async () => {
@@ -370,7 +370,7 @@ describe('admin apunte actions', () => {
     const { deleteApunteAction } = await import('./actions')
     await deleteApunteAction(makeFormData({ id: 'apunte-1' }))
 
-    expect(revalidateTagRawMock).toHaveBeenCalledWith('latest-apuntes', 'max')
+    expect(updateTagMock).toHaveBeenCalledWith('latest-apuntes')
     expect(revokeApunteCreatedMock).toHaveBeenCalledWith('admin-1', 2)
   })
 
@@ -637,6 +637,6 @@ describe('deleteYearAction', () => {
     const { deleteYearAction } = await import('./actions')
     await deleteYearAction(makeFormData({ id: 'year-1' }))
 
-    expect(revalidateTagRawMock).toHaveBeenCalledWith('quiz-bank-tag', 'max')
+    expect(updateTagMock).toHaveBeenCalledWith('quiz-bank-tag')
   })
 })

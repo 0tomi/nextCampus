@@ -5,29 +5,48 @@ import {
   getLatestApuntesByYear,
   getPeriodos,
   getTiposEvento,
+  getTodayKeyAR,
   getYearBySlug,
 } from '@/lib/queries'
-import { todayKeyAR } from '@/lib/utils'
 import {
   buildMobileYear,
   buildYearLatestApuntes,
-  buildYearAdminData,
   buildYearCalendarEvents,
   buildYearDrawerYears,
   buildYearModalSubjects,
   buildYearOverviewEvents,
   buildYearUpcomingEvents,
   getYearDisplayIndex,
+  type YearPageYear,
 } from '@/lib/domain/year-page-adapters'
 
+function buildYearAdminData({
+  displayIndex,
+  year,
+}: {
+  displayIndex: number
+  year: YearPageYear
+}) {
+  return {
+    id: year.id,
+    slug: year.slug,
+    nombre: year.nombre,
+    descripcion: year.descripcion,
+    links: year.links,
+    orden: displayIndex,
+    color: year.color,
+  }
+}
+
 export async function getYearRouteContext(yearSlug: string) {
-  const [year, tiposEvento, career, categoriasDisponibles, periodos, latestApuntesRaw] = await Promise.all([
+  const [year, tiposEvento, career, categoriasDisponibles, periodos, latestApuntesRaw, todayKey] = await Promise.all([
     getYearBySlug(yearSlug),
     getTiposEvento(),
     getCareer(),
     getCategoriasApunte(),
     getPeriodos(),
     getLatestApuntesByYear(yearSlug),
+    getTodayKeyAR(),
   ])
 
   if (!year) notFound()
@@ -40,7 +59,7 @@ export async function getYearRouteContext(yearSlug: string) {
     periodos,
     latestApuntes: buildYearLatestApuntes(latestApuntesRaw),
     allYears: buildYearDrawerYears(career),
-    nextEvents: buildYearUpcomingEvents(year.subjects, todayKeyAR()),
+    nextEvents: buildYearUpcomingEvents(year.subjects, todayKey),
     overviewEvents: buildYearOverviewEvents(year.subjects),
     calendarEvents: buildYearCalendarEvents(year.subjects),
     mobileYear: buildMobileYear(year),

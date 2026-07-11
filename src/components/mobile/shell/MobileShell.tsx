@@ -115,6 +115,7 @@ interface DrawerUtilityLinkProps {
   Icon: LucideIcon
   active: boolean
   onClose: () => void
+  prefetch?: boolean
 }
 
 export function MobileShell({
@@ -609,6 +610,7 @@ function DrawerFooter({ pathname, onClose }: DrawerFooterProps) {
           Icon={Shield}
           active={pathname.startsWith('/admin')}
           onClose={onClose}
+          prefetch={false}
         />
         <DrawerUtilityLink
           href="/configurar"
@@ -617,6 +619,7 @@ function DrawerFooter({ pathname, onClose }: DrawerFooterProps) {
           Icon={SlidersHorizontal}
           active={pathname.startsWith('/configurar')}
           onClose={onClose}
+          prefetch={false}
         />
       </div>
       <MapaDrawerLink active={pathname.startsWith('/mapa')} onClose={onClose} />
@@ -625,11 +628,20 @@ function DrawerFooter({ pathname, onClose }: DrawerFooterProps) {
   )
 }
 
-function DrawerUtilityLink({ href, label, eyebrow, Icon, active, onClose }: DrawerUtilityLinkProps) {
+function DrawerUtilityLink({
+  href,
+  label,
+  eyebrow,
+  Icon,
+  active,
+  onClose,
+  prefetch,
+}: DrawerUtilityLinkProps) {
   return (
     <Link
       href={href}
       onClick={onClose}
+      prefetch={prefetch}
       className={cn(
         'flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
         active ? 'bg-white/5' : 'hover:bg-white/5',

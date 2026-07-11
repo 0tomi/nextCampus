@@ -276,6 +276,7 @@ function HomeGlobalCalendarSetupNotice() {
         </div>
         <Link
           href="/configurar"
+          prefetch={false}
           className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-light"
         >
           <SlidersHorizontal className="size-4" />

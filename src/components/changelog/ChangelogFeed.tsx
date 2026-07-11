@@ -78,7 +78,7 @@ export function ChangelogFeed({
         if (!linkEntries) return <div key={entry.id}>{card}</div>
 
         return (
-          <Link key={entry.id} href={`/admin/changelog/${encodeURIComponent(entry.changelogId)}`} className="block cursor-pointer transition-opacity hover:opacity-90">
+          <Link key={entry.id} href={`/admin/changelog/${encodeURIComponent(entry.changelogId)}`} prefetch={false} className="block cursor-pointer transition-opacity hover:opacity-90">
             {card}
           </Link>
         )

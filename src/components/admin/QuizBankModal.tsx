@@ -3,6 +3,8 @@
 import { useEffect, useActionState, useRef, useState, useCallback } from 'react'
 import { Check, Copy, FileJson, Sparkles, Upload } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
+import { Button } from '@/components/ui/button'
+import { FormError } from '@/components/ui/FormError'
 import {
   uploadQuizBankAction,
   type QuizBankActionState,
@@ -282,11 +284,10 @@ export function QuizBankModal({
             </div>
 
             {/* Error de archivo */}
-            {fileError && (
-              <p className="border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-                {fileError}
-              </p>
-            )}
+            <FormError
+              message={fileError}
+              className="rounded-none border-rose-500/30 px-4 py-3 text-rose-200"
+            />
 
             {/* Preview del archivo */}
             {preview && !fileError && (
@@ -307,27 +308,28 @@ export function QuizBankModal({
           </div>
 
           {/* Mensaje de respuesta del server */}
-          {state.message && !state.ok && (
-            <p className="border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-              {state.message}
-            </p>
-          )}
+          <FormError
+            message={!state.ok ? state.message : ''}
+            className="rounded-none border-rose-500/30 px-4 py-3 text-rose-200"
+          />
 
           <div className="flex justify-end gap-3 pt-1">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={onClose}
-              className="px-4 py-2.5 text-sm font-semibold text-white/58 transition-colors hover:text-white cursor-pointer"
+              className="rounded-none border-0 px-4 py-2.5 font-semibold text-white/58 hover:bg-transparent"
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
               disabled={pending || !preview}
-              className="inline-flex items-center gap-2 bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-none bg-primary px-5 py-2.5 font-bold text-white transition-colors hover:bg-primary-light disabled:opacity-40"
             >
               {pending ? 'Subiendo…' : 'Subir banco'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { subjectsData } from '@/lib/domain/mapa/correlativasData';
 import {
+  EMPTY_STRING_ARRAY,
   MAPA_YEARS,
   VISUAL_STATUS_ACCENTS as STATUS_ACCENTS,
   VISUAL_STATUS_LABELS as STATUS_COPY,
@@ -52,10 +53,7 @@ type MapaVisualCorrelativasProps = {
 
 type MapaVisualEdge = ReturnType<typeof getMapaVisualEdges>[number];
 
-const EMPTY_AVAILABLE_SUBJECT_SLUGS: string[] = [];
-const EMPTY_HIGHLIGHT_SLUGS: string[] = [];
-
-export function MapaVisualCorrelativas({ availableSubjectSlugs = EMPTY_AVAILABLE_SUBJECT_SLUGS }: MapaVisualCorrelativasProps) {
+export function MapaVisualCorrelativas({ availableSubjectSlugs = EMPTY_STRING_ARRAY }: MapaVisualCorrelativasProps) {
   const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const progress = useMapaProgress();
@@ -483,7 +481,7 @@ function RelationCloud({
   title,
   slugs,
   empty,
-  highlightSlugs = EMPTY_HIGHLIGHT_SLUGS,
+  highlightSlugs = EMPTY_STRING_ARRAY,
 }: {
   title: string;
   slugs: string[];

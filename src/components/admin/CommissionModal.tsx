@@ -3,6 +3,10 @@
 import { useActionState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/ui/Modal'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { FormError } from '@/components/ui/FormError'
 import {
   createCommissionAction,
   type CommissionActionState,
@@ -60,19 +64,14 @@ export function CommissionModal({
         </div>
 
         <div className="space-y-1">
-          <label
-            htmlFor="commission-nombre"
-            className="block text-xs font-semibold uppercase tracking-widest text-white/40"
-          >
-            Comisión
-          </label>
-          <input
+          <Label htmlFor="commission-nombre">Comisión</Label>
+          <Input
             id="commission-nombre"
             type="text"
             name="nombre"
             required
             placeholder="Ej: Comisión 2"
-            className="w-full rounded border border-white/10 bg-surface-0 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:outline-none"
+            className="focus:border-white/30"
           />
         </div>
 
@@ -92,27 +91,15 @@ export function CommissionModal({
           </div>
         </div>
 
-        {state.message && !state.ok && (
-          <p className="rounded border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
-            {state.message}
-          </p>
-        )}
+        <FormError message={!state.ok ? state.message : ''} />
 
         <div className="flex justify-end gap-2 pt-1">
-          <button
-            type="button"
-            onClick={onClose}
-            className="cursor-pointer rounded border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white"
-          >
+          <Button type="button" variant="ghost" onClick={onClose}>
             Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={pending}
-            className="cursor-pointer rounded bg-white px-4 py-2 text-sm font-semibold text-black transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-          >
+          </Button>
+          <Button type="submit" variant="primary" disabled={pending}>
             {pending ? 'Guardando…' : 'Crear comisión'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

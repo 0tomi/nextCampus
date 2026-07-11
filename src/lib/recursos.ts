@@ -102,7 +102,7 @@ export function youtubeEmbedUrl(id: string): string {
 
 export type DriveKind = 'file' | 'document' | 'spreadsheet' | 'presentation'
 
-export interface DriveParsed {
+interface DriveParsed {
   kind: DriveKind
   id: string
   resourceKey?: string

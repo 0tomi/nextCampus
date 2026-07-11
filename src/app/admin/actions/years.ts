@@ -1,19 +1,23 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { getYearDeleteImpact, queryTags, type YearDeleteImpact } from '@/lib/queries'
+import { getYearDeleteImpact, type YearDeleteImpact } from '@/lib/queries'
 import {
   deleteYearStorage,
   listQuizBankContributionRevocations,
-  quizBanksCacheTag,
 } from '@/lib/storage'
 import { uniqueSlug, yearSlugFromNumber } from '@/lib/slug'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
 import { revokeContributionBatch } from '@/lib/contributions'
 import { isReservedYearSlug, reservedYearSlugSet } from '@/lib/year-slugs'
-import { parseLinksFromForm, requireAuth, revalidateTag } from './shared'
+import {
+  parseLinksFromForm,
+  requireAuth,
+  revalidateCareerListing,
+  revalidateYearRemoval,
+  revalidateYearUpdate,
+} from './shared'
 
 export interface YearActionState {
   ok: boolean
@@ -90,8 +94,7 @@ export async function createYearAction(
     select: { id: true },
   })
 
-  revalidateTag(queryTags.career)
-  revalidatePath('/')
+  revalidateCareerListing()
   await recordAudit({
     userId: admin.id,
     action: AUDIT_ACTIONS.YEAR_CREATED,
@@ -171,16 +174,7 @@ export async function updateYearAction(
     }
   })
 
-  revalidateTag(queryTags.career)
-  revalidateTag(queryTags.year(oldSlug))
-  if (newSlug !== oldSlug) revalidateTag(queryTags.year(newSlug))
-  revalidatePath('/')
-  revalidatePath(`/${oldSlug}`)
-  revalidatePath(`/${oldSlug}/calendario`)
-  if (newSlug !== oldSlug) {
-    revalidatePath(`/${newSlug}`)
-    revalidatePath(`/${newSlug}/calendario`)
-  }
+  revalidateYearUpdate(oldSlug, newSlug)
   await recordAudit({
     userId: admin.id,
     action: AUDIT_ACTIONS.YEAR_UPDATED,
@@ -305,14 +299,10 @@ export async function deleteYearAction(formData: FormData): Promise<void> {
     })
   }
 
-  revalidateTag(queryTags.career)
-  revalidateTag(queryTags.year(year.slug))
-  for (const s of year.subjects) {
-    revalidateTag(queryTags.subject(s.slug))
-    revalidateTag(quizBanksCacheTag(year.slug, s.slug))
-  }
-  revalidatePath('/')
-  revalidatePath(`/${year.slug}`)
+  revalidateYearRemoval(
+    year.slug,
+    year.subjects.map((s) => s.slug),
+  )
   await recordAudit({
     userId: admin.id,
     action: AUDIT_ACTIONS.YEAR_DELETED,

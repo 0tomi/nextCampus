@@ -247,10 +247,6 @@ export async function requireAnyAdmin(): Promise<AdminUser> {
   return admin
 }
 
-// Alias compatible con las llamadas existentes. F2 reemplazará los checks amplios
-// por helpers más específicos según la mutación.
-export const requireAdmin = requireAnyAdmin
-
 export async function requireGeneralAdmin(): Promise<AdminUser> {
   const admin = await requireAnyAdmin()
   if (admin.role !== USER_ROLES.ADMIN) {
@@ -277,20 +273,12 @@ export async function requireAuditViewer(): Promise<AdminUser> {
 
 // Shape pensada para hidratar el client provider del admin: lo que el
 // cliente necesita para evaluar hasAdminAccess() sin volver a pegarle al
-// server. Idéntico al payload de /api/admin/me, pero resuelto en el render.
-export interface AdminClientUser {
-  id: string
-  email: string
-  role: string
-  yearIds: string[]
-  yearSlugs: string[]
-  canManageAllYears: boolean
-  canCreateUsers: boolean
-  canViewAuditHistory: boolean
-  canManageAcademicStructure: boolean
-  canManageAnyContribution: boolean
-  canCreateContributions: boolean
-}
+// server. Se resuelve en el render (root layout) y se pasa como prop inicial.
+// Derivado de AdminUser para no restatear campos ni desincronizarse de la fuente.
+export type AdminClientUser = Pick<
+  AdminUser,
+  'id' | 'email' | 'role' | 'yearIds' | 'yearSlugs' | keyof AdminCapabilities
+>
 
 export interface AdminClientSession {
   isAdmin: boolean
@@ -321,8 +309,6 @@ export async function getAdminClientSession(): Promise<AdminClientSession> {
 export function adminCanManageYear(admin: AdminUser, yearId: string): boolean {
   return admin.canManageAllYears || admin.yearIds.includes(yearId)
 }
-
-export const canAdminManageYear = adminCanManageYear
 
 export function adminCanManageAcademicStructure(admin: AdminUser): boolean {
   return admin.canManageAcademicStructure
@@ -400,220 +386,180 @@ async function requireYearAdminForScope<T extends YearAdminScope>(
   return { ...scope, admin } as T
 }
 
-export async function requireYearAdminForSubjectId(
+// Los 6 resolvers de scope por entidad comparten exactamente el mismo flujo:
+// requireAnyAdmin() -> buscar la entidad -> si no existe devolver null ->
+// mapearla a un scope -> requireYearAdminForScope(). Difieren solo en la query
+// Prisma y en cómo se arma el scope. Se colapsan en una config por entidad
+// (query + mapper) que corre un resolver genérico, preservando firmas y tipos.
+
+// Porción de scope compartida por todas las entidades: toda entidad cuelga de
+// un subject y de ahí sale el year que gobierna la autorización.
+type SubjectScopeSource = {
+  id: string
+  slug: string
+  commissions: Array<{ slug: string }>
+  year: { id: string; slug: string }
+}
+
+function mapSubjectScope(
+  subject: SubjectScopeSource,
+): YearAdminScopeInput<SubjectAdminScope> {
+  return {
+    subjectId: subject.id,
+    subjectSlug: subject.slug,
+    commissionSlugs: subject.commissions.map((commission) => commission.slug),
+    yearId: subject.year.id,
+    yearSlug: subject.year.slug,
+  }
+}
+
+const subjectScopeSelect = {
+  id: true,
+  slug: true,
+  commissions: { select: { slug: true } },
+  year: { select: { id: true, slug: true } },
+} as const
+
+interface ScopeResolverConfig<TEntity, TScope extends YearAdminScope> {
+  fetch: (identifier: string) => Promise<TEntity | null>
+  toScope: (entity: TEntity) => YearAdminScopeInput<TScope>
+}
+
+// Fija el tipo de scope de destino y deja inferir el tipo de la entidad desde
+// la query Prisma, sin casts: cada config queda validada contra su scope.
+function defineScopeResolver<TScope extends YearAdminScope>() {
+  return <TEntity>(config: ScopeResolverConfig<TEntity, TScope>) => config
+}
+
+async function resolveYearAdminScope<TEntity, TScope extends YearAdminScope>(
+  config: ScopeResolverConfig<TEntity, TScope>,
+  identifier: string,
+): Promise<TScope | null> {
+  const admin = await requireAnyAdmin()
+  const entity = await config.fetch(identifier)
+  return requireYearAdminForScope<TScope>(admin, entity ? config.toScope(entity) : null)
+}
+
+const subjectByIdResolver = defineScopeResolver<SubjectAdminScope>()({
+  fetch: (subjectId) =>
+    prisma.subject.findUnique({ where: { id: subjectId }, select: subjectScopeSelect }),
+  toScope: mapSubjectScope,
+})
+
+const subjectBySlugResolver = defineScopeResolver<SubjectAdminScope>()({
+  fetch: (subjectSlug) =>
+    prisma.subject.findUnique({ where: { slug: subjectSlug }, select: subjectScopeSelect }),
+  toScope: mapSubjectScope,
+})
+
+const agendaByIdResolver = defineScopeResolver<AgendaAdminScope>()({
+  fetch: (agendaId) =>
+    prisma.agenda.findUnique({
+      where: { id: agendaId },
+      select: {
+        id: true,
+        commissionId: true,
+        commission: { select: { slug: true } },
+        subject: { select: subjectScopeSelect },
+      },
+    }),
+  toScope: (agenda) => ({
+    agendaId: agenda.id,
+    commissionId: agenda.commissionId,
+    commissionSlug: agenda.commission?.slug ?? null,
+    ...mapSubjectScope(agenda.subject),
+  }),
+})
+
+const eventoByIdResolver = defineScopeResolver<EventoAdminScope>()({
+  fetch: (eventoId) =>
+    prisma.evento.findUnique({
+      where: { id: eventoId },
+      select: {
+        id: true,
+        agenda: {
+          select: {
+            id: true,
+            commissionId: true,
+            commission: { select: { slug: true } },
+            subject: { select: subjectScopeSelect },
+          },
+        },
+      },
+    }),
+  toScope: (evento) => ({
+    eventoId: evento.id,
+    agendaId: evento.agenda.id,
+    commissionId: evento.agenda.commissionId,
+    commissionSlug: evento.agenda.commission?.slug ?? null,
+    ...mapSubjectScope(evento.agenda.subject),
+  }),
+})
+
+const commissionByIdResolver = defineScopeResolver<CommissionAdminScope>()({
+  fetch: (commissionId) =>
+    prisma.commission.findUnique({
+      where: { id: commissionId },
+      select: {
+        id: true,
+        slug: true,
+        subject: { select: subjectScopeSelect },
+      },
+    }),
+  toScope: (commission) => ({
+    commissionId: commission.id,
+    commissionSlug: commission.slug,
+    ...mapSubjectScope(commission.subject),
+  }),
+})
+
+const apunteByIdResolver = defineScopeResolver<ApunteAdminScope>()({
+  fetch: (apunteId) =>
+    prisma.apunte.findUnique({
+      where: { id: apunteId },
+      select: {
+        id: true,
+        subject: { select: subjectScopeSelect },
+      },
+    }),
+  toScope: (apunte) => ({
+    apunteId: apunte.id,
+    ...mapSubjectScope(apunte.subject),
+  }),
+})
+
+export function requireYearAdminForSubjectId(
   subjectId: string,
 ): Promise<SubjectAdminScope | null> {
-  const admin = await requireAnyAdmin()
-  const subject = await prisma.subject.findUnique({
-    where: { id: subjectId },
-    select: {
-      id: true,
-      slug: true,
-      commissions: { select: { slug: true } },
-      year: { select: { id: true, slug: true } },
-    },
-  })
-
-  return requireYearAdminForScope(
-    admin,
-    subject
-      ? {
-          subjectId: subject.id,
-          subjectSlug: subject.slug,
-          commissionSlugs: subject.commissions.map((commission) => commission.slug),
-          yearId: subject.year.id,
-          yearSlug: subject.year.slug,
-        }
-      : null,
-  )
+  return resolveYearAdminScope(subjectByIdResolver, subjectId)
 }
 
-export async function requireYearAdminForSubjectSlug(
+export function requireYearAdminForSubjectSlug(
   subjectSlug: string,
 ): Promise<SubjectAdminScope | null> {
-  const admin = await requireAnyAdmin()
-  const subject = await prisma.subject.findUnique({
-    where: { slug: subjectSlug },
-    select: {
-      id: true,
-      slug: true,
-      commissions: { select: { slug: true } },
-      year: { select: { id: true, slug: true } },
-    },
-  })
-
-  return requireYearAdminForScope(
-    admin,
-    subject
-      ? {
-          subjectId: subject.id,
-          subjectSlug: subject.slug,
-          commissionSlugs: subject.commissions.map((commission) => commission.slug),
-          yearId: subject.year.id,
-          yearSlug: subject.year.slug,
-        }
-      : null,
-  )
+  return resolveYearAdminScope(subjectBySlugResolver, subjectSlug)
 }
 
-export async function requireYearAdminForAgendaId(
+export function requireYearAdminForAgendaId(
   agendaId: string,
 ): Promise<AgendaAdminScope | null> {
-  const admin = await requireAnyAdmin()
-  const agenda = await prisma.agenda.findUnique({
-    where: { id: agendaId },
-    select: {
-      id: true,
-      commissionId: true,
-      commission: {
-        select: {
-          slug: true,
-        },
-      },
-      subject: {
-        select: {
-          id: true,
-          slug: true,
-          commissions: { select: { slug: true } },
-          year: { select: { id: true, slug: true } },
-        },
-      },
-    },
-  })
-
-  return requireYearAdminForScope(
-    admin,
-    agenda
-      ? {
-          agendaId: agenda.id,
-          commissionId: agenda.commissionId,
-          commissionSlug: agenda.commission?.slug ?? null,
-          subjectId: agenda.subject.id,
-          subjectSlug: agenda.subject.slug,
-          commissionSlugs: agenda.subject.commissions.map((commission) => commission.slug),
-          yearId: agenda.subject.year.id,
-          yearSlug: agenda.subject.year.slug,
-        }
-      : null,
-  )
+  return resolveYearAdminScope(agendaByIdResolver, agendaId)
 }
 
-export async function requireYearAdminForEventoId(
+export function requireYearAdminForEventoId(
   eventoId: string,
 ): Promise<EventoAdminScope | null> {
-  const admin = await requireAnyAdmin()
-  const evento = await prisma.evento.findUnique({
-    where: { id: eventoId },
-    select: {
-      id: true,
-      agenda: {
-        select: {
-          id: true,
-          commissionId: true,
-          commission: {
-            select: {
-              slug: true,
-            },
-          },
-          subject: {
-            select: {
-              id: true,
-              slug: true,
-              commissions: { select: { slug: true } },
-              year: { select: { id: true, slug: true } },
-            },
-          },
-        },
-      },
-    },
-  })
-
-  return requireYearAdminForScope(
-    admin,
-    evento
-      ? {
-          eventoId: evento.id,
-          agendaId: evento.agenda.id,
-          commissionId: evento.agenda.commissionId,
-          commissionSlug: evento.agenda.commission?.slug ?? null,
-          subjectId: evento.agenda.subject.id,
-          subjectSlug: evento.agenda.subject.slug,
-          commissionSlugs: evento.agenda.subject.commissions.map(
-            (commission) => commission.slug,
-          ),
-          yearId: evento.agenda.subject.year.id,
-          yearSlug: evento.agenda.subject.year.slug,
-        }
-      : null,
-  )
+  return resolveYearAdminScope(eventoByIdResolver, eventoId)
 }
 
-export async function requireYearAdminForCommissionId(
+export function requireYearAdminForCommissionId(
   commissionId: string,
 ): Promise<CommissionAdminScope | null> {
-  const admin = await requireAnyAdmin()
-  const commission = await prisma.commission.findUnique({
-    where: { id: commissionId },
-    select: {
-      id: true,
-      slug: true,
-      subject: {
-        select: {
-          id: true,
-          slug: true,
-          commissions: { select: { slug: true } },
-          year: { select: { id: true, slug: true } },
-        },
-      },
-    },
-  })
-
-  return requireYearAdminForScope(
-    admin,
-    commission
-      ? {
-          commissionId: commission.id,
-          commissionSlug: commission.slug,
-          subjectId: commission.subject.id,
-          subjectSlug: commission.subject.slug,
-          commissionSlugs: commission.subject.commissions.map((item) => item.slug),
-          yearId: commission.subject.year.id,
-          yearSlug: commission.subject.year.slug,
-        }
-      : null,
-  )
+  return resolveYearAdminScope(commissionByIdResolver, commissionId)
 }
 
-export async function requireYearAdminForApunteId(
+export function requireYearAdminForApunteId(
   apunteId: string,
 ): Promise<ApunteAdminScope | null> {
-  const admin = await requireAnyAdmin()
-  const apunte = await prisma.apunte.findUnique({
-    where: { id: apunteId },
-    select: {
-      id: true,
-      subject: {
-        select: {
-          id: true,
-          slug: true,
-          commissions: { select: { slug: true } },
-          year: { select: { id: true, slug: true } },
-        },
-      },
-    },
-  })
-
-  return requireYearAdminForScope(
-    admin,
-    apunte
-      ? {
-          apunteId: apunte.id,
-          subjectId: apunte.subject.id,
-          subjectSlug: apunte.subject.slug,
-          commissionSlugs: apunte.subject.commissions.map((commission) => commission.slug),
-          yearId: apunte.subject.year.id,
-          yearSlug: apunte.subject.year.slug,
-        }
-      : null,
-  )
+  return resolveYearAdminScope(apunteByIdResolver, apunteId)
 }

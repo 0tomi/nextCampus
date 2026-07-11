@@ -17,7 +17,7 @@
 const DEFAULT_MAX_SLUG_LENGTH = 80
 const DEFAULT_FALLBACK_SLUG = 'apunte'
 
-export interface SlugifyOptions {
+interface SlugifyOptions {
   /** Largo máximo del slug resultante. Por defecto 80. Usar `Infinity` para no truncar. */
   maxLength?: number
   /** Valor a devolver si la normalización deja un string vacío. Por defecto `'apunte'`. Pasar `''` para no aplicar fallback. */
