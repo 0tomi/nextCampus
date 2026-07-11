@@ -14,7 +14,14 @@ function createPrismaClient(): PrismaClient {
   if (!connectionString) {
     throw new Error('DATABASE_URL no está definida')
   }
-  const adapter = new PrismaPg({ connectionString })
+  const adapter = new PrismaPg({
+    connectionString,
+    // Serverless: cada instancia (Lambda/Edge) abre su propio pool.
+    // Supabase Transaction Pooler → 200 slots. Con max=2 soportamos
+    // hasta 100 instancias concurrentes sin agotar conexiones.
+    max: 2,
+    idleTimeoutMillis: 30_000,
+  })
   return new PrismaClient({ adapter })
 }
 
