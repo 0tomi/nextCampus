@@ -411,6 +411,9 @@ function DesktopContentCard({
 }) {
   const { apunte, apunteHref, isFirstOfApunte, recurso, showApunteActions } = card
   const enfocado = focusApunteSlug === apunte.slug && isFirstOfApunte
+  const shouldShowHeader = isFirstOfApunte || (!neighbors.sameApunteLeft && !neighbors.sameApunteUp)
+  const shouldShowActions = showApunteActions || (!neighbors.sameApunteRight && !neighbors.sameApunteDown)
+
   const wrapperClassName = [
     'scroll-mt-24',
     neighbors.sameApunteLeft ? '-ml-4 w-[calc(100%+1rem)]' : '',
@@ -432,7 +435,7 @@ function DesktopContentCard({
       className={wrapperClassName}
     >
       <DarkCard className={cardClassName}>
-        {(isFirstOfApunte || neighbors.sameApunteLeft) ? (
+        {(shouldShowHeader || neighbors.sameApunteLeft) ? (
           <div
             aria-hidden="true"
             className={[
@@ -442,10 +445,10 @@ function DesktopContentCard({
             ].join(' ')}
           />
         ) : null}
-        <div className={['relative shrink-0', isFirstOfApunte ? 'mb-3 h-[92px]' : 'hidden'].join(' ')}>
-          {isFirstOfApunte ? (
+        <div className={['relative shrink-0', shouldShowHeader ? 'mb-3 h-[92px]' : 'hidden'].join(' ')}>
+          {shouldShowHeader ? (
             <div className="h-full">
-              <div className={showApunteActions ? 'pr-[168px]' : ''}>
+              <div className={shouldShowActions ? 'pr-[168px]' : ''}>
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Apunte</p>
                 </div>
@@ -478,7 +481,7 @@ function DesktopContentCard({
           ) : null}
         </div>
 
-        {showApunteActions ? (
+        {shouldShowActions ? (
           <div className="absolute right-5 top-5 z-20 flex items-center gap-1.5">
             <AdminControls yearId={yearId} ownerUserId={apunte.createdByUserId} noWrapper>
               <div className="flex gap-1">

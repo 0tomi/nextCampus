@@ -173,7 +173,7 @@ export function InstallPWATopbarButton() {
   const action = useInstallAction()
 
   if (!action.visible) {
-    return <div className="size-10" aria-hidden />
+    return null
   }
 
   return (
