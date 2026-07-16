@@ -205,16 +205,66 @@ body {
   }
 }
 
+/* Animaciones para el modal (dialog) usando estándar CSS de top-layer */
+.modal-dialog {
+  display: none;
+  opacity: 0;
+  transform: translateY(12px) scale(0.97);
+  transition:
+    display 0.3s allow-discrete,
+    overlay 0.3s allow-discrete,
+    opacity 0.3s ease-out,
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-dialog[open] {
+  display: flex;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+@starting-style {
+  .modal-dialog[open] {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+}
+
+.modal-dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(0px);
+  transition:
+    display 0.3s allow-discrete,
+    overlay 0.3s allow-discrete,
+    background-color 0.3s ease-out,
+    backdrop-filter 0.3s ease-out;
+}
+
+.modal-dialog[open]::backdrop {
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+@starting-style {
+  .modal-dialog[open]::backdrop {
+    background-color: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0px);
+  }
+}
+
 /* Soporte para preferencias de movimiento reducido */
 @media (prefers-reduced-motion: reduce) {
   .sheet-dialog,
-  .sheet-dialog[open] {
+  .sheet-dialog[open],
+  .modal-dialog,
+  .modal-dialog[open] {
     transform: none !important;
-    transition-duration: 0.1s;
+    transition-duration: 0.15s;
   }
 
   @starting-style {
-    .sheet-dialog[open] {
+    .sheet-dialog[open],
+    .modal-dialog[open] {
       transform: none !important;
     }
   }
@@ -1069,5 +1119,35 @@ body {
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* Micro-animaciones para el Quiz */
+@keyframes quizShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-3px); }
+  40%, 80% { transform: translateX(3px); }
+}
+
+.animate-quiz-shake {
+  animation: quizShake 0.25s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes quizCorrectPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.16); }
+  100% { transform: scale(1); }
+}
+
+.animate-quiz-correct-pulse {
+  animation: quizCorrectPulse 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+/* Soporte para prefers-reduced-motion en las animaciones del Quiz */
+@media (prefers-reduced-motion: reduce) {
+  .animate-quiz-shake,
+  .animate-quiz-correct-pulse {
+    animation: none !important;
+    transform: none !important;
   }
 }

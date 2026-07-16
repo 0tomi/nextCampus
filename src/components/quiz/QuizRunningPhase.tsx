@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { AlertDialog } from '@/components/ui/AlertDialog'
 import { DarkCard } from '@/components/ui/DarkCard'
+import { AnimateIn } from '@/components/ui/AnimateIn'
 import { cn } from '@/lib/utils'
 import { formatQuizTime } from './quizFormat'
 import { OptionButton } from './OptionButton'
@@ -77,11 +78,15 @@ function QuestionCard() {
 
   return (
     <DarkCard className="p-6 sm:p-8">
-      <h2 className="break-words text-xl font-black leading-snug tracking-tight text-white sm:text-2xl">{pregunta.question}</h2>
-      <QuestionOptions />
-      {pregunta.type === 'multiple' && !resultado ? <p className="mt-3 text-xs text-white/36">Puede haber más de una respuesta correcta.</p> : null}
-      <PracticeFeedback />
-      {state.error ? <p className="mt-6 border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{state.error}</p> : null}
+      <AnimateIn key={pregunta.id} className="space-y-6">
+        <div>
+          <h2 className="break-words text-xl font-black leading-snug tracking-tight text-white sm:text-2xl">{pregunta.question}</h2>
+          <QuestionOptions />
+          {pregunta.type === 'multiple' && !resultado ? <p className="mt-3 text-xs text-white/36">Puede haber más de una respuesta correcta.</p> : null}
+          <PracticeFeedback />
+          {state.error ? <p className="mt-6 border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{state.error}</p> : null}
+        </div>
+      </AnimateIn>
       <QuestionNavigation />
     </DarkCard>
   )

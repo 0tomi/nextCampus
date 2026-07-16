@@ -82,7 +82,7 @@ export function Modal({
     }
   }, [open])
 
-  if (!open || !mounted) return null
+  if (!mounted) return null
 
 
   return createPortal(
@@ -90,7 +90,7 @@ export function Modal({
       ref={dialogRef}
       aria-labelledby={titleId}
       className={cn(
-        'm-auto flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg flex-col overflow-hidden rounded-none border border-white/8 bg-surface-1 p-0 text-white shadow-[0_24px_64px_rgba(0,0,0,0.72)] backdrop:bg-black/70 backdrop:backdrop-blur-sm animate-in md:w-full',
+        'modal-dialog m-auto flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg flex-col overflow-hidden rounded-none border border-white/8 bg-surface-1 p-0 text-white shadow-[0_24px_64px_rgba(0,0,0,0.72)] md:w-full',
         className,
       )}
     >

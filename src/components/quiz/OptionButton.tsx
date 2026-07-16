@@ -29,13 +29,14 @@ export function OptionButton({
         state === 'idle' && (selected ? CONTROL_ACTIVE : CONTROL),
         state === 'correct' && 'border border-emerald-400/50 bg-emerald-500/10',
         state === 'wrong' && (selected ? 'border border-rose-400/50 bg-rose-500/10' : 'border border-white/[0.06] bg-surface-3 opacity-55'),
+        state === 'wrong' && selected && 'animate-quiz-shake',
       )}
     >
       <span
         className={cn(
           'flex size-6 shrink-0 items-center justify-center text-xs font-bold tabular-nums transition-colors',
           state === 'correct'
-            ? 'bg-emerald-500/20 text-emerald-300'
+            ? 'bg-emerald-500/20 text-emerald-300 animate-quiz-correct-pulse'
             : state === 'wrong' && selected
               ? 'bg-rose-500/20 text-rose-300'
               : selected
