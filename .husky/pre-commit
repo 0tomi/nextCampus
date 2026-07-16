@@ -1,6 +1,3 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
 # Obtener los archivos en el stage de commit
 staged_files=$(git diff --cached --name-only)
 
