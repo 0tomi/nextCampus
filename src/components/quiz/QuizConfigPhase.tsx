@@ -3,6 +3,7 @@
 import { Check, ChevronRight, Trash2 } from 'lucide-react'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { DarkCard } from '@/components/ui/DarkCard'
+import { AnimateIn } from '@/components/ui/AnimateIn'
 import { UploaderByline } from '@/components/ui/UploaderByline'
 import { deleteQuizBankAction } from '@/app/admin/actions/quiz'
 import { cn } from '@/lib/utils'
@@ -28,9 +29,17 @@ export function QuizConfigPhase() {
   return (
     <DarkCard className="divide-y divide-white/[0.06]">
       <QuestionBankSection bancos={bancos} rankedMode={state.mode === 'ranked'} selectedBancos={state.selectedBancos} subjectSlug={subjectSlug} yearId={yearId} onToggle={actions.toggleBanco} />
-      {state.mode !== 'ranked' && availableUnits.length > 0 ? <UnitSelectorSection availableUnits={availableUnits} excludedUnits={state.excludedUnits} onToggle={actions.toggleUnit} /> : null}
+      {state.mode !== 'ranked' && availableUnits.length > 0 ? (
+        <AnimateIn>
+          <UnitSelectorSection availableUnits={availableUnits} excludedUnits={state.excludedUnits} onToggle={actions.toggleUnit} />
+        </AnimateIn>
+      ) : null}
       <QuizSettingsSection maxPreguntas={maxPreguntas} />
-      {state.mode === 'ranked' ? <RankedInfoSection /> : null}
+      {state.mode === 'ranked' ? (
+        <AnimateIn>
+          <RankedInfoSection />
+        </AnimateIn>
+      ) : null}
       <StartQuizSection canStart={rankedCanStart || regularCanStart} />
     </DarkCard>
   )
