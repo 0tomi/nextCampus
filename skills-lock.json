@@ -6,6 +6,12 @@
       "sourceType": "autoskills-registry",
       "computedHash": "bffe3d08cfe92ebad63699f74ce29e35c19850ebfbf474c1463183cfe34d6a09"
     },
+    "animation-vocabulary": {
+      "source": "emilkowalski/skill",
+      "sourceType": "github",
+      "skillPath": "skills/animation-vocabulary/SKILL.md",
+      "computedHash": "39319fc9a33c15be08666b3685f58666f042ff36bb902b7814c0834a5ba99df4"
+    },
     "brainstorming": {
       "source": "obra/superpowers",
       "sourceType": "github",
@@ -17,10 +23,22 @@
       "sourceType": "autoskills-registry",
       "computedHash": "c124390cc3441844903ada94cb5820b23d922f2d0ad34e01e029e410197c8a32"
     },
+    "find-animation-opportunities": {
+      "source": "emilkowalski/skill",
+      "sourceType": "github",
+      "skillPath": "skills/find-animation-opportunities/SKILL.md",
+      "computedHash": "15dc983ce2cd00489fcdc4a92e2752d47e1620f7619038b00eb84c2b97d50597"
+    },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "autoskills-registry",
       "computedHash": "82fb11a63fb1e35ee2469516ed02d54695f783115b1540c0e783197af4240a3a"
+    },
+    "improve-animations": {
+      "source": "emilkowalski/skill",
+      "sourceType": "github",
+      "skillPath": "skills/improve-animations/SKILL.md",
+      "computedHash": "32f23d860467841f5b07cef198fb53efc70f2adaaa6144cf1a3434d782aed246"
     },
     "next-best-practices": {
       "source": "vercel-labs/next-skills",
@@ -71,6 +89,12 @@
       "source": "vercel-labs/agent-skills",
       "sourceType": "autoskills-registry",
       "computedHash": "502eb06700e2c3cb1bd7f710860528f72281320bd5171a2087b05a090b573dc1"
+    },
+    "review-animations": {
+      "source": "emilkowalski/skill",
+      "sourceType": "github",
+      "skillPath": "skills/review-animations/SKILL.md",
+      "computedHash": "c92905bff59c3007d07c2638a2a83d5d71c901feef108cce1da0bf3c7cafd579"
     },
     "security-pen-testing": {
       "source": "alirezarezvani/claude-skills",
