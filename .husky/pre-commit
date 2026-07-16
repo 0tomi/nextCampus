@@ -1,0 +1,35 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Obtener los archivos en el stage de commit
+staged_files=$(git diff --cached --name-only)
+
+# Si no hay archivos staged, no hacemos nada
+if [ -z "$staged_files" ]; then
+  exit 0
+fi
+
+# Bandera para saber si debemos omitir el pre-commit
+skip_hooks=true
+
+for file in $staged_files; do
+  # Evaluamos si el archivo NO es .md Y NO está en .agents/ Y NO está en docs/
+  case "$file" in
+    *.md | .agents/* | docs/*)
+      # Es un archivo excluido, continua evaluando el resto
+      ;;
+    *)
+      # Hay al menos un archivo que requiere validacion (codigo, etc.)
+      skip_hooks=false
+      break
+      ;;
+  esac
+done
+
+if [ "$skip_hooks" = true ]; then
+  echo "Husky: Omitiendo validación de linter (solo cambios en archivos markdown, .agents o docs)."
+  exit 0
+fi
+
+echo "Husky: Corriendo linter pre-commit..."
+pnpm exec lint-staged
