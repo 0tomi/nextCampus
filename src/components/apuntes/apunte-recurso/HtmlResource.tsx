@@ -130,12 +130,33 @@ function HtmlPreviewIframe({
     }
     window.addEventListener('keydown', handleKeyDown)
 
-    const originalOverflow = document.body.style.overflow
+    // Lock viewport scroll — position:fixed on body is the cross-browser
+    // way to truly prevent scroll on mobile (iOS Safari ignores overflow:hidden
+    // on body alone; Android Chrome handles it but the fixed trick is harmless).
+    const scrollY = window.scrollY
+    const htmlEl = document.documentElement
+    const saved = {
+      htmlOverflow: htmlEl.style.overflow,
+      bodyOverflow: document.body.style.overflow,
+      bodyPosition: document.body.style.position,
+      bodyTop: document.body.style.top,
+      bodyWidth: document.body.style.width,
+    }
+
+    htmlEl.style.overflow = 'hidden'
     document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = originalOverflow
+      htmlEl.style.overflow = saved.htmlOverflow
+      document.body.style.overflow = saved.bodyOverflow
+      document.body.style.position = saved.bodyPosition
+      document.body.style.top = saved.bodyTop
+      document.body.style.width = saved.bodyWidth
+      window.scrollTo(0, scrollY)
     }
   }, [isExpanded])
 
@@ -155,7 +176,7 @@ function HtmlPreviewIframe({
     <>
       {isExpanded && (
         <div
-          className={`fixed inset-0 z-40 bg-black/85 backdrop-blur-sm transition-opacity duration-300 ${
+          className={`fixed inset-0 z-40 touch-none overscroll-none bg-black/85 backdrop-blur-sm transition-opacity duration-300 ${
             animate ? 'opacity-100' : 'opacity-0'
           }`}
           onClick={handleReduce}
@@ -166,7 +187,7 @@ function HtmlPreviewIframe({
       <div
         className={
           isExpanded
-            ? `fixed inset-4 sm:inset-6 z-50 flex flex-col bg-[#101010] border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,0.8)] rounded-2xl p-0 overflow-hidden transition-all duration-300 ${
+            ? `fixed inset-0 z-50 flex flex-col bg-[#101010] p-0 overflow-hidden transition-all duration-300 sm:inset-4 sm:rounded-2xl sm:border sm:border-white/10 sm:shadow-[0_24px_64px_rgba(0,0,0,0.8)] md:inset-6 ${
                 animate ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
               }`
             : collapsedClassName
