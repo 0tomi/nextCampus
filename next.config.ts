@@ -16,6 +16,13 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  experimental: {
+    // El default de Next es 1 MB y los apuntes interactivos con MathJax embebido
+    // superan ese tamaño; 4 MB deja margen para el multipart (límite de Vercel ~4.5 MB).
+    serverActions: {
+      bodySizeLimit: '4mb',
+    },
+  },
   // esbuild tiene binarios nativos por plataforma; lo usamos solo en server para
   // compilar apuntes React subidos por admins, así que Next no debe empaquetarlo
   // dentro del bundle de rutas.
