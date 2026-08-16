@@ -91,7 +91,7 @@ export function AlertDialog({
       aria-labelledby="alert-dialog-title"
       aria-describedby="alert-dialog-description"
       className={cn(
-        'modal-dialog m-auto w-[calc(100%-2rem)] max-w-md border border-white/10 bg-surface-1 p-6 text-white shadow-[0_24px_64px_rgba(0,0,0,0.8)] backdrop:bg-black/80 backdrop:backdrop-blur-sm animate-in md:w-full',
+        'modal-dialog m-auto flex flex-col w-[calc(100%-2rem)] max-w-md border border-white/10 bg-surface-1 p-6 text-white shadow-[0_24px_64px_rgba(0,0,0,0.8)] backdrop:bg-black/80 backdrop:backdrop-blur-sm animate-in md:w-full',
         className,
       )}
     >

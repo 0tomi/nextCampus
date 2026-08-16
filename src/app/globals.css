@@ -219,6 +219,7 @@ body {
 
 .modal-dialog[open] {
   display: flex;
+  flex-direction: column;
   opacity: 1;
   transform: translateY(0) scale(1);
 }
