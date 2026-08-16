@@ -1,9 +1,12 @@
 'use client'
 
+import { useState, useTransition } from 'react'
 import { Check, ChevronRight, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { AnimateIn } from '@/components/ui/AnimateIn'
+import { AlertDialog } from '@/components/ui/AlertDialog'
 import { UploaderByline } from '@/components/ui/UploaderByline'
 import { deleteQuizBankAction } from '@/app/admin/actions/quiz'
 import { cn } from '@/lib/utils'
@@ -60,6 +63,29 @@ function QuestionBankSection({
   yearId?: string
   onToggle: (id: string) => void
 }) {
+  const [bancoToDelete, setBancoToDelete] = useState<BancoInfo | null>(null)
+  const [isDeleting, startTransition] = useTransition()
+
+  const handleConfirmDelete = () => {
+    if (!bancoToDelete) return
+    const idToDelete = bancoToDelete.id
+    startTransition(async () => {
+      try {
+        const formData = new FormData()
+        formData.append('subjectSlug', subjectSlug)
+        formData.append('bankId', idToDelete)
+        await deleteQuizBankAction(formData)
+        if (selectedBancos.includes(idToDelete)) {
+          onToggle(idToDelete)
+        }
+        toast.success('Banco de preguntas eliminado')
+        setBancoToDelete(null)
+      } catch {
+        toast.error('No pudimos eliminar el banco. Probá de nuevo.')
+      }
+    })
+  }
+
   return (
     <section className="space-y-4 p-6 sm:p-8">
       <div>
@@ -68,9 +94,34 @@ function QuestionBankSection({
       </div>
       <div className="grid min-w-0 gap-3 sm:grid-cols-2">
         {bancos.map((banco) => (
-          <QuestionBankCard key={banco.id} banco={banco} active={selectedBancos.includes(banco.id)} subjectSlug={subjectSlug} yearId={yearId} onToggle={() => onToggle(banco.id)} />
+          <QuestionBankCard
+            key={banco.id}
+            banco={banco}
+            active={selectedBancos.includes(banco.id)}
+            yearId={yearId}
+            onToggle={() => onToggle(banco.id)}
+            onDelete={() => setBancoToDelete(banco)}
+          />
         ))}
       </div>
+
+      <AlertDialog
+        open={Boolean(bancoToDelete)}
+        onClose={() => {
+          if (!isDeleting) setBancoToDelete(null)
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar banco de preguntas"
+        description={
+          bancoToDelete
+            ? `¿Estás seguro de que querés eliminar el banco "${bancoToDelete.nombre}"? Esta acción es permanente y no se puede deshacer.`
+            : ''
+        }
+        cancelText="Cancelar"
+        confirmText={isDeleting ? 'Eliminando…' : 'Eliminar'}
+        confirmDisabled={isDeleting}
+        variant="destructive"
+      />
     </section>
   )
 }
@@ -78,15 +129,15 @@ function QuestionBankSection({
 function QuestionBankCard({
   banco,
   active,
-  subjectSlug,
   yearId,
   onToggle,
+  onDelete,
 }: {
   banco: BancoInfo
   active: boolean
-  subjectSlug: string
   yearId?: string
   onToggle: () => void
+  onDelete: () => void
 }) {
   return (
     <div className={cn('group relative flex min-w-0 items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors', active ? CONTROL_ACTIVE : CONTROL)}>
@@ -104,13 +155,18 @@ function QuestionBankCard({
 
       <div className="relative z-10 flex shrink-0 items-center gap-2">
         <AdminControls yearId={yearId} ownerUserId={banco.subidoPorId} noWrapper>
-          <form action={deleteQuizBankAction} className="flex">
-            <input type="hidden" name="subjectSlug" value={subjectSlug} />
-            <input type="hidden" name="bankId" value={banco.id} />
-            <button type="submit" className="flex size-7 items-center justify-center rounded text-white/55 transition-colors hover:bg-white/10 hover:text-white cursor-pointer" title="Eliminar banco de preguntas">
-              <Trash2 className="size-4 text-rose-400" />
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete()
+            }}
+            className="flex size-7 items-center justify-center rounded text-white/55 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+            title="Eliminar banco de preguntas"
+            aria-label={`Eliminar banco de preguntas ${banco.nombre}`}
+          >
+            <Trash2 className="size-4 text-rose-400" />
+          </button>
         </AdminControls>
         <span className={cn('flex size-5 shrink-0 items-center justify-center transition-colors pointer-events-none', active ? 'bg-primary text-white' : 'border border-white/15')}>
           {active ? <Check className="size-3" strokeWidth={3} /> : null}
