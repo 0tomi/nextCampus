@@ -220,13 +220,13 @@ export function HomeYearsGrid({ initialPrefs, years }: HomeYearsGridProps) {
 }
 
 function HomeYearsGridSkeleton({ yearsCount }: { yearsCount: number }) {
-  const items = Array.from({ length: Math.max(1, yearsCount) })
+  const items = Array.from({ length: Math.max(1, yearsCount) }, (_, index) => index)
 
   return (
     <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5" aria-hidden="true">
-      {items.map((_, index) => (
+      {items.map((row) => (
         <div
-          key={index}
+          key={row}
           className="flex min-h-[250px] flex-col overflow-hidden rounded bg-surface-1"
         >
           <div className="h-[84px] animate-pulse bg-white/[0.06]" />
@@ -338,18 +338,19 @@ function HomeYearCardSection({
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {year.subjects.map((subject, index) => (
-            <Link
+            <div
               key={subject.id}
-              href={buildSubjectHref({
-                yearSlug: year.slug,
-                subjectSlug: subject.slug,
-              })}
-              className="group"
+              className="group relative transition-transform duration-300 hover:-translate-y-1"
             >
-              <DarkCard
-                variant="interactive"
-                className="flex h-full flex-col justify-between p-5"
-              >
+              <Link
+                href={buildSubjectHref({
+                  yearSlug: year.slug,
+                  subjectSlug: subject.slug,
+                })}
+                aria-label={`Abrir ${subject.nombre}`}
+                className="absolute inset-0 z-10"
+              />
+              <DarkCard className="flex h-full flex-col justify-between border border-white/5 bg-surface-1 p-5 transition-colors duration-300 group-hover:border-white/10">
                 <div>
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
@@ -357,13 +358,7 @@ function HomeYearCardSection({
                       <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38 flex items-center gap-2">
                         <span>Materia {String(index + 1).padStart(2, '0')}</span>
                         <AdminControls requireAcademicStructure noWrapper>
-                          <span
-                            className="pointer-events-auto flex items-center"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              e.preventDefault()
-                            }}
-                          >
+                          <span className="pointer-events-auto relative z-20 flex items-center">
                             <SubjectAdminRow
                               subject={{
                                 id: subject.id,
@@ -406,7 +401,7 @@ function HomeYearCardSection({
                   <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
                 </div>
               </DarkCard>
-            </Link>
+            </div>
           ))}
 
           <AdminControls yearId={year.id}>

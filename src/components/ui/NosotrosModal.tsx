@@ -167,12 +167,9 @@ export function NosotrosModal({ open, onClose }: NosotrosModalProps) {
         'fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm transition-opacity duration-300 ease-out',
         visible ? 'opacity-100' : 'pointer-events-none opacity-0',
       )}
-      onClick={onClose}
-      role="presentation"
     >
       <dialog
         ref={dialogRef}
-        onClick={(e) => e.stopPropagation()}
         aria-labelledby="about-modal-title"
         className={cn(
           'relative m-auto w-full max-w-4xl overflow-hidden rounded-2xl border border-white/8 bg-surface-1 p-0 text-white shadow-[0_24px_64px_rgba(0,0,0,0.85)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] backdrop:bg-transparent',
