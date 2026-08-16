@@ -19,6 +19,17 @@ interface LinkRow {
   url: string
 }
 
+interface EditableLinkRow extends LinkRow {
+  /** Identidad de UI únicamente; nunca se envía al servidor. */
+  uiKey: string
+}
+
+let nextLinkUiKey = 0
+
+function toEditableLinks(rows: LinkRow[]): EditableLinkRow[] {
+  return rows.map((row) => ({ ...row, uiKey: `link-${nextLinkUiKey++}` }))
+}
+
 type LinksAction =
   | { type: 'ADD' }
   | { type: 'REMOVE'; index: number }
@@ -26,10 +37,13 @@ type LinksAction =
   | { type: 'MOVE_UP'; index: number }
   | { type: 'MOVE_DOWN'; index: number }
 
-function linksReducer(state: LinkRow[], action: LinksAction): LinkRow[] {
+function linksReducer(
+  state: EditableLinkRow[],
+  action: LinksAction,
+): EditableLinkRow[] {
   switch (action.type) {
     case 'ADD':
-      return [...state, { label: '', url: '' }]
+      return [...state, { label: '', url: '', uiKey: `link-${nextLinkUiKey++}` }]
     case 'REMOVE':
       return state.filter((_, i) => i !== action.index)
     case 'UPDATE_FIELD': {
@@ -85,7 +99,7 @@ export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
   const initialLinks: LinkRow[] = year?.links
     ? year.links.toSorted((a, b) => a.orden - b.orden).map(({ label, url }) => ({ label, url }))
     : []
-  const [links, dispatch] = useReducer(linksReducer, initialLinks)
+  const [links, dispatch] = useReducer(linksReducer, initialLinks, toEditableLinks)
 
   const action = isEdit ? updateYearAction : createYearAction
   const [state, formAction, pending] = useActionState(action, emptyState)
@@ -100,7 +114,14 @@ export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
 
   const title = isEdit ? 'Editar año' : 'Nuevo año'
 
-  const serializedLinks = JSON.stringify(links.filter((l) => l.url.trim() !== ''))
+  const serializedLinks = JSON.stringify(
+    links.reduce<LinkRow[]>((acc, link) => {
+      if (link.url.trim() !== '') {
+        acc.push({ label: link.label, url: link.url })
+      }
+      return acc
+    }, []),
+  )
 
   return (
     <Modal open={open} onClose={onClose} title={title}>
@@ -148,7 +169,7 @@ export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
 
           {links.map((link, index) => (
             <div
-              key={index}
+              key={link.uiKey}
               className="rounded border border-white/10 bg-surface-0 p-3 space-y-2"
             >
               <div className="flex items-center justify-between gap-2">

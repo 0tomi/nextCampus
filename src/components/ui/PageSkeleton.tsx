@@ -22,8 +22,8 @@ export function DashboardSkeleton() {
             <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
             <div className="h-6 w-44 animate-pulse rounded bg-white/10" />
             <div className="mt-6 space-y-2">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-9 w-full animate-pulse rounded bg-white/5" />
+              {Array.from({ length: 5 }, (_, index) => `nav-row-${index}`).map((row) => (
+                <div key={row} className="h-9 w-full animate-pulse rounded bg-white/5" />
               ))}
             </div>
           </div>
@@ -32,8 +32,8 @@ export function DashboardSkeleton() {
           <div className="h-10 w-72 animate-pulse rounded bg-white/10" />
           <div className="h-4 w-96 animate-pulse rounded bg-white/5" />
           <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-44 animate-pulse rounded bg-surface-1" />
+            {Array.from({ length: 6 }, (_, index) => `card-${index}`).map((card) => (
+              <div key={card} className="h-44 animate-pulse rounded bg-surface-1" />
             ))}
           </div>
         </main>
