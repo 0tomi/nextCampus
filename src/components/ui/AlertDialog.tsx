@@ -13,6 +13,8 @@ interface AlertDialogProps {
   cancelText?: string
   confirmText?: string
   variant?: 'default' | 'destructive'
+  confirmDisabled?: boolean
+  className?: string
 }
 
 export function AlertDialog({
@@ -24,6 +26,8 @@ export function AlertDialog({
   cancelText = 'Cancelar',
   confirmText = 'Continuar',
   variant = 'default',
+  confirmDisabled = false,
+  className,
 }: AlertDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [mounted, setMounted] = useState(false)
@@ -41,20 +45,28 @@ export function AlertDialog({
     const dialog = dialogRef.current
     if (!dialog || !open) return
 
+    let pressStartedOnBackdrop = false
+
     const closeFromNativeEvent = (event: Event) => {
       event.preventDefault()
       closeDialog()
     }
+    const trackPressOrigin = (event: globalThis.MouseEvent) => {
+      pressStartedOnBackdrop = event.target === dialog
+    }
     const closeFromBackdrop = (event: globalThis.MouseEvent) => {
-      if (event.target === dialog) closeDialog()
+      if (event.target === dialog && pressStartedOnBackdrop) closeDialog()
+      pressStartedOnBackdrop = false
     }
 
     if (!dialog.open) dialog.showModal()
     dialog.addEventListener('cancel', closeFromNativeEvent)
+    dialog.addEventListener('mousedown', trackPressOrigin)
     dialog.addEventListener('click', closeFromBackdrop)
 
     return () => {
       dialog.removeEventListener('cancel', closeFromNativeEvent)
+      dialog.removeEventListener('mousedown', trackPressOrigin)
       dialog.removeEventListener('click', closeFromBackdrop)
       if (dialog.open) dialog.close()
     }
@@ -78,7 +90,10 @@ export function AlertDialog({
       ref={dialogRef}
       aria-labelledby="alert-dialog-title"
       aria-describedby="alert-dialog-description"
-      className="m-auto w-[calc(100%-2rem)] max-w-md border border-white/10 bg-surface-1 p-6 text-white shadow-[0_24px_64px_rgba(0,0,0,0.8)] backdrop:bg-black/80 backdrop:backdrop-blur-sm animate-in md:w-full"
+      className={cn(
+        'modal-dialog m-auto w-[calc(100%-2rem)] max-w-md border border-white/10 bg-surface-1 p-6 text-white shadow-[0_24px_64px_rgba(0,0,0,0.8)] backdrop:bg-black/80 backdrop:backdrop-blur-sm animate-in md:w-full',
+        className,
+      )}
     >
       <div className="flex flex-col gap-2">
         <h2
@@ -98,16 +113,18 @@ export function AlertDialog({
       <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <button
           type="button"
+          disabled={confirmDisabled}
           onClick={onClose}
-          className="inline-flex justify-center border border-white/8 bg-surface-3 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:border-white/15 hover:text-white cursor-pointer"
+          className="inline-flex justify-center border border-white/8 bg-surface-3 px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:border-white/15 hover:text-white cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
         >
           {cancelText}
         </button>
         <button
           type="button"
+          disabled={confirmDisabled}
           onClick={onConfirm}
           className={cn(
-            'inline-flex justify-center px-4 py-2 text-sm font-bold text-white transition-colors cursor-pointer',
+            'inline-flex justify-center px-4 py-2 text-sm font-bold text-white transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50',
             variant === 'destructive'
               ? 'bg-rose-600 hover:bg-rose-500'
               : 'bg-primary hover:bg-primary-light',
