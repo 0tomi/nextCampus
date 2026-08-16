@@ -35,11 +35,8 @@ Este proyecto tiene skills disponibles que DEBES usar para trabajar de forma int
 - **NUNCA** agregar "Co-Authored-By" ni ninguna atribución a IA en los mensajes de commit.
 
 ### Verificación pre-deploy
-El deploy en Vercel corre `pnpm build` (`prisma generate && next build` con Turbopack). Si el build falla ahí, el deploy se cae. Para cachar esos errores ANTES, en capas:
-
-- **Antes de dar una tarea por terminada (rápido, segundos):** corré `pnpm typecheck`. Agarra errores de tipos, identificadores duplicados (ej: `name defined multiple times`) e imports rotos — la mayoría de los errores que rompen el build.
-- **Antes de mergear/pushear a `main` (autoritativo):** corré `pnpm build`. Es lo único que reproduce el 100% de lo que Vercel rechaza (incluye errores de RSC, boundaries client/server, etc.). Es más lento, por eso solo en este punto.
-- **Atajo:** `pnpm verify` corre todo junto en orden (generate → typecheck → lint → test → build).
+- **`pnpm check` (rápido, desarrollo):** corre `db:generate`, `typecheck`, `lint` y `test` para validar lo que exige el CI de GitHub.
+- **`pnpm verify` (autoritativo, pre-push/merge):** corre `pnpm check` + `pnpm build` para validar el 100% del build de producción de Vercel.
 
 ### Reglas de redaccion Frontend
 - La redaccion debe ser de cara al usuario. No deben incluirse detalles tecnicos asociados al prompt ingresado por el usuario.

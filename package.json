@@ -9,7 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "check": "pnpm db:generate && pnpm typecheck && pnpm lint && pnpm test",
-    "verify": "pnpm db:generate && pnpm typecheck && pnpm lint && pnpm test && pnpm build",
+    "verify": "pnpm check && pnpm build",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
