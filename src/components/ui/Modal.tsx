@@ -113,7 +113,7 @@ export function Modal({
       </div>
 
       {/* Content */}
-      <div className={cn('min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5 scrollbar-none', contentClassName)}>{children}</div>
+      <div className={cn('max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain px-6 py-5 scrollbar-none', contentClassName)}>{children}</div>
     </dialog>,
     document.body,
   )
