@@ -148,9 +148,9 @@ function useInstallAction() {
   const state = useInstallPrompt()
   const [showInstructions, setShowInstructions] = useState(false)
 
-  const onClick = async () => {
+  const onClick = () => {
     if (state.canPromptNatively) {
-      await state.promptInstall()
+      void state.promptInstall()
       return
     }
     setShowInstructions(true)

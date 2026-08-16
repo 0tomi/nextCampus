@@ -217,21 +217,23 @@ export function HistorialList({
   }, [loadPage, state.selectedActions, state.selectedUsers])
 
   useEffect(() => {
-    const handle = window.setTimeout(async () => {
-      dispatch({ type: 'user-search-requested' })
-      try {
-        const params = new URLSearchParams()
-        if (state.userQuery.trim()) params.set('q', state.userQuery.trim())
-        const response = await fetch(`/api/admin/historial/users?${params.toString()}`)
-        if (!response.ok) throw new Error('No se pudieron buscar usuarios.')
-        const data = (await response.json()) as { users: HistorialUserOption[] }
-        dispatch({
-          type: 'user-search-loaded',
-          users: data.users.filter((user) => !selectedUserIds.includes(user.id)),
-        })
-      } catch {
-        dispatch({ type: 'user-search-failed' })
-      }
+    const handle = window.setTimeout(() => {
+      void (async () => {
+        dispatch({ type: 'user-search-requested' })
+        try {
+          const params = new URLSearchParams()
+          if (state.userQuery.trim()) params.set('q', state.userQuery.trim())
+          const response = await fetch(`/api/admin/historial/users?${params.toString()}`)
+          if (!response.ok) throw new Error('No se pudieron buscar usuarios.')
+          const data = (await response.json()) as { users: HistorialUserOption[] }
+          dispatch({
+            type: 'user-search-loaded',
+            users: data.users.filter((user) => !selectedUserIds.includes(user.id)),
+          })
+        } catch {
+          dispatch({ type: 'user-search-failed' })
+        }
+      })()
     }, 250)
 
     return () => window.clearTimeout(handle)

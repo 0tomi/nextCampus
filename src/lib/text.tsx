@@ -1,3 +1,4 @@
+/* eslint-disable react/no-array-index-key */
 import React from 'react'
 
 /**
@@ -16,7 +17,7 @@ export function formatDescription(text: string | null | undefined): React.ReactN
     if (part.match(urlRegex)) {
       return (
         <a
-          key={index}
+          key={`url-${index}-${part}`}
           href={part}
           target="_blank"
           rel="noopener noreferrer"
@@ -31,7 +32,7 @@ export function formatDescription(text: string | null | undefined): React.ReactN
     const boldParts = part.split(/\*\*([^*]+)\*\*/g)
 
     return (
-      <React.Fragment key={index}>
+      <React.Fragment key={`part-${index}`}>
         {boldParts.map((subPart, subIndex) => {
           // Los índices impares corresponden al texto capturado dentro de **
           const isBold = subIndex % 2 === 1
@@ -39,7 +40,7 @@ export function formatDescription(text: string | null | undefined): React.ReactN
           // Dividimos por saltos de línea para renderizar elementos <br />
           const lineParts = subPart.split('\n')
           const renderedText = lineParts.map((line, lineIndex) => (
-            <React.Fragment key={lineIndex}>
+            <React.Fragment key={`line-${index}-${subIndex}-${lineIndex}`}>
               {lineIndex > 0 && <br />}
               {line}
             </React.Fragment>
@@ -47,7 +48,7 @@ export function formatDescription(text: string | null | undefined): React.ReactN
 
           if (isBold) {
             return (
-              <strong key={subIndex} className="font-bold text-white">
+              <strong key={`bold-${index}-${subIndex}`} className="font-bold text-white">
                 {renderedText}
               </strong>
             )

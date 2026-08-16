@@ -46,7 +46,9 @@ export function CopyApunteLinkButton({
   return (
     <button
       type="button"
-      onClick={handleCopiar}
+      onClick={() => {
+        void handleCopiar()
+      }}
       className={[base, state, className ?? ''].join(' ').trim()}
       aria-live="polite"
     >

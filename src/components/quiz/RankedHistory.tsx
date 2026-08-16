@@ -176,20 +176,22 @@ function RankedHistoryContent() {
   const loading = lookupActive ? lookupLoading : state.rankedHistoryLoading
   const error = lookupActive ? lookupError : state.rankedHistoryError
 
-  async function lookupByName(name: string) {
+  function lookupByName(name: string) {
     const target = name.trim()
     if (!bankId || !target) return
     setLookupActive(true)
     setLookupLoading(true)
     setLookupError(false)
-    try {
-      setLookup(await fetchRankedHistory(subjectSlug, bankId, target))
-    } catch {
-      setLookup(null)
-      setLookupError(true)
-    } finally {
-      setLookupLoading(false)
-    }
+    void (async () => {
+      try {
+        setLookup(await fetchRankedHistory(subjectSlug, bankId, target))
+      } catch {
+        setLookup(null)
+        setLookupError(true)
+      } finally {
+        setLookupLoading(false)
+      }
+    })()
   }
 
   if (loading && !history) return <HistoryListSkeleton />
@@ -219,9 +221,9 @@ function RankedHistoryContent() {
       <p className="text-sm font-semibold text-white/72">{history.participantName}</p>
 
       <ol className="divide-y divide-white/[0.06] border-y border-white/[0.06]">
-        {history.attempts.map((attempt, index) => (
+        {history.attempts.map((attempt) => (
           <li
-            key={`${attempt.finishedAt}-${index}`}
+            key={attempt.finishedAt}
             className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 py-3 sm:grid-cols-[1fr_auto_auto_auto]"
           >
             <span className="text-sm text-white/56">{formatHistoryDate(attempt.finishedAt)}</span>

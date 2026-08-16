@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { formatDescription } from './text'
-import React from 'react'
+import type React from 'react'
 
 describe('formatDescription — formateo seguro de texto plano', () => {
   it('retorna vacío para inputs vacíos o nulos', () => {

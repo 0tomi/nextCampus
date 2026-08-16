@@ -37,6 +37,7 @@ export function YouTubeFacade({ videoId, title, className }: YouTubeFacadeProps)
       aria-label={`Reproducir video: ${title ?? 'YouTube'}`}
       className={`group relative block w-full cursor-pointer overflow-hidden bg-black/20 ${className ?? ''}`}
     >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}
         alt={title ?? 'Video'}

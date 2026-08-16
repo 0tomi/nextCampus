@@ -15,6 +15,7 @@ import {
 import { YEAR_COLOR_PRESETS } from '@/lib/yearColors'
 
 interface LinkRow {
+  id: string
   label: string
   url: string
 }
@@ -22,14 +23,14 @@ interface LinkRow {
 type LinksAction =
   | { type: 'ADD' }
   | { type: 'REMOVE'; index: number }
-  | { type: 'UPDATE_FIELD'; index: number; field: keyof LinkRow; value: string }
+  | { type: 'UPDATE_FIELD'; index: number; field: keyof Omit<LinkRow, 'id'>; value: string }
   | { type: 'MOVE_UP'; index: number }
   | { type: 'MOVE_DOWN'; index: number }
 
 function linksReducer(state: LinkRow[], action: LinksAction): LinkRow[] {
   switch (action.type) {
     case 'ADD':
-      return [...state, { label: '', url: '' }]
+      return [...state, { id: crypto.randomUUID(), label: '', url: '' }]
     case 'REMOVE':
       return state.filter((_, i) => i !== action.index)
     case 'UPDATE_FIELD': {
@@ -83,7 +84,9 @@ export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
   const setColor = (value: string) => setColorDraft({ scope: colorScope, value })
 
   const initialLinks: LinkRow[] = year?.links
-    ? year.links.toSorted((a, b) => a.orden - b.orden).map(({ label, url }) => ({ label, url }))
+    ? year.links
+        .toSorted((a, b) => a.orden - b.orden)
+        .map(({ label, url }, idx) => ({ id: `${label}-${url}-${idx}`, label, url }))
     : []
   const [links, dispatch] = useReducer(linksReducer, initialLinks)
 
@@ -100,7 +103,11 @@ export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
 
   const title = isEdit ? 'Editar año' : 'Nuevo año'
 
-  const serializedLinks = JSON.stringify(links.filter((l) => l.url.trim() !== ''))
+  const serializedLinks = JSON.stringify(
+    links
+      .filter((l) => l.url.trim() !== '')
+      .map(({ label, url }) => ({ label, url })),
+  )
 
   return (
     <Modal open={open} onClose={onClose} title={title}>
@@ -148,7 +155,7 @@ export function YearModal({ open, onClose, year, onSuccess }: YearModalProps) {
 
           {links.map((link, index) => (
             <div
-              key={index}
+              key={link.id}
               className="rounded border border-white/10 bg-surface-0 p-3 space-y-2"
             >
               <div className="flex items-center justify-between gap-2">

@@ -121,6 +121,7 @@ function SubjectAdminRow({
           type="button"
           onClick={(e) => {
             e.preventDefault()
+            e.stopPropagation()
             setEditOpen(true)
           }}
           title="Editar materia"
@@ -132,6 +133,7 @@ function SubjectAdminRow({
           type="button"
           onClick={(e) => {
             e.preventDefault()
+            e.stopPropagation()
             setDeleteOpen(true)
           }}
           title="Eliminar materia"

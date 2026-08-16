@@ -2,6 +2,9 @@
 // (header + sidebar + área principal) y unas barras pulsantes para evitar
 // el típico parpadeo entre páginas en navegaciones.
 
+const SIDEBAR_SLOTS = ['sb-1', 'sb-2', 'sb-3', 'sb-4', 'sb-5']
+const CONTENT_SLOTS = ['ct-1', 'ct-2', 'ct-3', 'ct-4', 'ct-5', 'ct-6']
+
 export function DashboardSkeleton() {
   return (
     <div className="min-h-screen bg-surface-0 text-white">
@@ -22,8 +25,8 @@ export function DashboardSkeleton() {
             <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
             <div className="h-6 w-44 animate-pulse rounded bg-white/10" />
             <div className="mt-6 space-y-2">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-9 w-full animate-pulse rounded bg-white/5" />
+              {SIDEBAR_SLOTS.map((slotId) => (
+                <div key={slotId} className="h-9 w-full animate-pulse rounded bg-white/5" />
               ))}
             </div>
           </div>
@@ -32,8 +35,8 @@ export function DashboardSkeleton() {
           <div className="h-10 w-72 animate-pulse rounded bg-white/10" />
           <div className="h-4 w-96 animate-pulse rounded bg-white/5" />
           <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-44 animate-pulse rounded bg-surface-1" />
+            {CONTENT_SLOTS.map((slotId) => (
+              <div key={slotId} className="h-44 animate-pulse rounded bg-surface-1" />
             ))}
           </div>
         </main>

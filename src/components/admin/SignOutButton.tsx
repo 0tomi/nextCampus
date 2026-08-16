@@ -23,7 +23,7 @@ export function SignOutButton() {
   }
 
   return (
-    <form onSubmit={handleSignOut}>
+    <form onSubmit={(e) => { void handleSignOut(e) }}>
       <button
         type="submit"
         disabled={loading}

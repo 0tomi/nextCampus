@@ -19,6 +19,7 @@ import {
 // ---------------------------------------------------------------------------
 
 interface LinkRow {
+  id: string
   label: string
   url: string
 }
@@ -26,14 +27,14 @@ interface LinkRow {
 type LinksAction =
   | { type: 'ADD' }
   | { type: 'REMOVE'; index: number }
-  | { type: 'UPDATE_FIELD'; index: number; field: keyof LinkRow; value: string }
+  | { type: 'UPDATE_FIELD'; index: number; field: keyof Omit<LinkRow, 'id'>; value: string }
   | { type: 'MOVE_UP'; index: number }
   | { type: 'MOVE_DOWN'; index: number }
 
 function linksReducer(state: LinkRow[], action: LinksAction): LinkRow[] {
   switch (action.type) {
     case 'ADD':
-      return [...state, { label: '', url: '' }]
+      return [...state, { id: crypto.randomUUID(), label: '', url: '' }]
     case 'REMOVE':
       return state.filter((_, i) => i !== action.index)
     case 'UPDATE_FIELD': {
@@ -96,7 +97,7 @@ export function SubjectModal({
   const initialLinks: LinkRow[] = subject?.links
     ? subject.links
         .toSorted((a, b) => a.orden - b.orden)
-        .map(({ label, url }) => ({ label, url }))
+        .map(({ label, url }, idx) => ({ id: `${label}-${url}-${idx}`, label, url }))
     : []
 
   const [links, dispatch] = useReducer(linksReducer, initialLinks)
@@ -125,21 +126,17 @@ export function SubjectModal({
   const title = isEdit ? 'Editar materia' : 'Nueva materia'
 
   const serializedLinks = JSON.stringify(
-    links.filter((l) => l.url.trim() !== ''),
+    links
+      .filter((l) => l.url.trim() !== '')
+      .map(({ label, url }) => ({ label, url })),
   )
 
   return (
     <Modal open={open} onClose={onClose} title={title}>
       <form action={formAction} className="space-y-4">
-        {isEdit ? (
-          <>
-            <input type="hidden" name="id" value={subject.id} />
-            <input type="hidden" name="yearId" value={yearId ?? ''} />
-          </>
-        ) : (
-          <input type="hidden" name="yearId" value={yearId ?? ''} />
-        )}
-
+        {isEdit && <input type="hidden" name="id" value={subject.id} />}
+        {yearId && <input type="hidden" name="yearId" value={yearId} />}
+        
         {/* Serialized links for the server action */}
         <input type="hidden" name="links" value={serializedLinks} readOnly />
 
@@ -152,7 +149,7 @@ export function SubjectModal({
             name="nombre"
             required
             defaultValue={subject?.nombre ?? ''}
-            placeholder="Ej: Algoritmos y Estructuras de Datos"
+            placeholder="Ej: Análisis Matemático I"
           />
         </div>
 
@@ -184,7 +181,7 @@ export function SubjectModal({
 
           {links.map((link, index) => (
             <div
-              key={index}
+              key={link.id}
               className="rounded border border-white/10 bg-surface-0 p-3 space-y-2"
             >
               {/* Row controls: reorder + remove */}

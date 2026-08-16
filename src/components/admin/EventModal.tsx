@@ -97,25 +97,27 @@ function useApunteSearch({
     }
 
     const controller = new AbortController()
-    const handle = window.setTimeout(async () => {
-      setSearching(true)
-      try {
-        const params = new URLSearchParams({ subjectId })
-        if (query.trim()) params.set('q', query.trim())
-        const response = await fetch(`/api/admin/apuntes/search?${params.toString()}`, {
-          signal: controller.signal,
-        })
-        if (!response.ok) {
-          setResults([])
-          return
+    const handle = window.setTimeout(() => {
+      void (async () => {
+        setSearching(true)
+        try {
+          const params = new URLSearchParams({ subjectId })
+          if (query.trim()) params.set('q', query.trim())
+          const response = await fetch(`/api/admin/apuntes/search?${params.toString()}`, {
+            signal: controller.signal,
+          })
+          if (!response.ok) {
+            setResults([])
+            return
+          }
+          const data = (await response.json()) as { items?: RelatedApunteLink[] }
+          setResults(data.items ?? [])
+        } catch (error) {
+          if ((error as Error).name !== 'AbortError') setResults([])
+        } finally {
+          setSearching(false)
         }
-        const data = (await response.json()) as { items?: RelatedApunteLink[] }
-        setResults(data.items ?? [])
-      } catch (error) {
-        if ((error as Error).name !== 'AbortError') setResults([])
-      } finally {
-        setSearching(false)
-      }
+      })()
     }, 180)
 
     return () => {

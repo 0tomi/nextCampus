@@ -220,13 +220,16 @@ export function HomeYearsGrid({ initialPrefs, years }: HomeYearsGridProps) {
 }
 
 function HomeYearsGridSkeleton({ yearsCount }: { yearsCount: number }) {
-  const items = Array.from({ length: Math.max(1, yearsCount) })
+  const items = Array.from(
+    { length: Math.max(1, yearsCount) },
+    (_, i) => `home-years-skel-${i + 1}`,
+  )
 
   return (
     <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5" aria-hidden="true">
-      {items.map((_, index) => (
+      {items.map((slotId) => (
         <div
-          key={index}
+          key={slotId}
           className="flex min-h-[250px] flex-col overflow-hidden rounded bg-surface-1"
         >
           <div className="h-[84px] animate-pulse bg-white/[0.06]" />
@@ -357,13 +360,7 @@ function HomeYearCardSection({
                       <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/38 flex items-center gap-2">
                         <span>Materia {String(index + 1).padStart(2, '0')}</span>
                         <AdminControls requireAcademicStructure noWrapper>
-                          <span
-                            className="pointer-events-auto flex items-center"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              e.preventDefault()
-                            }}
-                          >
+                          <span className="pointer-events-auto flex items-center">
                             <SubjectAdminRow
                               subject={{
                                 id: subject.id,
