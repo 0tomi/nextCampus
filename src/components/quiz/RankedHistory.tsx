@@ -192,13 +192,17 @@ function RankedHistoryContent() {
     }
   }
 
+  function handleLookupByName(name: string) {
+    void lookupByName(name)
+  }
+
   if (loading && !history) return <HistoryListSkeleton />
 
   if (error && !history) {
     return (
       <div className="space-y-5">
         <p className="py-6 text-center text-sm text-white/52">No pudimos cargar tu progreso. Probá de nuevo en un momento.</p>
-        <ChangeNameForm onLookup={lookupByName} loading={lookupLoading} />
+        <ChangeNameForm onLookup={handleLookupByName} loading={lookupLoading} />
       </div>
     )
   }
@@ -209,19 +213,33 @@ function RankedHistoryContent() {
         <div className="flex flex-col items-center gap-2 border border-dashed border-white/10 px-6 py-10 text-center">
           <p className="text-sm text-white/56">{history?.summary.message ?? 'Todavía no hay resultados válidos con este nombre.'}</p>
         </div>
-        <ChangeNameForm onLookup={lookupByName} loading={lookupLoading} />
+        <ChangeNameForm onLookup={handleLookupByName} loading={lookupLoading} />
       </div>
     )
   }
+
+  const occurrenceByFingerprint = new Map<string, number>()
+  const attemptsWithKeys = history.attempts.map((attempt) => {
+    const fingerprint = [
+      attempt.finishedAt,
+      attempt.correctAnswers,
+      attempt.totalQuestions,
+      attempt.percentage,
+      attempt.durationSeconds,
+    ].join(':')
+    const occurrence = (occurrenceByFingerprint.get(fingerprint) ?? 0) + 1
+    occurrenceByFingerprint.set(fingerprint, occurrence)
+    return { attempt, key: `${fingerprint}:${occurrence}` }
+  })
 
   return (
     <div className="space-y-5">
       <p className="text-sm font-semibold text-white/72">{history.participantName}</p>
 
       <ol className="divide-y divide-white/[0.06] border-y border-white/[0.06]">
-        {history.attempts.map((attempt, index) => (
+        {attemptsWithKeys.map(({ attempt, key }) => (
           <li
-            key={`${attempt.finishedAt}-${index}`}
+            key={key}
             className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 py-3 sm:grid-cols-[1fr_auto_auto_auto]"
           >
             <span className="text-sm text-white/56">{formatHistoryDate(attempt.finishedAt)}</span>
@@ -235,7 +253,7 @@ function RankedHistoryContent() {
       </ol>
 
       <HistorySummaryFooter summary={history.summary} />
-      <ChangeNameForm onLookup={lookupByName} loading={lookupLoading} />
+      <ChangeNameForm onLookup={handleLookupByName} loading={lookupLoading} />
       <p className="text-xs leading-5 text-white/40">{LOOKUP_HINT}</p>
     </div>
   )

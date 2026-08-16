@@ -120,7 +120,12 @@ function LoginFormInner() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-3">
+        <form
+          onSubmit={(event) => {
+            void handleSubmit(event)
+          }}
+          className="mt-8 space-y-3"
+        >
           <label className="sr-only" htmlFor="admin-email">Email</label>
           <input
             id="admin-email"

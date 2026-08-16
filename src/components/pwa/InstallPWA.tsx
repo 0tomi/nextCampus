@@ -181,7 +181,9 @@ export function InstallPWATopbarButton() {
       <button
         type="button"
         aria-label="Instalar app"
-        onClick={action.onClick}
+        onClick={() => {
+          void action.onClick()
+        }}
         className="flex size-10 cursor-pointer items-center justify-center rounded-lg border border-primary/35 bg-primary/12 text-white transition-colors hover:border-primary/55 hover:bg-primary/20"
       >
         <Download size={17} strokeWidth={2.3} />
@@ -205,7 +207,9 @@ export function InstallPWAHeroButton() {
       <button
         type="button"
         aria-label="Instalar app"
-        onClick={action.onClick}
+        onClick={() => {
+          void action.onClick()
+        }}
         className="inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full bg-gradient-to-br from-amber-400 to-orange-500 px-3 text-[12.5px] font-bold leading-none text-black shadow-[0_0_22px_rgba(251,191,36,0.25)] transition-colors hover:from-amber-300 hover:to-orange-400 min-[360px]:gap-2 min-[360px]:px-4 min-[360px]:text-sm"
       >
         <Download size={14} strokeWidth={2.5} />
@@ -257,7 +261,9 @@ export function InstallPWASettingsCard({ className }: InstallPWASettingsCardProp
           <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-stretch md:flex-row">
             <button
               type="button"
-              onClick={action.onClick}
+              onClick={() => {
+                void action.onClick()
+              }}
               className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-light"
             >
               <Download size={15} strokeWidth={2.5} />

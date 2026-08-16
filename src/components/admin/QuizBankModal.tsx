@@ -181,14 +181,14 @@ export function QuizBankModal({
 
   function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (file) processFile(file)
+    if (file) void processFile(file)
   }
 
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault()
     setDragging(false)
     const file = e.dataTransfer.files?.[0]
-    if (file) processFile(file)
+    if (file) void processFile(file)
   }
 
   function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
@@ -230,7 +230,9 @@ export function QuizBankModal({
           </ol>
           <button
             type="button"
-            onClick={copyPrompt}
+            onClick={() => {
+              void copyPrompt()
+            }}
             className="inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10 cursor-pointer"
           >
             {copied ? (

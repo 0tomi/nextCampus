@@ -154,6 +154,21 @@ function buildDayKey(dateValue: EventCalendarDateInput): string {
   return dateValue.toISOString().slice(0, 10)
 }
 
+function renderEventContent(info: { event: { title: string } }) {
+  return (
+    <div className="fc-event-chip">
+      <span className="fc-event-chip__viewport">
+        <span className="fc-event-chip__track">
+          <span className="fc-event-chip__title">{info.event.title}</span>
+          <span aria-hidden="true" className="fc-event-chip__title fc-event-chip__title--duplicate">
+            {info.event.title}
+          </span>
+        </span>
+      </span>
+    </div>
+  )
+}
+
 export function EventCalendar({
   events = EMPTY_EVENTS,
   periodos = EMPTY_PERIODOS,
@@ -168,7 +183,7 @@ export function EventCalendar({
 }: EventCalendarProps) {
   const calendarRef = useRef<FullCalendar>(null)
 
-  async function handleEventDrop(info: { event: { id: string; startStr: string }; revert: () => void }) {
+  function handleEventDrop(info: { event: { id: string; startStr: string }; revert: () => void }) {
     if (!onEventDrop) {
       info.revert()
       return
@@ -176,8 +191,15 @@ export function EventCalendar({
     // `startStr` de un evento all-day es "YYYY-MM-DD" (sin zona horaria). Lo usamos
     // como día destino para no reintroducir el off-by-one que evitamos en todo el resto.
     const nuevaFechaKey = info.event.startStr.slice(0, 10)
-    const ok = await onEventDrop(info.event.id, nuevaFechaKey)
-    if (!ok) info.revert()
+    void (async () => {
+      try {
+        const ok = await onEventDrop(info.event.id, nuevaFechaKey)
+        if (!ok) info.revert()
+      } catch (error) {
+        console.error('No se pudo actualizar la fecha del evento:', error)
+        info.revert()
+      }
+    })()
   }
 
   function handleDateClick(info: DateClickArg) {
@@ -286,21 +308,7 @@ export function EventCalendar({
         eventDidMount={(info) => {
           info.el.setAttribute('title', info.event.title)
         }}
-        eventContent={(info) => (
-          <div className="fc-event-chip">
-            <span className="fc-event-chip__viewport">
-              <span className="fc-event-chip__track">
-                <span className="fc-event-chip__title">{info.event.title}</span>
-                <span
-                  aria-hidden="true"
-                  className="fc-event-chip__title fc-event-chip__title--duplicate"
-                >
-                  {info.event.title}
-                </span>
-              </span>
-            </span>
-          </div>
-        )}
+        eventContent={renderEventContent}
         dateClick={editable ? handleDateClick : undefined}
         eventClick={(info) => {
           const clickedId = info.event.id
