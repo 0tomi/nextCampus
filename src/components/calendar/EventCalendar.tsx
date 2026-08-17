@@ -195,8 +195,12 @@ export function EventCalendar({
     // como día destino para no reintroducir el off-by-one que evitamos en todo el resto.
     const nuevaFechaKey = info.event.startStr.slice(0, 10)
     void (async () => {
-      const ok = await onEventDrop(info.event.id, nuevaFechaKey)
-      if (!ok) info.revert()
+      try {
+        const ok = await onEventDrop(info.event.id, nuevaFechaKey)
+        if (!ok) info.revert()
+      } catch {
+        info.revert()
+      }
     })()
   }
 

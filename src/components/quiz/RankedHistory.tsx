@@ -216,14 +216,28 @@ function RankedHistoryContent() {
     )
   }
 
+  const occurrenceByFingerprint = new Map<string, number>()
+  const attemptsWithKeys = history.attempts.map((attempt) => {
+    const fingerprint = [
+      attempt.finishedAt,
+      attempt.correctAnswers,
+      attempt.totalQuestions,
+      attempt.percentage,
+      attempt.durationSeconds,
+    ].join(':')
+    const occurrence = (occurrenceByFingerprint.get(fingerprint) ?? 0) + 1
+    occurrenceByFingerprint.set(fingerprint, occurrence)
+    return { attempt, key: `${fingerprint}:${occurrence}` }
+  })
+
   return (
     <div className="space-y-5">
       <p className="text-sm font-semibold text-white/72">{history.participantName}</p>
 
       <ol className="divide-y divide-white/[0.06] border-y border-white/[0.06]">
-        {history.attempts.map((attempt) => (
+        {attemptsWithKeys.map(({ attempt, key }) => (
           <li
-            key={attempt.finishedAt}
+            key={key}
             className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 py-3 sm:grid-cols-[1fr_auto_auto_auto]"
           >
             <span className="text-sm text-white/56">{formatHistoryDate(attempt.finishedAt)}</span>
