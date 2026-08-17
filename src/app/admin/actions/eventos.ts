@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import {
   ensureCanManageContribution,
+  requireAnyAdmin,
   requireYearAdminForAgendaId,
   requireYearAdminForCommissionId,
   requireYearAdminForEventoId,
@@ -208,6 +209,7 @@ export async function updateEventoFechaAction(
   nuevaFecha: string,
   _subjectSlug: string,
 ): Promise<{ ok: boolean }> {
+  await requireAnyAdmin()
   void _subjectSlug
   const validId = z.string().min(1).parse(id)
   // El drag de calendario manda el día como "YYYY-MM-DD" (sin hora). La hora del
@@ -338,6 +340,7 @@ export async function updateEventoAction(
 }
 
 export async function deleteEvento(formData: FormData): Promise<void> {
+  await requireAnyAdmin()
   const id = z.string().min(1).parse(formData.get('id'))
   const scope = await requireYearAdminForEventoId(id)
   if (!scope) return
