@@ -86,7 +86,7 @@ vi.mock('@/lib/storage', () => ({
   uploadQuizBank: vi.fn(),
   uploadApunteHtml: uploadApunteHtmlMock,
   deleteApunteHtml: deleteApunteHtmlMock,
-  MAX_APUNTE_HTML_BYTES: 2 * 1024 * 1024,
+  MAX_APUNTE_HTML_BYTES: 3 * 1024 * 1024,
   APUNTE_HTML_MIME: 'text/html; charset=utf-8',
   deleteQuizBank: vi.fn(),
   deleteSubjectStorage: vi.fn(),
@@ -399,6 +399,39 @@ describe('admin apunte actions', () => {
     expect(result).toEqual({ ok: false, message: 'El archivo debe ser HTML, JSX o TSX.' })
     expect(uploadApunteHtmlMock).not.toHaveBeenCalled()
     expect(prismaMock.apunte.delete).toHaveBeenCalledWith({ where: { id: 'apunte-1' } })
+  })
+
+  it('rechaza un apunte interactivo que supera el límite de 3 MB sin escribir', async () => {
+    requireYearAdminForSubjectIdMock.mockResolvedValue({
+      subjectSlug: 'calculo',
+      yearSlug: 'primer-anio',
+      commissionSlugs: [],
+      admin: { id: 'admin-1' },
+    })
+    prismaMock.apunte.create.mockResolvedValue({ id: 'apunte-1' })
+
+    const formData = makeFormData({
+      subjectId: 'subject-1',
+      titulo: 'Laboratorio HTML',
+      descripcionHtml: '<p>Interactivo</p>',
+      recursosJson: JSON.stringify([
+        { tipo: 'HTML', localId: 'html-1', orden: 0, nombre: 'Demo' },
+      ]),
+    })
+    const oversized = new File(
+      [`<!doctype html><html><body>${'x'.repeat(3 * 1024 * 1024 + 1 - '<!doctype html><html><body></body></html>'.length)}</body></html>`],
+      'oversized.html',
+      { type: 'text/html' },
+    )
+    expect(oversized.size).toBeGreaterThan(3 * 1024 * 1024)
+    formData.set('htmlFile:html-1', oversized)
+
+    const { createApunteAction } = await import('./actions')
+    const result = await createApunteAction({ ok: false, message: '' }, formData)
+
+    expect(result).toEqual({ ok: false, message: 'El HTML no puede superar los 3 MB.' })
+    expect(uploadApunteHtmlMock).not.toHaveBeenCalled()
+    expect(prismaMock.apunteRecurso.createMany).not.toHaveBeenCalled()
   })
 
   it('sube recursos HTML validados y los registra en el apunte', async () => {

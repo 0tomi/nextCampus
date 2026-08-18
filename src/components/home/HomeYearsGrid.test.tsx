@@ -6,11 +6,15 @@ const adminAccessState = {
 }
 
 vi.mock('next/link', () => ({
-  default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
-    <a href={href} {...props}>
-      {children}
-    </a>
-  ),
+  default: (props: { href: string; children: React.ReactNode; prefetch?: boolean }) => {
+    const { href, children, prefetch, ...anchorProps } = props
+    void prefetch
+    return (
+      <a href={href} {...anchorProps}>
+        {children}
+      </a>
+    )
+  },
 }))
 
 vi.mock('@/components/admin/adminAccess', () => ({
@@ -19,7 +23,7 @@ vi.mock('@/components/admin/adminAccess', () => ({
 
 vi.mock('@/components/admin/HomeAdminOverlay', () => ({
   YearAdminBar: () => <div>Admin año</div>,
-  SubjectAdminRow: () => <span>Admin materia</span>,
+  SubjectAdminRow: () => <button type="button">Admin materia</button>,
   AddYearButton: () => <button type="button">Agregar año</button>,
   AddSubjectButton: () => <button type="button">Agregar materia</button>,
 }))
@@ -107,6 +111,22 @@ describe('HomeYearsGrid', () => {
     expect(markup).toContain('Mostrar años ocultos')
     expect(markup).toContain('No tenés años o materias visibles')
     expect(markup).not.toContain('Ocultar años ocultos')
+  })
+
+  it('mantiene los controles administrativos fuera del enlace de la materia', async () => {
+    adminAccessState.isAdmin = true
+
+    const { HomeYearsGrid } = await import('./HomeYearsGrid')
+
+    const markup = renderToStaticMarkup(
+      <HomeYearsGrid
+        initialPrefs={{ hiddenYears: [], hiddenSubjects: [], hiddenCommissions: [] }}
+        years={makeYears()}
+      />,
+    )
+
+    expect(markup).toMatch(/<a href="\/primer-anio\/calculo"[^>]*><\/a>/)
+    expect(markup).toContain('<button type="button">Admin materia</button>')
   })
 
   it('incluye años ocultos sin escribir preferencias cuando el admin activa la vista local', async () => {

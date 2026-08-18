@@ -17,7 +17,7 @@ export function quizBanksCacheTag(yearSlug: string, subjectSlug: string): string
 
 const BUCKET = env.SUPABASE_STORAGE_BUCKET
 const MAX_BANK_BYTES = 1 * 1024 * 1024 // 1 MB de JSON es de sobra
-export const MAX_APUNTE_HTML_BYTES = 2 * 1024 * 1024
+export const MAX_APUNTE_HTML_BYTES = 3 * 1024 * 1024
 export const APUNTE_HTML_MIME = 'text/html; charset=utf-8'
 
 function apunteHtmlDir(yearSlug: string, subjectSlug: string, apunteId: string): string {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Play } from 'lucide-react'
 import { youtubeEmbedUrl } from '@/lib/recursos'
 
@@ -37,12 +38,12 @@ export function YouTubeFacade({ videoId, title, className }: YouTubeFacadeProps)
       aria-label={`Reproducir video: ${title ?? 'YouTube'}`}
       className={`group relative block w-full cursor-pointer overflow-hidden bg-black/20 ${className ?? ''}`}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <Image
         src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}
         alt={title ?? 'Video'}
-        loading="lazy"
-        className="size-full object-cover"
+        fill
+        sizes="(max-width: 768px) 100vw, 50vw"
+        className="object-cover"
       />
       <span className="absolute inset-0 flex items-center justify-center bg-black/25 transition-colors duration-200 group-hover:bg-black/40">
         <span className="flex size-14 items-center justify-center rounded-full bg-red-600/90 text-white shadow-lg transition-transform duration-200 group-hover:scale-110">

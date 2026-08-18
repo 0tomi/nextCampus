@@ -133,7 +133,7 @@ async function readInteractiveUpload(formData: FormData, localId: string, title:
     }
 
     if (raw.size > MAX_APUNTE_HTML_BYTES) {
-      return { error: 'El HTML no puede superar los 2 MB.' }
+      return { error: 'El HTML no puede superar los 3 MB.' }
     }
 
     const html = await raw.text()
