@@ -123,7 +123,7 @@ export function HomeGlobalCalendar({
             closestEvents.map((evento) => (
               <DarkCard
                 key={evento.id}
-                className="group relative flex min-h-[140px] flex-col justify-between rounded-lg border border-white/5 bg-surface-1/60 p-4 backdrop-blur-sm transition-all duration-300 hover:border-white/10 hover:bg-surface-1"
+                className="group relative flex min-h-[140px] flex-col justify-between rounded-lg border border-white/5 bg-surface-1/60 p-4 backdrop-blur-sm transition-colors duration-300 hover:border-white/10 hover:bg-surface-1"
               >
                 <Link
                   href={buildHomeCalendarEventHref(evento)}
@@ -230,7 +230,7 @@ export function HomeGlobalCalendar({
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs font-bold text-white/80 transition-all hover:bg-white/10 hover:text-white"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs font-bold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
         >
           {isExpanded ? (
             <>

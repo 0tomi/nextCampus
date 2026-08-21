@@ -453,7 +453,7 @@ function DesktopContentCard({
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Apunte</p>
                 </div>
                 <h3
-                  className="mt-2 truncate text-xl font-black tracking-tight text-white transition-all hover:underline"
+                  className="mt-2 truncate text-xl font-black tracking-tight text-white transition-colors hover:underline"
                   title={apunte.titulo}
                 >
                   <Link href={apunteHref}>{apunte.titulo}</Link>
@@ -543,8 +543,8 @@ function ApunteCard({
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Apunte</p>
           </div>
           <h3 className={variant === 'desktop'
-            ? 'mt-2 text-xl font-black tracking-tight text-white transition-all hover:underline'
-            : 'mt-1 text-base font-black leading-tight text-white transition-all hover:underline'}>
+            ? 'mt-2 text-xl font-black tracking-tight text-white transition-colors hover:underline'
+            : 'mt-1 text-base font-black leading-tight text-white transition-colors hover:underline'}>
             <Link href={apunteHref}>{apunte.titulo}</Link>
           </h3>
           {apunte.categorias.length > 0 ? (

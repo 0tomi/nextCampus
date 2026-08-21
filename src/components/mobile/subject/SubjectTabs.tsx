@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { CalendarDays, Sparkles, NotebookTabs } from 'lucide-react'
 import { AgendaTab } from './tabs/AgendaTab'
 import { QuizTab } from './tabs/QuizTab'
@@ -69,19 +69,32 @@ const HASH_MAP: Record<string, TabKey> = {
   '#apuntes': 'apuntes',
 }
 
+function subscribeToHash(callback: () => void) {
+  window.addEventListener('hashchange', callback)
+  return () => window.removeEventListener('hashchange', callback)
+}
+
+function getHashSnapshot(): string {
+  return window.location.hash
+}
+
+function getHashServerSnapshot(): string {
+  return ''
+}
+
 export function SubjectTabs({ subjectId, subjectSlug, subjectName, yearSlug, yearColor, yearId, agendaId, events, periodos, apuntes, categorias, apuntesHasMore, apuntesNextCursor, tiposEvento, subjects, commissions, focusApunteSlug, activeCommissionName }: SubjectTabsProps) {
-  const [active, setActive] = useState<TabKey>(() => {
-    if (focusApunteSlug) return 'apuntes'
-    if (typeof window === 'undefined') return 'agenda'
-    const hash = window.location.hash
-    return hash in HASH_MAP ? HASH_MAP[hash] : 'agenda'
-  })
+  const rawHash = useSyncExternalStore(subscribeToHash, getHashSnapshot, getHashServerSnapshot)
+
+  const active: TabKey = focusApunteSlug
+    ? 'apuntes'
+    : (rawHash in HASH_MAP ? HASH_MAP[rawHash] : 'agenda')
+
   const colors = getYearColorClasses({ slug: yearSlug, color: yearColor })
 
   const onSelect = (key: TabKey) => {
-    setActive(key)
     if (typeof window !== 'undefined') {
       history.replaceState(null, '', `#${key}`)
+      window.dispatchEvent(new Event('hashchange'))
     }
   }
 

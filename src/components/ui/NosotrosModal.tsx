@@ -80,22 +80,24 @@ function useNosotrosModalTransition(open: boolean) {
 
   useEffect(() => {
     if (open) {
-      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current)
+        closeTimerRef.current = null
+      }
       const openTimer = setTimeout(() => dispatch({ type: 'opened' }), 0)
       return () => clearTimeout(openTimer)
     }
 
     const hideTimer = setTimeout(() => dispatch({ type: 'closing' }), 0)
     closeTimerRef.current = setTimeout(() => dispatch({ type: 'unmounted' }), 300)
-    return () => clearTimeout(hideTimer)
-  }, [open])
-
-  useEffect(() => {
-    const timerRef = closeTimerRef
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
+      clearTimeout(hideTimer)
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current)
+        closeTimerRef.current = null
+      }
     }
-  }, [])
+  }, [open])
 
   return {
     mounted: state.mounted,

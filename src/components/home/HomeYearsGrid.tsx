@@ -252,7 +252,7 @@ function AddSubjectCard({ yearId }: { yearId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex size-full min-h-[140px] cursor-pointer flex-col items-center justify-center gap-2 rounded border border-dashed border-white/10 bg-surface-1/40 hover:bg-surface-1/70 hover:border-white/20 text-white/40 hover:text-white/60 transition-all p-5"
+        className="flex size-full min-h-[140px] cursor-pointer flex-col items-center justify-center gap-2 rounded border border-dashed border-white/10 bg-surface-1/40 hover:bg-surface-1/70 hover:border-white/20 text-white/40 hover:text-white/60 transition-colors p-5"
       >
         <Plus className="size-5" />
         <span className="text-xs font-bold uppercase tracking-wider">Agregar Materia</span>
@@ -301,7 +301,7 @@ function HomeYearCardSection({
             style={colors.style}
           >
             {year.nombre}
-            <ArrowRight className="size-4 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+            <ArrowRight className="size-4 opacity-0 -translate-x-2 transition-[opacity,transform] duration-200 group-hover:opacity-100 group-hover:translate-x-0" />
           </h3>
         </Link>
 
