@@ -45,6 +45,12 @@ It's not worth recommending when:
 
 When in doubt, leave it out. A unit without a recommended skill is the default, not a gap.
 
+## Absorbing the skill
+
+Once a skill earns its place on a unit, the unit **absorbs** it: read the skill in full — not just its description — and write the tasks to follow the approach it encodes and the validation to check what it considers done right. If a testing skill mandates table-driven tests, the unit's validation says table-driven tests. An absorbed recommendation makes the unit self-consistent; an unabsorbed one forces the executor to reconcile two sources.
+
+Absorption reaches *how* the unit works, never *what* it's for — the goal comes from the requirement. If following a skill would change what the unit should be (a workflow skill that imposes its own phases, say), that's a plan-shape decision to surface to the user, not something to absorb silently.
+
 ## How it shows up in the plan
 
 It's an optional line inside the unit, alongside goal / tasks / touches / validation. One line is enough:
@@ -70,4 +76,3 @@ If a single unit could plausibly use two skills, recommend both only when each c
 - Don't add `Suggested skill: none` as filler. Absence of the field is the signal.
 - Don't list skills at the plan level as a general inventory. The recommendation lives on the unit that benefits, not in a global section.
 - Don't recommend a skill the plan never explored. If you don't know what a skill does, you don't know it fits.
-- Don't let a recommended skill change the shape of the unit. The unit's goal, tasks, and validation are decided by the work — the skill is a tool that helps execute them, not a reason to reshape them.

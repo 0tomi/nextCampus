@@ -1,69 +1,78 @@
 # Protocolo de Delegación
 
-Una delegación efectiva pasa al sub-agente lo necesario para ejecutar bien sin tener que adivinar nada esencial. Sobra el resto.
+Una delegación efectiva pasa al sub-agente lo necesario para ejecutar bien sin tener que adivinar nada esencial. Sobra el resto. La delegación es **autocontenida**: no hay archivo de estado que consultar — todo lo que la fase necesita viaja en el mensaje.
 
 ---
 
 ## Lo que sí debe llevar la delegación
 
 1. **Sub-agente objetivo** — backend / frontend / datos / infra / qa.
-2. **Qué hacer** — el contenido operativo de la fase, no solo el nombre. Tiene que poder ejecutarse leyendo solo este mensaje (con el archivo del plan como respaldo).
-3. **Archivos en alcance** — qué puede tocar y qué está fuera de alcance, con razón breve cuando importe.
-4. **Criterio de cierre** — condición verificable que marca la fase como terminada.
-5. **Criticidad** — crítica o estándar. Le dice al sub-agente qué nivel de rigor se va a aplicar al revisarlo.
-6. **Ruta al archivo de plan + claves a consultar** (si aplica) — la ruta exacta del YAML (ej: `docs/plans/refactor-auth.yaml`) y las claves concretas que el sub-agente tiene que leer: la fase actual (`F2`) y las restricciones globales que aplican (`R1`, `R3`). Claves reales, no placeholders: no mandar `F{N}` literal.
-7. **Skills sugeridas** (si aplica) — las que el plan original ya nombre para esta fase, o las que conozcas del entorno y apliquen a la tarea. Con razón concreta. Si nada aplica, omitir la sección. Ver el bloque abajo.
+2. **Qué hacer** — el contenido operativo completo de la fase, no solo el nombre. Tiene que poder ejecutarse leyendo solo este mensaje.
+3. **Restricciones globales que aplican** — inline, con su contenido, no por referencia. Solo las que tocan a esta fase.
+4. **Archivos en alcance** — qué puede tocar y qué está fuera de alcance, con razón breve cuando importe. El orquestador stagea y valida contra este alcance, así que tiene que ser preciso.
+5. **Criterio de cierre** — condición verificable que marca la fase como terminada.
+6. **Criticidad** — crítica o estándar. Le dice al sub-agente qué nivel de rigor se va a aplicar al revisarlo.
+7. **Skills a aplicar** (si aplica) — nombre + **ruta al SKILL.md** + instrucción de leerla antes de empezar. Ver el bloque abajo. Si nada aplica, omitir la sección.
 8. **Sub-agentes auxiliares disponibles** (si aplica) — sdd-explore / sdd-archive cuando la fase los puede aprovechar. Ver `auxiliares.md`.
-9. **Si es re-delegación tras rechazo**: motivo del rechazo previo, qué corregir, qué del intento anterior sí está bien.
+9. **El contrato** — bloque fijo con las reglas de la relación: no commitear, apego al plan, desviaciones justificadas, deuda. Ver abajo.
+10. **Si es re-delegación tras rechazo**: motivo del rechazo previo, qué corregir, qué del intento anterior sí está bien (ver `supervision.md`).
+11. **Contexto del historial** (si sirve): las `Notas para fases siguientes` que dejaron los cierres anteriores relevantes, o la indicación de leerlas con `git log --grep="^Plan: {nombre}"`.
 
-Lo que **no** hace falta agregar: prohibiciones obvias ("no rompas el repo"), restricciones administrativas que limitan al sub-agente sin necesidad ("no consultes otras entradas del archivo"), ni listas de cosas que el sub-agente claramente entiende solo.
-
----
-
-## Bloque sugerido para acceso al archivo de plan
-
-```
-Antes de empezar, leé estas entradas del archivo del plan
-<RUTA_REAL_DEL_ARCHIVO>:
-  - <CLAVE_DE_ESTA_FASE> (esta fase)
-  - <CLAVES_DE_RESTRICCIONES> (restricciones globales que aplican)
-
-Este mensaje es un extracto. El archivo es la fuente completa.
-Si lo que leés en el archivo contradice este mensaje, reportá la
-discrepancia antes de seguir. Podés consultar otras entradas si te
-ayudan; no edites el archivo, eso lo hago yo al cerrar tu fase.
-
-Si por cualquier razón te desviás del alcance, supuestos o criterio
-de cierre — porque hizo falta para destrabar algo, porque el plan no
-lo cubría, o porque tomaste un atajo — marcalo explícito en el campo
-"Apego al plan" de tu reporte. Lo mismo con deuda que dejes (TODOs,
-tests pendientes, refactors postergados): listala. La desviación
-reportada se incorpora a la validación; la oculta degrada el plan.
-```
-
-Ejemplo de bloque preparado correctamente: ruta `docs/plans/refactor-auth.yaml`, claves `F2` y `R1, R3`. No dejar placeholders literales como `<CLAVE_DE_ESTA_FASE>`.
+Lo que **no** hace falta agregar: prohibiciones obvias ("no rompas el repo") ni listas de cosas que el sub-agente claramente entiende solo.
 
 ---
 
-## Bloque sugerido para skills
-
-Dos caminos según de dónde vengan:
-
-**Caso A — el plan ya trae skills sugeridas para la fase.** Transcribirlas con su razón a la delegación. El planificador ya hizo el trabajo de evaluar fit; no lo segundo-adivinés salvo que sospeches que la skill ya no existe o no aplica más al contexto real del repo.
-
-**Caso B — el plan no las trae.** Antes de empezar a delegar, dale una mirada a las skills disponibles del entorno (lo que el cliente exponga, o lo que viva en `.claude/skills/`, `.agents/skills/`, etc.). Una lectura rápida de nombres y descripciones alcanza. Después, por cada fase, preguntate si alguna calza con el trabajo a delegar. Si no encontrás nada que aplique de verdad, omití la sección en esa delegación.
-
-Formato cuando incluís el bloque:
+## El contrato (bloque fijo de toda delegación)
 
 ```
-Skills aplicables a esta fase:
-  - {nombre}: {por qué aplica acá}
-  - {nombre}: {por qué aplica acá}
+Reglas de esta delegación:
+
+- NO commitees, no stagees, no toques el índice de git. Trabajá sobre el
+  worktree y entregá. El commit lo hago yo si tu entrega pasa validación.
+
+- Apegate al plan: alcance, supuestos y criterio de cierre tal como están
+  acá. Si necesitás desviarte — porque algo lo destrababa, porque el plan
+  no cubría un caso — la desviación tiene que venir JUSTIFICADA en tu
+  reporte: qué te desvió, por qué no había alternativa dentro del alcance.
+  Una desviación sin justificación sólida se rechaza con todo el entregable.
+  Una desviación oculta es peor: se descubre en el diff y degrada la
+  confianza en todo tu reporte.
+
+- No dejes deuda evitable: TODOs, tests pendientes o atajos que podés
+  resolver dentro de esta fase, se resuelven en esta fase. Solo es
+  aceptable deuda con razón estructural (depende de una fase posterior,
+  excede el alcance definido) y declarada en el reporte.
+
+- Si el contexto no te alcanza para ejecutar, decilo en el reporte en vez
+  de inventar: eso es un problema de delegación, no tuyo.
 ```
 
-Omitir el bloque entero si no hay skills que apliquen. No inventar. No sumar skills "por las dudas" — el sub-agente lee la lista como una sugerencia legítima del orquestador, y un nombre sin valor es ruido que inunda su contexto.
+---
 
-Si la fase es de frontend y existe `DESIGN.md` en el repo:
+## Bloque de skills: usar o justificar
+
+Cuando hay skills que aplican a la fase, el bloque es imperativo y con rutas — un nombre suelto no se carga y no se usa:
+
+```
+Skills a aplicar en esta fase:
+
+  - {nombre} ({ruta al SKILL.md})
+    Por qué aplica: {razón concreta ligada a la tarea}
+
+Antes de empezar, leé el SKILL.md de cada una y aplicalas durante la
+tarea. Si en algún punto decidís no seguir lo que una skill indica,
+anotalo en el campo "Skills aplicadas" de tu reporte con la razón.
+No seguirla sin justificarlo cuenta como desviación del plan.
+```
+
+De dónde salen las skills:
+
+- **El plan ya las trae por fase**: transcribirlas con su razón. El planificador ya evaluó fit; no segundo-adivinarlo salvo que la skill no exista en el entorno o el contexto real del repo la vuelva inaplicable.
+- **El plan no las trae**: relevar una vez, antes de la primera delegación, lo disponible en el entorno (lista del cliente tipo `<available_skills>`, `.claude/skills/`, `.agents/skills/`, o donde el repo las tenga — nombres y descripciones alcanzan). Después, por fase, evaluar si alguna calza con el trabajo a delegar.
+
+Si ninguna aplica de verdad, **omitir la sección entera**. No inventar skills no verificadas en el entorno; no sumar skills "por las dudas" — el sub-agente lee la lista como indicación legítima del orquestador, y un nombre sin valor es ruido que inunda su contexto.
+
+Si la fase es de frontend y existe `DESIGN.md` en el repo, tratarlo como una skill más:
 
 ```
 Antes de implementar componentes, leé DESIGN.md. Mantené la paleta,
@@ -79,18 +88,18 @@ reportalo en lugar de improvisar.
 Cambios realizados: ...
 Archivos tocados: ...
 Supuestos usados: ...
-Apego al plan: completo | con desviaciones — qué se desvió y por qué
-Deuda dejada: ninguna | ... (lista breve, marcar si algo es bloqueante)
+Apego al plan: completo | desviaciones — qué, por qué, por qué no había
+               alternativa dentro del alcance
+Skills aplicadas: {skill}: cómo se aplicó | no seguí {skill} en X porque...
+Deuda dejada: ninguna | ítems con su razón estructural (marcar bloqueantes)
 Bloqueos / inconsistencias: ninguno | ...
 Suficiencia de contexto: sí | no — qué faltó
 Notas para el siguiente agente: ...
 ```
 
+`Archivos tocados` no es decorativo: el orquestador lo contrasta contra `git status` en la validación. Un archivo modificado que el reporte no menciona es una desviación oculta.
+
 Si el sub-agente reporta "contexto insuficiente", el problema fue de delegación, no de ejecución. El orquestador re-delega ampliando el contexto, no penaliza al sub-agente.
-
-**Norma sobre desviaciones**: el sub-agente reporta lo que pasó tal como pasó. Si se salió del alcance, modificó algo no previsto, dejó algo a medias, o tomó un atajo, lo dice. Una desviación reportada cuesta poco — el orquestador la incorpora a la validación o la registra como deuda. Una desviación oculta se descubre tarde y degrada el plan. Este principio se transmite en el cuerpo de la delegación, no se asume.
-
-**Norma sobre deuda**: si la fase dejó deuda técnica (TODOs, atajos, tests faltantes, refactors pospuestos), se lista explícita acá. El orquestador la agrega al bloque `cierre.deuda` del archivo y la considera al cerrar el plan.
 
 ---
 
@@ -102,16 +111,10 @@ Si el sub-agente reporta "contexto insuficiente", el problema fue de delegación
 - **Infra**: deploy, pipelines, configuración, observabilidad.
 - **QA**: tests unitarios, integración, e2e, cobertura.
 
-Una fase mezcla dominios solo cuando hay buena razón. Por defecto, una fase = un dominio. Si una fase del plan original mezcla, dividila antes de delegar.
+Una fase mezcla dominios solo cuando hay buena razón. Por defecto, una fase = un dominio. Si una fase del plan original mezcla, dividirla antes de delegar (y acordarlo con el usuario si cambia el plan de forma visible).
 
 ---
 
 ## Re-delegación
 
-Tras un rechazo:
-
-1. Registrar el rechazo en el archivo del plan con motivo concreto (estado de la fase a `rechazada` y evento en `historial`).
-2. Decidir si la falla fue de ejecución o de delegación insuficiente.
-3. Re-delegar con: motivo del rechazo, qué corregir, qué del intento previo está bien (si aplica).
-
-Tres rechazos sin éxito → marcar fase como `bloqueada` y escalar al humano con resumen de los intentos.
+El procedimiento completo (registro del motivo, diagnóstico de responsable, qué pasar en el nuevo prompt, límite de tres intentos) vive en `supervision.md` — un solo dueño para no divergir.

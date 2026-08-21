@@ -25,15 +25,15 @@ Si vuelve con más información de la pedida, el implementador descarta lo que n
 
 **Útil cuando** la fase produjo una decisión arquitectónica no trivial, un patrón nuevo, o un workaround que merece quedar documentado en el repo.
 
-**No conviene cuando** el cambio es obvio o ya está cubierto por convenciones existentes. Las decisiones del estado del plan van al archivo del plan, no acá.
+**No conviene cuando** el cambio es obvio o ya está cubierto por convenciones existentes. El estado del plan no va acá: eso vive en los commits de cierre de la rama del plan.
 
 **Tip clave**: llegar con el contenido cerrado. sdd-archive persiste, no decide. El implementador tiene que pasarle: contexto, decisión, razones, alternativas descartadas, consecuencias.
 
 ---
 
-## Diferencia con el archivo del plan
+## Diferencia con el registro del plan
 
-El archivo del plan persiste el estado del plan (vive durante el proyecto, lo escribe el orquestador). `sdd-archive` persiste decisiones técnicas en el repo (vive permanentemente, lo dispara el implementador). Pueden coexistir: el archivo del plan registra que la fase tomó la decisión X; `sdd-archive` deja la decisión X documentada en el código.
+El historial de Git de la rama registra el **avance del plan** (qué fase cerró, con qué supuestos, desviaciones y deuda — lo escribe el orquestador al commitear). `sdd-archive` persiste **decisiones técnicas** como documentación del repo (vive más allá del plan, lo dispara el implementador). Pueden coexistir: el commit de cierre registra que la fase tomó la decisión X; `sdd-archive` deja la decisión X documentada donde el próximo desarrollador la va a buscar.
 
 ---
 
@@ -48,7 +48,8 @@ Si durante esta fase necesitás:
   - Documentar una decisión arquitectónica que tomes: podés spawnear sdd-archive.
     Llegá con la decisión cerrada — sdd-archive solo persiste.
 
-Si los usás, mencionalo en tu reporte para que pueda registrarlo en el archivo del plan.
+Si los usás, mencionalo en tu reporte para que quede registrado en el
+cierre de la fase.
 ```
 
 Omitir si la fase es trivial. No mencionarlos solo por completitud.

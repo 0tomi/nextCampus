@@ -1,14 +1,14 @@
 ---
 name: orquestar-planes
-description: Orquestar planes técnicos por fases con sub-agentes especializados. Usar cuando hay un plan con múltiples fases o dominios y se necesita delegar, supervisar y auditar la ejecución. El orquestador delega tareas, valida cada entregable y al final del plan audita el conjunto contra el objetivo original. Activadores típicos - "orquestar agentes", "plan de fases", "delegación técnica", "sub-agentes", o cualquier descomposición de trabajo en fases coordinadas.
+description: Orquestar planes técnicos por fases con sub-agentes especializados, registrando el avance en commits de Git. Usar cuando hay un plan con múltiples fases o dominios y se necesita delegar, supervisar y auditar la ejecución. El orquestador delega tareas, valida cada entregable contra el plan y el diff real, y commitea cada fase validada. Activadores típicos - "orquestar agentes", "ejecutar este plan", "plan de fases", "delegación técnica", "sub-agentes", o cualquier descomposición de trabajo en fases coordinadas.
 ---
 
 # Orquestación de Planes con Sub-Agentes
 
 > Referencias (cargar cuando aplique):
-> - `references/archivo_plan.md` — formato YAML del plan, claves indexadas y operaciones sobre el archivo
-> - `references/protocolo_delegacion.md` — qué incluir en cada delegación
-> - `references/supervision.md` — criticidad, validación, verificación independiente, re-delegación, auditoría final y cierre de deuda
+> - `references/registro_git.md` — rama del plan, formato de commits, staging por alcance, recuperación
+> - `references/protocolo_delegacion.md` — qué incluir en cada delegación y formato de reporte
+> - `references/supervision.md` — criticidad, validación, desviaciones, deuda, re-delegación, auditoría final
 > - `references/auxiliares.md` — sdd-explore y sdd-archive
 
 ---
@@ -29,60 +29,57 @@ No activar para brainstorming, tareas de una sola capa, o cambios menores que no
 
 ---
 
+## La entrada: el archivo de plan
+
+El plan llega como **archivo que el usuario le pasa al orquestador** (generado por un planificador o escrito a mano). Ese archivo es del usuario: puede traer comentarios, ajustes o instrucciones agregadas antes de arrancar — leerlos como parte del plan. El orquestador **lo lee, no lo edita ni lo mantiene**. El estado de avance no vive ahí: vive en el historial de Git de la rama del plan.
+
+Si el usuario invoca la orquestación sin archivo de plan, pedírselo antes de delegar nada. Sin fases definidas no hay nada que orquestar.
+
+---
+
 ## Flujo
 
-1. **Crear el archivo de plan** antes de delegar nada. Un único YAML indexado con meta, restricciones globales, fases (cada una con su clave estable tipo `F1`, `F2`, …) y estado global. Cada fase se clasifica como **crítica** o **estándar** (criterios en `supervision.md`). Ubicación y estructura en `archivo_plan.md`.
+1. **Leer el plan completo** — fases, restricciones, comentarios del usuario. Clasificar cada fase como **crítica** o **estándar** (criterios en `supervision.md`) si el plan no lo trae. Mapear qué skills del entorno aplican a cada fase (ver abajo).
 
-2. **Delegar una fase a la vez**. La delegación lleva: contexto suficiente para ejecutar, ruta del archivo de plan + claves que el sub-agente debe consultar (ej: `F2`, `R1`, `R3`), skills aplicables si corresponde (las que el plan ya sugiera o las que detectes del entorno — ver más abajo), y la criticidad declarada. Plantilla en `protocolo_delegacion.md`.
+2. **Crear la rama del plan**: `plan/{nombre}` desde la rama actual. Todo el plan se ejecuta dentro de esa rama; el merge final lo decide el humano. Detalle en `registro_git.md`.
 
-3. **Validar el entregable** según criticidad: las críticas se validan antes de delegar la siguiente; las estándar pueden agruparse de a 2. El sub-agente debe reportar fielmente cualquier desviación del plan en su entrega — no se penaliza la desviación reportada, sí la oculta. Para fases críticas o grandes donde dudás de cubrir todo a ojo, podés delegar una verificación independiente a un segundo sub-agente; usar con criterio, consume tokens. Detalle en `supervision.md`.
+3. **Delegar una fase a la vez**. La delegación es autocontenida: contenido operativo de la fase, restricciones que aplican, criterio de cierre, criticidad, alcance de archivos, skills a aplicar con su ruta, y la prohibición de commitear. Plantilla en `protocolo_delegacion.md`.
 
-4. **Registrar el cierre en el archivo**: actualizar el `estado` de la fase a `completada` (o `parcial`/`rechazada` según corresponda) y rellenar su bloque `cierre`. Si dos sub-agentes terminan a la vez, el orquestador actualiza el archivo uno cierre por turno — ver `archivo_plan.md`.
+4. **Validar el entregable** contra tres cosas: el criterio de cierre, el reporte del sub-agente, y **el diff real** (`git status` + `git diff` — el reporte se contrasta, no se cree a ciegas). Las desviaciones del plan se evalúan: con justificación sólida se incorporan; sin justificación, se rechaza. La deuda evitable no pasa: se re-delega para resolverla en la fase. Detalle en `supervision.md`.
 
-5. **Auditoría final + cierre de deuda** cuando todas las fases cierran: cobertura del objetivo, consistencia entre fases, desvíos, deuda. El plan no se cierra dejando deuda flotando — la levantás vos directamente o delegás un cleanup según volumen y criticidad. Si hay desvíos bloqueantes, el plan tampoco cierra. Detalle en `supervision.md`.
+5. **Commitear el cierre de la fase**: el orquestador — único que commitea, siempre tras aprobar — stagea los archivos del alcance y crea un commit cuyo mensaje registra supuestos, apego al plan, deuda, intentos y notas para las fases siguientes. Ese commit es el sello de validación y la traza de avance. Formato en `registro_git.md`.
 
----
-
-## El archivo de plan, en una línea
-
-Un YAML en `docs/plans/{nombre}.yaml` (si esa carpeta existe) o en la raíz como `plan-{nombre}.yaml`. Indexa el plan completo bajo claves estables y se actualiza a medida que las fases cierran. Sobrevive compactaciones porque vive en el repo. El orquestador es el único que escribe; los sub-agentes solo leen. Los detalles de estructura, claves y operaciones viven en `references/archivo_plan.md`.
+6. **Auditoría final** cuando todas las fases cierran: cobertura del objetivo, consistencia entre fases, desvíos, deuda residual. Si la auditoría corrige código (cleanup), eso genera su propio commit; si no corrigió nada, el resultado se reporta al usuario y no se commitea. Detalle en `supervision.md`.
 
 ---
 
-## Sub-agente y archivo de plan
+## Skills en la delegación: usar o justificar
 
-Pasarle la ruta exacta al archivo y las claves concretas que debe consultar (`F2`, `R1`, `R3` — no placeholders), e instruirle que lea esas entradas al inicio de su tarea. El mensaje de delegación puede ser un extracto; el archivo es la fuente completa. Si el sub-agente no puede leer archivos del repo, el contexto va inline en la delegación.
+Que los sub-agentes apliquen las skills correctas es responsabilidad del orquestador, no una esperanza. Tres reglas:
 
-Si encuentra contradicciones entre lo que dice el archivo y lo que decís en el mensaje, debe reportarlas, no resolverlas por su cuenta.
+1. **Mapear antes de delegar.** Si el plan ya sugiere skills por fase, transcribirlas. Si no, relevar las disponibles en el entorno (lista tipo `<available_skills>`, o `.claude/skills/`, `.agents/skills/`, etc.) una sola vez al inicio, y evaluar fit por fase.
+2. **Pasar nombre + ruta al SKILL.md + instrucción imperativa**: el sub-agente debe leer la skill antes de empezar y aplicarla. Si decide no seguirla en algún punto, lo justifica en su reporte. Sin ruta, la skill no se carga; sin instrucción, se ignora.
+3. **Verificar en la validación.** El reporte del sub-agente incluye el campo `Skills aplicadas`; el orquestador chequea que las aplicó o que la justificación para no seguirlas es sólida. Justificación floja → cuenta como desviación.
 
----
-
-## Cuándo ofrecer skills y sub-agentes auxiliares
-
-- **Skills**: dos caminos según de dónde vengan.
-  - *El plan ya trae skills sugeridas por fase* (algunos planificadores lo hacen, otros no). Si las trae, transcribilas a la delegación de esa fase con su razón — el planificador ya hizo el trabajo de evaluar fit.
-  - *El plan no las menciona, o no las conocés bien.* Antes de delegar la primera fase, dale una mirada a lo que esté disponible: el cliente puede exponer una lista (tipo `<available_skills>` con descripciones), o pueden vivir en `.claude/skills/`, `.agents/skills/`, o donde el repo las tenga. Una lectura rápida de nombres y descripciones alcanza. Después, por cada fase, evaluá si alguna calza con el trabajo a delegar.
-
-  Si ninguna aplica a la fase, omití la sección entera en esa delegación. Una skill irrelevante inunda el contexto del sub-agente sin aportar. Nunca inventes skills: si no estás seguro de que existe en el entorno, no la menciones.
-- **DESIGN.md**: si la fase es de frontend y existe `DESIGN.md` en el repo, incluilo como referencia obligatoria de estilo visual.
-- **sdd-explore / sdd-archive**: ofrecelos cuando la fase pinta candidata a necesitar exploración del repo o documentación de una decisión arquitectónica. Detalle en `auxiliares.md`.
-
-El orquestador sugiere, no obliga. Si el sub-agente no necesita la herramienta, no debe usarla solo porque está listada.
+Si ninguna skill aplica a la fase, omitir la sección entera: una skill irrelevante inunda el contexto del sub-agente sin aportar. Nunca inventar skills que no se verificaron en el entorno. Mecánica y bloques en `protocolo_delegacion.md`.
 
 ---
 
 ## Recuperación tras compactación
 
-Releer el archivo de plan, identificar la próxima fase no completada, continuar. **Nunca asumir** que una fase está completa porque "se recuerda" haberla delegado: leer el estado real desde el archivo. Si una fase quedó marcada `en_curso` sin bloque de `cierre`, probablemente es zombie — ver detección y resolución en `supervision.md`.
-
----
-
-## Re-delegación tras rechazo
-
-Si rechazás un entregable, registrá el rechazo en el archivo de plan primero (dejá traza en `historial` y movés el estado de la fase a `rechazada`), después re-delegá pasando: motivo del rechazo, qué corregir específicamente, qué del intento previo sí está bien (si aplica). Mantenés el resto de la delegación igual. Tres rechazos sin éxito → marcar fase como `bloqueada` y escalar.
+Localizar la rama `plan/{nombre}`, leer el archivo de plan (la ruta está en el trailer `Plan-File` de cualquier commit del plan), y comparar: fases del plan vs commits de cierre en el historial. La próxima fase sin commit es la próxima a delegar. **Nunca asumir** que una fase está completa porque "se recuerda" haberla delegado: si no tiene commit de cierre, no está cerrada. Worktree sucio sin commit correspondiente = fase zombie — resolución en `supervision.md`.
 
 ---
 
 ## Regla central
 
-El trabajo del orquestador termina cuando el plan completo está auditado, consistente, y la deuda acumulada quedó resuelta o aceptada con razón. No cuando el último sub-agente entrega. El archivo de plan es la fuente de verdad del estado. Las skills y los auxiliares son herramientas que ofrecés; el sub-agente decide.
+El trabajo del orquestador termina cuando el plan completo está auditado, consistente, y sin deuda flotando sin razón. No cuando el último sub-agente entrega. El historial de Git de la rama es la fuente de verdad del avance; el archivo de plan es la fuente de verdad de lo que había que hacer. Nada llega al historial sin validación: commit aprobado o no hay commit.
+
+---
+
+## No sobredelegacion
+
+Ser orquestador no te libera del trabajo completamente. Existen acciones sencillas que como orquestador, delegarlas carece de sentido. Algunas tareas sencillas que no valen la pena delegar son:
+1. Ejecución de pocos comandos (menos de 5 comandos): Si ese necesario ejecutar algun comando ya sea por verificacion, modificacion o cualquier motivo necesario, siempre y cuando sea simplemente ejecutar el o los comandos para observar la salida de los mismos, el orquestador puede hacerlo sin problemas.
+2. Modificaciones minimas de lineas de codigo: Si por algun motivo es necesario cambiar pocas lineas de codigo, o cambiar no mas de 2 archivos, si el orquestador tiene contexto suficiente para realizar el cambio por si mismo, puede y deberia hcerlo el mismo. Si el cambio es minimo, pero el orquestador no cuenta con contexto suficiente, puede delegar la tarea.
+--
