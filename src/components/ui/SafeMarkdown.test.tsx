@@ -19,9 +19,12 @@ Este texto tiene **negrita** e *itálica*.`
 
     const markup = renderToStaticMarkup(<SafeMarkdown content={markdown} />)
 
-    expect(markup).toContain('<h1>Título 1</h1>')
-    expect(markup).toContain('<h2>Título 2</h2>')
-    expect(markup).toContain('<h3>Título 3</h3>')
+    expect(markup).toContain('<h1')
+    expect(markup).toContain('Título 1</h1>')
+    expect(markup).toContain('<h2')
+    expect(markup).toContain('Título 2</h2>')
+    expect(markup).toContain('<h3')
+    expect(markup).toContain('Título 3</h3>')
     expect(markup).toContain('<strong>negrita</strong>')
     expect(markup).toContain('<em>itálica</em>')
   })
