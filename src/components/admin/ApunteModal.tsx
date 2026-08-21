@@ -13,7 +13,7 @@ import {
   updateApunteAction,
   type ApunteActionState,
 } from '@/app/admin/actions/apuntes'
-import { RichTextEditor } from './RichTextEditor'
+import { MarkdownEditor } from './MarkdownEditor'
 import { RecursoRow } from '@/components/admin/apunte/RecursoRow'
 import { useAutoApunteCategories } from '@/components/admin/apunte/useAutoApunteCategories'
 import { useApunteRecursos } from '@/components/admin/apunte/useApunteRecursos'
@@ -31,7 +31,7 @@ import {
 export type ApunteFull = {
   id: string
   titulo: string
-  descripcionHtml: string
+  descripcion: string
   /** Link compartible del apunte. Opcional para no romper callsites que aún no lo proveen. */
   slug?: string | null
   categorias?: Array<{ id: string; nombre: string }>
@@ -173,17 +173,17 @@ export function ApunteModal({
 
         <ApunteTitleField value={titulo} onChange={handleTituloChange} />
 
-        {/* Descripción — Rich Text */}
+        {/* Descripción — Markdown */}
         <CollapsibleFormSection
           title="Descripción"
           hint="Opcional. Agregá una explicación corta si hace falta."
           open={descriptionOpen}
           onToggle={() => setDescriptionOpen((value) => !value)}
         >
-          <RichTextEditor
-            name="descripcionHtml"
-            defaultValue={apunte?.descripcionHtml ?? ''}
-            placeholder="Descripción del contenido"
+          <MarkdownEditor
+            name="descripcion"
+            defaultValue={apunte?.descripcion ?? (apunte as unknown as { descripcionHtml?: string })?.descripcionHtml ?? ''}
+            placeholder="Contenido o notas del apunte (Markdown soportado)..."
           />
         </CollapsibleFormSection>
 

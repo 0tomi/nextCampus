@@ -8,8 +8,8 @@ import {
   requireYearAdminForApunteId,
   requireYearAdminForSubjectId,
 } from '@/lib/auth'
-import { sanitizeRichHtml } from '@/lib/sanitize'
 import { ensureUniqueSlug, slugify } from '@/lib/slug'
+
 import {
   uploadApunteHtml,
   deleteApunteHtml,
@@ -251,7 +251,7 @@ async function buildApunteRecursos(params: {
 
 const apunteContentSchema = z.object({
   titulo: z.string().trim().min(1).max(200),
-  descripcionHtml: z.string().max(20000).default(''),
+  descripcion: z.string().max(20000).default(''),
   slug: z.preprocess(
     (v) => {
       if (typeof v !== 'string') return undefined
@@ -338,9 +338,10 @@ export async function createApunteAction(
     return { ok: false, message: 'Elegí al menos una categoría.' }
   }
 
+  const rawDescripcion = formData.get('descripcion') ?? formData.get('descripcionHtml') ?? ''
   const parsed = apunteContentSchema.safeParse({
     titulo: formData.get('titulo'),
-    descripcionHtml: formData.get('descripcionHtml') ?? '',
+    descripcion: typeof rawDescripcion === 'string' ? rawDescripcion : '',
     slug: formData.get('slug') ?? undefined,
     recursos: recursosRaw,
     categoriaIds: categoriaIdsRaw,
@@ -349,7 +350,7 @@ export async function createApunteAction(
     return { ok: false, message: parsed.error.issues[0].message }
   }
 
-  const { titulo, descripcionHtml, slug: slugInput, recursos, categoriaIds } = parsed.data
+  const { titulo, descripcion, slug: slugInput, recursos, categoriaIds } = parsed.data
 
   // Resolver slug final.
   let finalSlug: string
@@ -384,7 +385,7 @@ export async function createApunteAction(
           subjectId: subjectId.data,
           titulo,
           slug: finalSlug,
-          descripcionHtml: sanitizeRichHtml(descripcionHtml),
+          descripcion: descripcion.trim(),
           createdByUserId: scope.admin.id,
           categorias: {
             create: validCategoriaIds.map((categoriaId) => ({ categoriaId })),
@@ -483,9 +484,10 @@ export async function updateApunteAction(
     return { ok: false, message: 'Elegí al menos una categoría.' }
   }
 
+  const rawDescripcion = formData.get('descripcion') ?? formData.get('descripcionHtml') ?? ''
   const parsed = apunteContentSchema.safeParse({
     titulo: formData.get('titulo'),
-    descripcionHtml: formData.get('descripcionHtml') ?? '',
+    descripcion: typeof rawDescripcion === 'string' ? rawDescripcion : '',
     slug: formData.get('slug') ?? undefined,
     recursos: recursosRaw,
     categoriaIds: categoriaIdsRaw,
@@ -494,7 +496,7 @@ export async function updateApunteAction(
     return { ok: false, message: parsed.error.issues[0].message }
   }
 
-  const { titulo, descripcionHtml, slug: slugInput, recursos, categoriaIds } = parsed.data
+  const { titulo, descripcion, slug: slugInput, recursos, categoriaIds } = parsed.data
 
   // Resolver slug final: si llega y cambia, validar unicidad excluyendo el propio id.
   const apunteActual = await prisma.apunte.findUnique({
@@ -569,7 +571,7 @@ export async function updateApunteAction(
         data: {
           titulo,
           slug: finalSlug,
-          descripcionHtml: sanitizeRichHtml(descripcionHtml),
+          descripcion: descripcion.trim(),
         },
       })
       await tx.apunteRecurso.deleteMany({ where: { apunteId: apunteId.data } })

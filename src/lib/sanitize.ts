@@ -1,8 +1,5 @@
 import sanitize from 'sanitize-html'
 
-// Sanitiza HTML enriquecido de admins (descripciones de eventos/apuntes).
-// Defensa contra XSS / inyección: se aplica ANTES de persistir y al renderizar.
-// Whitelist mínima: formato básico + links seguros.
 const ALLOWED_TAGS = [
   'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's',
   'ul', 'ol', 'li', 'a', 'h2', 'h3', 'h4',
@@ -17,6 +14,10 @@ const ALLOWED_ATTRS: sanitize.IOptions['allowedAttributes'] = {
 // Protocolos permitidos en href
 const ALLOWED_SCHEMES = ['https', 'mailto']
 
+/**
+ * @deprecated Ya no se usa en persistencia tras la migración a Markdown (Fase F3).
+ * El renderizado seguro en frontend se delega a SafeMarkdown (AST react-markdown + remark-gfm).
+ */
 export function sanitizeRichHtml(dirty: string): string {
   return sanitize(dirty ?? '', {
     allowedTags: ALLOWED_TAGS,
