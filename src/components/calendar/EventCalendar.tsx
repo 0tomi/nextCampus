@@ -172,6 +172,27 @@ function renderEventContent(info: { event: { title: string } }) {
   )
 }
 
+const MONTH_NAMES_ES = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
+] as const
+
+function formatMonthYearTitle(date: Date): string {
+  const monthName = MONTH_NAMES_ES[date.getMonth()]
+  const year = date.getFullYear()
+  return `${monthName} ${year}`
+}
+
 export function EventCalendar({
   events = EMPTY_EVENTS,
   periodos = EMPTY_PERIODOS,
@@ -185,8 +206,6 @@ export function EventCalendar({
   onPeriodoClick,
 }: EventCalendarProps) {
   const calendarRef = useRef<FullCalendar>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const prevDateRef = useRef<Date | null>(null)
   const [currentTitle, setCurrentTitle] = useState('')
   const [currentMonthKey, setCurrentMonthKey] = useState('')
 
@@ -280,7 +299,7 @@ export function EventCalendar({
   const allCalendarEvents = [...periodoEvents, ...calendarEvents]
 
   return (
-    <DarkCard ref={containerRef} className={cn('overflow-hidden p-4 sm:p-6', className, editable && 'calendar-editable')}>
+    <DarkCard className={cn('overflow-hidden p-4 sm:p-6', className, editable && 'calendar-editable')}>
       {calendarEvents.length === 0 ? (
         <p className="mb-4 text-sm text-white/54">{emptyMessage}</p>
       ) : null}
@@ -318,19 +337,19 @@ export function EventCalendar({
           </div>
 
           <div className="fc-toolbar-chunk flex flex-wrap items-center justify-center gap-2.5">
-            <h2 className="fc-toolbar-title font-display text-xl font-extrabold tracking-tight text-white capitalize sm:text-2xl">
-              {currentTitle}
+            <h2 className="fc-toolbar-title font-display text-xl font-extrabold tracking-tight text-white sm:text-2xl">
+              <span>{currentTitle}</span>
+              {currentMonthEventsCount > 0 ? (
+                <>
+                  <span className="text-white/40 font-semibold"> - </span>
+                  <span className="text-yellow-400">
+                    {currentMonthEventsCount === 1
+                      ? '1 evento'
+                      : `${currentMonthEventsCount} eventos`}
+                  </span>
+                </>
+              ) : null}
             </h2>
-            {currentMonthEventsCount > 0 ? (
-              <div className="flex items-center gap-2">
-                <span className="text-white/40 font-semibold">-</span>
-                <span className="inline-flex items-center border border-white/10 bg-surface-1 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white/72">
-                  {currentMonthEventsCount === 1
-                    ? '1 evento'
-                    : `${currentMonthEventsCount} eventos`}
-                </span>
-              </div>
-            ) : null}
           </div>
 
           <div className="fc-toolbar-chunk hidden w-[110px] sm:block" />
@@ -355,29 +374,11 @@ export function EventCalendar({
         eventStartEditable={editable}
         eventDrop={editable ? handleEventDrop : undefined}
         datesSet={(dateInfo) => {
-          setCurrentTitle(dateInfo.view.title)
           const start = dateInfo.view.currentStart ?? dateInfo.start
+          setCurrentTitle(formatMonthYearTitle(start))
           const year = start.getFullYear()
           const month = String(start.getMonth() + 1).padStart(2, '0')
           setCurrentMonthKey(`${year}-${month}`)
-
-          if (prevDateRef.current) {
-            const prevTime = prevDateRef.current.getTime()
-            const currTime = start.getTime()
-
-            if (currTime !== prevTime) {
-              const direction = currTime > prevTime ? 'next' : 'prev'
-              const gridBody = containerRef.current?.querySelector(
-                '.fc-daygrid-body',
-              ) as HTMLElement | null
-              if (gridBody) {
-                gridBody.classList.remove('fc-slide-prev', 'fc-slide-next')
-                void gridBody.offsetWidth
-                gridBody.classList.add(direction === 'next' ? 'fc-slide-next' : 'fc-slide-prev')
-              }
-            }
-          }
-          prevDateRef.current = start
         }}
         eventDidMount={(info) => {
           info.el.setAttribute('title', info.event.title)
