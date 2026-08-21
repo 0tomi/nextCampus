@@ -594,12 +594,23 @@ function ApunteCard({
       </div>
 
       {apunte.descripcion ? (
-        <SafeMarkdown
-          className={variant === 'desktop'
-            ? 'mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white'
-            : 'text-sm leading-6 text-white/60 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white'}
-          content={apunte.descripcion}
-        />
+        <Link
+          href={apunteHref}
+          className="group/desc mt-3 block cursor-pointer"
+          title="Ver apunte completo"
+        >
+          <div className="relative overflow-hidden">
+            <SafeMarkdown
+              className={
+                variant === 'desktop'
+                  ? 'line-clamp-3 text-sm leading-6 text-white/65 transition-colors group-hover/desc:text-white/80 [&_a]:text-violet-300 [&_p]:m-0 [&_strong]:text-white'
+                  : 'line-clamp-3 text-sm leading-6 text-white/60 transition-colors group-hover/desc:text-white/80 [&_a]:text-violet-300 [&_p]:m-0 [&_strong]:text-white'
+              }
+              content={apunte.descripcion}
+            />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-gradient-to-t from-surface-0 to-transparent" />
+          </div>
+        </Link>
       ) : null}
 
       {apunte.recursos.length > 0 ? (

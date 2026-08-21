@@ -251,7 +251,10 @@ async function buildApunteRecursos(params: {
 
 const apunteContentSchema = z.object({
   titulo: z.string().trim().min(1).max(200),
-  descripcion: z.string().max(20000).default(''),
+  descripcion: z
+    .string()
+    .max(100000, 'La descripción no puede superar los 100.000 caracteres.')
+    .default(''),
   slug: z.preprocess(
     (v) => {
       if (typeof v !== 'string') return undefined
