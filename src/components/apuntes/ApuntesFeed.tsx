@@ -63,7 +63,7 @@ interface DesktopContentCardData {
   col: 0 | 1
   isFirstOfApunte: boolean
   showApunteActions: boolean
-  recurso: ApunteFeedItem['recursos'][number]
+  recurso: ApunteFeedItem['recursos'][number] | null
   row: number
 }
 
@@ -148,6 +148,21 @@ function buildDesktopContentCards(
 
   return items.flatMap((apunte) => {
     const apunteHref = `/${yearSlug}/${subjectSlug}/apuntes/${apunte.slug}`
+
+    if (apunte.recursos.length === 0) {
+      const card: DesktopContentCardData = {
+        apunte,
+        apunteHref,
+        cardId: apunte.id,
+        col: (linearIndex % 2) as 0 | 1,
+        isFirstOfApunte: true,
+        showApunteActions: true,
+        recurso: null,
+        row: Math.floor(linearIndex / 2),
+      }
+      linearIndex += 1
+      return [card]
+    }
 
     return apunte.recursos.map((recurso, recursoIndex) => {
       const card: DesktopContentCardData = {
@@ -414,10 +429,11 @@ function DesktopContentCard({
   const shouldShowHeader = isFirstOfApunte || (!neighbors.sameApunteLeft && !neighbors.sameApunteUp)
   const shouldShowActions = showApunteActions || (!neighbors.sameApunteRight && !neighbors.sameApunteDown)
 
+  const hasRecurso = recurso !== null
   const wrapperClassName = [
     'scroll-mt-24',
     neighbors.sameApunteLeft ? '-ml-4 w-[calc(100%+1rem)]' : '',
-    'h-[500px]',
+    hasRecurso ? 'h-[500px]' : '',
   ].filter(Boolean).join(' ')
   const cardClassName = [
     'relative flex h-full w-full flex-col overflow-hidden p-5',
@@ -473,7 +489,9 @@ function DesktopContentCard({
                 {apunte.descripcion ? (
                   <SafeMarkdown
                     stripLinks
-                    className="mt-2 line-clamp-1 text-sm leading-6 text-white/62 [&_p]:m-0 [&_strong]:text-white"
+                    className={hasRecurso
+                      ? 'mt-2 line-clamp-1 text-sm leading-6 text-white/62 [&_p]:m-0 [&_strong]:text-white'
+                      : 'hidden'}
                     content={apunte.descripcion}
                   />
                 ) : null}
@@ -508,9 +526,28 @@ function DesktopContentCard({
           </div>
         ) : null}
 
-        <div className="relative mt-auto h-[356px] min-h-0">
-          <ApunteRecursoView recurso={recurso} variant="content-card" apunteHref={apunteHref} htmlLoadMode="on-click" />
-        </div>
+        {hasRecurso ? (
+          <div className="relative mt-auto h-[356px] min-h-0">
+            <ApunteRecursoView recurso={recurso} variant="content-card" apunteHref={apunteHref} htmlLoadMode="on-click" />
+          </div>
+        ) : (
+          <div className="relative mt-1 min-h-0 flex-1">
+            {apunte.descripcion ? (
+              <>
+                <SafeMarkdown
+                  stripLinks
+                  className="line-clamp-[12] text-sm leading-7 text-white/65 [&_p]:m-0 [&_strong]:text-white"
+                  content={apunte.descripcion}
+                />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-surface-0 to-transparent" />
+              </>
+            ) : (
+              <p className="py-6 text-center text-sm text-white/35">
+                Este apunte aún no tiene recursos adjuntos.
+              </p>
+            )}
+          </div>
+        )}
       </DarkCard>
     </div>
   )
