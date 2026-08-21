@@ -365,7 +365,7 @@ function EventModalContent({
 
         <EventDateTimeFields eventToEdit={eventToEdit} initialDate={initialDate} />
 
-        <EventDescriptionField defaultValue={(eventToEdit as { descripcion?: string | null } | undefined)?.descripcion ?? eventToEdit?.descripcionHtml ?? ''} />
+        <EventDescriptionField defaultValue={eventToEdit?.descripcion ?? ''} />
 
         <FormError message={!state.ok ? state.message : ''} />
 

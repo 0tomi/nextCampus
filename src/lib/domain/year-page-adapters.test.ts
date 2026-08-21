@@ -16,7 +16,7 @@ function makeYear(): YearPageYear {
   const generalEvent = {
     id: 'general-event',
     titulo: 'Clase general',
-    descripcionHtml: '',
+    descripcion: '',
     fecha: '2026-06-04',
     hora: null,
     createdByUserId: null,
@@ -31,7 +31,7 @@ function makeYear(): YearPageYear {
   const commissionEvent = {
     id: 'commission-event',
     titulo: 'Parcial',
-    descripcionHtml: '<p>Temas</p>',
+    descripcion: '<p>Temas</p>',
     fecha: '2026-06-10',
     hora: '09:00',
     createdByUserId: 'user-1',

@@ -94,7 +94,7 @@ export async function searchApuntes(input: ApunteSearchInput): Promise<ApunteSea
         nullif(
           trim(
             regexp_replace(
-              regexp_replace(coalesce(a."descripcionHtml", ''), '<[^>]+>', ' ', 'g'),
+              regexp_replace(coalesce(a."descripcion", ''), '<[^>]+>', ' ', 'g'),
               '\\s+',
               ' ',
               'g'
@@ -115,7 +115,7 @@ export async function searchApuntes(input: ApunteSearchInput): Promise<ApunteSea
           || setweight(
             to_tsvector(
               'spanish',
-              unaccent(regexp_replace(coalesce(a."descripcionHtml", ''), '<[^>]+>', ' ', 'g'))
+              unaccent(regexp_replace(coalesce(a."descripcion", ''), '<[^>]+>', ' ', 'g'))
             ),
             'C'
           ) AS document

@@ -12,7 +12,7 @@ export type RawHomeLatestApunte = Awaited<ReturnType<typeof getLatestApuntes>>[n
 export type HomeUpcomingEvent = {
   id: string
   titulo: string
-  descripcionHtml: string | null
+  descripcion: string | null
   fecha: string
   hora: string | null
   tipo: string
@@ -40,7 +40,7 @@ export type HomeCalendarPageEvent = {
   subjectSlug: string
   subjectId: string
   materiaNombre: string
-  descripcionHtml: string | null
+  descripcion: string | null
   commissionSlug: string | null
   commissionNombre: string | null
   agendaId: string
@@ -83,7 +83,7 @@ export function isHomeEventVisibleForPrefs(
 type HomeEventCore = {
   id: string
   titulo: string
-  descripcionHtml: string | null
+  descripcion: string | null
   fecha: string
   hora: string | null
   tipo: string
@@ -110,7 +110,7 @@ function mapHomeEvent(event: RawHomeCalendarEvent): HomeEventCore | null {
   return {
     id: event.id,
     titulo: event.titulo,
-    descripcionHtml: event.descripcionHtml,
+    descripcion: event.descripcion,
     fecha: event.fecha,
     hora: event.hora,
     tipo: event.tipoEvento.nombre,

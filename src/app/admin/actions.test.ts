@@ -212,7 +212,7 @@ describe('admin apunte actions', () => {
       makeFormData({
         subjectId: 'subject-1',
         titulo: 'Resumen parcial',
-        descripcionHtml: '<p>Temas clave</p>',
+        descripcion: 'Temas clave',
         recursosJson: '[]',
       }),
     )
@@ -245,7 +245,7 @@ describe('admin apunte actions', () => {
       makeFormData({
         apunteId: 'apunte-1',
         titulo: 'Resumen actualizado',
-        descripcionHtml: '<p>Más claro</p>',
+        descripcion: 'Más claro',
         recursosJson: '[]',
       }),
     )
@@ -278,7 +278,7 @@ describe('admin apunte actions', () => {
     const formData = makeFormData({
       apunteId: 'apunte-1',
       titulo: 'Resumen actualizado',
-      descripcionHtml: '<p>Más claro</p>',
+      descripcion: 'Más claro',
       recursosJson: JSON.stringify([
         {
           tipo: 'HTML',
@@ -340,7 +340,7 @@ describe('admin apunte actions', () => {
       makeFormData({
         apunteId: 'apunte-1',
         titulo: 'Resumen actualizado',
-        descripcionHtml: '<p>Más claro</p>',
+        descripcion: 'Más claro',
         recursosJson: JSON.stringify([
           { tipo: 'YOUTUBE', url: 'https://youtube.com/watch?v=abc', orden: 0, nombre: 'Video' },
           { tipo: 'DRIVE', url: 'https://drive.google.com/file/d/123/view', orden: 1, nombre: 'Guía' },
@@ -386,7 +386,7 @@ describe('admin apunte actions', () => {
     const formData = makeFormData({
       subjectId: 'subject-1',
       titulo: 'Laboratorio HTML',
-      descripcionHtml: '<p>Interactivo</p>',
+      descripcion: 'Interactivo',
       recursosJson: JSON.stringify([
         { tipo: 'HTML', localId: 'html-1', orden: 0, nombre: 'Demo' },
       ]),
@@ -413,7 +413,7 @@ describe('admin apunte actions', () => {
     const formData = makeFormData({
       subjectId: 'subject-1',
       titulo: 'Laboratorio HTML',
-      descripcionHtml: '<p>Interactivo</p>',
+      descripcion: 'Interactivo',
       recursosJson: JSON.stringify([
         { tipo: 'HTML', localId: 'html-1', orden: 0, nombre: 'Demo' },
       ]),
@@ -446,7 +446,7 @@ describe('admin apunte actions', () => {
     const formData = makeFormData({
       subjectId: 'subject-1',
       titulo: 'Laboratorio HTML',
-      descripcionHtml: '<p>Interactivo</p>',
+      descripcion: 'Interactivo',
       recursosJson: JSON.stringify([
         { tipo: 'HTML', localId: 'html-1', orden: 0, nombre: 'Demo' },
       ]),
@@ -493,7 +493,7 @@ describe('admin apunte actions', () => {
     const formData = makeFormData({
       subjectId: 'subject-1',
       titulo: 'Laboratorios',
-      descripcionHtml: '<p>Interactivos</p>',
+      descripcion: 'Interactivos',
       recursosJson: JSON.stringify([
         { tipo: 'HTML', localId: 'html-1', orden: 7, nombre: 'Primero' },
         { tipo: 'HTML', localId: 'html-2', orden: 3, nombre: 'Segundo' },
@@ -548,7 +548,7 @@ describe('admin apunte actions', () => {
     const formData = makeFormData({
       subjectId: 'subject-1',
       titulo: 'Calculadora interactiva',
-      descripcionHtml: '<p>Interactivo</p>',
+      descripcion: 'Interactivo',
       recursosJson: JSON.stringify([
         { tipo: 'HTML', localId: 'react-1', orden: 0, nombre: 'Calculadora' },
       ]),

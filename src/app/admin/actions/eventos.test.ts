@@ -96,6 +96,7 @@ const scope = {
   yearSlug: 'primer-anio',
   subjectId: 'subject-1',
   subjectSlug: 'calculo',
+  agendaId: 'agenda-1',
   commissionSlugs: [],
 }
 
@@ -259,3 +260,79 @@ describe('eventos actions: regresión de wrappers create/update', () => {
     expect(requireYearAdminForEventoIdMock).not.toHaveBeenCalled()
   })
 })
+
+describe('eventos actions: creación y edición con descripción Markdown', () => {
+  it('createEvento guarda la descripción y revalida los tags de eventos', async () => {
+    requireYearAdminForAgendaIdMock.mockResolvedValue(scope)
+    prismaMock.evento.create.mockResolvedValue({
+      id: 'evento-1',
+      titulo: 'Parcial 1',
+    })
+
+    const { createEvento } = await import('./eventos')
+
+    await createEvento(
+      makeFormData({
+        agendaId: 'agenda-1',
+        tipoEventoId: 'tipo-1',
+        titulo: 'Parcial 1',
+        descripcion: 'Temas: **Unidad 1** y *Unidad 2*',
+        fecha: '2026-08-20',
+        hora: '10:00',
+      }),
+    )
+
+    expect(prismaMock.evento.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        agendaId: 'agenda-1',
+        tipoEventoId: 'tipo-1',
+        titulo: 'Parcial 1',
+        descripcion: 'Temas: **Unidad 1** y *Unidad 2*',
+        hora: '10:00',
+        createdByUserId: 'admin-1',
+      }),
+    })
+    expect(updateTagMock).toHaveBeenCalledWith('upcoming-events')
+    expect(updateTagMock).toHaveBeenCalledWith('subject:calculo')
+  })
+
+  it('updateEvento actualiza la descripción y revalida los tags de eventos', async () => {
+    requireYearAdminForEventoIdMock.mockResolvedValue(scope)
+    requireYearAdminForAgendaIdMock.mockResolvedValue(scope)
+    prismaMock.evento.findUnique.mockResolvedValue({ createdByUserId: 'admin-1' })
+    const updateMock = vi.fn().mockResolvedValue(undefined)
+    const deleteManyMock = vi.fn().mockResolvedValue(undefined)
+    prismaMock.$transaction.mockImplementation(async (callback) =>
+      callback({
+        evento: { update: updateMock },
+        apunteEvento: { deleteMany: deleteManyMock, createMany: vi.fn() },
+      }),
+    )
+
+    const { updateEvento } = await import('./eventos')
+
+    await updateEvento(
+      makeFormData({
+        id: 'evento-1',
+        agendaId: 'agenda-1',
+        tipoEventoId: 'tipo-1',
+        titulo: 'Parcial 1 Modificado',
+        descripcion: 'Temas actualizados: **Unidad 1 a 3**',
+        fecha: '2026-08-21',
+        hora: '11:00',
+      }),
+    )
+
+    expect(updateMock).toHaveBeenCalledWith({
+      where: { id: 'evento-1' },
+      data: expect.objectContaining({
+        titulo: 'Parcial 1 Modificado',
+        descripcion: 'Temas actualizados: **Unidad 1 a 3**',
+        hora: '11:00',
+      }),
+    })
+    expect(updateTagMock).toHaveBeenCalledWith('upcoming-events')
+    expect(updateTagMock).toHaveBeenCalledWith('subject:calculo')
+  })
+})
+

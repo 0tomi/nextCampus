@@ -182,7 +182,7 @@ export function ApunteModal({
         >
           <MarkdownEditor
             name="descripcion"
-            defaultValue={apunte?.descripcion ?? (apunte as unknown as { descripcionHtml?: string })?.descripcionHtml ?? ''}
+            defaultValue={apunte?.descripcion ?? ''}
             placeholder="Contenido o notas del apunte (Markdown soportado)..."
           />
         </CollapsibleFormSection>
