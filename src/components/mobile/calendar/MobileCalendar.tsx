@@ -6,7 +6,7 @@ import { getEventTone } from '@/components/mobile/shared/tokens'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { MobileEventDetailSheet } from './MobileEventDetailSheet'
-import { eventDateToLocal } from '@/lib/utils'
+import { cn, eventDateToLocal } from '@/lib/utils'
 import type { CommissionOption } from '@/lib/commission-preferences'
 import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import {
@@ -199,6 +199,7 @@ export function MobileCalendar({
   const [selected, setSelected] = useState<Date | null>(() =>
     initialSelected ? toLocalDate(initialSelected) : null,
   )
+  const [slideDirection, setSlideDirection] = useState<'prev' | 'next' | null>(null)
 
   const monthEvents = useMemo(() => {
     return (events ?? []).filter((e) => {
@@ -239,11 +240,13 @@ export function MobileCalendar({
   const monthEventsSorted = monthEvents.toSorted(byFechaHora)
 
   const goPrev = () => {
+    setSlideDirection('prev')
     const d = new Date(cursor)
     d.setMonth(d.getMonth() - 1)
     setCursor(d)
   }
   const goNext = () => {
+    setSlideDirection('next')
     const d = new Date(cursor)
     d.setMonth(d.getMonth() + 1)
     setCursor(d)
@@ -260,6 +263,7 @@ export function MobileCalendar({
         dayMap={dayMap}
         periodos={periodos}
         selected={selected}
+        slideDirection={slideDirection}
         today={today}
         onSelectDate={(date) => setSelected((current) => (current && sameDay(date, current) ? null : date))}
       />
@@ -330,6 +334,7 @@ function MobileCalendarCard({
   dayMap,
   periodos,
   selected,
+  slideDirection,
   today,
   onSelectDate,
 }: {
@@ -339,11 +344,12 @@ function MobileCalendarCard({
   dayMap: Record<number, MobileCalendarEvent[]>
   periodos: readonly PeriodoCalendario[]
   selected: Date | null
+  slideDirection: 'prev' | 'next' | null
   today: Date
   onSelectDate: (date: Date) => void
 }) {
   return (
-    <div className="mx-[18px] rounded-xl border border-white/5 bg-[#1a1a1a]" style={{ padding: '12px 10px 14px' }}>
+    <div className="mx-[18px] overflow-hidden rounded-xl border border-white/5 bg-[#1a1a1a]" style={{ padding: '12px 10px 14px' }}>
       <WeekdayStrip />
       <DayGrid
         accent={accent}
@@ -352,6 +358,7 @@ function MobileCalendarCard({
         dayMap={dayMap}
         periodos={periodos}
         selected={selected}
+        slideDirection={slideDirection}
         today={today}
         onSelectDate={onSelectDate}
       />
@@ -383,6 +390,7 @@ function DayGrid({
   dayMap,
   periodos,
   selected,
+  slideDirection,
   today,
   onSelectDate,
 }: {
@@ -392,11 +400,19 @@ function DayGrid({
   dayMap: Record<number, MobileCalendarEvent[]>
   periodos: readonly PeriodoCalendario[]
   selected: Date | null
+  slideDirection: 'prev' | 'next' | null
   today: Date
   onSelectDate: (date: Date) => void
 }) {
   return (
-    <div className="grid grid-cols-7 gap-0.5">
+    <div
+      key={`${cursor.getFullYear()}-${cursor.getMonth()}`}
+      className={cn(
+        'grid grid-cols-7 gap-0.5',
+        slideDirection === 'next' && 'fc-slide-next',
+        slideDirection === 'prev' && 'fc-slide-prev',
+      )}
+    >
       {cells.map((cell) => {
         const isToday = !cell.muted && sameDay(cell.date, today)
         const isSelected = !cell.muted && selected !== null && sameDay(cell.date, selected)

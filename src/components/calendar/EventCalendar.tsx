@@ -185,6 +185,8 @@ export function EventCalendar({
   onPeriodoClick,
 }: EventCalendarProps) {
   const calendarRef = useRef<FullCalendar>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const prevDateRef = useRef<Date | null>(null)
   const [currentTitle, setCurrentTitle] = useState('')
   const [currentMonthKey, setCurrentMonthKey] = useState('')
 
@@ -278,7 +280,7 @@ export function EventCalendar({
   const allCalendarEvents = [...periodoEvents, ...calendarEvents]
 
   return (
-    <DarkCard className={cn('overflow-hidden p-4 sm:p-6', className, editable && 'calendar-editable')}>
+    <DarkCard ref={containerRef} className={cn('overflow-hidden p-4 sm:p-6', className, editable && 'calendar-editable')}>
       {calendarEvents.length === 0 ? (
         <p className="mb-4 text-sm text-white/54">{emptyMessage}</p>
       ) : null}
@@ -358,6 +360,24 @@ export function EventCalendar({
           const year = start.getFullYear()
           const month = String(start.getMonth() + 1).padStart(2, '0')
           setCurrentMonthKey(`${year}-${month}`)
+
+          if (prevDateRef.current) {
+            const prevTime = prevDateRef.current.getTime()
+            const currTime = start.getTime()
+
+            if (currTime !== prevTime) {
+              const direction = currTime > prevTime ? 'next' : 'prev'
+              const gridBody = containerRef.current?.querySelector(
+                '.fc-daygrid-body',
+              ) as HTMLElement | null
+              if (gridBody) {
+                gridBody.classList.remove('fc-slide-prev', 'fc-slide-next')
+                void gridBody.offsetWidth
+                gridBody.classList.add(direction === 'next' ? 'fc-slide-next' : 'fc-slide-prev')
+              }
+            }
+          }
+          prevDateRef.current = start
         }}
         eventDidMount={(info) => {
           info.el.setAttribute('title', info.event.title)
