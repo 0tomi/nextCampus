@@ -25,12 +25,12 @@ interface SubjectForMobile {
   descripcion: string | null
   links: SubjectLinkDTO[]
   year: { id: string; slug: string; nombre: string; color?: string | null; career: { nombre: string } }
-  agenda: { id: string; eventos: Array<{ id: string; titulo: string; descripcionHtml: string | null; fecha: string; hora: string | null; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId?: string | null; commissionSlug?: string | null; commissionNombre?: string | null; createdByUserId?: string | null; createdByNombre?: string | null; apuntes?: RelatedApunteLink[] }> } | null
+  agenda: { id: string; eventos: Array<{ id: string; titulo: string; descripcion: string | null; fecha: string; hora: string | null; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId?: string | null; commissionSlug?: string | null; commissionNombre?: string | null; createdByUserId?: string | null; createdByNombre?: string | null; apuntes?: RelatedApunteLink[] }> } | null
   apuntes: Array<{
     id: string
     titulo: string
     slug: string
-    descripcionHtml: string | null
+    descripcion: string | null
     createdAt: string
     createdByUserId: string | null
     categorias: Array<{ id: string; nombre: string }>
@@ -59,7 +59,7 @@ interface TipoEvento {
 interface SubjectMobileEvent {
   id: string
   titulo: string
-  descripcionHtml: string | null
+  descripcion: string | null
   fecha: string
   hora: string | null
   tipoEventoId: string
@@ -240,7 +240,7 @@ export function MobileSubject({
             hora: e.hora,
             tipo: e.tipoEvento.nombre,
             tipoId: e.tipoEventoId,
-            descripcionHtml: e.descripcionHtml,
+            descripcion: e.descripcion,
             subjectId: subject.id,
             subjectSlug: subject.slug,
             materiaNombre: subject.nombre,

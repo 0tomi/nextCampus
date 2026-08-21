@@ -1,6 +1,6 @@
 # Supervisión y Validación
 
-El orquestador vigila activamente que cada fase quede bien hecha y que el plan completo sea coherente. La validación se ejecuta a dos niveles: por fase (con frecuencia ajustada a criticidad) y al final del plan (auditoría completa).
+El orquestador vigila activamente que cada fase quede bien hecha y que el plan completo sea coherente. La validación se ejecuta a dos niveles: por fase (con frecuencia ajustada a criticidad) y al final del plan (auditoría completa). Nada llega al historial de Git sin pasar por acá: el commit es la consecuencia de aprobar, nunca un trámite previo.
 
 ---
 
@@ -27,9 +27,11 @@ Ante la duda, marcar como crítica. Validar de más es barato; no validar una cr
 | Crítica | Inmediatamente, antes de delegar la siguiente fase |
 | Estándar | Puedo agrupar hasta 2 entregables y validar juntos |
 
+El batch de 2 estándar solo es posible si las fases se delegaron en paralelo con **alcances de archivos disjuntos** (condición para paralelizar — ver `registro_git.md`). Los cierres se commitean igual de a uno.
+
 Excepciones que rompen el batch (volver a validación inmediata):
 
-- El sub-agente reporta bloqueo o discrepancia.
+- El sub-agente reporta bloqueo, desviación o discrepancia.
 - La fase siguiente es crítica.
 - Sospecha de regresión.
 - Una fase tarda mucho — validar lo que haya y no esperar al par.
@@ -40,43 +42,71 @@ Cuando valido en batch dos fases que comparten dominio, también reviso que no s
 
 ## Qué verifico en cada validación
 
+La validación cruza tres fuentes: el criterio de cierre del plan, el reporte del sub-agente, y **el diff real del worktree**. El reporte se contrasta, no se cree a ciegas.
+
 - ¿El entregable cumple el criterio de cierre que declaré?
-- ¿Es coherente con el código existente y con lo que dicen las restricciones globales?
+- ¿`git status` coincide con "Archivos tocados" del reporte? Un archivo modificado que el reporte no menciona es una desviación oculta — investigar antes de decidir.
+- ¿Todo lo tocado cae dentro del alcance declarado? Lo que quedó fuera del alcance, ¿fue declarado y justificado?
+- ¿Es coherente con el código existente y con las restricciones globales?
 - ¿Los contratos compartidos siguen alineados con otras capas?
-- ¿El sub-agente tuvo que inferir algo crítico? Si sí, eso es señal de que el contexto que pasé fue insuficiente — corregirlo en próximas delegaciones.
+- ¿Aplicó las skills indicadas en la delegación, o la justificación para no seguirlas es sólida? Justificación floja = desviación.
+- ¿El sub-agente tuvo que inferir algo crítico? Si sí, el contexto que pasé fue insuficiente — corregirlo en próximas delegaciones.
 
 Decisión:
 
-- **Aprobada** → registrar cierre, avanzar.
-- **Aprobada con observaciones** → registrar cierre + deuda técnica, avanzar.
-- **Rechazada** → re-delegar con feedback (ver abajo).
-- **Bloqueada** → registrar bloqueo, escalar.
+- **Aprobada** → commit de cierre (`Estado: completada`), avanzar.
+- **Aprobada con deuda estructural justificada** → commit de cierre (`Estado: parcial`) con la deuda y su razón en el mensaje. Excepción, no rutina — ver política de deuda.
+- **Rechazada** → re-delegar con feedback (ver abajo). Sin commit.
+- **Bloqueada** → escalar al humano. Sin commit.
+
+---
+
+## Política de desviaciones
+
+La instrucción base de toda delegación es **apego estricto al plan**. Una desviación no es gratis por venir reportada: se evalúa.
+
+- **Reportada con justificación sólida** (destrababa la fase, el plan no cubría el caso, no había alternativa dentro del alcance) → se acepta y queda registrada en `Apego al plan` del commit, con la justificación. Si toca a fases siguientes, propagar la nota.
+- **Reportada con justificación floja o sin justificación** ("me pareció mejor", "aproveché a refactorizar") → rechazo. La re-delegación pide deshacer la desviación o justificarla en serio.
+- **Oculta** (aparece en el diff, no en el reporte) → rechazo directo, y el resto del reporte pierde credibilidad: validar esa fase con lupa o con verificador independiente.
+
+La jerarquía se mantiene: oculta es peor que reportada. Pero reportada ya no equivale a aceptada.
+
+---
+
+## Política de deuda: se resuelve en la fase
+
+La deuda no se acumula para el final — se corta donde nace.
+
+- **Deuda evitable** (TODOs resolubles ahora, tests que faltan, atajos sin razón): la fase **no se aprueba**. Re-delegar con la lista concreta de ítems a resolver. Esto no es un rechazo por mala ejecución sino un cierre incompleto; el feedback lo dice así.
+- **Deuda estructural justificada** (depende de una fase posterior, excede el alcance definido del plan, requiere decisión del humano): se acepta, la fase cierra como `parcial` y la deuda queda en el mensaje del commit con su razón. La auditoría final la retoma.
+
+`parcial` es excepción justificada, no estado rutinario. Si la mitad de las fases cierran parciales, el plan estaba mal dimensionado — replantearlo con el usuario vale más que seguir arrastrando.
 
 ---
 
 ## Verificación independiente (opcional)
 
-Para fases críticas o de mucho alcance, podés delegar la validación a un segundo sub-agente — el **verificador**. No es el default: consume tokens y en la mayoría de las fases tu revisión más el reporte del implementador alcanzan. Tratá esta herramienta como excepción, no como rutina.
+Para fases críticas o de mucho alcance, se puede delegar la validación a un segundo sub-agente — el **verificador**. No es el default: consume tokens y en la mayoría de las fases tu revisión más el reporte del implementador alcanzan. Excepción, no rutina.
 
 **Cuándo conviene**
 
-- Fase crítica que toca contratos, lógica sensible (pagos, auth, datos legales) o un patrón que se va a replicar.
+- Fase crítica que toca contratos, lógica sensible o un patrón que se va a replicar.
 - Fase grande con muchos archivos donde dudás de cubrir todo a ojo.
 - El implementador admite desviaciones que querés contrastar antes de aceptarlas.
-- Sospecha de regresión sutil que un vistazo rápido no detecta.
+- Se detectó una desviación oculta y el resto del entregable quedó bajo sospecha.
 
 **Cuándo no**
 
 - Fases estándar, localizadas, que seguís bien con una lectura.
 - Fases que ya validaste vos sin dudas.
-- Como code review genérico — el verificador chequea apego al plan, no opina sobre estilo o gustos.
+- Como code review genérico — el verificador chequea apego al plan, no opina sobre estilo.
 
-**Qué le pasás al verificador**
+**Qué le pasás**
 
-- Ruta del archivo del plan + las mismas claves que recibió el implementador (`F2`, `R1`, `R3`…).
-- El reporte completo que devolvió el implementador.
-- Lista de archivos tocados (de "Archivos tocados" del reporte).
-- Pregunta concreta y acotada: *"¿el entregable cumple el criterio de cierre declarado en `F2`, respeta los archivos en alcance, y honra las restricciones globales `R1, R3`? Si encontrás desvíos, listá archivo + qué desvía."*
+- El contenido de la fase y las restricciones que aplican (los mismos que recibió el implementador).
+- El reporte completo del implementador.
+- El diff a revisar (`git diff` del worktree, o la lista de archivos tocados).
+- Pregunta concreta y acotada: *"¿el entregable cumple el criterio de cierre declarado, respeta el alcance de archivos, y honra las restricciones? Si encontrás desvíos, listá archivo + qué desvía."*
 
 **Qué te devuelve**
 
@@ -84,97 +114,89 @@ Confirmación corta o lista de desvíos concretos (archivo + qué desvía + por 
 
 **Qué hacés con el resultado**
 
-- *Confirma sin desvíos* → cerrás la fase normal.
-- *Encuentra desvíos menores* → los registrás como deuda en el cierre y avanzás.
-- *Encuentra desvíos sustanciales* → re-delegás al implementador con feedback puntual, o los resolvés vos si son chicos.
+- *Confirma sin desvíos* → commit de cierre normal.
+- *Desvíos menores con justificación válida* → constan en el commit, avanzás.
+- *Desvíos sustanciales* → re-delegás al implementador con feedback puntual, o los resolvés vos si son chicos.
 - *Contradice al implementador* → revisás vos directo antes de decidir; el verificador puede equivocarse.
 
 **Tope práctico**
 
-A lo sumo una verificación independiente por plan mediano, dos o tres por plan grande. Si sentís que necesitás más, probablemente el plan está mal dimensionado o las fases están mal acotadas — replantear vale más que sumar verificadores.
+A lo sumo una verificación independiente por plan mediano, dos o tres por plan grande. Si sentís que necesitás más, el plan está mal dimensionado o las fases mal acotadas — replantear vale más que sumar verificadores.
 
 ---
 
 ## Re-delegación tras rechazo
 
-1. **Registrar el rechazo en el archivo del plan** con motivo concreto antes de re-delegar. Esto deja huella si el contexto se compacta entre intentos: estado de la fase pasa a `rechazada` y se agrega un evento al `historial` con el motivo.
+1. **Anotar el motivo del rechazo** (en el contexto de trabajo del orquestador): va a terminar como línea de `Intentos` en el commit de cierre eventual de la fase, así la traza queda en el historial sin commits intermedios.
 
-2. **Decidir el responsable**: ¿el sub-agente ejecutó mal o yo delegué mal? Cambia el approach del nuevo prompt y evita culpar al sub-agente cuando el problema es mío.
+2. **Decidir el responsable**: ¿el sub-agente ejecutó mal o yo delegué mal? Cambia el approach del nuevo prompt y evita culpar al sub-agente cuando el problema es mío (contexto insuficiente, alcance ambiguo, skill que no correspondía).
 
-3. **Re-delegar pasando**:
-   - Motivo del rechazo.
-   - Qué corregir específicamente.
-   - Qué del intento previo sí está bien (si aplica) — para que no rehaga lo correcto.
+3. **Decidir qué hacer con el worktree**: si el intento previo tiene partes rescatables, se conservan y la re-delegación las nombra como base; si está todo mal, limpiar antes de re-delegar (`git checkout -- <alcance>`) para que el nuevo intento arranque de cero real.
 
-4. El resto de la delegación se mantiene igual.
+4. **Re-delegar pasando**: motivo del rechazo, qué corregir específicamente, qué del intento previo sí está bien (si aplica). El resto de la delegación — contrato incluido — se mantiene igual.
 
-**Límite**: tres rechazos sin éxito → marcar fase como `bloqueada` y escalar al humano con resumen de los intentos. No insistir indefinidamente.
+**Límite**: tres rechazos sin éxito → escalar al humano con resumen de los intentos y motivos. Sin commit: la fase bloqueada no llega al historial. No insistir indefinidamente.
 
 ---
 
-## Estados zombie
+## Fases zombie
 
-Una fase queda zombie cuando está marcada `en_curso` en el archivo del plan pero no tiene bloque `cierre` correspondiente. Pasa por crashes, compactaciones, sesiones interrumpidas.
+Una fase queda zombie cuando fue delegada, el worktree tiene cambios, pero no existe commit de cierre — típicamente por crash, compactación o sesión interrumpida entre la delegación y la validación.
 
-Detección al recuperar sesión: por cada fase en `en_curso`, verificar si existe su bloque `cierre`. Si no existe, es zombie.
+Detección al recuperar sesión: la próxima fase según el historial figura como no cerrada, pero `git status` muestra un worktree sucio con archivos dentro de su alcance.
 
 Resolución:
 
-- Si hay entregable parcial recuperable: validarlo, decidir si completar o re-delegar.
-- Si no hay nada: marcar como `parcial`, re-delegar limpio mencionando que el intento previo no completó.
+- Si el trabajo parcial es evaluable: validarlo como un entregable más (sin reporte, con más cuidado — el diff es la única fuente). Completo → commitear cierre anotando la situación en el mensaje. Incompleto pero rescatable → re-delegar nombrando lo hecho como base.
+- Si no se puede evaluar con confianza: limpiar el alcance y re-delegar de cero, mencionando que hubo un intento previo que no completó.
 
 ---
 
 ## Auditoría final
 
-Cuando todas las fases reportan estado de cierre, **el plan no termina ahí**. Antes de cerrar, ejecutar una auditoría que verifica el conjunto.
+Cuando todas las fases tienen commit de cierre, **el plan no termina ahí**. Antes de cerrar, auditar el conjunto:
 
 **Cobertura del objetivo**
-- ¿Todo lo que el plan se proponía está cubierto por alguna fase completada?
+- ¿Todo lo que el plan se proponía está cubierto por alguna fase cerrada?
 - ¿Hay objetivos parciales sin cubrir?
 
 **Consistencia inter-fases**
-- ¿Algún archivo fue tocado por fases que no debían interactuar?
+- ¿Algún archivo fue tocado por fases que no debían interactuar? (`git log --stat` de la rama lo muestra rápido.)
 - ¿Algún contrato compartido quedó modificado por una fase y no propagado a las que lo consumen?
-- ¿La arquitectura final coincide con las restricciones globales declaradas?
+- ¿La arquitectura final coincide con las restricciones globales del plan?
 
 **Desvíos**
-- ¿Alguna fase introdujo cambios fuera de su alcance?
-- ¿Hay supuestos contradictorios entre fases?
+- Revisar los `Apego al plan` de los commits: ¿las desviaciones aceptadas, en conjunto, siguen siendo coherentes entre sí?
 
-**Deuda acumulada**
-- Listar lo que quedó pendiente, separar lo bloqueante de lo postergable.
+**Deuda residual**
+- Recolectar los `Deuda` de los commits `parcial`. Separar bloqueante de postergable.
 
-Si la auditoría detecta **inconsistencias bloqueantes**, no se cierra el plan: se abre fase de remediación o se escala al humano.
+Resultado según lo que encuentre:
 
-Si la auditoría detecta deuda no bloqueante, el plan **tampoco** se cierra dejándola flotando — pasar a la sección siguiente.
+- **Inconsistencias bloqueantes** → el plan no cierra: fase de remediación o escalar al humano.
+- **Correcciones concretas a hacer** (deuda a levantar, inconsistencias resolubles) → pasar a resolución de deuda; ese trabajo genera su propio commit de cleanup.
+- **Nada que corregir** → **no hay commit de auditoría**: el resultado (cobertura, consistencia, deuda postergada con razón) se reporta al usuario en la conversación y el plan queda cerrado, listo para que el humano decida el merge de la rama.
 
 ---
 
-## Resolución de deuda acumulada
+## Resolución de deuda residual
 
-La auditoría lista la deuda; el cierre la resuelve o la acepta con razón. Antes de marcar `completado`, decidís ítem por ítem:
+Con la política por fase, lo que llega acá es solo deuda estructural que dependía de fases posteriores o excedía alcances. Decidir ítem por ítem:
 
-- **Levantar ahora** — entra al cierre del plan.
-- **Postergar con razón** — queda registrada en `auditoria.deuda` con justificación concreta de por qué se posterga (no "lo vemos después" genérico).
+- **Levantar ahora** — se resuelve antes de cerrar el plan.
+- **Postergar con razón** — queda en el reporte final al usuario con justificación concreta (no "lo vemos después" genérico).
 - **Bloqueante** — el plan no cierra hasta resolverla.
 
-Cómo levantar la deuda que decidís resolver depende de volumen y criticidad:
+Cómo levantar lo que se decide resolver, según volumen y criticidad:
 
-- **Poca y acotada** (un par de ítems, mismo dominio, sin riesgo de tocar lo ya validado) → delegá una mini-fase de cleanup a un sub-agente. La lista de deuda es el contenido operativo; el criterio de cierre es "todos los ítems resueltos o marcados inviables con razón". Tratala como una fase más: validás el entregable al volver.
-
-- **Crítica o voluminosa** (toca contratos sensibles, cruza dominios, son muchos ítems, o el riesgo de regresión es alto) → la encarás vos como orquestador. La razón es práctica: coordinar sub-agentes para levantar deuda crítica cuesta más que resolverla con contexto completo en la mano, y tu atención vale más que la velocidad cuando lo crítico está en juego.
-
-- **Tan grande que es su propio plan** (varias fases, múltiples dominios, supera el alcance original) → no la fuerces dentro del cierre. Cerrá el plan actual como `parcial` con la deuda documentada en `auditoria.deuda` y arrancá un plan nuevo para resolverla. Forzar un cleanup grande dentro del cierre rompe la trazabilidad y desdibuja el alcance del plan original.
-
-Tras resolver la deuda que decidiste levantar, registrar en `auditoria` qué se resolvió y qué quedó postergado. **Recién ahí** el orquestador rellena el bloque `auditoria`, pasa `estado_global.estado` a `completado` y agrega el evento `plan_cerrado` al `historial`.
-
-Si la deuda se resolvió delegando un cleanup, también registrar la mini-fase en `historial` (evento `cleanup_deuda` con resumen de qué se levantó) para mantener traza.
+- **Poca y acotada** (un par de ítems, mismo dominio, sin riesgo de tocar lo validado) → delegar una mini-fase de cleanup. La lista de deuda es el contenido operativo; el criterio de cierre es "todos los ítems resueltos o marcados inviables con razón". Se valida y commitea como una fase más (`Fase: cleanup`).
+- **Crítica o voluminosa** (contratos sensibles, cruza dominios, riesgo de regresión alto) → la encara el orquestador directo: coordinar sub-agentes para deuda crítica cuesta más que resolverla con contexto completo en la mano. El resultado igual se commitea como cleanup.
+- **Tan grande que es su propio plan** → no forzarla dentro del cierre. Cerrar este plan reportando la deuda documentada y proponer al usuario un plan nuevo (con su propia rama) para resolverla.
 
 ---
 
 ## Dry-run (opcional)
 
-Para planes complejos o sensibles, generar el preview completo de delegaciones planeadas (sub-agente, criticidad, archivos, criterio de cierre por cada fase) y presentarlo al humano antes de delegar la primera. Si el humano ajusta algo, actualizar las entradas de fase en el archivo del plan antes de empezar.
+Para planes complejos o sensibles, generar el preview completo de delegaciones planeadas (sub-agente, criticidad, alcance, skills mapeadas, criterio de cierre por fase) y presentarlo al humano antes de crear la rama y delegar la primera. Si el humano ajusta algo, esos ajustes van directo a las delegaciones (el archivo de plan es del usuario; si quiere, los anota él ahí).
 
 No es obligatorio. Útil cuando el costo de equivocarse es alto.

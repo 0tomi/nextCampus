@@ -1,0 +1,135 @@
+plan: migracion-markdown-descripciones
+meta:
+  objetivo: Migrar descripciones de Apuntes y Eventos de HTML enriquecido a Markdown nativo, eliminando código y dependencias legacy (TipTap, SafeHtml, RichTextEditor).
+  dominio: fullstack (datos + backend + frontend + qa)
+  creado: 2026-08-21T15:35:00-03:00
+  fases_totales: 5
+
+restricciones:
+  R1:
+    titulo: No romper datos existentes ni slugs
+    contenido: |
+      La migración de columnas en PostgreSQL debe renombrar `descripcionHtml` a `descripcion` sin pérdida de registros. No alterar slugs de materias ni apuntes.
+  R2:
+    titulo: Cero dependencias legacy de TipTap
+    contenido: |
+      Al finalizar el plan, no debe quedar ningún archivo ni import de `@tiptap/*` ni `RichTextEditor.tsx`.
+  R3:
+    titulo: Renderizado seguro sin dangerouslySetInnerHTML
+    contenido: |
+      El renderizado de Markdown debe usar un AST seguro (con `react-markdown` y `remark-gfm`) con links externos protegidos (`target="_blank"`, `rel="noopener noreferrer nofollow"`).
+  R4:
+    titulo: Convención de commits y verificación
+    contenido: |
+      Seguir Conventional Commits sin mención a IA ni co-authored-by. Cada entrega debe pasar validación de tipos y tests.
+
+fases:
+  F1:
+    nombre: Dependencias y Esquema de Base de Datos
+    dominio: datos
+    criticidad: critica
+    objetivo: Renombrar `descripcionHtml` a `descripcion` en Prisma (modelos `Apunte` y `Evento`), correr prisma generate/migrate e instalar `react-markdown` y `remark-gfm`.
+    archivos_alcance:
+      permitidos:
+        - prisma/schema.prisma
+        - prisma/migrations/
+        - package.json
+        - pnpm-lock.yaml
+      prohibidos:
+        - src/components/
+    criterio_cierre: Schema Prisma actualizado, cliente generado y paquetes listos en package.json.
+    dependencias: []
+    estado: pendiente
+
+  F2:
+    nombre: Componente SafeMarkdown y MarkdownEditor
+    dominio: frontend
+    criticidad: critica
+    objetivo: Crear SafeMarkdown.tsx (reemplazo de SafeHtml) y MarkdownEditor.tsx (reemplazo de RichTextEditor) con toolbar y preview.
+    archivos_alcance:
+      permitidos:
+        - src/components/ui/SafeMarkdown.tsx
+        - src/components/ui/SafeHtml.tsx
+        - src/components/admin/MarkdownEditor.tsx
+        - src/components/admin/RichTextEditor.tsx
+      prohibidos:
+        - src/app/admin/actions/
+    criterio_cierre: SafeMarkdown y MarkdownEditor creados y testeables; SafeHtml y RichTextEditor eliminados.
+    dependencias: [F1]
+    estado: pendiente
+
+  F3:
+    nombre: Server Actions, Sanitización y Modales Admin
+    dominio: backend
+    criticidad: critica
+    objetivo: Actualizar acciones de apuntes y eventos para usar `descripcion`, adaptar ApunteModal y EventModal, limpiar sanitize.ts y desinstalar @tiptap/*.
+    archivos_alcance:
+      permitidos:
+        - src/app/admin/actions/apuntes.ts
+        - src/app/admin/actions/eventos.ts
+        - src/components/admin/ApunteModal.tsx
+        - src/components/admin/EventModal.tsx
+        - src/lib/sanitize.ts
+        - package.json
+        - pnpm-lock.yaml
+      prohibidos:
+        - src/app/[yearSlug]/
+    criterio_cierre: Server actions y modales guardan y editan campo descripcion; @tiptap desinstalado.
+    dependencias: [F2]
+    estado: pendiente
+
+  F4:
+    nombre: Consumo Frontend en Feeds, Calendario y Vistas
+    dominio: frontend
+    criticidad: estandar
+    objetivo: Actualizar todas las vistas y componentes que consumían descripcionHtml para usar SafeMarkdown y campo descripcion.
+    archivos_alcance:
+      permitidos:
+        - src/app/[yearSlug]/[subjectSlug]/apuntes/[apunteSlug]/page.tsx
+        - src/components/apuntes/ApuntesFeed.tsx
+        - src/components/calendar/EventCalendar.tsx
+        - src/components/calendar/EventCalendarAdmin.tsx
+        - src/components/home/HomeGlobalCalendar.tsx
+        - src/components/mobile/calendar/MobileEventDetailSheet.tsx
+        - src/components/mobile/calendar/MobileCalendar.tsx
+        - src/components/mobile/home/MobileHome.tsx
+        - src/components/subject/SubjectEventsSection.tsx
+        - src/components/year/YearOverviewEvents.tsx
+    criterio_cierre: Todas las vistas compilan y renderizan descripciones con SafeMarkdown.
+    dependencias: [F3]
+    estado: pendiente
+
+  F5:
+    nombre: Actualización de Tests y Verificación Integral
+    dominio: qa
+    criticidad: critica
+    objetivo: Actualizar tests unitarios y de integración para descripcion, agregar tests para SafeMarkdown y validar `pnpm check`.
+    archivos_alcance:
+      permitidos:
+        - src/app/admin/actions.test.ts
+        - src/app/admin/actions/eventos.test.ts
+        - src/components/home/HomeGlobalCalendar.test.tsx
+        - src/components/subject/SubjectEventsSection.test.tsx
+        - src/components/year/YearOverviewEvents.test.tsx
+        - src/components/ui/SafeMarkdown.test.tsx
+        - src/lib/sanitize.test.ts
+      prohibidos: []
+    criterio_cierre: 100% de la suite de tests pasando (pnpm test) y typecheck limpio (pnpm check).
+    dependencias: [F4]
+    estado: pendiente
+
+estado_global:
+  estado: en_curso
+  fases:
+    F1: pendiente
+    F2: pendiente
+    F3: pendiente
+    F4: pendiente
+    F5: pendiente
+
+auditoria: null
+
+historial:
+  - timestamp: 2026-08-21T15:35:00-03:00
+    evento: plan_creado
+    detalle: Plan inicializado con 5 fases para orquestación con sub-agentes.

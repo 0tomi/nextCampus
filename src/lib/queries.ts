@@ -50,7 +50,7 @@ function unwrapRelatedApuntes(apuntes: readonly { apunte: RelatedApunte }[]): Re
 const eventoSelect = {
   id: true,
   titulo: true,
-  descripcionHtml: true,
+  descripcion: true,
   fecha: true,
   hora: true,
   createdByUserId: true,
@@ -86,7 +86,7 @@ type QueryCommission = {
 type QueryEvent = {
   id: string
   titulo: string
-  descripcionHtml: string
+  descripcion: string
   fecha: string
   hora: string | null
   createdByUserId: string | null
@@ -232,7 +232,7 @@ const apunteCardSelect = {
   id: true,
   titulo: true,
   slug: true,
-  descripcionHtml: true,
+  descripcion: true,
   createdAt: true,
   createdByUserId: true,
   recursos: {
@@ -489,7 +489,7 @@ export async function getApuntePageBySlug(subjectSlug: string, apunteSlug: strin
           id: true,
           titulo: true,
           slug: true,
-          descripcionHtml: true,
+          descripcion: true,
           createdAt: true,
           createdBy: { select: { nombreUsuario: true } },
           categorias: {
@@ -685,7 +685,7 @@ export async function getHomeCalendarEvents() {
     select: {
       id: true,
       titulo: true,
-      descripcionHtml: true,
+      descripcion: true,
       fecha: true,
       hora: true,
       tipoEventoId: true,

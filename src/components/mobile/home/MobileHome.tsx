@@ -53,7 +53,7 @@ interface TipoEvento {
 interface UpcomingEvent {
   id: string
   titulo: string
-  descripcionHtml: string | null
+  descripcion: string | null
   fecha: string
   hora: string | null
   tipo: string
@@ -186,7 +186,7 @@ export function MobileHome({
       hora: event.hora,
       tipo: event.tipo,
       tipoId: event.tipoId,
-      descripcionHtml: event.descripcionHtml,
+      descripcion: event.descripcion,
       subjectId: event.subjectId,
       subjectSlug: event.subjectSlug,
       materiaNombre: event.subjectNombre,

@@ -63,7 +63,7 @@ interface NextEvent {
   subjectSlug: string
   subjectNombre: string
   materiaNombre: string
-  descripcionHtml?: string | null
+  descripcion?: string | null
   commissionId?: string | null
   commissionSlug?: string | null
   commissionNombre?: string | null
@@ -116,7 +116,7 @@ function toEventDetail(event: NextEvent, year: YearForMobile): MobileCalendarEve
     hora: event.hora,
     tipo: event.tipo,
     tipoId: event.tipoId,
-    descripcionHtml: event.descripcionHtml ?? null,
+    descripcion: event.descripcion ?? null,
     subjectId: event.subjectId,
     subjectSlug: event.subjectSlug,
     materiaNombre: event.materiaNombre || event.subjectNombre,

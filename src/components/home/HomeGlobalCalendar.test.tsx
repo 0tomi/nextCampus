@@ -47,7 +47,7 @@ function makeEvent(
     subjectSlug: 'calculo',
     subjectId: 'subject-1',
     materiaNombre: 'Cálculo',
-    descripcionHtml: '<p>Temas 1 y 2</p>',
+    descripcion: '<p>Temas 1 y 2</p>',
     commissionSlug: 'comision-a',
     commissionNombre: 'Comisión A',
     ...overrides,

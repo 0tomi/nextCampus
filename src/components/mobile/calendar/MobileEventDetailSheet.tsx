@@ -9,7 +9,7 @@ import { EventModal } from '@/components/admin/EventModal'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { Sheet } from '@/components/ui/Sheet'
 import { AlertDialog } from '@/components/ui/AlertDialog'
-import { SafeHtml } from '@/components/ui/SafeHtml'
+import { SafeMarkdown } from '@/components/ui/SafeMarkdown'
 import { deleteEvento } from '@/app/admin/actions/eventos'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { getEventTone } from '@/components/mobile/shared/tokens'
@@ -161,14 +161,14 @@ export function MobileEventDetailSheet({
               </div>
             ) : null}
 
-            {event.descripcionHtml ? (
+            {event.descripcion ? (
               <div className="space-y-2">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/50">
                   Descripción
                 </p>
-                <SafeHtml
+                <SafeMarkdown
                   className="rounded-xl border border-white/6 bg-white/[0.025] px-4 py-3 text-sm leading-7 text-white/68 [&_a]:cursor-pointer [&_a]:text-red-300 [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
-                  html={event.descripcionHtml}
+                  content={event.descripcion}
                 />
               </div>
             ) : (
@@ -239,7 +239,7 @@ export function MobileEventDetailSheet({
             subjectId: event.subjectId,
             subjectSlug: event.subjectSlug ?? effectiveSubjectSlug,
             materiaNombre: event.materiaNombre,
-            descripcionHtml: event.descripcionHtml,
+            descripcion: event.descripcion,
             commissionId: event.commissionId,
             commissionSlug: event.commissionSlug,
             commissionNombre: event.commissionNombre,

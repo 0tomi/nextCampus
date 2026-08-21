@@ -9,7 +9,6 @@ import {
   requireYearAdminForCommissionId,
   requireYearAdminForEventoId,
 } from '@/lib/auth'
-import { sanitizeRichHtml } from '@/lib/sanitize'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
 import { awardEventoCreated, revokeEventoCreated } from '@/lib/contributions'
 import {
@@ -44,7 +43,7 @@ const eventoSchema = z.object({
   commissionId: optionalEntityIdSchema,
   tipoEventoId: z.string().trim().min(1),
   titulo: z.string().trim().min(1).max(200),
-  descripcionHtml: z.string().max(20000).default(''),
+  descripcion: z.string().max(20000).default(''),
   // Día calendario "YYYY-MM-DD" (sin hora). La hora va aparte y es opcional.
   fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha no es válida.'),
   hora: horaSchema,
@@ -129,12 +128,13 @@ async function resolveAgendaTarget(input: {
 }
 
 export async function createEvento(formData: FormData): Promise<void> {
+  const rawDescripcion = formData.get('descripcion') ?? formData.get('descripcionHtml') ?? ''
   const data = eventoSchema.parse({
     agendaId: formData.get('agendaId'),
     commissionId: formData.get('commissionId'),
     tipoEventoId: formData.get('tipoEventoId'),
     titulo: formData.get('titulo'),
-    descripcionHtml: formData.get('descripcionHtml') ?? '',
+    descripcion: typeof rawDescripcion === 'string' ? rawDescripcion : '',
     fecha: formData.get('fecha'),
     hora: formData.get('hora'),
   })
@@ -155,7 +155,7 @@ export async function createEvento(formData: FormData): Promise<void> {
       agendaId: scope.agendaId,
       tipoEventoId: data.tipoEventoId,
       titulo: data.titulo,
-      descripcionHtml: sanitizeRichHtml(data.descripcionHtml),
+      descripcion: data.descripcion.trim(),
       fecha: fechaToDbDate(data.fecha),
       hora: data.hora,
       createdByUserId: scope.admin.id,
@@ -251,12 +251,13 @@ export async function updateEventoFechaAction(
 
 export async function updateEvento(formData: FormData): Promise<void> {
   const id = z.string().min(1).parse(formData.get('id'))
+  const rawDescripcion = formData.get('descripcion') ?? formData.get('descripcionHtml') ?? ''
   const data = eventoSchema.parse({
     agendaId: formData.get('agendaId'),
     commissionId: formData.get('commissionId'),
     tipoEventoId: formData.get('tipoEventoId'),
     titulo: formData.get('titulo'),
-    descripcionHtml: formData.get('descripcionHtml') ?? '',
+    descripcion: typeof rawDescripcion === 'string' ? rawDescripcion : '',
     fecha: formData.get('fecha'),
     hora: formData.get('hora'),
   })
@@ -293,7 +294,7 @@ export async function updateEvento(formData: FormData): Promise<void> {
         agendaId: targetScope.agendaId,
         tipoEventoId: data.tipoEventoId,
         titulo: data.titulo,
-        descripcionHtml: sanitizeRichHtml(data.descripcionHtml),
+        descripcion: data.descripcion.trim(),
         fecha: fechaToDbDate(data.fecha),
         hora: data.hora,
       },

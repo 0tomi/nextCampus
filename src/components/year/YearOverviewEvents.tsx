@@ -12,7 +12,7 @@ import {
 } from '@/components/admin/SubjectPageAdminOverlay'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { formatEventDateTime } from '@/lib/utils'
-import { SafeHtml } from '@/components/ui/SafeHtml'
+import { SafeMarkdown } from '@/components/ui/SafeMarkdown'
 import { RelatedApunteLinks, type RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import {
   filterEventsByPreferredCommission,
@@ -45,7 +45,7 @@ interface YearOverviewEvent {
   subjectSlug: string
   subjectId: string
   materiaNombre: string
-  descripcionHtml?: string | null
+  descripcion?: string | null
   tituloOriginal?: string
   commissionId?: string | null
   commissionSlug?: string | null
@@ -205,10 +205,10 @@ export function YearOverviewEvents({
                   </div>
                 </div>
 
-                {evento.descripcionHtml ? (
-                  <SafeHtml
+                {evento.descripcion ? (
+                  <SafeMarkdown
                     className="mt-3 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
-                    html={evento.descripcionHtml}
+                    content={evento.descripcion}
                   />
                 ) : null}
               </DarkCard>

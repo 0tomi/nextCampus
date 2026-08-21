@@ -61,18 +61,20 @@ Mix shapes if it helps (e.g. a decision section followed by phases). The shape s
 
 These pieces usually matter. Include the ones that earn their place. A 3-line bug fix doesn't need a non-goals section; a refactor across services does.
 
+- **Context** — the problem, in 2–4 lines: what's broken or missing today, and why it's worth solving now. It opens the plan; an executor picking it up cold shouldn't need the conversation to understand why the work exists.
 - **Goal** — what gets built, end state in 2–5 lines.
+- **Done when** — one verifiable criterion for the plan as a whole. Anyone (or anything) checking on the plan later should be able to answer "is it finished?" from this line, without re-reading every unit.
 - **Non-goals** — what's explicitly out of scope. Worth including when scope drift is plausible.
 - **Assumptions / unknowns** — what the plan takes for granted and what it doesn't know yet. Flag the ones that, if wrong, invalidate the plan.
 - **Affected surface** — files / modules touched, with state (Create / Modify / Delete / Review). Listed once for the whole plan; units of work reference it instead of repeating.
 - **Risks** — what can break. Cross-cutting risks at the top, unit-specific risks inside the unit.
 - **Sizing** — S / M / L with a one-line why. For the plan as a whole and, when relevant, per unit. See sizing notes below.
-- **Units of work** — phases / parts / roadmap items. Each one needs enough to be executable: a clear goal, the tasks, what proves it's done.
+- **Units of work** — phases / parts / roadmap items. Each one needs enough to be executable: a clear goal, the tasks, what proves it's done. In sequential shapes the dependency on the previous unit is implicit; when the ordering isn't strictly linear (a unit depends on an earlier one, not its immediate predecessor), say so with a `Depends on` line — that's structure the plan already knows, and the reader shouldn't have to infer it.
 - **Execution notes** — only if non-obvious: order rule, what to do if validation fails, anything an executor needs that isn't already in the units.
 
 For each unit of work, the ingredients that usually matter: a one-sentence goal, the concrete tasks (verb-led, executable), what files it touches (by reference to the affected surface), how to know it's done (validation), and what could break (risks). For parallel-ready plans, add inputs/outputs as a contract — see the orchestration reference.
 
-Optionally, with the available skills already in mind (see step 2 above), for each unit ask whether one would genuinely help the work it describes. When it does, name it as a recommendation on that unit; when nothing fits, leave the field out. Don't list skills that only loosely relate, and don't add the field to every unit for symmetry. See `references/skills.md` for how to decide.
+With the available skills already in mind (see step 2 above), for each unit ask whether one would genuinely help the work it describes. When one does, the unit **absorbs** the skill — read it in full, design the unit's tasks and validation with it, and name it as the recommendation. When nothing fits, leave the field out. See `references/skills.md` for how to decide fit and what absorbing means.
 
 Skip ingredients that don't apply. A plan that says "Risks: none" because the unit truly has none is fine. A plan that hides risks is not.
 

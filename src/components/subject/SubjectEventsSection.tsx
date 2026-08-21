@@ -10,7 +10,7 @@ import {
   DeleteEventoButton,
 } from '@/components/admin/SubjectPageAdminOverlay'
 import { AdminControls } from '@/components/admin/AdminControls'
-import { SafeHtml } from '@/components/ui/SafeHtml'
+import { SafeMarkdown } from '@/components/ui/SafeMarkdown'
 import { UploaderByline } from '@/components/ui/UploaderByline'
 import { formatEventDateTime } from '@/lib/utils'
 import { RelatedApunteLinks, type RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
@@ -36,7 +36,7 @@ interface SubjectEventItem extends CommissionAwareEvent {
   titulo: string
   fecha: string
   hora: string | null
-  descripcionHtml: string | null
+  descripcion: string | null
   tipoEvento: {
     nombre: string
   }
@@ -168,7 +168,7 @@ export function SubjectEventsSection({
             tipo: evento.tipoEvento.nombre,
             tipoId: evento.tipoEventoId,
             materiaNombre: subject.nombre,
-            descripcionHtml: evento.descripcionHtml,
+            descripcion: evento.descripcion,
             tituloOriginal: evento.titulo,
             subjectSlug: subject.slug,
             subjectId: subject.id,
@@ -227,7 +227,7 @@ export function SubjectEventsSection({
                       tipo: evento.tipoEvento.nombre,
                       tipoId: evento.tipoEventoId,
                       materiaNombre: subject.nombre,
-                      descripcionHtml: evento.descripcionHtml,
+                      descripcion: evento.descripcion,
                       tituloOriginal: evento.titulo,
                       subjectSlug: subject.slug,
                       subjectId: subject.id,
@@ -276,10 +276,10 @@ export function SubjectEventsSection({
                     </div>
                   </div>
 
-                  {evento.descripcionHtml ? (
-                    <SafeHtml
+                  {evento.descripcion ? (
+                    <SafeMarkdown
                       className="pointer-events-auto mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
-                      html={evento.descripcionHtml ?? ''}
+                      content={evento.descripcion}
                     />
                   ) : null}
 

@@ -365,7 +365,7 @@ function EventModalContent({
 
         <EventDateTimeFields eventToEdit={eventToEdit} initialDate={initialDate} />
 
-        <EventDescriptionField defaultValue={eventToEdit?.descripcionHtml ?? ''} />
+        <EventDescriptionField defaultValue={eventToEdit?.descripcion ?? ''} />
 
         <FormError message={!state.ok ? state.message : ''} />
 
@@ -660,7 +660,7 @@ function EventDescriptionField({ defaultValue }: { defaultValue: string }) {
       </Label>
       <Textarea
         id="evento-descripcion"
-        name="descripcionHtml"
+        name="descripcion"
         rows={3}
         defaultValue={defaultValue}
         placeholder="Detalles del evento"

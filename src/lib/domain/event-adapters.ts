@@ -6,7 +6,7 @@ export type EventDateTime = {
 type EventWithCommissionMeta = {
   id: string
   titulo: string
-  descripcionHtml: string
+  descripcion: string
   fecha: string
   hora: string | null
   tipoEvento: { nombre: string }
@@ -50,7 +50,7 @@ export function toSubjectEvents<T extends EventWithCommissionMeta & { apuntes: R
     titulo: evento.titulo,
     fecha: evento.fecha,
     hora: evento.hora,
-    descripcionHtml: evento.descripcionHtml,
+    descripcion: evento.descripcion,
     tipoEvento: evento.tipoEvento,
     tipoEventoId: evento.tipoEventoId,
     commissionId: evento.commissionId,
@@ -65,7 +65,7 @@ export function toMobileEvents<T extends EventWithCommissionMeta>(events: readon
   return events.map((evento) => ({
     id: evento.id,
     titulo: evento.titulo,
-    descripcionHtml: evento.descripcionHtml,
+    descripcion: evento.descripcion,
     fecha: evento.fecha,
     hora: evento.hora,
     tipoEventoId: evento.tipoEventoId,

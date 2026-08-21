@@ -10,7 +10,7 @@ import { PeriodoDetailSheet } from '@/components/calendar/PeriodoDetailSheet'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { usePreferences } from '@/hooks/usePreferences'
 import { cn, formatEventDateTime, todayKeyAR } from '@/lib/utils'
-import { SafeHtml } from '@/components/ui/SafeHtml'
+import { SafeMarkdown } from '@/components/ui/SafeMarkdown'
 import { RelatedApunteLinks, type RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import type { UserPreferences } from '@/lib/preferences'
@@ -29,7 +29,7 @@ export interface HomeGlobalCalendarEvent {
   subjectSlug: string
   subjectId: string
   materiaNombre: string
-  descripcionHtml: string | null
+  descripcion: string | null
   commissionSlug: string | null
   commissionNombre: string | null
   apuntes?: RelatedApunteLink[]
@@ -89,7 +89,7 @@ export function HomeGlobalCalendar({
     subjectId: event.subjectId,
     subjectSlug: event.subjectSlug,
     materiaNombre: event.materiaNombre,
-    descripcionHtml: event.descripcionHtml,
+    descripcion: event.descripcion,
     commissionSlug: event.commissionSlug,
     commissionNombre: event.commissionNombre,
     apuntes: event.apuntes,
@@ -175,10 +175,10 @@ export function HomeGlobalCalendar({
                     {evento.titulo}
                   </h3>
 
-                  {evento.descripcionHtml ? (
-                    <SafeHtml
+                  {evento.descripcion ? (
+                    <SafeMarkdown
                       className="text-xs leading-relaxed text-white/55 line-clamp-2 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
-                      html={evento.descripcionHtml}
+                      content={evento.descripcion}
                     />
                   ) : null}
                   <RelatedApunteLinks apuntes={evento.apuntes} />

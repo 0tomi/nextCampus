@@ -19,7 +19,7 @@ function makeHomeEvent(overrides: Partial<RawHomeCalendarEvent> = {}): RawHomeCa
   return {
     id: 'event-1',
     titulo: 'Primer parcial',
-    descripcionHtml: '<p>Temas</p>',
+    descripcion: '<p>Temas</p>',
     fecha: '2026-06-10',
     hora: '09:00',
     tipoEventoId: 'tipo-1',

@@ -11,7 +11,9 @@ Use when work has true ordering and each step is worth pausing on.
 ```markdown
 # Plan: <name>
 
+**Context.** <2–4 lines: what's broken or missing today, why now>
 **Goal.** <2–4 lines>
+**Done when.** <one verifiable criterion for the whole plan>
 **Affected surface.** <files / modules with state>
 **Sizing.** M — touches HTTP, persistence, tests.
 **Risks.** <cross-cutting>
@@ -33,7 +35,7 @@ Use when work has true ordering and each step is worth pausing on.
 Phase N+1 starts only after N validates. If validation fails, fix in place; if an assumption broke, update the plan before continuing.
 ```
 
-The `Suggested skill` line is optional. Include it on a phase only when a skill clearly helps the work that phase does; leave it out of phases where nothing fits. See `references/skills.md`.
+The `Suggested skill` line is optional. Include it only on a phase that absorbed the skill — its tasks and validation already reflect it (see `references/skills.md`); leave it out of phases where nothing fits.
 
 ---
 
@@ -44,7 +46,9 @@ Use when the work splits cleanly by layer (frontend / backend / DB) and the orde
 ```markdown
 # Plan: <name>
 
+**Context.** <2–4 lines: what's broken or missing today, why now>
 **Goal.** <2–4 lines>
+**Done when.** <one verifiable criterion for the whole plan>
 **Affected surface.** <files with state>
 **Sizing.** M.
 **Assumptions.** <what holds across all parts>
@@ -81,6 +85,7 @@ Use when the work is small enough that phases would be theater. A numbered list 
 ```markdown
 # Plan: <name>
 
+**Context.** <1–2 lines: why this work exists>
 **Goal.** <1–2 lines>
 **Affected surface.** <2–4 files>
 **Sizing.** S.

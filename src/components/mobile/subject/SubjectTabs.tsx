@@ -41,7 +41,7 @@ interface SubjectTabsProps {
     id: string
     titulo: string
     slug: string
-    descripcionHtml: string | null
+    descripcion: string | null
     createdAt: string
     createdByUserId: string | null
     categorias: Array<{ id: string; nombre: string }>

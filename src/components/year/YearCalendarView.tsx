@@ -41,7 +41,7 @@ interface YearCalendarEvent {
   subjectSlug: string
   subjectId: string
   materiaNombre: string
-  descripcionHtml?: string | null
+  descripcion?: string | null
   tituloOriginal?: string
   commissionId?: string | null
   commissionSlug?: string | null
@@ -181,7 +181,7 @@ export function YearCalendarView({
                 tituloOriginal: event.tituloOriginal ?? event.titulo,
                 tipo: event.tipo,
                 tipoId: event.tipoId,
-                descripcionHtml: event.descripcionHtml,
+                descripcion: event.descripcion,
                 subjectId: event.subjectId,
                 subjectSlug: event.subjectSlug,
                 materiaNombre: event.materiaNombre,
