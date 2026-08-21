@@ -16,7 +16,7 @@ import { updateEventoFechaAction, deleteEvento } from '@/app/admin/actions/event
 import { cn, formatEventDateTime } from '@/lib/utils'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { RelatedApunteLinks } from '@/components/events/RelatedApunteLinks'
-import { SafeHtml } from '@/components/ui/SafeHtml'
+import { SafeMarkdown } from '@/components/ui/SafeMarkdown'
 import type { CommissionOption } from '@/lib/commission-preferences'
 import type { PeriodoCalendario } from '@/lib/periodos'
 
@@ -418,7 +418,7 @@ function EventMetaDetail({ label, value }: { label: string; value: string }) {
 }
 
 function EventDescription({ event }: { event: EventCalendarEvent }) {
-  if (!event.descripcionHtml) {
+  if (!event.descripcion) {
     return (
       <div className="border-t border-white/6 pt-5">
         <p className="text-sm text-white/30 italic">Sin descripción detallada.</p>
@@ -431,9 +431,9 @@ function EventDescription({ event }: { event: EventCalendarEvent }) {
       <span className="mb-2 block text-[10px] font-semibold uppercase tracking-wider text-white/30">
         Descripción
       </span>
-      <SafeHtml
+      <SafeMarkdown
         className="text-sm leading-7 text-white/70 [&_a]:text-red-400 [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
-        html={event.descripcionHtml}
+        content={event.descripcion}
       />
     </div>
   )

@@ -8,7 +8,7 @@ import { DeleteApunteButton } from '@/components/admin/SubjectPageAdminOverlay'
 import { ApunteRecursoView } from '@/components/apuntes/ApunteRecursoView'
 import { CopyApunteLinkButton } from '@/components/apuntes/CopyApunteLinkButton'
 import { DarkCard } from '@/components/ui/DarkCard'
-import { SafeHtml } from '@/components/ui/SafeHtml'
+import { SafeMarkdown } from '@/components/ui/SafeMarkdown'
 import { EditApunteButton } from '@/components/admin/EditApunteButton'
 import type { RecursoTipo } from '@/lib/recursos'
 
@@ -21,7 +21,7 @@ export interface ApunteFeedItem {
   id: string
   titulo: string
   slug: string
-  descripcionHtml: string | null
+  descripcion: string | null
   createdAt: string
   createdByUserId: string | null
   categorias: CategoriaItem[]
@@ -470,10 +470,10 @@ function DesktopContentCard({
                     ))}
                   </div>
                 ) : null}
-                {apunte.descripcionHtml ? (
-                  <SafeHtml
+                {apunte.descripcion ? (
+                  <SafeMarkdown
                     className="mt-2 line-clamp-1 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
-                    html={apunte.descripcionHtml}
+                    content={apunte.descripcion}
                   />
                 ) : null}
               </div>
@@ -490,7 +490,7 @@ function DesktopContentCard({
                     id: apunte.id,
                     titulo: apunte.titulo,
                     slug: apunte.slug,
-                    descripcionHtml: apunte.descripcionHtml ?? '',
+                    descripcion: apunte.descripcion ?? '',
                     recursos: apunte.recursos,
                     categorias: apunte.categorias,
                   }}
@@ -567,7 +567,7 @@ function ApunteCard({
                   id: apunte.id,
                   titulo: apunte.titulo,
                   slug: apunte.slug,
-                  descripcionHtml: apunte.descripcionHtml ?? '',
+                  descripcion: apunte.descripcion ?? '',
                   recursos: apunte.recursos,
                   categorias: apunte.categorias,
                 }}
@@ -578,7 +578,7 @@ function ApunteCard({
                 onClick={() => {
                   window.dispatchEvent(
                     new CustomEvent('open-admin-modal-edit-apunte', {
-                      detail: { apunte: { ...apunte, descripcionHtml: apunte.descripcionHtml ?? '' } },
+                      detail: { apunte: { ...apunte, descripcion: apunte.descripcion ?? '' } },
                     }),
                   )
                 }}
@@ -593,12 +593,12 @@ function ApunteCard({
         </AdminControls>
       </div>
 
-      {apunte.descripcionHtml ? (
-        <SafeHtml
+      {apunte.descripcion ? (
+        <SafeMarkdown
           className={variant === 'desktop'
             ? 'mt-4 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white'
             : 'text-sm leading-6 text-white/60 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white'}
-          html={apunte.descripcionHtml}
+          content={apunte.descripcion}
         />
       ) : null}
 

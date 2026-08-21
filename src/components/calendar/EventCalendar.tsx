@@ -30,7 +30,7 @@ export interface EventCalendarEvent {
   subjectSlug?: string
   subjectId?: string
   materiaNombre?: string
-  descripcionHtml?: string | null
+  descripcion?: string | null
   tituloOriginal?: string
   commissionId?: string | null
   commissionSlug?: string | null

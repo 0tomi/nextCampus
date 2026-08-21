@@ -120,7 +120,7 @@ export interface MobileCalendarEvent {
   tipo: string
   tipoId?: string
   tituloOriginal?: string
-  descripcionHtml?: string | null
+  descripcion?: string | null
   subjectId?: string
   subjectSlug?: string
   materiaNombre?: string

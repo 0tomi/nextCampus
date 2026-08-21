@@ -6,7 +6,7 @@ import { ApunteRecursoView } from '@/components/apuntes/ApunteRecursoView'
 import { CopyApunteLinkButton } from '@/components/apuntes/CopyApunteLinkButton'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { getApuntePageBySlug, getContentSlugsForStaticParams } from '@/lib/queries'
-import { SafeHtml } from '@/components/ui/SafeHtml'
+import { SafeMarkdown } from '@/components/ui/SafeMarkdown'
 import { UploaderByline } from '@/components/ui/UploaderByline'
 
 
@@ -127,10 +127,10 @@ export default async function ApuntePage({
                 <UploaderByline nombre={apunte.createdByNombre} className="mt-4" />
               ) : null}
 
-              {apunte.descripcionHtml ? (
-                <SafeHtml
+              {apunte.descripcion ? (
+                <SafeMarkdown
                   className="mt-5 space-y-3 text-base leading-7 text-white/66 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
-                  html={apunte.descripcionHtml}
+                  content={apunte.descripcion}
                 />
               ) : null}
             </DarkCard>
