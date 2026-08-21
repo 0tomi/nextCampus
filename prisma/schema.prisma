@@ -214,8 +214,8 @@ model Evento {
   tipoEvento      TipoEvento     @relation(fields: [tipoEventoId], references: [id], onDelete: Restrict)
   tipoEventoId    String
   titulo          String
-  /// HTML enriquecido y SANITIZADO (hipervínculos, formato). Nunca crudo.
-  descripcionHtml String         @default("")
+  /// Markdown enriquecido y sanitizado en texto plano.
+  descripcion     String         @default("")
   /// Solo fecha (sin hora). La hora vive aparte y es opcional.
   fecha           DateTime       @db.Date
   /// Hora opcional en formato "HH:mm" (24h). null = evento sin hora definida.
@@ -321,8 +321,8 @@ model Apunte {
   subjectId       String
   titulo          String
   slug            String
-  /// HTML enriquecido y SANITIZADO (links a Drive/Docs, formato).
-  descripcionHtml String            @default("")
+  /// Markdown enriquecido y sanitizado en texto plano.
+  descripcion     String            @default("")
   recursos        ApunteRecurso[]
   categorias      ApunteCategoria[]
   eventos         ApunteEvento[]
