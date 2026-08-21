@@ -433,7 +433,12 @@ function MapaVisualDetailsPanel({
             <h2 className="mt-2 text-2xl font-black leading-tight text-white">{selectedSubject.nombre}</h2>
             <p className="mt-2 text-xs font-bold uppercase tracking-widest text-white/38">{selectedSubject.codigo} · {selectedSubject.periodo}</p>
           </div>
-          <button type="button" onClick={onClose} className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-white/40 transition hover:bg-white/10 hover:text-white">
+          <button
+            type="button"
+            aria-label="Cerrar detalle de materia"
+            onClick={onClose}
+            className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-white/40 transition hover:bg-white/10 hover:text-white"
+          >
             <X className="size-4" />
           </button>
         </div>

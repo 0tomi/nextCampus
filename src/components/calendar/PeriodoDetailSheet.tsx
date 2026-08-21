@@ -4,22 +4,22 @@ import { Sheet } from '@/components/ui/Sheet'
 import { eventDateToLocal } from '@/lib/utils'
 import { type PeriodoCalendario } from '@/lib/periodos'
 
+const fullDateFormatter = new Intl.DateTimeFormat('es-AR', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+})
+
+const shortDateFormatter = new Intl.DateTimeFormat('es-AR', {
+  day: 'numeric',
+  month: 'long',
+})
+
 function formatRango(periodo: PeriodoCalendario): string {
-  const inicio = eventDateToLocal(periodo.fechaInicio).toLocaleDateString('es-AR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
+  const inicio = fullDateFormatter.format(eventDateToLocal(periodo.fechaInicio))
   if (periodo.fechaInicio === periodo.fechaFin) return inicio
-  const inicioCorto = eventDateToLocal(periodo.fechaInicio).toLocaleDateString('es-AR', {
-    day: 'numeric',
-    month: 'long',
-  })
-  const fin = eventDateToLocal(periodo.fechaFin).toLocaleDateString('es-AR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
+  const inicioCorto = shortDateFormatter.format(eventDateToLocal(periodo.fechaInicio))
+  const fin = fullDateFormatter.format(eventDateToLocal(periodo.fechaFin))
   return `${inicioCorto} – ${fin}`
 }
 

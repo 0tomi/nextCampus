@@ -27,11 +27,21 @@ import { eventDateToLocal } from '@/lib/utils'
 
 const emptyState: PeriodoActionState = { ok: false, message: '' }
 
+const rangeShortFormatter = new Intl.DateTimeFormat('es-AR', {
+  day: 'numeric',
+  month: 'short',
+})
+
+const rangeFullFormatter = new Intl.DateTimeFormat('es-AR', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+})
+
 function formatRange(fechaInicio: string, fechaFin: string): string {
-  const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
-  const inicio = eventDateToLocal(fechaInicio).toLocaleDateString('es-AR', opts)
+  const inicio = rangeShortFormatter.format(eventDateToLocal(fechaInicio))
   if (fechaInicio === fechaFin) return inicio
-  const fin = eventDateToLocal(fechaFin).toLocaleDateString('es-AR', { ...opts, year: 'numeric' })
+  const fin = rangeFullFormatter.format(eventDateToLocal(fechaFin))
   return `${inicio} – ${fin}`
 }
 
@@ -293,6 +303,7 @@ function PeriodoForm({
                   <button
                     key={tone}
                     type="button"
+                    aria-label={`Seleccionar tono ${tone}`}
                     onClick={() => setNewCatTone(tone)}
                     className={`group relative flex size-7 cursor-pointer items-center justify-center rounded-full border transition-all duration-[120ms] ${
                       isSelected

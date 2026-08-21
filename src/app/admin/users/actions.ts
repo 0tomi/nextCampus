@@ -45,8 +45,7 @@ const editAdminCampusSchema = z.object({
 function formYearIds(formData: FormData): string[] {
   return formData
     .getAll('yearIds')
-    .map((value) => String(value))
-    .filter(Boolean)
+    .flatMap((value) => (value ? [String(value)] : []))
 }
 
 async function validateYearIds(yearIds: string[]): Promise<string[]> {

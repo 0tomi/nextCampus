@@ -86,11 +86,11 @@ export function GlobalApunteSearch({ variant }: { variant: GlobalApunteSearchVar
       const response = await fetch(`/api/apuntes/search?q=${encodeURIComponent(query)}`, {
         signal: controller.signal,
       })
-      const body = (await response.json().catch(() => null)) as {
-        items?: ApunteSearchItem[]
-        error?: string
-      } | null
-      if (!response.ok) throw new Error(body?.error ?? 'No pudimos buscar ahora.')
+      if (!response.ok) {
+        const errBody = (await response.json().catch(() => null)) as { error?: string } | null
+        throw new Error(errBody?.error ?? 'No pudimos buscar ahora.')
+      }
+      const body = (await response.json().catch(() => null)) as { items?: ApunteSearchItem[] } | null
       if (searchControllerRef.current !== controller) return
       dispatch({ type: 'search-success', items: body?.items ?? [] })
     } catch (error) {
