@@ -95,4 +95,15 @@ Este texto tiene **negrita** e *itálica*.`
 
     expect(markup).toContain('custom-markdown-class')
   })
+
+  it('renderiza enlaces como span plano cuando stripLinks es true', () => {
+    const markdown = 'Visita [mi apunte](https://example.com) para más info'
+    const markup = renderToStaticMarkup(
+      <SafeMarkdown content={markdown} stripLinks />,
+    )
+
+    expect(markup).not.toContain('<a')
+    expect(markup).not.toContain('href=')
+    expect(markup).toContain('<span>mi apunte</span>')
+  })
 })

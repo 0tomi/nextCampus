@@ -48,7 +48,14 @@ export function DriveEmbed({
 
   const previewMode = inferDrivePreviewMode(parsed, title)
 
-  if (previewMode === 'thumbnail') {
+  // En tarjetas y feeds ('card' | 'content-card'), evitamos montar iframes pesados de Google Docs
+  // para preservar los 60 FPS y no saturar el compositor del navegador.
+  // El iframe interactivo completo se reserva para la vista de detalle ('wide').
+  if (variant !== 'wide' || previewMode === 'thumbnail') {
+    if (previewMode === 'fallback') {
+      return <DriveFallback href={url} title={title} variant={variant} />
+    }
+
     return (
       <DriveThumbnailPreview
         href={url}

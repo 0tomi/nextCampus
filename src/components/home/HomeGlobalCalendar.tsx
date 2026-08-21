@@ -177,7 +177,8 @@ export function HomeGlobalCalendar({
 
                   {evento.descripcion ? (
                     <SafeMarkdown
-                      className="text-xs leading-relaxed text-white/55 line-clamp-2 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
+                      stripLinks
+                      className="text-xs leading-relaxed text-white/55 line-clamp-2 [&_p]:m-0 [&_strong]:text-white"
                       content={evento.descripcion}
                     />
                   ) : null}

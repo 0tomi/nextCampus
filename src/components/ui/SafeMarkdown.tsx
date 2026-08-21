@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 export interface SafeMarkdownProps {
   content?: string | null
   className?: string
+  stripLinks?: boolean
 }
 
 function isSafeUrl(url?: string): boolean {
@@ -39,9 +40,18 @@ const markdownComponents: Components = {
   },
 }
 
+const markdownComponentsStripLinks: Components = {
+  ...markdownComponents,
+  a: ({ children }) => <span>{children}</span>,
+}
+
 const markdownPlugins = [remarkGfm]
 
-export function SafeMarkdown({ content, className }: SafeMarkdownProps) {
+export const SafeMarkdown = React.memo(function SafeMarkdown({
+  content,
+  className,
+  stripLinks = false,
+}: SafeMarkdownProps) {
   if (!content || !content.trim()) {
     return null
   }
@@ -55,10 +65,10 @@ export function SafeMarkdown({ content, className }: SafeMarkdownProps) {
     >
       <Markdown
         remarkPlugins={markdownPlugins}
-        components={markdownComponents}
+        components={stripLinks ? markdownComponentsStripLinks : markdownComponents}
       >
         {content}
       </Markdown>
     </div>
   )
-}
+})

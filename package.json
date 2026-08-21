@@ -21,7 +21,7 @@
     "changelog:notify": "tsx scripts/changelog-notification.ts",
     "backfill:contributions": "tsx prisma/backfill-contributions.ts",
     "backfill:banco-author": "tsx prisma/backfill-banco-subido-por-id.ts",
-    "doctor": "npx react-doctor@latest",
+    "doctor": "pnpm dlx react-doctor@latest",
     "prepare": "husky"
   },
   "prisma": {
