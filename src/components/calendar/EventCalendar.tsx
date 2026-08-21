@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState, useMemo } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin, { type DateClickArg } from '@fullcalendar/interaction'
@@ -185,6 +185,8 @@ export function EventCalendar({
   onPeriodoClick,
 }: EventCalendarProps) {
   const calendarRef = useRef<FullCalendar>(null)
+  const [currentTitle, setCurrentTitle] = useState('')
+  const [currentMonthKey, setCurrentMonthKey] = useState('')
 
   function handleEventDrop(info: { event: { id: string; startStr: string }; revert: () => void }) {
     if (!onEventDrop) {
@@ -207,6 +209,17 @@ export function EventCalendar({
   function handleDateClick(info: DateClickArg) {
     onDateClick?.(info.dateStr)
   }
+
+  const currentMonthEventsCount = useMemo(() => {
+    if (!currentMonthKey) return 0
+    return events.filter((event) => {
+      const title = (event.title ?? event.titulo ?? '').trim()
+      const startValue = event.start ?? event.date ?? event.fecha
+      if (!title || !startValue) return false
+      const dayKey = buildDayKey(startValue)
+      return dayKey.startsWith(currentMonthKey)
+    }).length
+  }, [events, currentMonthKey])
 
   const eventCountByDay = events.reduce<Record<string, number>>((acc, event) => {
     const startValue = event.start ?? event.date ?? event.fecha
@@ -270,31 +283,63 @@ export function EventCalendar({
         <p className="mb-4 text-sm text-white/54">{emptyMessage}</p>
       ) : null}
 
+      <div className="fc">
+        <div className="fc-header-toolbar fc-toolbar mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="fc-toolbar-chunk flex items-center gap-1.5">
+            <div className="fc-button-group inline-flex">
+              <button
+                type="button"
+                aria-label="Mes anterior"
+                title="Mes anterior"
+                onClick={() => calendarRef.current?.getApi().prev()}
+                className="fc-button fc-button-primary inline-flex cursor-pointer items-center justify-center border border-white/10 bg-surface-3 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:border-white/14 hover:bg-[#1f1f1f]"
+              >
+                ←
+              </button>
+              <button
+                type="button"
+                aria-label="Mes siguiente"
+                title="Mes siguiente"
+                onClick={() => calendarRef.current?.getApi().next()}
+                className="fc-button fc-button-primary inline-flex cursor-pointer items-center justify-center border border-l-0 border-white/10 bg-surface-3 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:border-white/14 hover:bg-[#1f1f1f]"
+              >
+                →
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => calendarRef.current?.getApi().today()}
+              className="fc-button fc-button-primary inline-flex cursor-pointer items-center justify-center border border-white/10 bg-surface-3 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:border-white/14 hover:bg-[#1f1f1f]"
+            >
+              Hoy
+            </button>
+          </div>
+
+          <div className="fc-toolbar-chunk flex flex-wrap items-center justify-center gap-2.5">
+            <h2 className="fc-toolbar-title font-display text-xl font-extrabold tracking-tight text-white capitalize sm:text-2xl">
+              {currentTitle}
+            </h2>
+            {currentMonthEventsCount > 0 ? (
+              <div className="flex items-center gap-2">
+                <span className="text-white/40 font-semibold">-</span>
+                <span className="inline-flex items-center border border-white/10 bg-surface-1 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white/72">
+                  {currentMonthEventsCount === 1
+                    ? '1 evento'
+                    : `${currentMonthEventsCount} eventos`}
+                </span>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="fc-toolbar-chunk hidden w-[110px] sm:block" />
+        </div>
+      </div>
+
       <FullCalendar
         ref={calendarRef}
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
-        headerToolbar={{
-          left: 'customPrev,customNext customToday',
-          center: 'title',
-          right: '',
-        }}
-        customButtons={{
-          customPrev: {
-            text: '←',
-            click: () => calendarRef.current?.getApi().prev(),
-            hint: 'Mes anterior',
-          },
-          customNext: {
-            text: '→',
-            click: () => calendarRef.current?.getApi().next(),
-            hint: 'Mes siguiente',
-          },
-          customToday: {
-            text: 'Hoy',
-            click: () => calendarRef.current?.getApi().today(),
-          },
-        }}
+        headerToolbar={false}
         events={allCalendarEvents}
         locale="es"
         firstDay={1}
@@ -307,6 +352,13 @@ export function EventCalendar({
         editable={editable}
         eventStartEditable={editable}
         eventDrop={editable ? handleEventDrop : undefined}
+        datesSet={(dateInfo) => {
+          setCurrentTitle(dateInfo.view.title)
+          const start = dateInfo.view.currentStart ?? dateInfo.start
+          const year = start.getFullYear()
+          const month = String(start.getMonth() + 1).padStart(2, '0')
+          setCurrentMonthKey(`${year}-${month}`)
+        }}
         eventDidMount={(info) => {
           info.el.setAttribute('title', info.event.title)
         }}

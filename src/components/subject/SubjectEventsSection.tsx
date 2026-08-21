@@ -12,7 +12,8 @@ import {
 import { AdminControls } from '@/components/admin/AdminControls'
 import { SafeMarkdown } from '@/components/ui/SafeMarkdown'
 import { UploaderByline } from '@/components/ui/UploaderByline'
-import { formatEventDateTime } from '@/lib/utils'
+import { formatEventDateTime, todayKeyAR } from '@/lib/utils'
+import { isUpcomingEvent } from '@/lib/domain/event-adapters'
 import { RelatedApunteLinks, type RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import {
   ALL_COMMISSIONS_VALUE,
@@ -101,6 +102,11 @@ export function SubjectEventsSection({
 
     return filterEventsByPreferredCommission(events, preferredCommissionId)
   }, [activeCommission, events, preferredCommissionId])
+
+  const todayKey = todayKeyAR()
+  const upcomingEvents = useMemo(() => {
+    return visibleEvents.filter((evento) => isUpcomingEvent(evento, todayKey))
+  }, [visibleEvents, todayKey])
 
   const description = activeCommission
     ? 'Acá ves las fechas generales de la materia y lo propio de esta comisión.'
@@ -201,14 +207,12 @@ export function SubjectEventsSection({
         />
 
         <div className="space-y-3">
-          {visibleEvents.length === 0 ? (
+          {upcomingEvents.length === 0 ? (
             <DarkCard className="p-5 text-sm leading-6 text-white/58">
-              {activeCommission || selectedCommission
-                ? 'Todavía no hay fechas detalladas para esta comisión.'
-                : 'Todavía no hay eventos detallados para esta materia.'}
+              No hay eventos próximos para mostrar
             </DarkCard>
           ) : (
-            visibleEvents.map((evento) => (
+            upcomingEvents.map((evento) => (
               <DarkCard
                 key={evento.id}
                 className="group relative p-5 transition-colors hover:border-white/14 focus-within:border-white/20"
