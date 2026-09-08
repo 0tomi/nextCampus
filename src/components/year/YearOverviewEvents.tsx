@@ -4,6 +4,8 @@ import { useMemo } from 'react'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
+import { CalendarExportButton } from '@/components/calendar/CalendarExportButton'
+import type { CalendarExportEvent } from '@/lib/calendar/ics'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { AdminControls } from '@/components/admin/AdminControls'
 import {
@@ -119,6 +121,21 @@ export function YearOverviewEvents({
     [nextEvents, preferredBySubject, subjectsById, subjectsBySlug],
   )
 
+  const exportEvents: CalendarExportEvent[] = useMemo(
+    () =>
+      filteredEvents.map((event) => ({
+        id: event.id,
+        titulo: event.titulo,
+        tituloOriginal: event.tituloOriginal ?? event.titulo,
+        fecha: event.fecha,
+        hora: event.hora,
+        materiaNombre: event.materiaNombre,
+        descripcion: event.descripcion,
+        commissionNombre: event.commissionNombre,
+      })),
+    [filteredEvents],
+  )
+
   return (
     <section className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -153,6 +170,12 @@ export function YearOverviewEvents({
           yearSlug={year.slug}
           tiposEvento={tiposEvento}
           subjects={subjects}
+          toolbarAction={
+            <CalendarExportButton
+              events={exportEvents}
+              calendarName={`NextCampus · ${year.slug}`}
+            />
+          }
         />
 
         <div className="space-y-3 xl:min-w-[324px] 2xl:min-w-[344px]">

@@ -3,6 +3,8 @@
 import { useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
+import { CalendarExportButton } from '@/components/calendar/CalendarExportButton'
+import type { CalendarExportEvent } from '@/lib/calendar/ics'
 import type { EventCalendarEvent } from '@/components/calendar/EventCalendar'
 import { DarkCard } from '@/components/ui/DarkCard'
 import {
@@ -108,6 +110,21 @@ export function SubjectEventsSection({
     return visibleEvents.filter((evento) => isUpcomingEvent(evento, todayKey))
   }, [visibleEvents, todayKey])
 
+  const exportEvents: CalendarExportEvent[] = useMemo(
+    () =>
+      visibleEvents.map((evento) => ({
+        id: evento.id,
+        titulo: evento.titulo,
+        tituloOriginal: evento.titulo,
+        fecha: evento.fecha,
+        hora: evento.hora,
+        materiaNombre: subject.nombre,
+        descripcion: evento.descripcion,
+        commissionNombre: evento.commissionNombre,
+      })),
+    [visibleEvents, subject.nombre],
+  )
+
   const description = activeCommission
     ? 'Acá ves las fechas generales de la materia y lo propio de esta comisión.'
     : selectedCommission
@@ -204,6 +221,12 @@ export function SubjectEventsSection({
           setSelectedEvent={setSelectedEvent}
           sheetOpen={sheetOpen}
           setSheetOpen={setSheetOpen}
+          toolbarAction={
+            <CalendarExportButton
+              events={exportEvents}
+              calendarName={`NextCampus · ${subject.nombre}`}
+            />
+          }
         />
 
         <div className="space-y-3">

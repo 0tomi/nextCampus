@@ -225,6 +225,13 @@ export function HomeGlobalCalendar({
               emptyMessage="Por ahora no hay eventos con tu selección actual."
               className="home-global-calendar"
               dayMaxEvents={4}
+              toolbarAction={
+                <CalendarExportButton
+                  events={exportEvents}
+                  calendarName="NextCampus · Calendario de tus materias"
+                  disabled={!isHydrated}
+                />
+              }
               onEventClick={(event) => {
                 if (!event.yearSlug || !event.subjectSlug) {
                   return

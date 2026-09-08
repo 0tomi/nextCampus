@@ -136,6 +136,7 @@ export function SubjectTabs({ subjectId, subjectSlug, subjectName, yearSlug, yea
             yearId={yearId}
             yearSlug={yearSlug}
             subjectSlug={subjectSlug}
+            subjectName={subjectName}
             agendaId={agendaId}
             tiposEvento={tiposEvento}
             subjects={subjects}
