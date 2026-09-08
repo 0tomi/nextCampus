@@ -68,6 +68,7 @@ describe('HomeGlobalCalendar', () => {
     expect(markup).toContain('Primer año')
     expect(markup).toContain('href="/primer-anio/calculo/comision-a"')
     expect(markup).toContain('aria-label="Abrir Cálculo"')
+    expect(markup).toContain('Descargar calendario')
   })
 
   it('arma la navegación base sin comisión y sigue mostrando el año', async () => {

@@ -11,6 +11,8 @@ import { AdminControls } from '@/components/admin/AdminControls'
 import { AddYearButton } from '@/components/admin/HomeAdminOverlay'
 import { MobileEventDetailSheet } from '@/components/mobile/calendar/MobileEventDetailSheet'
 import type { MobileCalendarEvent } from '@/components/mobile/calendar/MobileCalendar'
+import { CalendarExportButton } from '@/components/calendar/CalendarExportButton'
+import type { CalendarExportEvent } from '@/lib/calendar/ics'
 import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import { Mascot } from '@/components/ui/Mascot'
 import { usePreferences } from '@/hooks/usePreferences'
@@ -24,6 +26,7 @@ import {
 } from '@/lib/preferences'
 import type { CommissionOption } from '@/lib/commission-preferences'
 import type { SubjectLinkDTO } from '@/lib/subjectLinks'
+import type { HomeCalendarPageEvent } from '@/lib/domain/home-page-adapters'
 
 interface CareerForMobile {
   nombre: string
@@ -69,17 +72,6 @@ interface UpcomingEvent {
   apuntes?: RelatedApunteLink[]
 }
 
-interface HomeCalendarEventForMobile {
-  id: string
-  agendaId: string
-  subjectId: string
-  subjectSlug: string
-  materiaNombre: string
-  yearId: string
-  yearSlug: string
-  apuntes?: RelatedApunteLink[]
-}
-
 export function MobileHome({
   career,
   initialPrefs,
@@ -93,7 +85,7 @@ export function MobileHome({
   initialPrefs: UserPreferences | null
   upcomingEvents: UpcomingEvent[]
   tiposEvento: readonly TipoEvento[]
-  calendarEvents: readonly HomeCalendarEventForMobile[]
+  calendarEvents: readonly HomeCalendarPageEvent[]
   latestApuntes: readonly HomeLatestApunte[]
   hasAnyNotes: boolean
 }) {
@@ -177,6 +169,36 @@ export function MobileHome({
     }),
   )
 
+  const exportEvents: CalendarExportEvent[] = hasConfiguredSubjects
+    ? calendarEvents.reduce<CalendarExportEvent[]>((acc, event) => {
+        if (!isYearVisible(event.yearSlug, effectivePrefs)) return acc
+        if (!isSubjectVisible(event.yearSlug, event.subjectSlug, effectivePrefs)) return acc
+        if (
+          event.commissionSlug &&
+          !isCommissionVisible(
+            event.yearSlug,
+            event.subjectSlug,
+            event.commissionSlug,
+            effectivePrefs,
+          )
+        ) {
+          return acc
+        }
+
+        acc.push({
+          id: event.id,
+          titulo: event.titulo,
+          tituloOriginal: event.titulo,
+          fecha: event.fecha,
+          hora: event.hora,
+          materiaNombre: event.materiaNombre,
+          descripcion: event.descripcion,
+          commissionNombre: event.commissionNombre,
+        })
+        return acc
+      }, [])
+    : []
+
   const openEventDetail = (event: UpcomingEvent) => {
     setDetailEvent({
       id: event.id,
@@ -246,11 +268,19 @@ export function MobileHome({
           <>
             {/* PRÓXIMOS EVENTOS */}
             <section className="flex flex-col gap-3">
-              <div className="px-[18px]">
+              <div className="flex items-end justify-between gap-3 px-[18px]">
+                <div className="min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">Agenda</p>
                 <h2 className="mt-1 text-lg font-black text-white">
                   Próximos eventos - {uniqueSubjectsInEvents} {uniqueSubjectsInEvents === 1 ? 'Materia' : 'Materias'}
                 </h2>
+                </div>
+                <CalendarExportButton
+                  events={exportEvents}
+                  calendarName="NextCampus · Calendario de tus materias"
+                  disabled={!isHydrated}
+                  variant="mobile"
+                />
               </div>
               <div className="px-[18px] flex flex-col gap-2.5">
                 {!hasConfiguredSubjects ? (

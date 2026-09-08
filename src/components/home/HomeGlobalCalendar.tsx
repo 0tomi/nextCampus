@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { CalendarDays, SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react'
 import { EventCalendar, type EventCalendarEvent } from '@/components/calendar/EventCalendar'
+import { CalendarExportButton } from '@/components/calendar/CalendarExportButton'
+import type { CalendarExportEvent } from '@/lib/calendar/ics'
 import { PeriodoLegend } from '@/components/calendar/PeriodoLegend'
 import { PeriodoDetailSheet } from '@/components/calendar/PeriodoDetailSheet'
 import { DarkCard } from '@/components/ui/DarkCard'
@@ -77,6 +79,17 @@ export function HomeGlobalCalendar({
 
   const closestEvents = upcomingEvents.slice(0, 5)
 
+  const exportEvents: CalendarExportEvent[] = visibleEvents.map((event) => ({
+    id: event.id,
+    titulo: event.titulo,
+    tituloOriginal: event.titulo,
+    fecha: event.fecha,
+    hora: event.hora,
+    materiaNombre: event.materiaNombre,
+    descripcion: event.descripcion,
+    commissionNombre: event.commissionNombre,
+  }))
+
   const calendarEvents: EventCalendarEvent[] = visibleEvents.map((event) => ({
     id: event.id,
     titulo: `${event.titulo} · ${event.materiaNombre}`,
@@ -106,9 +119,16 @@ export function HomeGlobalCalendar({
             Calendario de tus materias
           </h2>
         </div>
-        <p className="max-w-xl text-sm leading-6 text-white/50">
-          Reunimos las fechas de los años, materias y comisiones que elegiste.
-        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:justify-end">
+          <p className="max-w-xl text-sm leading-6 text-white/50">
+            Reunimos las fechas de los años, materias y comisiones que elegiste.
+          </p>
+          <CalendarExportButton
+            events={exportEvents}
+            calendarName="NextCampus · Calendario de tus materias"
+            disabled={!isHydrated}
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-6">
