@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useMemo } from 'react'
+import { useRef, useState, useMemo, type ReactNode } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin, { type DateClickArg } from '@fullcalendar/interaction'
@@ -57,6 +57,7 @@ interface EventCalendarProps {
   onEventClick?: (event: EventCalendarEvent) => void
   /** Callback cuando se hace clic en un día pintado por un período. */
   onPeriodoClick?: (periodo: PeriodoCalendario) => void
+  toolbarAction?: ReactNode
 }
 
 const EMPTY_PERIODOS: readonly PeriodoCalendario[] = []
@@ -204,6 +205,7 @@ export function EventCalendar({
   onDateClick,
   onEventClick,
   onPeriodoClick,
+  toolbarAction,
 }: EventCalendarProps) {
   const calendarRef = useRef<FullCalendar>(null)
   const [currentTitle, setCurrentTitle] = useState('')
@@ -352,7 +354,9 @@ export function EventCalendar({
             </h2>
           </div>
 
-          <div className="fc-toolbar-chunk hidden w-[110px] sm:block" />
+          <div className="fc-toolbar-chunk flex shrink-0 items-center justify-end">
+            {toolbarAction ?? <div className="hidden w-[110px] sm:block" />}
+          </div>
         </div>
       </div>
 

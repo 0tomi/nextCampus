@@ -9,11 +9,11 @@ import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { MobileCalendar } from '@/components/mobile/calendar/MobileCalendar'
 import { InstallPWATopbarButton } from '@/components/pwa/InstallPWA'
-import {
-  filterEventsByPreferredCommission,
-  type CommissionOption,
-} from '@/lib/commission-preferences'
+import { type CommissionOption } from '@/lib/commission-preferences'
 import { usePreferredCommissionMap } from '@/components/commissions/usePreferredCommission'
+import { usePreferences } from '@/hooks/usePreferences'
+import { filterYearCalendarEventsForUser } from '@/lib/calendar/calendar-export'
+import { CalendarExportButton } from '@/components/calendar/CalendarExportButton'
 import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import type { PeriodoCalendario } from '@/lib/periodos'
 
@@ -86,30 +86,27 @@ export function YearCalendarView({
   periodos,
 }: YearCalendarViewProps) {
   const preferredBySubject = usePreferredCommissionMap(subjects)
+  const { prefs, isHydrated } = usePreferences()
 
-  const subjectsById = useMemo(
-    () => new Map(subjects.map((subject) => [subject.id, subject] as const)),
-    [subjects],
+  const visibleEvents = useMemo(
+    () => filterYearCalendarEventsForUser({ events, yearSlug: year.slug, prefs, preferredBySubject }),
+    [events, year.slug, prefs, preferredBySubject],
   )
-  const subjectsBySlug = useMemo(
-    () => new Map(subjects.map((subject) => [subject.slug, subject] as const)),
-    [subjects],
+  const calendarName = `NextCampus · ${year.nombre}`
+  const exportButton = (
+    <CalendarExportButton
+      events={visibleEvents}
+      calendarName={calendarName}
+      disabled={!isHydrated}
+    />
   )
-
-  const filteredEvents = useMemo(
-    () =>
-      events.filter((event) => {
-        const subject =
-          subjectsById.get(event.subjectId) ?? subjectsBySlug.get(event.subjectSlug) ?? null
-
-        if (!subject) return true
-
-        return filterEventsByPreferredCommission(
-          [event],
-          preferredBySubject[subject.slug] ?? null,
-        ).length > 0
-      }),
-    [events, preferredBySubject, subjectsById, subjectsBySlug],
+  const mobileExportButton = (
+    <CalendarExportButton
+      events={visibleEvents}
+      calendarName={calendarName}
+      disabled={!isHydrated}
+      variant="mobile"
+    />
   )
 
   return (
@@ -149,14 +146,15 @@ export function YearCalendarView({
               </div>
             </div>
             <EventCalendarAdmin
-              events={filteredEvents}
+               events={visibleEvents}
               periodos={periodos}
               emptyMessage="Todavía no hay eventos cargados en este año."
               className="year-calendar-expanded"
               dayMaxEvents={4}
               yearSlug={year.slug}
               tiposEvento={tiposEvento}
-              subjects={subjects}
+               subjects={subjects}
+               toolbarAction={exportButton}
             />
           </section>
         </DashboardShell>
@@ -173,7 +171,7 @@ export function YearCalendarView({
         >
           <div className="pt-4">
             <MobileCalendar
-              events={filteredEvents.map((event) => ({
+               events={visibleEvents.map((event) => ({
                 id: event.id,
                 fecha: event.fecha,
                 hora: event.hora,
@@ -195,11 +193,12 @@ export function YearCalendarView({
               }))}
               periodos={periodos}
               accent={tone}
-              initialDate={filteredEvents[0]?.fecha}
+               initialDate={visibleEvents[0]?.fecha}
               yearId={year.id}
               yearSlug={year.slug}
               tiposEvento={tiposEvento}
-              subjects={subjects}
+               subjects={subjects}
+               headerAction={mobileExportButton}
             />
           </div>
         </MobileShell>

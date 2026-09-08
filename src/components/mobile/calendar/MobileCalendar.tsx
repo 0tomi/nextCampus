@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getEventTone } from '@/components/mobile/shared/tokens'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
@@ -161,6 +161,7 @@ export interface MobileCalendarProps {
   tiposEvento?: readonly TipoEvento[]
   subjects?: readonly EventModalSubject[]
   commissions?: readonly CommissionOption[]
+  headerAction?: ReactNode
 }
 
 const EMPTY_PERIODOS: readonly PeriodoCalendario[] = []
@@ -178,6 +179,7 @@ export function MobileCalendar({
   tiposEvento,
   subjects,
   commissions,
+  headerAction,
 }: MobileCalendarProps) {
   const [detailEvent, setDetailEvent] = useState<MobileCalendarEvent | null>(null)
   const [cursor, setCursor] = useState<Date>(() => {
@@ -254,7 +256,7 @@ export function MobileCalendar({
 
   return (
     <div className="flex flex-col gap-3.5">
-      <MobileCalendarHeader cursor={cursor} onNext={goNext} onPrev={goPrev} />
+      <MobileCalendarHeader cursor={cursor} headerAction={headerAction} onNext={goNext} onPrev={goPrev} />
 
       <MobileCalendarCard
         accent={accent}
@@ -296,16 +298,17 @@ export function MobileCalendar({
 }
 
 
-function MobileCalendarHeader({ cursor, onNext, onPrev }: { cursor: Date; onNext: () => void; onPrev: () => void }) {
+function MobileCalendarHeader({ cursor, headerAction, onNext, onPrev }: { cursor: Date; headerAction?: ReactNode; onNext: () => void; onPrev: () => void }) {
   return (
     <div className="flex items-center justify-between px-[18px]">
-      <div>
+      <div className="min-w-0">
         <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/38">MES</p>
         <div className="mt-1 text-[22px] font-black leading-[1.1] tracking-[-0.02em] text-white">
           {MONTH_NAMES_ES[cursor.getMonth()]} <span className="font-bold text-white/40">{cursor.getFullYear()}</span>
         </div>
       </div>
-      <div className="flex gap-1">
+      <div className="flex shrink-0 gap-1">
+        {headerAction}
         <button
           onClick={onPrev}
           aria-label="Mes anterior"

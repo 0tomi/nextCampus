@@ -49,4 +49,18 @@ describe('EventCalendar', () => {
     expect(markup).toContain('←')
     expect(markup).toContain('→')
   })
+
+  it('renderiza una acción opcional en el tercer bloque del toolbar', async () => {
+    const { EventCalendar } = await import('./EventCalendar')
+
+    const markup = renderToStaticMarkup(
+      <EventCalendar
+        events={[makeCalendarEvent()]}
+        toolbarAction={<button type="button">Descargar calendario</button>}
+      />,
+    )
+
+    expect(markup).toContain('Descargar calendario')
+    expect(markup).toContain('fc-toolbar-chunk')
+  })
 })

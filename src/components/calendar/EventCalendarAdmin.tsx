@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useTransition } from 'react'
+import { useState, useCallback, useTransition, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Pencil, Trash2 } from 'lucide-react'
@@ -65,6 +65,7 @@ interface EventCalendarAdminProps {
   setSelectedEvent?: (event: EventCalendarEvent | null) => void
   sheetOpen?: boolean
   setSheetOpen?: (open: boolean) => void
+  toolbarAction?: ReactNode
 }
 
 /**
@@ -94,6 +95,7 @@ export function EventCalendarAdmin({
   setSelectedEvent,
   sheetOpen,
   setSheetOpen,
+  toolbarAction,
 }: EventCalendarAdminProps) {
   const canEdit = useAdminAccess({ yearId, yearSlug }) ?? false
   const router = useRouter()
@@ -191,6 +193,7 @@ export function EventCalendarAdmin({
         onDateClick={canEdit ? handleDateClick : undefined}
         onEventClick={handleEventClick}
         onPeriodoClick={setSelectedPeriodo}
+        toolbarAction={toolbarAction}
       />
 
       <EventDetailSheet
