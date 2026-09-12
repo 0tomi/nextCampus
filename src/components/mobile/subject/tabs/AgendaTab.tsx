@@ -84,7 +84,6 @@ export function AgendaTab({
         events={events}
         periodos={periodos}
         accent={accent}
-        initialDate={events[0]?.fecha}
         yearId={yearId}
         yearSlug={yearSlug}
         subjectSlug={subjectSlug}

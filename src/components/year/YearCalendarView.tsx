@@ -195,7 +195,6 @@ export function YearCalendarView({
               }))}
               periodos={periodos}
               accent={tone}
-              initialDate={filteredEvents[0]?.fecha}
               yearId={year.id}
               yearSlug={year.slug}
               tiposEvento={tiposEvento}

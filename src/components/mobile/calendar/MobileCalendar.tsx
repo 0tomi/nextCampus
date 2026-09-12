@@ -186,11 +186,6 @@ export function MobileCalendar({
       d.setDate(1)
       return d
     }
-    if (events && events.length > 0) {
-      const d = eventDateToLocal(events[0].fecha)
-      d.setDate(1)
-      return d
-    }
     const d = new Date()
     d.setDate(1)
     return d
