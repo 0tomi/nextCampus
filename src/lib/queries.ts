@@ -211,6 +211,11 @@ const TAGS = {
   tiposEvento: 'tipos-evento',
   year: (slug: string) => `year:${slug}`,
   subject: (slug: string) => `subject:${slug}`,
+  subjectContent: (slug: string) => `subject-content:${slug}`,
+  apunte: (subjectSlug: string, apunteSlug: string) => `apunte:${subjectSlug}:${apunteSlug}`,
+  yearMeta: (slug: string) => `year-meta:${slug}`,
+  latestApuntesByYear: (slug: string) => `latest-apuntes-year:${slug}`,
+  subjectAuthors: (slug: string) => `subject-authors:${slug}`,
   // "quiz-banks:<year>:<subject>". La plantilla vive en storage.ts (que la
   // cachea en lectura) porque este módulo ya importa storage: definirla acá
   // y consumirla desde allá crearía un ciclo queries <-> storage.
@@ -347,7 +352,7 @@ export async function getCareer() {
 
 export async function getYearBySlug(slug: string) {
   'use cache'
-  cacheTag(TAGS.year(slug), TAGS.career)
+  cacheTag(TAGS.year(slug), TAGS.yearMeta(slug), TAGS.career)
   cacheLife({ revalidate: 3600, expire: 86400 })
 
   const year = await prisma.academicYear.findUnique({
@@ -396,7 +401,7 @@ export async function getYearBySlug(slug: string) {
 
 export async function getSubjectPageBySlug(slug: string) {
   'use cache'
-  cacheTag(TAGS.subject(slug))
+  cacheTag(TAGS.subject(slug), TAGS.subjectContent(slug), TAGS.subjectAuthors(slug), TAGS.categorias)
   cacheLife({ revalidate: 3600, expire: 86400 })
 
   const [subject, categorias] = await Promise.all([
@@ -444,6 +449,7 @@ export async function getSubjectPageBySlug(slug: string) {
   ])
 
   if (!subject) return null
+  cacheTag(TAGS.yearMeta(subject.year.slug))
 
   const base = attachCommissionMetadataToSubject({
     ...subject,
@@ -464,7 +470,7 @@ export async function getSubjectPageBySlug(slug: string) {
 
 export async function getApuntePageBySlug(subjectSlug: string, apunteSlug: string) {
   'use cache'
-  cacheTag(TAGS.subject(subjectSlug))
+  cacheTag(TAGS.subject(subjectSlug), TAGS.apunte(subjectSlug, apunteSlug), TAGS.subjectAuthors(subjectSlug), TAGS.categorias)
   cacheLife({ revalidate: 3600, expire: 86400 })
 
   const subject = await prisma.subject.findUnique({
@@ -514,6 +520,7 @@ export async function getApuntePageBySlug(subjectSlug: string, apunteSlug: strin
     },
   })
 
+  if (subject) cacheTag(TAGS.yearMeta(subject.year.slug))
   const apunte = subject?.apuntes[0]
   if (!subject || !apunte) return null
 
@@ -601,7 +608,7 @@ export async function getSubjectQuizMeta(slug: string) {
   cacheTag(TAGS.subject(slug))
   cacheLife({ revalidate: 3600, expire: 86400 })
 
-  return prisma.subject.findUnique({
+  const subject = await prisma.subject.findUnique({
     where: { slug },
     select: {
       id: true,
@@ -610,6 +617,8 @@ export async function getSubjectQuizMeta(slug: string) {
       year: { select: { id: true, slug: true } },
     },
   })
+  if (subject) cacheTag(TAGS.yearMeta(subject.year.slug))
+  return subject
 }
 
 export async function getTiposEvento() {
@@ -751,7 +760,7 @@ export async function getLatestApuntes() {
 
 export async function getLatestApuntesByYear(yearSlug: string, limit = 6) {
   'use cache'
-  cacheTag(TAGS.year(yearSlug))
+  cacheTag(TAGS.latestApuntesByYear(yearSlug))
   cacheLife({ revalidate: 300, expire: 3600 })
 
   const rows = await prisma.apunte.findMany({

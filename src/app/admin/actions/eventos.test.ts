@@ -48,6 +48,7 @@ vi.mock('@/lib/queries', () => ({
     upcomingEvents: 'upcoming-events',
     year: (slug: string) => `year:${slug}`,
     subject: (slug: string) => `subject:${slug}`,
+    subjectContent: (slug: string) => `subject-content:${slug}`,
     quizBanks: vi.fn(() => 'quiz-bank-tag'),
   },
 }))
@@ -165,7 +166,7 @@ describe('eventos actions: auth ANTES de validación (regresión 10/7)', () => {
     const updateData = prismaMock.evento.update.mock.calls[0][0].data
     expect(updateData).toEqual({ fecha: new Date('2026-08-20T00:00:00.000Z') })
     expect(updateTagMock).toHaveBeenCalledWith('upcoming-events')
-    expect(updateTagMock).toHaveBeenCalledWith('subject:calculo')
+    expect(updateTagMock).toHaveBeenCalledWith('subject-content:calculo')
     expect(recordAuditMock).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'EVENTO_DATE_UPDATED',
@@ -293,7 +294,7 @@ describe('eventos actions: creación y edición con descripción Markdown', () =
       }),
     })
     expect(updateTagMock).toHaveBeenCalledWith('upcoming-events')
-    expect(updateTagMock).toHaveBeenCalledWith('subject:calculo')
+    expect(updateTagMock).toHaveBeenCalledWith('subject-content:calculo')
   })
 
   it('updateEvento actualiza la descripción y revalida los tags de eventos', async () => {
@@ -332,7 +333,31 @@ describe('eventos actions: creación y edición con descripción Markdown', () =
       }),
     })
     expect(updateTagMock).toHaveBeenCalledWith('upcoming-events')
-    expect(updateTagMock).toHaveBeenCalledWith('subject:calculo')
+    expect(updateTagMock).toHaveBeenCalledWith('subject-content:calculo')
   })
 })
 
+
+
+describe('event invalidation after primary commit', () => {
+  it('invalidates exact projections before a scoring failure', async () => {
+    requireYearAdminForAgendaIdMock.mockResolvedValue(scope)
+    prismaMock.evento.create.mockResolvedValue({ id: 'event-1' })
+    const error = new Error('scoring unavailable')
+    awardEventoCreatedMock.mockRejectedValue(error)
+    const { createEvento } = await import('./eventos')
+    await expect(createEvento(makeFormData({ agendaId: 'agenda-1', tipoEventoId: 'tipo-1', titulo: 'Parcial', fecha: '2026-08-20' }))).rejects.toBe(error)
+    expect(updateTagMock.mock.calls.map(([tag]) => tag).sort()).toEqual(['subject-content:calculo', 'upcoming-events', 'year:primer-anio'])
+    expect(updateTagMock.mock.invocationCallOrder[0]).toBeLessThan(awardEventoCreatedMock.mock.invocationCallOrder[0])
+    expect(recordAuditMock).not.toHaveBeenCalled()
+  })
+  it('does not invalidate when the primary creation fails', async () => {
+    requireYearAdminForAgendaIdMock.mockResolvedValue(scope)
+    const error = new Error('database unavailable')
+    prismaMock.evento.create.mockRejectedValue(error)
+    const { createEvento } = await import('./eventos')
+    await expect(createEvento(makeFormData({ agendaId: 'agenda-1', tipoEventoId: 'tipo-1', titulo: 'Parcial', fecha: '2026-08-20' }))).rejects.toBe(error)
+    expect(updateTagMock).not.toHaveBeenCalled()
+    expect(revalidatePathMock).not.toHaveBeenCalled()
+  })
+})

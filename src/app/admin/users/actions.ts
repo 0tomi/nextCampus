@@ -8,6 +8,7 @@ import { requireGeneralAdmin as requireAuth } from '@/lib/auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
 import { ActionInputError, actionError } from '../actions/errors'
+import { revalidateAuthorNames } from '../actions/shared'
 
 export interface AdminUserActionState {
   ok: boolean
@@ -161,7 +162,7 @@ export async function updateAdminCampusAction(
 
     const current = await prisma.userAccount.findUnique({
       where: { id: data.id },
-      select: { id: true, authUserId: true, email: true, role: true },
+      select: { id: true, authUserId: true, email: true, role: true, nombreUsuario: true },
     })
 
     if (!current) throw new ActionInputError('No encontramos esa cuenta.')
@@ -170,6 +171,20 @@ export async function updateAdminCampusAction(
     }
 
     await ensureEmailAvailable(data.email, current.id)
+
+    const authorContext = data.nombreUsuario !== current.nombreUsuario ? {
+      subjectSlugs: (await prisma.subject.findMany({
+        where: { OR: [
+          { apuntes: { some: { createdByUserId: current.id } } },
+          { agendas: { some: { eventos: { some: { createdByUserId: current.id } } } } },
+        ] },
+        select: { slug: true },
+      })).map((subject) => subject.slug),
+      eventYearSlugs: (await prisma.academicYear.findMany({
+        where: { subjects: { some: { agendas: { some: { eventos: { some: { createdByUserId: current.id } } } } } } },
+        select: { slug: true },
+      })).map((year) => year.slug),
+    } : null
 
     const emailChanged = data.email !== current.email
     const authUpdates: { email?: string; password?: string; email_confirm?: boolean } = {}
@@ -219,6 +234,7 @@ export async function updateAdminCampusAction(
       throw error
     }
 
+    if (authorContext) revalidateAuthorNames(authorContext)
     revalidatePath('/admin/users')
     revalidatePath(`/admin/users/edit/${current.id}`)
     await recordAudit({

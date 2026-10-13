@@ -14,7 +14,6 @@ import { isReservedYearSlug, reservedYearSlugSet } from '@/lib/year-slugs'
 import {
   parseLinksFromForm,
   requireAuth,
-  revalidateCareerListing,
   revalidateYearRemoval,
   revalidateYearUpdate,
 } from './shared'
@@ -94,7 +93,7 @@ export async function createYearAction(
     select: { id: true },
   })
 
-  revalidateCareerListing()
+  revalidateYearUpdate(slug, slug)
   await recordAudit({
     userId: admin.id,
     action: AUDIT_ACTIONS.YEAR_CREATED,
@@ -280,14 +279,18 @@ export async function deleteYearAction(formData: FormData): Promise<void> {
     subjectSlug: s.slug,
   }))
 
-  // Limpiar Storage ANTES de borrar en BD
+  await prisma.academicYear.delete({ where: { id } })
+  revalidateYearRemoval(
+    year.slug,
+    year.subjects.map((s) => s.slug),
+  )
+
+  // Clean files only after the database deletion and cache invalidation.
   try {
     await deleteYearStorage(storageTargets)
   } catch {
     console.error(`Storage cleanup parcial para año ${year.slug}`)
   }
-
-  await prisma.academicYear.delete({ where: { id } })
 
   // Revocar contribuciones de usuarios afectados
   for (const [userId, counts] of userRevokeMap) {
@@ -299,10 +302,6 @@ export async function deleteYearAction(formData: FormData): Promise<void> {
     })
   }
 
-  revalidateYearRemoval(
-    year.slug,
-    year.subjects.map((s) => s.slug),
-  )
   await recordAudit({
     userId: admin.id,
     action: AUDIT_ACTIONS.YEAR_DELETED,

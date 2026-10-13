@@ -412,11 +412,22 @@ export async function createApunteAction(
     formData,
     recursos,
     existingResourceMetaByStorageKey: new Map(),
+  }).catch((error: unknown) => {
+    // Metadata already exists; an upload exception leaves visibility uncertain.
+    revalidateSubjectApuntes({ ...scope, apunteSlugs: [finalSlug], affectsRelatedEvents: false })
+    throw error
   })
 
   if ('error' in built) {
-    await deleteApunteHtml(built.uploadedStorageKeys)
-    await prisma.apunte.delete({ where: { id: apunteId } }).catch(() => undefined)
+    try {
+      await deleteApunteHtml(built.uploadedStorageKeys)
+    } catch (error) {
+      revalidateSubjectApuntes({ ...scope, apunteSlugs: [finalSlug], affectsRelatedEvents: false })
+      throw error
+    }
+    await prisma.apunte.delete({ where: { id: apunteId } }).catch(() => {
+      revalidateSubjectApuntes({ ...scope, apunteSlugs: [finalSlug], affectsRelatedEvents: false })
+    })
     return { ok: false, message: built.error }
   }
 
@@ -424,15 +435,22 @@ export async function createApunteAction(
     if (built.data.length > 0) {
       await prisma.apunteRecurso.createMany({ data: built.data })
     }
-    await awardApunteCreated(scope.admin.id, built.data.length)
   } catch (err) {
     console.error('createApunteAction: failed to create note resources', err)
-    await deleteApunteHtml(built.uploadedStorageKeys)
-    await prisma.apunte.delete({ where: { id: apunteId } }).catch(() => undefined)
+    try {
+      await deleteApunteHtml(built.uploadedStorageKeys)
+    } catch (error) {
+      revalidateSubjectApuntes({ ...scope, apunteSlugs: [finalSlug], affectsRelatedEvents: false })
+      throw error
+    }
+    await prisma.apunte.delete({ where: { id: apunteId } }).catch(() => {
+      revalidateSubjectApuntes({ ...scope, apunteSlugs: [finalSlug], affectsRelatedEvents: false })
+    })
     return { ok: false, message: 'No se pudo crear el apunte. Intentá de nuevo.' }
   }
 
-  revalidateSubjectApuntes(scope)
+  revalidateSubjectApuntes({ ...scope, apunteSlugs: [finalSlug], affectsRelatedEvents: false })
+  await awardApunteCreated(scope.admin.id, built.data.length)
   await recordAudit({
     userId: scope.admin.id,
     action: AUDIT_ACTIONS.APUNTE_CREATED,
@@ -506,9 +524,10 @@ export async function updateApunteAction(
     where: { id: apunteId.data },
     select: {
       slug: true,
+      titulo: true,
       subjectId: true,
       createdByUserId: true,
-      _count: { select: { recursos: true } },
+      _count: { select: { recursos: true, eventos: true } },
       recursos: {
         where: { tipo: 'HTML', storageKey: { not: null } },
         select: { storageKey: true, mimeType: true, sizeBytes: true },
@@ -595,6 +614,10 @@ export async function updateApunteAction(
     return { ok: false, message: 'No se pudo actualizar el apunte. Intentá de nuevo.' }
   }
 
+  revalidateSubjectApuntes({
+    ...scope, apunteSlugs: [apunteActual.slug, finalSlug],
+    affectsRelatedEvents: apunteActual._count.eventos > 0 && (apunteActual.titulo !== titulo || apunteActual.slug !== finalSlug),
+  })
   const scoreDelta = built.data.length - apunteActual._count.recursos
   if (apunteActual.createdByUserId && scoreDelta !== 0) {
     await adjustContributionScore(apunteActual.createdByUserId, scoreDelta)
@@ -602,7 +625,6 @@ export async function updateApunteAction(
 
   await deleteApunteHtml(storageKeysToDelete)
 
-  revalidateSubjectApuntes(scope)
   await recordAudit({
     userId: scope.admin.id,
     action: AUDIT_ACTIONS.APUNTE_UPDATED,
@@ -632,18 +654,21 @@ export async function deleteApunteAction(formData: FormData): Promise<void> {
     where: { id },
     select: {
       titulo: true,
+      slug: true,
       createdByUserId: true,
-      _count: { select: { recursos: true } },
+      _count: { select: { recursos: true, eventos: true } },
       recursos: {
         where: { tipo: 'HTML', storageKey: { not: null } },
         select: { storageKey: true },
       },
     },
   })
-  ensureCanManageContribution(scope.admin, apunte?.createdByUserId)
+  if (!apunte) return
+  ensureCanManageContribution(scope.admin, apunte.createdByUserId)
 
   // La FK con onDelete: Cascade borra los ApunteRecurso automáticamente.
   await prisma.apunte.delete({ where: { id } })
+  revalidateSubjectApuntes({ ...scope, apunteSlugs: [apunte.slug], affectsRelatedEvents: apunte._count.eventos > 0 })
   await deleteApunteHtml(
     (apunte?.recursos ?? [])
       .map((r) => r.storageKey)
@@ -654,7 +679,6 @@ export async function deleteApunteAction(formData: FormData): Promise<void> {
     await revokeApunteCreated(apunte.createdByUserId, apunte._count.recursos)
   }
 
-  revalidateSubjectApuntes(scope)
   if (apunte) {
     await recordAudit({
       userId: scope.admin.id,

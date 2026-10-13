@@ -13,6 +13,7 @@ import {
   type ProfileActionState,
 } from './schemas'
 import { ActionInputError, actionError } from '../actions/errors'
+import { revalidateAuthorNames } from '../actions/shared'
 
 function revalidateAdminProfileViews() {
   revalidatePath('/admin/perfil')
@@ -86,6 +87,20 @@ export async function updateAdminProfileAction(
       return { ok: true, message: 'No hubo cambios para actualizar.' }
     }
 
+    const authorContext = nameChanged ? {
+      subjectSlugs: (await prisma.subject.findMany({
+        where: { OR: [
+          { apuntes: { some: { createdByUserId: admin.id } } },
+          { agendas: { some: { eventos: { some: { createdByUserId: admin.id } } } } },
+        ] },
+        select: { slug: true },
+      })).map((subject) => subject.slug),
+      eventYearSlugs: (await prisma.academicYear.findMany({
+        where: { subjects: { some: { agendas: { some: { eventos: { some: { createdByUserId: admin.id } } } } } } },
+        select: { slug: true },
+      })).map((year) => year.slug),
+    } : null
+
     if (emailChanged) {
       await ensureEmailAvailable(data.nextEmail, admin.id)
 
@@ -128,6 +143,8 @@ export async function updateAdminProfileAction(
         },
       })
     }
+
+    if (authorContext) revalidateAuthorNames(authorContext)
 
     await recordAudit({
       userId: admin.id,

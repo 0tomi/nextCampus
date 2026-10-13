@@ -17,7 +17,6 @@ import {
   parseLinksFromForm,
   requireAuth,
   revalidateSubjectContent,
-  revalidateYearContent,
 } from './shared'
 
 export type SubjectActionState =
@@ -117,7 +116,9 @@ export async function createSubjectAction(
     return created
   })
 
-  revalidateYearContent(year.slug)
+  invalidateTag(queryTags.career)
+  revalidatePath('/')
+  revalidateSubjectContent({ subjectSlug: slug, yearSlug: year.slug, commissionSlugs: [DEFAULT_SUBJECT_COMMISSION.slug] })
   await recordAudit({
     userId: admin.id,
     action: AUDIT_ACTIONS.SUBJECT_CREATED,
@@ -253,6 +254,7 @@ export async function updateSubjectAction(
 
   invalidateTag(queryTags.career)
   invalidateTag(queryTags.year(scope.yearSlug))
+  invalidateTag(queryTags.latestApuntesByYear(scope.yearSlug))
   invalidateTag(queryTags.subject(oldSlug))
   if (newSlug !== oldSlug) invalidateTag(queryTags.subject(newSlug))
   revalidatePath('/')
@@ -307,6 +309,8 @@ export async function deleteSubjectAction(formData: FormData): Promise<void> {
     },
   })
 
+  if (!subject) return
+
   // Agrupar contribuciones por usuario antes de borrar
   const userRevokeMap = new Map<
     string,
@@ -358,14 +362,23 @@ export async function deleteSubjectAction(formData: FormData): Promise<void> {
     userRevokeMap.set(revocation.ownerId, prev)
   }
 
-  // Limpiar Storage ANTES de borrar en BD
+  await prisma.subject.delete({ where: { id } })
+  invalidateTag(queryTags.career)
+  invalidateTag(queryTags.year(yearSlug))
+  invalidateTag(queryTags.latestApuntesByYear(yearSlug))
+  invalidateTag(queryTags.subject(subjectSlug))
+  invalidateTag(queryTags.quizBanks(yearSlug, subjectSlug))
+  revalidatePath('/')
+  revalidatePath(`/${yearSlug}`)
+  revalidatePath(`/${yearSlug}/calendario`)
+  revalidatePath(`/${yearSlug}/${subjectSlug}`)
+
+  // Clean files only after the database deletion and cache invalidation.
   try {
     await deleteSubjectStorage(yearSlug, subjectSlug)
   } catch {
     console.error(`Storage cleanup parcial para materia ${subjectSlug}`)
   }
-
-  await prisma.subject.delete({ where: { id } })
 
   // Revocar contribuciones de usuarios afectados
   for (const [userId, counts] of userRevokeMap) {
@@ -377,14 +390,6 @@ export async function deleteSubjectAction(formData: FormData): Promise<void> {
     })
   }
 
-  invalidateTag(queryTags.career)
-  invalidateTag(queryTags.year(yearSlug))
-  invalidateTag(queryTags.subject(subjectSlug))
-  invalidateTag(queryTags.quizBanks(yearSlug, subjectSlug))
-  revalidatePath('/')
-  revalidatePath(`/${yearSlug}`)
-  revalidatePath(`/${yearSlug}/calendario`)
-  revalidatePath(`/${yearSlug}/${subjectSlug}`)
   if (subject) {
     await recordAudit({
       userId: scope.admin.id,
