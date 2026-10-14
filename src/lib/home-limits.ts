@@ -1,0 +1,1 @@
+export const HOME_LATEST_APUNTES_LIMIT = 6

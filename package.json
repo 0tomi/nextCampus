@@ -22,7 +22,8 @@
     "backfill:contributions": "tsx prisma/backfill-contributions.ts",
     "backfill:banco-author": "tsx prisma/backfill-banco-subido-por-id.ts",
     "doctor": "pnpm dlx react-doctor@latest",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test:cache": "node scripts/run-cache-regression.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

@@ -164,8 +164,8 @@ export async function createEvento(formData: FormData): Promise<void> {
       },
     },
   })
-  await awardEventoCreated(scope.admin.id)
   revalidateSubjectEvents(scope)
+  await awardEventoCreated(scope.admin.id)
   await recordAudit({
     userId: scope.admin.id,
     action: AUDIT_ACTIONS.EVENTO_CREATED,
@@ -353,12 +353,12 @@ export async function deleteEvento(formData: FormData): Promise<void> {
   ensureCanManageContribution(scope.admin, evento?.createdByUserId)
 
   await prisma.evento.delete({ where: { id } })
+  revalidateSubjectEvents(scope)
 
   if (evento?.createdByUserId) {
     await revokeEventoCreated(evento.createdByUserId)
   }
 
-  revalidateSubjectEvents(scope)
   if (evento) {
     await recordAudit({
       userId: scope.admin.id,

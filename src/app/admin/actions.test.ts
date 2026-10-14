@@ -18,6 +18,8 @@ const detectarRecursoMock = vi.fn()
 const recordAuditMock = vi.fn()
 const uploadApunteHtmlMock = vi.fn()
 const deleteApunteHtmlMock = vi.fn()
+const deleteSubjectStorageMock = vi.fn()
+const deleteYearStorageMock = vi.fn()
 const awardApunteCreatedMock = vi.fn()
 const adjustContributionScoreMock = vi.fn()
 const revokeApunteCreatedMock = vi.fn()
@@ -89,8 +91,8 @@ vi.mock('@/lib/storage', () => ({
   MAX_APUNTE_HTML_BYTES: 3 * 1024 * 1024,
   APUNTE_HTML_MIME: 'text/html; charset=utf-8',
   deleteQuizBank: vi.fn(),
-  deleteSubjectStorage: vi.fn(),
-  deleteYearStorage: vi.fn(),
+  deleteSubjectStorage: deleteSubjectStorageMock,
+  deleteYearStorage: deleteYearStorageMock,
   listQuizBankContributionRevocations: listQuizBankContributionRevocationsMock,
 }))
 
@@ -102,6 +104,11 @@ vi.mock('@/lib/queries', () => ({
     upcomingEvents: 'upcoming-events',
     year: (slug: string) => `year:${slug}`,
     subject: (slug: string) => `subject:${slug}`,
+    subjectContent: (slug: string) => `subject-content:${slug}`,
+    apunte: (subject: string, slug: string) => `apunte:${subject}:${slug}`,
+    yearMeta: (slug: string) => `year-meta:${slug}`,
+    latestApuntesByYear: (slug: string) => `latest-apuntes-year:${slug}`,
+    subjectAuthors: (slug: string) => `subject-authors:${slug}`,
     quizBanks: vi.fn(() => 'quiz-bank-tag'),
   },
   getSubjectDeleteImpact: getSubjectDeleteImpactMock,
@@ -219,8 +226,8 @@ describe('admin apunte actions', () => {
 
     expect(result).toMatchObject({ ok: true, message: 'Apunte creado correctamente.' })
     expect(updateTagMock).toHaveBeenCalledWith('latest-apuntes')
-    expect(updateTagMock).toHaveBeenCalledWith('upcoming-events')
-    expect(updateTagMock).toHaveBeenCalledWith('year:primer-anio')
+    expect(updateTagMock).not.toHaveBeenCalledWith('upcoming-events')
+    expect(updateTagMock).toHaveBeenCalledWith('latest-apuntes-year:primer-anio')
     expect(prismaMock.subject.findUnique).not.toHaveBeenCalled()
   })
 
@@ -235,7 +242,7 @@ describe('admin apunte actions', () => {
     prismaMock.apunte.findUnique.mockResolvedValue({
       slug: 'resumen-actual',
       subjectId: 'subject-1',
-      _count: { recursos: 0 },
+      _count: { recursos: 0, eventos: 0 },
       recursos: [],
     })
 
@@ -266,7 +273,7 @@ describe('admin apunte actions', () => {
       slug: 'resumen-actual',
       subjectId: 'subject-1',
       createdByUserId: 'admin-1',
-      _count: { recursos: 1 },
+      _count: { recursos: 1, eventos: 0 },
       recursos: [
         {
           storageKey: 'apuntes/primer-anio/calculo/apunte-1/old.html',
@@ -330,7 +337,7 @@ describe('admin apunte actions', () => {
       slug: 'resumen-actual',
       subjectId: 'subject-1',
       createdByUserId: 'admin-1',
-      _count: { recursos: 1 },
+      _count: { recursos: 1, eventos: 0 },
       recursos: [],
     })
 
@@ -361,8 +368,9 @@ describe('admin apunte actions', () => {
     })
     prismaMock.apunte.findUnique.mockResolvedValue({
       titulo: 'Resumen viejo',
+      slug: 'resumen-viejo',
       createdByUserId: 'admin-1',
-      _count: { recursos: 2 },
+      _count: { recursos: 2, eventos: 0 },
       recursos: [],
     })
     prismaMock.apunte.delete.mockResolvedValue(undefined)
@@ -641,6 +649,8 @@ describe('deleteSubjectAction', () => {
 
     const { deleteSubjectAction } = await import('./actions')
     await deleteSubjectAction(makeFormData({ id: 'subject-1' }))
+    expect(prismaMock.subject.delete.mock.invocationCallOrder[0]).toBeLessThan(updateTagMock.mock.invocationCallOrder[0])
+    expect(updateTagMock.mock.invocationCallOrder[0]).toBeLessThan(deleteSubjectStorageMock.mock.invocationCallOrder[0])
 
     expect(revokeContributionBatchMock).toHaveBeenCalledWith('user-1', {
       apuntesCreados: 0,
@@ -669,6 +679,8 @@ describe('deleteYearAction', () => {
 
     const { deleteYearAction } = await import('./actions')
     await deleteYearAction(makeFormData({ id: 'year-1' }))
+    expect(prismaMock.academicYear.delete.mock.invocationCallOrder[0]).toBeLessThan(updateTagMock.mock.invocationCallOrder[0])
+    expect(updateTagMock.mock.invocationCallOrder[0]).toBeLessThan(deleteYearStorageMock.mock.invocationCallOrder[0])
 
     expect(updateTagMock).toHaveBeenCalledWith('quiz-bank-tag')
   })

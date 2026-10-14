@@ -1,4 +1,5 @@
 import type { getHomeCalendarEvents, getLatestApuntes } from '@/lib/queries'
+import { HOME_LATEST_APUNTES_LIMIT } from '@/lib/home-limits'
 import {
   isCommissionVisible,
   isSubjectVisible,
@@ -172,7 +173,7 @@ export function buildHomeCalendarEvents(
 export function buildHomeLatestApuntes(
   apuntes: readonly RawHomeLatestApunte[],
   prefs: UserPreferences | null,
-  limit = 6,
+  limit = HOME_LATEST_APUNTES_LIMIT,
 ): HomeLatestApunteItem[] {
   if (!prefs) return []
 

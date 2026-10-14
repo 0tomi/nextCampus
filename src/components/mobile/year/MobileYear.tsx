@@ -33,7 +33,7 @@ interface YearForMobile {
     slug: string
     nombre: string
     commissions: CommissionOption[]
-    agenda: { id: string; eventos: Array<{ id: string; titulo: string; fecha: string; hora: string | null; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId: string | null; commissionSlug: string | null; commissionNombre: string | null }> } | null
+    agenda: { id: string; eventos: Array<{ commissionId: string | null }> } | null
   }>
   career: { nombre: string }
 }

@@ -1,0 +1,56 @@
+// Generated ONLY into the disposable runner checkout. Never a deployed route.
+import { Suspense } from 'react'
+import { connection } from 'next/server'
+import { readFile } from 'node:fs/promises'
+import { getAdminUser, requireAnyAdmin } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import * as queries from '@/lib/queries'
+import { buildMobileYear, buildYearCalendarEvents } from '@/lib/domain/year-page-adapters'
+import { buildHomeLatestApuntes } from '@/lib/domain/home-page-adapters'
+import { updateEventoAction } from '@/app/admin/actions/eventos'
+import { updateApunteAction } from '@/app/admin/actions/apuntes'
+import { SignOutButton } from '@/components/admin/SignOutButton'
+
+async function fixture() {
+  return JSON.parse(await readFile(process.env.CACHE_FIXTURE_PATH!, 'utf8'))
+}
+async function mutate(form: FormData) {
+  'use server'
+  await requireAnyAdmin()
+  const state = await fixture()
+  const operation = form.get('operation')
+  if (operation === 'event') {
+    const payload = new FormData()
+    for (const [key, value] of Object.entries({ id: 'event-noisy-1', agendaId: 'agenda-noisy', commissionId: 'commission-noisy', tipoEventoId: 'cache-type', titulo: 'Updated fixture event', descripcion: 'Updated details', fecha: '2099-01-01', hora: '', apunteIdsJson: '["noisy-00"]' })) payload.set(key, value)
+    const result = await updateEventoAction({ ok: false, message: '' }, payload)
+    if (!result.ok) throw new Error(result.message)
+  } else if (operation === 'note') {
+    const payload = new FormData()
+    for (const [key, value] of Object.entries({ apunteId: 'noisy-00', titulo: 'Updated linked fixture note', descripcion: 'Updated note details', slug: 'note-0', categoriaIdsJson: JSON.stringify([state.categoryId]), recursosJson: JSON.stringify([{ tipo: 'HTML', orden: 0, storageKey: state.htmlKey, mimeType: 'text/html', sizeBytes: 67 }]) })) payload.set(key, value)
+    const result = await updateApunteAction({ ok: false, message: '' }, payload)
+    if (!result.ok) throw new Error(result.message)
+  } else throw new Error('Unknown fixture operation')
+}
+async function Content() {
+  await connection()
+  await requireAnyAdmin()
+  const [year, otherYear, subject, note, sibling, quiz, events, recent, yearRecent, today] = await Promise.all([
+    queries.getYearBySlug('primero'), queries.getYearBySlug('segundo'), queries.getSubjectPageBySlug('noisy'), queries.getApuntePageBySlug('noisy', 'note-0'), queries.getApuntePageBySlug('noisy', 'note-1'), queries.getSubjectQuizMeta('noisy'), queries.getHomeCalendarEvents(), queries.getLatestApuntes(), queries.getLatestApuntesByYear('primero'), queries.getTodayKeyAR(),
+  ])
+  if (!year || !otherYear || !subject || !note || !sibling) throw new Error('Missing fixture')
+  // Real database baseline independently checks bounded SQL DTOs and preference subsets.
+  const allNotes = await prisma.apunte.findMany({ orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }], select: { id: true, titulo: true, slug: true, createdAt: true, updatedAt: true, subject: { select: { slug: true, nombre: true, year: { select: { slug: true, nombre: true } } } } } })
+  const full = allNotes.map((row) => ({ ...row, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString() }))
+  let equivalent = true
+  for (let yearsMask = 0; yearsMask < 4; yearsMask++) for (let subjectsMask = 0; subjectsMask < 8; subjectsMask++) {
+    const prefs = { hiddenYears: ['primero', 'segundo'].filter((_, i) => yearsMask & (1 << i)), hiddenSubjects: ['noisy', 'quiet', 'other'].filter((_, i) => subjectsMask & (1 << i)), hiddenCommissions: [] }
+    for (const limit of [0, 2, 6]) equivalent &&= JSON.stringify(buildHomeLatestApuntes(recent, prefs, limit)) === JSON.stringify(buildHomeLatestApuntes(full, prefs, limit))
+  }
+  const snapshot = { year, otherYear, subject, note, sibling, quiz, events, recent, yearRecent, today, mobile: buildMobileYear(year), history: buildYearCalendarEvents(year.subjects), equivalent, fullCount: full.length, admin: Boolean(await getAdminUser()) }
+  return <>
+    <pre data-testid="cache-snapshot">{JSON.stringify(snapshot)}</pre>
+    <form action={mutate}><button name="operation" value="event">Update fixture event</button><button name="operation" value="note">Update fixture note</button></form>
+    <SignOutButton />
+  </>
+}
+export default function Probe() { return <Suspense fallback={<p>Loading fixture</p>}><Content /></Suspense> }

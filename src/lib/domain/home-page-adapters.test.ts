@@ -24,18 +24,16 @@ function makeHomeEvent(overrides: Partial<RawHomeCalendarEvent> = {}): RawHomeCa
     hora: '09:00',
     tipoEventoId: 'tipo-1',
     tipoEvento: { nombre: 'Parcial' },
-    createdByUserId: 'user-1',
     apuntes: [],
     agenda: {
       id: 'agenda-1',
       commissionId: 'commission-1',
-      commission: { id: 'commission-1', slug: 'comision-a', nombre: 'Comisión A' },
+      commission: { slug: 'comision-a', nombre: 'Comisión A' },
       subject: {
         id: 'subject-1',
         slug: 'calculo',
         nombre: 'Cálculo',
-        commissions: [{ id: 'commission-1', slug: 'comision-a', nombre: 'Comisión A' }],
-        year: { id: 'year-1', slug: 'primer-anio', nombre: 'Primer año', orden: 1 },
+        year: { id: 'year-1', slug: 'primer-anio', nombre: 'Primer año' },
       },
     },
     ...overrides,
@@ -121,5 +119,33 @@ describe('home-page-adapters', () => {
     expect(buildHomeUpcomingEvents([makeHomeEvent()], null, '2026-06-04')).toEqual([])
     expect(buildHomeCalendarEvents([makeHomeEvent()], null)).toEqual([])
     expect(buildHomeLatestApuntes([makeApunte()], null)).toEqual([])
+  })
+})
+
+
+describe('bounded per-subject recent notes', () => {
+  it('matches the full feed for all hidden-year and hidden-subject subsets, including ties and quiet subjects', () => {
+    const subjects = ['noisy', 'quiet', 'other']
+    const rows = subjects.flatMap((subject, index) => Array.from({ length: index === 0 ? 30 : index === 1 ? 2 : 8 }, (_, n) => makeApunte({
+      id: `${subject}-${String(n).padStart(2, '0')}`, updatedAt: `2026-01-${String(10 + (n % 4)).padStart(2, '0')}T00:00:00.000Z`,
+      subject: { slug: subject, nombre: subject, year: { slug: index === 2 ? 'second' : 'first', nombre: 'Year' } },
+    }))).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || b.id.localeCompare(a.id))
+    const counts = new Map<string, number>()
+    const bounded = rows.filter((row) => {
+      const n = counts.get(row.subject.slug) ?? 0
+      counts.set(row.subject.slug, n + 1)
+      return n < 6
+    })
+    expect(bounded).toHaveLength(14)
+    for (let yearsMask = 0; yearsMask < 4; yearsMask++) {
+      for (let subjectsMask = 0; subjectsMask < 8; subjectsMask++) {
+        const prefs = {
+          hiddenYears: ['first', 'second'].filter((_, i) => yearsMask & (1 << i)),
+          hiddenSubjects: subjects.filter((_, i) => subjectsMask & (1 << i)), hiddenCommissions: [],
+        }
+        for (const limit of [0, 2, 6]) expect(buildHomeLatestApuntes(bounded, prefs, limit)).toEqual(buildHomeLatestApuntes(rows, prefs, limit))
+      }
+    }
+    expect(buildHomeLatestApuntes([], visiblePrefs)).toEqual([])
   })
 })

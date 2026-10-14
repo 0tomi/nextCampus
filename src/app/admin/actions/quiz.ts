@@ -71,9 +71,8 @@ export async function uploadQuizBankAction(
       message: 'No se pudo guardar el banco. Probá de nuevo.',
     }
   }
-  await awardQuizBankCreated(scope.admin.id, bank.bank.units.length)
-
   invalidateTag(queryTags.quizBanks(scope.yearSlug, scope.subjectSlug))
+  await awardQuizBankCreated(scope.admin.id, bank.bank.units.length)
   await recordAudit({
     userId: scope.admin.id,
     action: AUDIT_ACTIONS.QUIZ_BANK_UPLOADED,
@@ -115,12 +114,12 @@ export async function deleteQuizBankAction(formData: FormData): Promise<void> {
   const ownerId = meta?.subidoPorId
 
   await deleteQuizBank(scope.yearSlug, scope.subjectSlug, bankId)
+  invalidateTag(queryTags.quizBanks(scope.yearSlug, scope.subjectSlug))
 
   if (ownerId) {
     await revokeQuizBankCreated(ownerId, unitsCount)
   }
 
-  invalidateTag(queryTags.quizBanks(scope.yearSlug, scope.subjectSlug))
   await recordAudit({
     userId: scope.admin.id,
     action: AUDIT_ACTIONS.QUIZ_BANK_DELETED,

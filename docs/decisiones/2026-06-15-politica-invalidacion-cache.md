@@ -1,108 +1,113 @@
 # Política de invalidación de cache
 
-**Fecha:** 2026-06-15
-**Estado:** Implementado
+**Fecha:** 2026-06-15 · **Actualización:** 2026-10-14
+**Estado:** Implementado; las rutas acotadas se conservan hasta verificar propagación en producción.
 
-## Objetivo
+## Objetivo y semántica
 
-Cada mutación administrativa debe invalidar todos los datos cacheados que
-muestran la entidad modificada, sin refrescar caches ajenos. La fuente de
-verdad de tags es `queryTags` en `src/lib/queries.ts`; los bancos de preguntas
-usan `quizBanksCacheTag` en `src/lib/storage.ts`.
+Invalidar las proyecciones afectadas por una escritura, sin expirar contenido
+independiente. `queryTags` en `src/lib/queries.ts` es la fuente de verdad;
+Storage define `quizBanksCacheTag`. El wrapper `invalidateTag` usa `updateTag`,
+no `revalidateTag(tag, 'max')`: expira inmediatamente con semántica
+read-your-own-writes en Server Actions.
 
-Todas las invalidaciones por tag pasan por el wrapper de
-`src/app/admin/actions/shared.ts`, que llama a `revalidateTag(tag, 'max')`.
-Esto conserva la política stale-while-revalidate de Next.js 16.
+Registrar tags derivados de argumentos antes de consultar, incluso si no existe
+la entidad. Las altas deben invalidar esos resultados negativos y sus rutas nuevas.
 
 ## Matriz de lecturas cacheadas
 
-| Lectura | Datos visibles | Tags |
+| Lectura | Tags |
+|---|---|
+| `getCareer` | `career` |
+| `getYearBySlug` | `year:<slug>`, `year-meta:<slug>`, `career` |
+| `getSubjectPageBySlug` | `subject:<slug>`, `subject-content:<slug>`, `subject-authors:<slug>`, `categorias-apunte`, `year-meta:<año encontrado>` |
+| `getApuntePageBySlug` | `subject:<materia>`, `apunte:<materia>:<apunte>`, `subject-authors:<materia>`, `categorias-apunte`, `year-meta:<año encontrado>` |
+| `getSubjectQuizMeta` | `subject:<slug>`, `year-meta:<año encontrado>` |
+| `getCategoriasApunte` | `categorias-apunte` |
+| `getTiposEvento` | `tipos-evento` |
+| `getPeriodos`, `getCategoriasPeriodo` | `periodos` |
+| `getHomeCalendarEvents` | `upcoming-events`, `career` |
+| `getLatestApuntes` | `latest-apuntes`, `career` |
+| `getLatestApuntesByYear` | `latest-apuntes-year:<año>` |
+| `listQuizBanks` | `quiz-banks:<año>:<materia>` |
+
+`subject` representa identidad y estructura; `subject-content`, eventos y listado
+de apuntes. `year-meta` separa presentación/identidad del año de sus eventos.
+Los nombres públicos dependen de `subject-authors`, no de un tag por autor:
+una materia con muchos autores no debe superar el límite de tags por entrada.
+Categorías y tipos de evento siguen siendo catálogos cargados por seed.
+
+## Duración de agregados y fecha local
+
+Solo los tres agregados siguientes amplían su intervalo de regeneración;
+las escrituras siguen expirando sus tags inmediatamente.
+
+| Lectura | `stale` | `revalidate` | `expire` |
+|---|---:|---:|---:|
+| `getHomeCalendarEvents` | 300 s | 1800 s | 3600 s |
+| `getLatestApuntes` | 300 s | 1800 s | 3600 s |
+| `getLatestApuntesByYear` | 300 s | 1800 s | 3600 s |
+
+Todos los demás perfiles permanecen sin cambios. `getTodayKeyAR` conserva
+`revalidate: 900` y `expire: 3600`, con fecha en la zona horaria de Argentina:
+el cambio de día ocurre a las 03:00 UTC, no a medianoche UTC. Su resultado
+cacheado puede conservar el día anterior hasta renovarse; esta política no
+promete actualización exacta a medianoche. La dependencia de fecha del año
+sigue imponiendo su intervalo de quince minutos. No debe deducirse una reducción
+proporcional de ISR Writes a partir de estos intervalos.
+
+## Matriz de escrituras
+
+| Escritura | Tags afectados | Rutas conservadas |
 |---|---|---|
-| `getCareer` | Carrera, años, materias, comisiones y enlaces | `career` |
-| `getYearBySlug` | Año, materias, comisiones y eventos | `year:<slug>`, `career` |
-| `getSubjectPageBySlug` | Materia, comisiones, eventos, apuntes y categorías | `subject:<slug>` |
-| `getApuntePageBySlug` | Apunte, recursos, categorías y eventos relacionados | `subject:<slug>` |
-| `getSubjectQuizMeta` | Identidad de materia y año para los flujos de quiz | `subject:<slug>` |
-| `getCategoriasApunte` | Catálogo global de categorías | `categorias-apunte` |
-| `getTiposEvento` | Catálogo global de tipos de evento | `tipos-evento` |
-| `getPeriodos` | Períodos académicos globales | `periodos` |
-| `getUpcomingEventsCrossYear` | Próximos eventos y apuntes relacionados | `upcoming-events` |
-| `getHomeCalendarEvents` | Calendario global, materias, años y comisiones | `upcoming-events`, `career` |
-| `getLatestApuntes` | Apuntes recientes con materia y año | `latest-apuntes`, `career` |
-| `getLatestApuntesByYear` | Apuntes recientes de un año | `year:<slug>` |
-| `listQuizBanks` | Bancos de preguntas de una materia | `quiz-banks:<año>:<materia>` |
+| Crear/editar/eliminar evento | `subject-content`, `year`, `upcoming-events` | Año, calendario, materia, comisiones |
+| Crear/editar/eliminar apunte | `subject-content`, detalles antiguos/nuevos `apunte`, `latest-apuntes`, `latest-apuntes-year` | Rutas acotadas anteriores y detalles exactos |
+| Cambiar título/slug de apunte vinculado; eliminar apunte vinculado | Los anteriores, más `year`, `upcoming-events` | Las anteriores |
+| Crear/editar/eliminar período o categoría de período | `periodos` | Ninguna |
+| Subir/eliminar banco de quiz | Su `quiz-banks` | Ninguna |
+| Crear/editar año | `career`, `year`, `year-meta`, `latest-apuntes-year` antiguos/nuevos | Inicio, año y calendario antiguos/nuevos |
+| Eliminar año | Los anteriores, identidades `subject` y `quiz-banks` de sus materias | Inicio, año, calendario |
+| Crear materia/comisión | `career`, `year`, `subject`, `subject-content`, `latest-apuntes-year` | Inicio cuando corresponde, año, calendario, materia, comisiones nuevas |
+| Editar materia | `career`, `year`, `latest-apuntes-year`, identidades `subject` antiguas/nuevas | Inicio, año, calendario, materia antigua/nueva |
+| Eliminar materia | `career`, `year`, `latest-apuntes-year`, `subject`, `quiz-banks` | Inicio, año, calendario, materia |
+| Cambiar nombre de usuario | `subject-authors` de materias con sus apuntes/eventos y `year` de sus eventos | Vistas administrativas existentes |
+| Cambiar correo, contraseña o permisos sin cambiar nombre | Ningún tag público | Vistas administrativas existentes |
+| Cerrar sesión | Ninguno | Ninguna invalidación compartida; navegación completa a inicio |
 
-No existen mutaciones administrativas para categorías o tipos de evento en el
-barrel actual. Si se agregan, deberán invalidar sus tags dedicados.
+Los wrappers delegan en su acción principal. Las consultas de impacto no mutan
+ni invalidan. Las eliminaciones/renombres estructurales invalidan `career`, que
+ya cubre calendario global y apuntes recientes globales. Los recientes del año
+requieren su tag específico. Editar recursos/descripción de un apunte vinculado
+sin cambiar título/slug no expira eventos.
 
-## Matriz de acciones administrativas
+## Orden de escritura y fallas
 
-La tabla cubre las 23 acciones exportadas por `src/app/admin/actions.ts`.
-Cuando una entrada dice “delega”, la acción wrapper ejecuta la mutación y la
-invalidación de la acción indicada.
+Autorización y validación preceden la escritura. Invalidar inmediatamente después
+de confirmar la escritura visible, antes de puntuación, auditoría o limpieza de
+archivos. Una falla secundaria no debe dejar cache antiguo de contenido confirmado.
 
-| Acción | Mutación | Tags invalidados | Paths |
-|---|---|---|---|
-| `createEvento` | Crea evento y relaciones con apuntes | `subject`, `year`, `upcoming-events` | año, calendario, materia y comisiones |
-| `createEventoAction` | Wrapper de creación | Delega en `createEvento` | Delega |
-| `updateEventoFechaAction` | Cambia fecha | `subject`, `year`, `upcoming-events` | año, calendario, materia y comisiones |
-| `updateEventoAction` | Edita evento y relaciones | `subject`, `year`, `upcoming-events` | año, calendario, materia y comisiones |
-| `deleteEvento` | Elimina evento | `subject`, `year`, `upcoming-events` | año, calendario, materia y comisiones |
-| `createPeriodoAction` | Crea período global | `periodos` | Ninguno |
-| `updatePeriodoAction` | Edita período global | `periodos` | Ninguno |
-| `deletePeriodo` | Elimina período global | `periodos` | Ninguno |
-| `createApunteAction` | Crea apunte | `subject`, `year`, `latest-apuntes`, `upcoming-events` | año, calendario, materia y comisiones |
-| `updateApunteAction` | Edita apunte y recursos | `subject`, `year`, `latest-apuntes`, `upcoming-events` | año, calendario, materia y comisiones |
-| `deleteApunteAction` | Elimina apunte y recursos | `subject`, `year`, `latest-apuntes`, `upcoming-events` | año, calendario, materia y comisiones |
-| `uploadQuizBankAction` | Sube banco de preguntas | `quiz-banks:<año>:<materia>` | Ninguno |
-| `deleteQuizBankAction` | Elimina banco de preguntas | `quiz-banks:<año>:<materia>` | Ninguno |
-| `createYearAction` | Crea año | `career` | home |
-| `updateYearAction` | Edita año o slug | `career`, `year:<slug viejo>`, `year:<slug nuevo>` | home y rutas vieja/nueva |
-| `deleteYearAction` | Elimina año, materias y storage | `career`, `year`, todos sus `subject` y `quiz-banks` | home y año |
-| `getYearDeleteImpactAction` | Solo lectura | Ninguno | Ninguno |
-| `createSubjectAction` | Crea materia y comisión inicial | `career`, `year` | home, año y calendario |
-| `createCommissionAction` | Crea comisión y agenda | `career`, `subject`, `year` | año, calendario, materia y comisiones |
-| `updateSubjectAction` | Edita materia o slug | `career`, `year`, `subject:<slug viejo>`, `subject:<slug nuevo>` | home, año, calendario y rutas vieja/nueva |
-| `deleteSubjectAction` | Elimina materia y storage | `career`, `year`, `subject`, `quiz-banks` | home, año, calendario y materia |
-| `getSubjectDeleteImpactAction` | Solo lectura | Ninguno | Ninguno |
-| `signOutAction` | Cierra sesión | Ninguno | layout global |
+En creación de apuntes, la visibilidad completa se confirma después de persistir
+sus recursos. Una falla de recursos conserva la compensación existente: si se
+confirma la eliminación del apunte, no se invalida; si la eliminación falla o la
+limpieza impide confirmarla, se invalida conservadoramente. La puntuación queda
+fuera de esa compensación: una falla de puntuación conserva el apunte confirmado,
+ya invalidado, y se propaga sin reintentos ni rediseño del sistema de contribuciones.
 
-`career` también pertenece a los caches del calendario global y de apuntes
-recientes. Por eso las eliminaciones y renombres estructurales no necesitan
-invalidar además `upcoming-events` o `latest-apuntes`: la misma entrada
-cacheada ya queda obsoleta al invalidar cualquiera de sus tags.
+Operaciones rechazadas, entidades ausentes y transacciones revertidas no invalidan.
+El perfil sin cambios conserva su retorno temprano. Los contextos de autores se
+resuelven antes de escribir y solo cuando cambia realmente el nombre.
 
-Los apuntes sí invalidan `upcoming-events` porque los eventos cacheados incluyen
-título y slug de sus apuntes relacionados. Se mantiene esta regla uniforme
-para crear, editar y borrar apuntes; evita que una relación creada en el mismo
-flujo quede desactualizada sin introducir variantes especiales por operación.
+## Helpers y verificación
 
-## Helpers y contexto
+Los helpers reciben contexto, deduplican tags y no consultan la base. El contexto
+de apuntes agrega `apunteSlugs` y `affectsRelatedEvents`. El de autores recibe
+materias y años de eventos afectados, obtenidos con consultas filtradas.
 
-- `revalidateSubjectContent` invalida el cache de materia, el cache del año y
-  las rutas públicas de esa materia.
-- `revalidateSubjectEvents` agrega `upcoming-events`.
-- `revalidateSubjectApuntes` agrega `latest-apuntes` y `upcoming-events`.
-- Los helpers no consultan la base. Los scopes de autorización ya recuperan
-  `yearSlug` y los slugs de comisiones en su lectura de la materia, y ese
-  contexto se pasa directamente.
-- Las mutaciones de períodos invalidan solo `periodos`; se eliminó el barrido
-  redundante de todos los años.
-- Las mutaciones de bancos invalidan solo su tag de Storage. No cambian la
-  metadata cacheada de la materia.
-
-## Regla para acciones nuevas
-
-Antes de mergear una nueva mutación:
-
-1. Identificar qué campos o relaciones modifica.
-2. Ubicar en la matriz de lecturas todas las queries que muestran esos datos.
-3. Invalidar al menos uno de los tags declarados por cada lectura afectada.
-4. Agregar la acción a esta matriz.
-5. No agregar `revalidatePath` como sustituto de un tag faltante.
-
-Si aparece una lectura cacheada o un tag nuevo, esta decisión se actualiza en
-el mismo cambio.
+Se conservan los `revalidatePath` acotados existentes hasta demostrar propagación
+correcta de tags en un build de producción. No agregar barridos globales como
+sustituto de una dependencia faltante. Antes de extender una mutación, identificar
+sus proyecciones lectoras y probar el conjunto exacto de tags, incluidos los que
+no deben invalidarse, resultados negativos, rollback y fallas secundarias.
 
 ## Verificación manual
 

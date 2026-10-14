@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { filterEventsByPreferredCommission } from '@/lib/commission-preferences'
+import { getSubjectVisibleEvents } from './event-adapters'
 import type { YearPageCareer, YearPageYear } from './year-page-adapters'
 import {
   buildMobileYear,
@@ -200,13 +202,55 @@ describe('year-page-adapters', () => {
         slug: 'calculo',
         nombre: 'Cálculo',
         agendaId: 'agenda-general',
-        commissions: year.subjects[0].commissions,
+        commissions: [{ id: 'commission-1', slug: 'comision-a', nombre: 'Comisión A' }],
         categoriasDisponibles: [{ id: 'cat-1', nombre: 'Guías' }],
       },
     ])
-    expect(mobileYear.subjects[0].agenda?.eventos.map((event) => event.commissionSlug)).toEqual([
+    expect(mobileYear.subjects[0].agenda?.eventos.map((event) => event.commissionId)).toEqual([
       null,
-      'comision-a',
+      'commission-1',
     ])
+  })
+})
+
+
+describe('lean mobile and modal projections', () => {
+  it('passes only count rows and commission options, preserving visible event counts', () => {
+    const year = makeYear()
+    const mobile = buildMobileYear(year)
+    expect(Object.keys(mobile).sort()).toEqual(['career', 'color', 'descripcion', 'id', 'links', 'nombre', 'slug', 'subjects'])
+    expect(Object.keys(mobile.subjects[0]).sort()).toEqual(['agenda', 'commissions', 'id', 'nombre', 'slug'])
+    expect(mobile.subjects[0].agenda?.eventos).toEqual([{ commissionId: null }, { commissionId: 'commission-1' }])
+    expect(Object.keys(mobile.subjects[0].commissions[0]).sort()).toEqual(['id', 'nombre', 'slug'])
+    expect(Object.keys(buildYearModalSubjects(year.subjects, [])[0].commissions[0]).sort()).toEqual(['id', 'nombre', 'slug'])
+    for (const preferred of [null, 'commission-1', 'missing']) {
+      expect(filterEventsByPreferredCommission(mobile.subjects[0].agenda?.eventos ?? [], preferred)).toHaveLength(
+        filterEventsByPreferredCommission(getSubjectVisibleEvents(year.subjects[0]), preferred).length,
+      )
+    }
+    const legacy = {
+      ...year,
+      subjects: year.subjects.map((subject) => ({
+        ...subject,
+        agenda: {
+          id: subject.agenda?.id ?? subject.agendas[0]?.id ?? subject.id,
+          eventos: getSubjectVisibleEvents(subject).map((event) => ({ ...event, commissionSlug: event.commission?.slug ?? null, commissionNombre: event.commission?.nombre ?? null })),
+        },
+      })),
+    }
+    const before = Buffer.byteLength(JSON.stringify(legacy))
+    const after = Buffer.byteLength(JSON.stringify(mobile))
+    expect(after).toBeLessThan(before / 2)
+    console.info(`mobile fixture DTO bytes: ${before} -> ${after}`)
+  })
+  it('preserves null agendas and ID fallback for commission-only subjects', () => {
+    const year = makeYear()
+    year.subjects[0].agenda = null
+    year.subjects[0].agendaGeneral = null
+    year.subjects[0].agendas = year.subjects[0].agendas.slice(1)
+    expect(buildMobileYear(year).subjects[0].agenda).toEqual({ id: 'agenda-commission', eventos: [{ commissionId: 'commission-1' }] })
+    year.subjects[0].agendas = []
+    expect(buildMobileYear(year).subjects[0].agenda).toBeNull()
+    expect(buildYearModalSubjects(year.subjects, [])).toEqual([])
   })
 })

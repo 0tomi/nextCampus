@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const revalidatePathMock = vi.fn()
+const updateTagMock = vi.fn()
 const requireAnyAdminMock = vi.fn()
 const recordAuditMock = vi.fn()
 const createSupabaseAdminClientMock = vi.fn()
 const createSupabaseServerClientMock = vi.fn()
 
 const prismaMock = {
+  subject: { findMany: vi.fn() },
+  academicYear: { findMany: vi.fn() },
   userAccount: {
     findUnique: vi.fn(),
     update: vi.fn(),
@@ -15,7 +18,13 @@ const prismaMock = {
 
 vi.mock('next/cache', () => ({
   revalidatePath: revalidatePathMock,
+  updateTag: updateTagMock,
 }))
+
+vi.mock('@/lib/queries', () => ({ queryTags: {
+  subjectAuthors: (slug: string) => `subject-authors:${slug}`,
+  year: (slug: string) => `year:${slug}`,
+} }))
 
 vi.mock('@/lib/auth', () => ({
   requireAnyAdmin: requireAnyAdminMock,
@@ -53,6 +62,8 @@ function makeFormData(entries: Record<string, string>) {
 beforeEach(() => {
   vi.clearAllMocks()
   vi.resetModules()
+  prismaMock.subject.findMany.mockResolvedValue([{ slug: 'calculo' }])
+  prismaMock.academicYear.findMany.mockResolvedValue([{ slug: 'primero' }])
 })
 
 describe('admin perfil profile action', () => {
@@ -147,6 +158,8 @@ describe('admin perfil profile action', () => {
         }),
       }),
     )
+    expect(updateTagMock.mock.calls).toEqual([['subject-authors:calculo'], ['year:primero']])
+    expect(updateTagMock.mock.invocationCallOrder[0]).toBeLessThan(recordAuditMock.mock.invocationCallOrder[0])
     expect(revalidatePathMock).toHaveBeenCalledWith('/admin/perfil')
     expect(revalidatePathMock).toHaveBeenCalledWith('/admin', 'layout')
     expect(revalidatePathMock).toHaveBeenCalledWith('/admin/historial')
@@ -198,10 +211,41 @@ describe('admin perfil profile action', () => {
       ok: false,
       message: 'No pudimos actualizar el perfil. Intentá de nuevo.',
     })
+    expect(updateTagMock).not.toHaveBeenCalled()
     expect(updateUserByIdMock).toHaveBeenNthCalledWith(2, 'auth-self', {
       email: 'actual@campus.test',
       email_confirm: true,
     })
+  })
+})
+
+describe('profile public cache boundaries', () => {
+  beforeEach(() => {
+    requireAnyAdminMock.mockResolvedValue({ id: 'self', authUserId: 'auth-self' })
+    prismaMock.userAccount.findUnique.mockImplementation(async ({ where }) => where.id ? { id: 'self', nombreUsuario: 'Current', email: 'current@campus.test' } : null)
+    prismaMock.userAccount.update.mockResolvedValue({ id: 'self' })
+    recordAuditMock.mockResolvedValue(undefined)
+  })
+  it('preserves the no-change early return without resolving dependencies', async () => {
+    const { updateAdminProfileAction } = await import('./actions')
+    expect((await updateAdminProfileAction({ ok: false, message: '' }, makeFormData({ nombreUsuario: 'Current', nextEmail: 'current@campus.test' }))).ok).toBe(true)
+    expect(prismaMock.subject.findMany).not.toHaveBeenCalled()
+    expect(prismaMock.userAccount.update).not.toHaveBeenCalled()
+    expect(updateTagMock).not.toHaveBeenCalled()
+  })
+  it('name-only changes expire public names before audit failure', async () => {
+    recordAuditMock.mockRejectedValue(new Error('audit unavailable'))
+    const { updateAdminProfileAction } = await import('./actions')
+    expect((await updateAdminProfileAction({ ok: false, message: '' }, makeFormData({ nombreUsuario: 'Next', nextEmail: 'current@campus.test' }))).ok).toBe(false)
+    expect(updateTagMock.mock.calls).toEqual([['subject-authors:calculo'], ['year:primero']])
+    expect(prismaMock.subject.findMany.mock.invocationCallOrder[0]).toBeLessThan(prismaMock.userAccount.update.mock.invocationCallOrder[0])
+  })
+  it('email-only changes do not resolve or expire public author projections', async () => {
+    createSupabaseAdminClientMock.mockReturnValue({ auth: { admin: { updateUserById: vi.fn().mockResolvedValue({ error: null }) } } })
+    const { updateAdminProfileAction } = await import('./actions')
+    expect((await updateAdminProfileAction({ ok: false, message: '' }, makeFormData({ nombreUsuario: 'Current', nextEmail: 'next@campus.test' }))).ok).toBe(true)
+    expect(prismaMock.subject.findMany).not.toHaveBeenCalled()
+    expect(updateTagMock).not.toHaveBeenCalled()
   })
 })
 

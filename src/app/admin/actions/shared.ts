@@ -29,70 +29,88 @@ export type SubjectRevalidationContext = {
   commissionSlugs: readonly string[]
 }
 
-export function revalidateSubjectContent(ctx: SubjectRevalidationContext): void {
-  invalidateTag(queryTags.subject(ctx.subjectSlug))
-  invalidateTag(queryTags.year(ctx.yearSlug))
+function invalidateTags(tags: readonly string[]): void {
+  for (const tag of new Set(tags)) invalidateTag(tag)
+}
+
+function revalidateSubjectPaths(ctx: SubjectRevalidationContext): void {
   revalidatePath(`/${ctx.yearSlug}`)
   revalidatePath(`/${ctx.yearSlug}/calendario`)
   revalidatePath(`/${ctx.yearSlug}/${ctx.subjectSlug}`)
-
-  for (const commissionSlug of ctx.commissionSlugs) {
+  for (const commissionSlug of new Set(ctx.commissionSlugs)) {
     revalidatePath(`/${ctx.yearSlug}/${ctx.subjectSlug}/${commissionSlug}`)
   }
 }
 
+// Structural subject/commission mutations, not ordinary content edits.
+export function revalidateSubjectContent(ctx: SubjectRevalidationContext): void {
+  invalidateTags([
+    queryTags.subject(ctx.subjectSlug), queryTags.subjectContent(ctx.subjectSlug),
+    queryTags.year(ctx.yearSlug), queryTags.latestApuntesByYear(ctx.yearSlug),
+  ])
+  revalidateSubjectPaths(ctx)
+}
+
 export function revalidateSubjectEvents(ctx: SubjectRevalidationContext): void {
-  revalidateSubjectContent(ctx)
-  invalidateTag(queryTags.upcomingEvents)
+  invalidateTags([queryTags.subjectContent(ctx.subjectSlug), queryTags.year(ctx.yearSlug), queryTags.upcomingEvents])
+  revalidateSubjectPaths(ctx)
 }
 
-export function revalidateSubjectApuntes(ctx: SubjectRevalidationContext): void {
-  revalidateSubjectContent(ctx)
-  invalidateTag(queryTags.latestApuntes)
-  invalidateTag(queryTags.upcomingEvents)
+export type ApunteRevalidationContext = SubjectRevalidationContext & {
+  apunteSlugs: readonly string[]
+  affectsRelatedEvents: boolean
 }
 
-// Alta de año: solo cambia el listado de años de la carrera y la home.
+export function revalidateSubjectApuntes(ctx: ApunteRevalidationContext): void {
+  invalidateTags([
+    queryTags.subjectContent(ctx.subjectSlug), queryTags.latestApuntes,
+    queryTags.latestApuntesByYear(ctx.yearSlug),
+    ...ctx.apunteSlugs.map((slug) => queryTags.apunte(ctx.subjectSlug, slug)),
+    ...(ctx.affectsRelatedEvents ? [queryTags.year(ctx.yearSlug), queryTags.upcomingEvents] : []),
+  ])
+  revalidateSubjectPaths(ctx)
+  for (const slug of new Set(ctx.apunteSlugs)) {
+    revalidatePath(`/${ctx.yearSlug}/${ctx.subjectSlug}/apuntes/${slug}`)
+  }
+}
+
+export type AuthorRevalidationContext = {
+  subjectSlugs: readonly string[]
+  eventYearSlugs: readonly string[]
+}
+
+export function revalidateAuthorNames(ctx: AuthorRevalidationContext): void {
+  invalidateTags([
+    ...ctx.subjectSlugs.map(queryTags.subjectAuthors),
+    ...ctx.eventYearSlugs.map(queryTags.year),
+  ])
+}
+
 export function revalidateCareerListing(): void {
   invalidateTag(queryTags.career)
   revalidatePath('/')
 }
 
-// Contenido de un año (materias, links): listado de carrera + tag del año,
-// más home, landing del año y su calendario.
 export function revalidateYearContent(yearSlug: string): void {
-  invalidateTag(queryTags.career)
-  invalidateTag(queryTags.year(yearSlug))
+  invalidateTags([queryTags.career, queryTags.year(yearSlug), queryTags.latestApuntesByYear(yearSlug)])
   revalidatePath('/')
   revalidatePath(`/${yearSlug}`)
   revalidatePath(`/${yearSlug}/calendario`)
 }
 
-// Update de año: invalida el slug viejo y, si el update lo cambió, también
-// el tag y las rutas del slug nuevo.
 export function revalidateYearUpdate(oldSlug: string, newSlug: string): void {
-  revalidateYearContent(oldSlug)
-  if (newSlug !== oldSlug) {
-    invalidateTag(queryTags.year(newSlug))
-    revalidatePath(`/${newSlug}`)
-    revalidatePath(`/${newSlug}/calendario`)
+  const slugs = [...new Set([oldSlug, newSlug])]
+  invalidateTags([queryTags.career, ...slugs.flatMap((slug) => [queryTags.year(slug), queryTags.yearMeta(slug), queryTags.latestApuntesByYear(slug)])])
+  revalidatePath('/')
+  for (const slug of slugs) {
+    revalidatePath(`/${slug}`)
+    revalidatePath(`/${slug}/calendario`)
   }
 }
 
-// Borrado de año: además del año en sí, cae todo lo que cuelga de él
-// (cada materia y sus bancos de quiz), más home y landing del año.
-export function revalidateYearRemoval(
-  yearSlug: string,
-  subjectSlugs: readonly string[],
-): void {
-  invalidateTag(queryTags.career)
-  invalidateTag(queryTags.year(yearSlug))
-  for (const subjectSlug of subjectSlugs) {
-    invalidateTag(queryTags.subject(subjectSlug))
-    invalidateTag(queryTags.quizBanks(yearSlug, subjectSlug))
-  }
-  revalidatePath('/')
-  revalidatePath(`/${yearSlug}`)
+export function revalidateYearRemoval(yearSlug: string, subjectSlugs: readonly string[]): void {
+  revalidateYearUpdate(yearSlug, yearSlug)
+  invalidateTags(subjectSlugs.flatMap((slug) => [queryTags.subject(slug), queryTags.quizBanks(yearSlug, slug)]))
 }
 
 // Definidos en un módulo hoja sin dependencias server-only para que también

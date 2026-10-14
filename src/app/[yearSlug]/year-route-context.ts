@@ -11,7 +11,6 @@ import {
 import {
   buildMobileYear,
   buildYearLatestApuntes,
-  buildYearCalendarEvents,
   buildYearDrawerYears,
   buildYearModalSubjects,
   buildYearOverviewEvents,
@@ -61,7 +60,6 @@ export async function getYearRouteContext(yearSlug: string) {
     allYears: buildYearDrawerYears(career),
     nextEvents: buildYearUpcomingEvents(year.subjects, todayKey),
     overviewEvents: buildYearOverviewEvents(year.subjects),
-    calendarEvents: buildYearCalendarEvents(year.subjects),
     mobileYear: buildMobileYear(year),
     modalSubjects: buildYearModalSubjects(year.subjects, categoriasDisponibles),
     adminYear: buildYearAdminData({ displayIndex, year }),

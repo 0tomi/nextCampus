@@ -5,6 +5,7 @@ import { prisma } from './prisma'
 import { countSubjectQuizBanks, quizBanksCacheTag } from './storage'
 import { isPeriodoTone } from './periodos'
 import { todayKeyAR } from './utils'
+import { HOME_LATEST_APUNTES_LIMIT } from './home-limits'
 
 // Una fecha "calendario" (sin hora) no es un instante: serializarla como Date
 // arrastra el bug de zona horaria (medianoche UTC se ve como el día anterior en
@@ -18,13 +19,24 @@ const toDateKey = (d: Date): string => d.toISOString().slice(0, 10)
 const eventoOrderBy: Prisma.EventoOrderByWithRelationInput[] = [
   { fecha: 'asc' },
   { hora: { sort: 'asc', nulls: 'first' } },
+  { id: 'asc' },
 ]
 
 // Select del pivot ApunteEvento → apunte relacionado (id/titulo/slug + su
 // materia/año). Repetido en cualquier query que traiga eventos con sus
 // apuntes vinculados.
+const relatedApunteOrderBy: Prisma.ApunteEventoOrderByWithRelationInput[] = [
+  { createdAt: 'asc' }, { apunteId: 'asc' },
+]
+const resourceOrderBy: Prisma.ApunteRecursoOrderByWithRelationInput[] = [
+  { orden: 'asc' }, { id: 'asc' },
+]
+const apunteCategoryOrderBy: Prisma.ApunteCategoriaOrderByWithRelationInput[] = [
+  { categoria: { nombre: 'asc' } }, { categoriaId: 'asc' },
+]
+
 const relatedApunteSelect = {
-  orderBy: { createdAt: 'asc' },
+  orderBy: relatedApunteOrderBy,
   select: {
     apunte: {
       select: {
@@ -160,10 +172,10 @@ function attachCommissionMetadataToAgenda(
   return {
     ...agenda,
     isGeneral: agenda.commissionId === null,
-    eventos: agenda.eventos.map((evento) => ({
+    eventos: agenda.eventos.map(({ createdBy, ...evento }) => ({
       ...evento,
       fecha: toDateKey(evento.fecha),
-      createdByNombre: evento.createdBy?.nombreUsuario ?? null,
+      createdByNombre: createdBy?.nombreUsuario ?? null,
       apuntes: unwrapRelatedApuntes(evento.apuntes),
       commissionId: agenda.commissionId,
       commission,
@@ -211,6 +223,11 @@ const TAGS = {
   tiposEvento: 'tipos-evento',
   year: (slug: string) => `year:${slug}`,
   subject: (slug: string) => `subject:${slug}`,
+  subjectContent: (slug: string) => `subject-content:${slug}`,
+  apunte: (subjectSlug: string, apunteSlug: string) => `apunte:${subjectSlug}:${apunteSlug}`,
+  yearMeta: (slug: string) => `year-meta:${slug}`,
+  latestApuntesByYear: (slug: string) => `latest-apuntes-year:${slug}`,
+  subjectAuthors: (slug: string) => `subject-authors:${slug}`,
   // "quiz-banks:<year>:<subject>". La plantilla vive en storage.ts (que la
   // cachea en lectura) porque este módulo ya importa storage: definirla acá
   // y consumirla desde allá crearía un ciclo queries <-> storage.
@@ -236,7 +253,7 @@ const apunteCardSelect = {
   createdAt: true,
   createdByUserId: true,
   recursos: {
-    orderBy: { orden: 'asc' },
+    orderBy: resourceOrderBy,
     select: {
       id: true,
       tipo: true,
@@ -252,7 +269,7 @@ const apunteCardSelect = {
     select: {
       categoria: { select: categoriaSelect },
     },
-    orderBy: { categoria: { nombre: 'asc' } },
+    orderBy: apunteCategoryOrderBy,
   },
 } as const
 
@@ -310,7 +327,7 @@ export async function getCareer() {
       nombre: true,
       descripcion: true,
       years: {
-        orderBy: { orden: 'asc' },
+        orderBy: [{ orden: 'asc' }, { id: 'asc' }],
         select: {
           id: true,
           slug: true,
@@ -320,10 +337,10 @@ export async function getCareer() {
           color: true,
           links: {
             select: { id: true, label: true, url: true, orden: true },
-            orderBy: { orden: 'asc' },
+            orderBy: [{ orden: 'asc' }, { id: 'asc' }],
           },
           subjects: {
-            orderBy: { nombre: 'asc' },
+            orderBy: [{ nombre: 'asc' }, { id: 'asc' }],
             select: {
               id: true,
               slug: true,
@@ -331,10 +348,10 @@ export async function getCareer() {
               descripcion: true,
               links: {
                 select: { id: true, label: true, url: true, orden: true },
-                orderBy: { orden: 'asc' },
+                orderBy: [{ orden: 'asc' }, { id: 'asc' }],
               },
               commissions: {
-                orderBy: { nombre: 'asc' },
+                orderBy: [{ nombre: 'asc' }, { id: 'asc' }],
                 select: { id: true, slug: true, nombre: true },
               },
             },
@@ -347,7 +364,7 @@ export async function getCareer() {
 
 export async function getYearBySlug(slug: string) {
   'use cache'
-  cacheTag(TAGS.year(slug), TAGS.career)
+  cacheTag(TAGS.year(slug), TAGS.yearMeta(slug), TAGS.career)
   cacheLife({ revalidate: 3600, expire: 86400 })
 
   const year = await prisma.academicYear.findUnique({
@@ -360,20 +377,20 @@ export async function getYearBySlug(slug: string) {
       color: true,
       links: {
         select: { id: true, label: true, url: true, orden: true },
-        orderBy: { orden: 'asc' },
+        orderBy: [{ orden: 'asc' }, { id: 'asc' }],
       },
       subjects: {
-        orderBy: { nombre: 'asc' },
+        orderBy: [{ nombre: 'asc' }, { id: 'asc' }],
         select: {
           id: true,
           slug: true,
           nombre: true,
           agendas: {
-            orderBy: { createdAt: 'asc' },
+            orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
             select: agendaWithEventosSelect,
           },
           commissions: {
-            orderBy: { nombre: 'asc' },
+            orderBy: [{ nombre: 'asc' }, { id: 'asc' }],
             select: {
               id: true,
               slug: true,
@@ -396,7 +413,7 @@ export async function getYearBySlug(slug: string) {
 
 export async function getSubjectPageBySlug(slug: string) {
   'use cache'
-  cacheTag(TAGS.subject(slug))
+  cacheTag(TAGS.subject(slug), TAGS.subjectContent(slug), TAGS.subjectAuthors(slug), TAGS.categorias)
   cacheLife({ revalidate: 3600, expire: 86400 })
 
   const [subject, categorias] = await Promise.all([
@@ -409,7 +426,7 @@ export async function getSubjectPageBySlug(slug: string) {
         descripcion: true,
         links: {
           select: { id: true, label: true, url: true, orden: true },
-          orderBy: { orden: 'asc' },
+          orderBy: [{ orden: 'asc' }, { id: 'asc' }],
         },
         year: {
           select: {
@@ -421,11 +438,11 @@ export async function getSubjectPageBySlug(slug: string) {
           },
         },
         agendas: {
-          orderBy: { createdAt: 'asc' },
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
           select: agendaWithEventosSelect,
         },
         commissions: {
-          orderBy: { nombre: 'asc' },
+          orderBy: [{ nombre: 'asc' }, { id: 'asc' }],
           select: {
             id: true,
             slug: true,
@@ -440,10 +457,11 @@ export async function getSubjectPageBySlug(slug: string) {
         },
       },
     }),
-    prisma.categoria.findMany({ orderBy: { nombre: 'asc' }, select: categoriaSelect }),
+    prisma.categoria.findMany({ orderBy: [{ nombre: 'asc' }, { id: 'asc' }], select: categoriaSelect }),
   ])
 
   if (!subject) return null
+  cacheTag(TAGS.yearMeta(subject.year.slug))
 
   const base = attachCommissionMetadataToSubject({
     ...subject,
@@ -464,7 +482,7 @@ export async function getSubjectPageBySlug(slug: string) {
 
 export async function getApuntePageBySlug(subjectSlug: string, apunteSlug: string) {
   'use cache'
-  cacheTag(TAGS.subject(subjectSlug))
+  cacheTag(TAGS.subject(subjectSlug), TAGS.apunte(subjectSlug, apunteSlug), TAGS.subjectAuthors(subjectSlug), TAGS.categorias)
   cacheLife({ revalidate: 3600, expire: 86400 })
 
   const subject = await prisma.subject.findUnique({
@@ -494,10 +512,10 @@ export async function getApuntePageBySlug(subjectSlug: string, apunteSlug: strin
           createdBy: { select: { nombreUsuario: true } },
           categorias: {
             select: { categoria: { select: categoriaSelect } },
-            orderBy: { categoria: { nombre: 'asc' } },
+            orderBy: apunteCategoryOrderBy,
           },
           recursos: {
-            orderBy: { orden: 'asc' },
+            orderBy: [{ orden: 'asc' }, { id: 'asc' }],
             select: {
               id: true,
               tipo: true,
@@ -514,6 +532,7 @@ export async function getApuntePageBySlug(subjectSlug: string, apunteSlug: strin
     },
   })
 
+  if (subject) cacheTag(TAGS.yearMeta(subject.year.slug))
   const apunte = subject?.apuntes[0]
   if (!subject || !apunte) return null
 
@@ -559,7 +578,7 @@ export async function getCategoriasApunte(): Promise<CategoriaListItem[]> {
   cacheTag(TAGS.categorias)
   cacheLife({ revalidate: 3600, expire: 86400 })
 
-  return prisma.categoria.findMany({ orderBy: { nombre: 'asc' }, select: categoriaSelect })
+  return prisma.categoria.findMany({ orderBy: [{ nombre: 'asc' }, { id: 'asc' }], select: categoriaSelect })
 }
 
 export async function getApuntesPage(input: {
@@ -601,7 +620,7 @@ export async function getSubjectQuizMeta(slug: string) {
   cacheTag(TAGS.subject(slug))
   cacheLife({ revalidate: 3600, expire: 86400 })
 
-  return prisma.subject.findUnique({
+  const subject = await prisma.subject.findUnique({
     where: { slug },
     select: {
       id: true,
@@ -610,6 +629,8 @@ export async function getSubjectQuizMeta(slug: string) {
       year: { select: { id: true, slug: true } },
     },
   })
+  if (subject) cacheTag(TAGS.yearMeta(subject.year.slug))
+  return subject
 }
 
 export async function getTiposEvento() {
@@ -617,7 +638,7 @@ export async function getTiposEvento() {
   cacheTag(TAGS.tiposEvento)
   cacheLife({ revalidate: 86400, expire: 604800 })
 
-  return prisma.tipoEvento.findMany({ orderBy: { nombre: 'asc' } })
+  return prisma.tipoEvento.findMany({ orderBy: [{ nombre: 'asc' }, { id: 'asc' }] })
 }
 
 // Períodos académicos (globales, no cuelgan de materia). Fechas serializadas a
@@ -628,7 +649,7 @@ export async function getPeriodos() {
   cacheLife({ revalidate: 3600, expire: 86400 })
 
   const rows = await prisma.periodoAcademico.findMany({
-    orderBy: { fechaInicio: 'asc' },
+    orderBy: [{ fechaInicio: 'asc' }, { id: 'asc' }],
     select: {
       id: true,
       categoriaId: true,
@@ -662,7 +683,7 @@ export async function getCategoriasPeriodo() {
   cacheLife({ revalidate: 3600, expire: 86400 })
 
   const rows = await prisma.categoriaPeriodo.findMany({
-    orderBy: { label: 'asc' },
+    orderBy: [{ label: 'asc' }, { id: 'asc' }],
     select: {
       id: true,
       label: true,
@@ -678,7 +699,7 @@ export async function getCategoriasPeriodo() {
 export async function getHomeCalendarEvents() {
   'use cache'
   cacheTag(TAGS.upcomingEvents, TAGS.career)
-  cacheLife({ revalidate: 300, expire: 3600 })
+  cacheLife({ stale: 300, revalidate: 1800, expire: 3600 })
 
   const rows = await prisma.evento.findMany({
     orderBy: eventoOrderBy,
@@ -690,7 +711,6 @@ export async function getHomeCalendarEvents() {
       hora: true,
       tipoEventoId: true,
       tipoEvento: { select: { nombre: true } },
-      createdByUserId: true,
       apuntes: relatedApunteSelect,
       agenda: {
         select: {
@@ -698,7 +718,6 @@ export async function getHomeCalendarEvents() {
           commissionId: true,
           commission: {
             select: {
-              id: true,
               slug: true,
               nombre: true,
             },
@@ -708,16 +727,11 @@ export async function getHomeCalendarEvents() {
               id: true,
               slug: true,
               nombre: true,
-              commissions: {
-                orderBy: { nombre: 'asc' },
-                select: { id: true, slug: true, nombre: true },
-              },
               year: {
                 select: {
                   id: true,
                   slug: true,
                   nombre: true,
-                  orden: true,
                 },
               },
             },
@@ -733,26 +747,56 @@ export async function getHomeCalendarEvents() {
   }))
 }
 
+type LatestApunteRow = {
+  id: string
+  titulo: string
+  slug: string
+  createdAt: Date
+  updatedAt: Date
+  subjectSlug: string
+  subjectNombre: string
+  yearSlug: string
+  yearNombre: string
+}
+
 export async function getLatestApuntes() {
   'use cache'
   cacheTag(TAGS.latestApuntes, TAGS.career)
-  cacheLife({ revalidate: 300, expire: 3600 })
+  cacheLife({ stale: 300, revalidate: 1800, expire: 3600 })
 
-  // Traemos todos los apuntes ordenados por fecha y dejamos que el cliente
-  // filtre según los años/materias elegidos y recorte a los últimos. Si
-  // limitáramos acá, un año podría quedarse sin apuntes en el home solo
-  // porque sus apuntes no entran en los más nuevos del campus entero.
-  const rows = await prisma.apunte.findMany({
-    orderBy: { updatedAt: 'desc' },
-    select: latestApunteSelect,
-  })
-  return rows.map(serializeLatestApunte)
+  // Six per subject preserves the newest six for every preference subset.
+  // Ranking bounds returned rows, not necessarily database work.
+  const rows = await prisma.$queryRaw<LatestApunteRow[]>`
+    WITH ranked AS (
+      SELECT "id", "titulo", "slug", "createdAt", "updatedAt", "subjectId",
+        ROW_NUMBER() OVER (
+          PARTITION BY "subjectId" ORDER BY "updatedAt" DESC, "id" DESC
+        ) AS rank
+      FROM "Apunte"
+    )
+    SELECT a."id", a."titulo", a."slug", a."createdAt", a."updatedAt",
+      s."slug" AS "subjectSlug", s."nombre" AS "subjectNombre",
+      y."slug" AS "yearSlug", y."nombre" AS "yearNombre"
+    FROM ranked a
+    JOIN "Subject" s ON s."id" = a."subjectId"
+    JOIN "AcademicYear" y ON y."id" = s."yearId"
+    WHERE a.rank <= ${HOME_LATEST_APUNTES_LIMIT}
+    ORDER BY a."updatedAt" DESC, a."id" DESC
+  `
+  return rows.map((row) => ({
+    id: row.id, titulo: row.titulo, slug: row.slug,
+    createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(),
+    subject: {
+      slug: row.subjectSlug, nombre: row.subjectNombre,
+      year: { slug: row.yearSlug, nombre: row.yearNombre },
+    },
+  }))
 }
 
 export async function getLatestApuntesByYear(yearSlug: string, limit = 6) {
   'use cache'
-  cacheTag(TAGS.year(yearSlug))
-  cacheLife({ revalidate: 300, expire: 3600 })
+  cacheTag(TAGS.latestApuntesByYear(yearSlug))
+  cacheLife({ stale: 300, revalidate: 1800, expire: 3600 })
 
   const rows = await prisma.apunte.findMany({
     where: {
@@ -762,7 +806,7 @@ export async function getLatestApuntesByYear(yearSlug: string, limit = 6) {
         },
       },
     },
-    orderBy: { updatedAt: 'desc' },
+    orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
     take: limit,
     select: latestApunteSelect,
   })
