@@ -23,14 +23,14 @@ vi.mock('./actions', () => ({
 
 describe('admin perfil page helpers', () => {
   it('describe el rol del admin con copy claro', async () => {
-    const { roleLabel } = await import('./page')
+    const { roleLabel } = await import('./profile-presenters')
 
     expect(roleLabel('AYUDANTE')).toBe('Ayudante')
     expect(roleLabel('ADMIN')).toBe('Admin')
   })
 
   it('resume los años asignados según el alcance', async () => {
-    const { buildAssignedYearsSummary } = await import('./page')
+    const { buildAssignedYearsSummary } = await import('./profile-presenters')
 
     expect(buildAssignedYearsSummary([], true)).toBe('Acceso a todos los años')
     expect(buildAssignedYearsSummary([], false)).toBe('Sin años asignados')
