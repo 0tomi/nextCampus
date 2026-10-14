@@ -9,6 +9,7 @@ import {
   getSubjectVisibleEvents,
   isUpcomingEvent,
   sortEventsByDateTime,
+  toEventSummaryItems,
 } from './event-adapters'
 
 export type YearPageYear = NonNullable<Awaited<ReturnType<typeof getYearBySlug>>>
@@ -98,7 +99,7 @@ export function buildYearModalSubjects(
         slug: subject.slug,
         nombre: subject.nombre,
         agendaId: subject.agenda.id,
-        commissions: subject.commissions,
+        commissions: subject.commissions.map(({ id, slug, nombre }) => ({ id, slug, nombre })),
         categoriasDisponibles,
       },
     ]
@@ -195,24 +196,26 @@ export function buildYearUpcomingEvents(
 
 export function buildMobileYear(year: YearPageYear) {
   return {
-    ...year,
+    id: year.id,
+    slug: year.slug,
+    nombre: year.nombre,
+    descripcion: year.descripcion,
+    links: year.links,
+    color: year.color,
+    career: year.career,
     subjects: year.subjects.map((subject) => {
       const visibleEvents = getSubjectVisibleEvents(subject)
-
       return {
-        ...subject,
-        commissions: subject.commissions,
-        agenda:
-          visibleEvents.length > 0
-            ? {
-                id: subject.agenda?.id ?? subject.agendas[0]?.id ?? subject.id,
-                eventos: visibleEvents.map((event) => ({
-                  ...event,
-                  commissionSlug: event.commission?.slug ?? null,
-                  commissionNombre: event.commission?.nombre ?? null,
-                })),
-              }
-            : null,
+        id: subject.id,
+        slug: subject.slug,
+        nombre: subject.nombre,
+        commissions: subject.commissions.map(({ id, slug, nombre }) => ({ id, slug, nombre })),
+        agenda: visibleEvents.length > 0
+          ? {
+              id: subject.agenda?.id ?? subject.agendas[0]?.id ?? subject.id,
+              eventos: toEventSummaryItems(visibleEvents),
+            }
+          : null,
       }
     }),
   }
