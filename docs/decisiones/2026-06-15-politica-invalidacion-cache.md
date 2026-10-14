@@ -1,6 +1,6 @@
 # Política de invalidación de cache
 
-**Fecha:** 2026-06-15 · **Actualización:** 2026-10-13
+**Fecha:** 2026-06-15 · **Actualización:** 2026-10-14
 **Estado:** Implementado; las rutas acotadas se conservan hasta verificar propagación en producción.
 
 ## Objetivo y semántica
@@ -36,6 +36,25 @@ de apuntes. `year-meta` separa presentación/identidad del año de sus eventos.
 Los nombres públicos dependen de `subject-authors`, no de un tag por autor:
 una materia con muchos autores no debe superar el límite de tags por entrada.
 Categorías y tipos de evento siguen siendo catálogos cargados por seed.
+
+## Duración de agregados y fecha local
+
+Solo los tres agregados siguientes amplían su intervalo de regeneración;
+las escrituras siguen expirando sus tags inmediatamente.
+
+| Lectura | `stale` | `revalidate` | `expire` |
+|---|---:|---:|---:|
+| `getHomeCalendarEvents` | 300 s | 1800 s | 3600 s |
+| `getLatestApuntes` | 300 s | 1800 s | 3600 s |
+| `getLatestApuntesByYear` | 300 s | 1800 s | 3600 s |
+
+Todos los demás perfiles permanecen sin cambios. `getTodayKeyAR` conserva
+`revalidate: 900` y `expire: 3600`, con fecha en la zona horaria de Argentina:
+el cambio de día ocurre a las 03:00 UTC, no a medianoche UTC. Su resultado
+cacheado puede conservar el día anterior hasta renovarse; esta política no
+promete actualización exacta a medianoche. La dependencia de fecha del año
+sigue imponiendo su intervalo de quince minutos. No debe deducirse una reducción
+proporcional de ISR Writes a partir de estos intervalos.
 
 ## Matriz de escrituras
 

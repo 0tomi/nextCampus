@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { isUpcomingEvent } from './domain/event-adapters'
 const mocks = vi.hoisted(() => ({
   cacheTag: vi.fn(), cacheLife: vi.fn(), $queryRaw: vi.fn(),
   evento: { findMany: vi.fn() },
@@ -9,7 +10,7 @@ vi.mock('server-only', () => ({}))
 vi.mock('next/cache', () => ({ cacheTag: mocks.cacheTag, cacheLife: mocks.cacheLife }))
 vi.mock('./prisma', () => ({ prisma: mocks }))
 vi.mock('./storage', () => ({ quizBanksCacheTag: (y: string, s: string) => `quiz-banks:${y}:${s}` }))
-import { getSubjectPageBySlug, getApuntePageBySlug, getSubjectQuizMeta, getYearBySlug, getLatestApuntesByYear, getLatestApuntes, getHomeCalendarEvents } from './queries'
+import { getSubjectPageBySlug, getApuntePageBySlug, getSubjectQuizMeta, getYearBySlug, getLatestApuntesByYear, getLatestApuntes, getHomeCalendarEvents, getTodayKeyAR } from './queries'
 const tags = () => mocks.cacheTag.mock.calls.flat().sort()
 const year = { id: 'year-1', slug: 'primero', nombre: 'First', color: null, career: { nombre: 'Campus' } }
 describe('public cache dependencies', () => {
@@ -79,7 +80,7 @@ describe('lean cached queries and stable ordering', () => {
     expect(sql).not.toMatch(/SELECT \*|recursos|descripcion|createdByUserId/)
     expect(mocks.apunte.findMany).not.toHaveBeenCalled()
     expect(tags()).toEqual(['career', 'latest-apuntes'])
-    expect(mocks.cacheLife).toHaveBeenCalledWith({ revalidate: 300, expire: 3600 })
+    expect(mocks.cacheLife).toHaveBeenCalledWith({ stale: 300, revalidate: 1800, expire: 3600 })
   })
   it('maps an empty recent-note result without extra queries', async () => {
     mocks.$queryRaw.mockResolvedValue([])
@@ -117,5 +118,44 @@ describe('lean cached queries and stable ordering', () => {
     const event = result?.agendas[0].eventos[0]
     expect(event).toMatchObject({ createdByNombre: 'Author', createdByUserId: 'u', descripcion: 'Details', fecha: '2026-01-01', apuntes: [] })
     expect(event).not.toHaveProperty('createdBy')
+  })
+})
+
+describe('conservative aggregate lifetimes and local dates', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    mocks.evento.findMany.mockResolvedValue([])
+    mocks.$queryRaw.mockResolvedValue([])
+    mocks.apunte.findMany.mockResolvedValue([])
+  })
+  afterEach(() => vi.useRealTimers())
+
+  it.each([
+    ['home calendar', () => getHomeCalendarEvents()],
+    ['global recent notes', () => getLatestApuntes()],
+    ['year recent notes', () => getLatestApuntesByYear('primero')],
+  ])('%s keeps a one-hour hard expiry with thirty-minute regeneration', async (_, read) => {
+    await read()
+    expect(mocks.cacheLife.mock.calls).toEqual([
+      [{ stale: 300, revalidate: 1800, expire: 3600 }],
+    ])
+  })
+
+  it('retains the date profile and rolls over at Argentina midnight, not UTC midnight', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-15T02:59:59.999Z'))
+    const beforeMidnight = await getTodayKeyAR()
+    expect(beforeMidnight).toBe('2026-10-14')
+    vi.setSystemTime(new Date('2026-10-15T03:00:00.000Z'))
+    const afterMidnight = await getTodayKeyAR()
+    expect(afterMidnight).toBe('2026-10-15')
+    expect(mocks.cacheLife.mock.calls).toEqual([
+      [{ revalidate: 900, expire: 3600 }],
+      [{ revalidate: 900, expire: 3600 }],
+    ])
+    const previousDayEvent = { fecha: '2026-10-14', hora: null }
+    expect(isUpcomingEvent(previousDayEvent, beforeMidnight)).toBe(true)
+    expect(isUpcomingEvent(previousDayEvent, afterMidnight)).toBe(false)
+    expect(isUpcomingEvent({ fecha: '2026-10-15', hora: null }, afterMidnight)).toBe(true)
   })
 })

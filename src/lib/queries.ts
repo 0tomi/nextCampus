@@ -699,7 +699,7 @@ export async function getCategoriasPeriodo() {
 export async function getHomeCalendarEvents() {
   'use cache'
   cacheTag(TAGS.upcomingEvents, TAGS.career)
-  cacheLife({ revalidate: 300, expire: 3600 })
+  cacheLife({ stale: 300, revalidate: 1800, expire: 3600 })
 
   const rows = await prisma.evento.findMany({
     orderBy: eventoOrderBy,
@@ -762,7 +762,7 @@ type LatestApunteRow = {
 export async function getLatestApuntes() {
   'use cache'
   cacheTag(TAGS.latestApuntes, TAGS.career)
-  cacheLife({ revalidate: 300, expire: 3600 })
+  cacheLife({ stale: 300, revalidate: 1800, expire: 3600 })
 
   // Six per subject preserves the newest six for every preference subset.
   // Ranking bounds returned rows, not necessarily database work.
@@ -796,7 +796,7 @@ export async function getLatestApuntes() {
 export async function getLatestApuntesByYear(yearSlug: string, limit = 6) {
   'use cache'
   cacheTag(TAGS.latestApuntesByYear(yearSlug))
-  cacheLife({ revalidate: 300, expire: 3600 })
+  cacheLife({ stale: 300, revalidate: 1800, expire: 3600 })
 
   const rows = await prisma.apunte.findMany({
     where: {
