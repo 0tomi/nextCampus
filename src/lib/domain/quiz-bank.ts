@@ -1,7 +1,7 @@
 // Dominio del Banco de Preguntas (JSON-en-bucket).
 //
 // Reemplaza al modelo viejo en DB. El formato de subida es el JSON que carga el
-// admin: { title, units: [ { name, questions: [...] } ] }.
+// admin: { title, description?, units: [ { name, questions: [...] } ] }.
 //
 // Reglas de seguridad:
 // - La corrección es SIEMPRE server-side. `answer` y `explanation` NUNCA se
@@ -46,6 +46,7 @@ export interface QuizBankUnit {
 
 export interface QuizBankFile {
   title: string
+  description?: string
   units: QuizBankUnit[]
 }
 
@@ -88,6 +89,9 @@ export interface QuizBankMeta {
   // Id de la cuenta que subió el banco. Opcional para compatibilidad con metas
   // viejas (anteriores a este campo), que solo guardaban el email en subidoPor.
   subidoPorId?: string
+  // Texto libre que describe el banco. Se toma del JSON al subirlo y el dueño
+  // lo puede editar después (vive solo en el meta).
+  descripcion?: string
 }
 
 export const quizBankMetaSchema = z.object({
@@ -97,6 +101,7 @@ export const quizBankMetaSchema = z.object({
   subidoEl: z.string().min(1),
   subidoPor: z.string().min(1),
   subidoPorId: z.string().min(1).optional(),
+  descripcion: z.string().max(1000).optional(),
 })
 
 
@@ -104,6 +109,7 @@ export const quizBankMetaSchema = z.object({
 
 export const LIMITS = {
   title: 200,
+  description: 1000,
   unitName: 200,
   question: 2000,
   option: 500,
@@ -177,6 +183,14 @@ const questionSchema = z.discriminatedUnion('type', [
   trueFalseSchema,
 ])
 
+// Vacía o solo espacios => se omite (undefined), así no se guarda ruido.
+export const descriptionSchema = z
+  .string()
+  .trim()
+  .max(LIMITS.description)
+  .optional()
+  .transform((value) => value || undefined)
+
 const unitSchema = z.object({
   name: z.string().trim().min(1).max(LIMITS.unitName),
   questions: z.array(questionSchema).min(1).max(LIMITS.questionsPerUnit),
@@ -185,6 +199,7 @@ const unitSchema = z.object({
 export const quizBankSchema = z
   .object({
     title: z.string().trim().min(1).max(LIMITS.title),
+    description: descriptionSchema,
     units: z.array(unitSchema).min(1).max(LIMITS.unitsMax),
   })
   .superRefine((bank, ctx) => {
@@ -222,7 +237,8 @@ export function parseQuizBank(rawText: string): QuizBankParseResult {
     }
   }
 
-  const bank = parsed.data as QuizBankFile
+  const { description, ...rest } = parsed.data
+  const bank = (description ? { ...rest, description } : rest) as QuizBankFile
   const totalPreguntas = bank.units.reduce(
     (acc, u) => acc + u.questions.length,
     0,

@@ -7,9 +7,14 @@ import {
   deleteQuizBank,
   getQuizBankMeta,
   readQuizBank,
+  updateQuizBankMeta,
 } from '@/lib/storage'
 import { queryTags } from '@/lib/queries'
-import { parseQuizBank } from '@/lib/domain/quiz-bank'
+import {
+  descriptionSchema,
+  parseQuizBank,
+  type QuizBankMeta,
+} from '@/lib/domain/quiz-bank'
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit'
 import { awardQuizBankCreated, revokeQuizBankCreated } from '@/lib/contributions'
 import { invalidateTag } from './shared'
@@ -64,6 +69,7 @@ export async function uploadQuizBankAction(
       totalPreguntas: bank.totalPreguntas,
       subidoPor: scope.admin.email,
       subidoPorId: scope.admin.id,
+      descripcion: bank.bank.description,
     })
   } catch {
     return {
@@ -92,6 +98,79 @@ export async function uploadQuizBankAction(
   }
 }
 
+// Ownership por id (criterio del resto del sistema). Para metas viejas sin
+// subidoPorId se cae al email como fallback de compatibilidad.
+function canManageBank(
+  meta: QuizBankMeta | null,
+  admin: { id: string; email: string; canManageAnyContribution: boolean },
+): boolean {
+  if (admin.canManageAnyContribution) return true
+  if (!meta) return false
+  return meta.subidoPorId
+    ? meta.subidoPorId === admin.id
+    : meta.subidoPor === admin.email
+}
+
+const updateDescriptionSchema = z.object({
+  subjectSlug: z.string().min(1),
+  bankId: z.uuid(),
+  descripcion: descriptionSchema,
+})
+
+// Edita la descripción de un banco. Solo el dueño (o quien gestiona cualquier
+// aporte). Una descripción vacía la quita.
+export async function updateQuizBankDescriptionAction(
+  _prev: QuizBankActionState,
+  formData: FormData,
+): Promise<QuizBankActionState> {
+  await requireAnyAdmin()
+  const parsedForm = updateDescriptionSchema.safeParse({
+    subjectSlug: formData.get('subjectSlug'),
+    bankId: formData.get('bankId'),
+    descripcion: formData.get('descripcion') ?? undefined,
+  })
+  if (!parsedForm.success) {
+    return { ok: false, message: 'La descripción puede tener hasta 1000 caracteres.' }
+  }
+  const { subjectSlug, bankId, descripcion } = parsedForm.data
+
+  const scope = await requireYearAdminForSubjectSlug(subjectSlug)
+  if (!scope) {
+    return { ok: false, message: 'Materia no encontrada.' }
+  }
+  const meta = await getQuizBankMeta(scope.yearSlug, scope.subjectSlug, bankId)
+  if (!meta) {
+    return { ok: false, message: 'Banco no encontrado.' }
+  }
+  if (!canManageBank(meta, scope.admin)) {
+    return { ok: false, message: 'Solo quien subió el banco puede editarlo.' }
+  }
+
+  const nextMeta: QuizBankMeta = { ...meta, descripcion }
+  if (!descripcion) delete nextMeta.descripcion
+
+  try {
+    await updateQuizBankMeta(scope.yearSlug, scope.subjectSlug, nextMeta)
+  } catch {
+    return { ok: false, message: 'No se pudo guardar la descripción. Probá de nuevo.' }
+  }
+  invalidateTag(queryTags.quizBanks(scope.yearSlug, scope.subjectSlug))
+  await recordAudit({
+    userId: scope.admin.id,
+    action: AUDIT_ACTIONS.QUIZ_BANK_UPDATED,
+    entityType: 'quizBank',
+    entityId: bankId,
+    yearId: scope.yearId,
+    yearSlug: scope.yearSlug,
+    detail: {
+      nombre: meta.nombre,
+      subjectSlug: scope.subjectSlug,
+      yearSlug: scope.yearSlug,
+    },
+  })
+  return { ok: true, message: 'Descripción actualizada.' }
+}
+
 export async function deleteQuizBankAction(formData: FormData): Promise<void> {
   await requireAnyAdmin()
   const subjectSlug = z.string().min(1).parse(formData.get('subjectSlug'))
@@ -99,12 +178,7 @@ export async function deleteQuizBankAction(formData: FormData): Promise<void> {
   const scope = await requireYearAdminForSubjectSlug(subjectSlug)
   if (!scope) return
   const meta = await getQuizBankMeta(scope.yearSlug, scope.subjectSlug, bankId)
-  // Ownership por id (criterio del resto del sistema). Para metas viejas sin
-  // subidoPorId se cae al email como fallback de compatibilidad.
-  const ownsBank = meta?.subidoPorId
-    ? meta.subidoPorId === scope.admin.id
-    : meta?.subidoPor === scope.admin.email
-  if (!scope.admin.canManageAnyContribution && !ownsBank) {
+  if (!canManageBank(meta, scope.admin)) {
     return
   }
 

@@ -1,3 +1,4 @@
+import type * as QuizBankDomain from '@/lib/domain/quiz-bank'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const revalidatePathMock = vi.fn()
@@ -143,7 +144,8 @@ vi.mock('@/lib/contributions', () => ({
   revokeQuizBankCreated: vi.fn(),
 }))
 
-vi.mock('@/lib/domain/quiz-bank', () => ({
+vi.mock('@/lib/domain/quiz-bank', async () => ({
+  descriptionSchema: (await vi.importActual<typeof QuizBankDomain>('@/lib/domain/quiz-bank')).descriptionSchema,
   parseQuizBank: vi.fn(),
 }))
 

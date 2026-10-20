@@ -29,6 +29,7 @@ export const AUDIT_ACTIONS = {
   USER_UPDATED: 'USER_UPDATED',
 
   QUIZ_BANK_UPLOADED: 'QUIZ_BANK_UPLOADED',
+  QUIZ_BANK_UPDATED: 'QUIZ_BANK_UPDATED',
   QUIZ_BANK_DELETED: 'QUIZ_BANK_DELETED',
 } as const
 
@@ -59,6 +60,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   [AUDIT_ACTIONS.USER_CREATED]: 'Usuario creado',
   [AUDIT_ACTIONS.USER_UPDATED]: 'Usuario actualizado',
   [AUDIT_ACTIONS.QUIZ_BANK_UPLOADED]: 'Banco de preguntas subido',
+  [AUDIT_ACTIONS.QUIZ_BANK_UPDATED]: 'Banco de preguntas actualizado',
   [AUDIT_ACTIONS.QUIZ_BANK_DELETED]: 'Banco de preguntas eliminado',
 }
 

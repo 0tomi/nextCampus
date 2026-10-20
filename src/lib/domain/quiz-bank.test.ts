@@ -9,6 +9,7 @@ import {
   toPublicQuestion,
   makeQuestionId,
   parseQuestionId,
+  LIMITS,
   type QuizBankFile,
   type BankQuestion,
 } from './quiz-bank'
@@ -49,6 +50,22 @@ describe('parseQuizBank', () => {
     const res = parseQuizBank(JSON.stringify(VALID))
     expect(res.ok).toBe(true)
     if (res.ok) expect(res.totalPreguntas).toBe(3)
+  })
+
+  it('acepta una descripción opcional y la normaliza', () => {
+    const res = parseQuizBank(JSON.stringify({ ...VALID, description: '  Repaso del primer parcial.  ' }))
+    expect(res.ok && res.bank.description).toBe('Repaso del primer parcial.')
+  })
+
+  it('omite la descripción vacía', () => {
+    const res = parseQuizBank(JSON.stringify({ ...VALID, description: '   ' }))
+    expect(res.ok).toBe(true)
+    expect(res.ok && 'description' in res.bank).toBe(false)
+  })
+
+  it('rechaza una descripción demasiado larga', () => {
+    const res = parseQuizBank(JSON.stringify({ ...VALID, description: 'x'.repeat(LIMITS.description + 1) }))
+    expect(res.ok).toBe(false)
   })
 
   it('rechaza JSON malformado sin lanzar', () => {

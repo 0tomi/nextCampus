@@ -15,6 +15,8 @@ export interface BancoInfo {
   subidoPorId?: string | null
   /** Nombre de quien subió el banco, resuelto por email. Null si no se ubica. */
   subidoPorNombre?: string | null
+  /** Descripción opcional que el dueño le pone al banco. */
+  descripcion?: string | null
 }
 
 export interface PublicQuestionOption {
