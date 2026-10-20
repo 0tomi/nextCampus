@@ -55,6 +55,7 @@ export default async function QuizPage({
       id: b.id,
       nombre: b.nombre,
       totalPreguntas: b.totalPreguntas,
+      descripcion: b.descripcion ?? null,
       unidades,
       subidoPorId: b.subidoPorId ?? null,
       subidoPorNombre: b.subidoPorId ? nombrePorId.get(b.subidoPorId) ?? null : null,

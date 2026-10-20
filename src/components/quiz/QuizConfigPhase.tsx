@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { Check, ChevronRight, Trash2 } from 'lucide-react'
+import { useCallback, useState, useTransition } from 'react'
+import { Check, ChevronRight, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { AnimateIn } from '@/components/ui/AnimateIn'
 import { AlertDialog } from '@/components/ui/AlertDialog'
+import { QuizBankDescriptionModal } from '@/components/admin/QuizBankDescriptionModal'
 import { UploaderByline } from '@/components/ui/UploaderByline'
 import { deleteQuizBankAction } from '@/app/admin/actions/quiz'
 import { cn } from '@/lib/utils'
@@ -64,6 +65,8 @@ function QuestionBankSection({
   onToggle: (id: string) => void
 }) {
   const [bancoToDelete, setBancoToDelete] = useState<BancoInfo | null>(null)
+  const [bancoToEdit, setBancoToEdit] = useState<BancoInfo | null>(null)
+  const closeEdit = useCallback(() => setBancoToEdit(null), [])
   const [isDeleting, startTransition] = useTransition()
 
   const handleConfirmDelete = () => {
@@ -100,10 +103,22 @@ function QuestionBankSection({
             active={selectedBancos.includes(banco.id)}
             yearId={yearId}
             onToggle={() => onToggle(banco.id)}
+            onEdit={() => setBancoToEdit(banco)}
             onDelete={() => setBancoToDelete(banco)}
           />
         ))}
       </div>
+
+      {bancoToEdit ? (
+        <QuizBankDescriptionModal
+          key={bancoToEdit.id}
+          subjectSlug={subjectSlug}
+          bankId={bancoToEdit.id}
+          bankName={bancoToEdit.nombre}
+          initialDescription={bancoToEdit.descripcion ?? ''}
+          onClose={closeEdit}
+        />
+      ) : null}
 
       <AlertDialog
         open={Boolean(bancoToDelete)}
@@ -131,12 +146,14 @@ function QuestionBankCard({
   active,
   yearId,
   onToggle,
+  onEdit,
   onDelete,
 }: {
   banco: BancoInfo
   active: boolean
   yearId?: string
   onToggle: () => void
+  onEdit: () => void
   onDelete: () => void
 }) {
   return (
@@ -148,6 +165,11 @@ function QuestionBankCard({
       <div className="relative min-w-0 pointer-events-none z-10">
         <span className="block truncate text-sm font-semibold text-white">{banco.nombre}</span>
         <span className="mt-0.5 block text-xs text-white/44">{banco.totalPreguntas} preguntas</span>
+        {banco.descripcion ? (
+          <p className="mt-1.5 line-clamp-3 whitespace-pre-line text-xs leading-5 text-white/56" title={banco.descripcion}>
+            {banco.descripcion}
+          </p>
+        ) : null}
         {banco.subidoPorNombre ? (
           <UploaderByline nombre={banco.subidoPorNombre} className="mt-1.5" />
         ) : null}
@@ -155,6 +177,18 @@ function QuestionBankCard({
 
       <div className="relative z-10 flex shrink-0 items-center gap-2">
         <AdminControls yearId={yearId} ownerUserId={banco.subidoPorId} noWrapper>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onEdit()
+            }}
+            className="flex size-7 items-center justify-center rounded text-white/55 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+            title="Editar descripción"
+            aria-label={`Editar descripción del banco ${banco.nombre}`}
+          >
+            <Pencil className="size-4" />
+          </button>
           <button
             type="button"
             onClick={(e) => {

@@ -62,6 +62,7 @@ El formato del JSON que debés devolver tiene que seguir EXACTAMENTE esta estruc
 
 {
   "title": "Nombre descriptivo del banco (usá el nombre de la materia o cátedra)",
+  "description": "Una o dos oraciones que cuenten qué temas cubre el banco y para qué sirve (ej: repaso para el primer parcial)",
   "units": [
     {
       "name": "Unidad 1: Nombre de la unidad",
@@ -92,6 +93,7 @@ El formato del JSON que debés devolver tiene que seguir EXACTAMENTE esta estruc
 }
 
 Reglas del formato:
+- "description" es opcional: un texto breve (hasta 1000 caracteres) que describa el banco para quien lo vaya a usar.
 - "type" es exactamente uno de: "single", "multiple", "truefalse".
 - En "single": "answer" es el índice (0-based) de la única opción correcta. Requiere "options" con mínimo 2 elementos.
 - En "multiple": "answer" es un array de índices (0-based) de las opciones correctas, sin repetir. Requiere "options" con mínimo 2 elementos. NO declares en el enunciado cuántas hay que marcar.
@@ -105,6 +107,7 @@ Reglas del formato:
 interface FilePreview {
   fileName: string
   title: string
+  description?: string
   totalPreguntas: number
   rawText: string
 }
@@ -174,6 +177,7 @@ export function QuizBankModal({
     setPreview({
       fileName: file.name,
       title: result.bank.title,
+      description: result.bank.description,
       totalPreguntas: result.totalPreguntas,
       rawText,
     })
@@ -304,6 +308,11 @@ export function QuizBankModal({
                     {preview.totalPreguntas === 1 ? 'pregunta' : 'preguntas'}{' '}
                     detectadas · {preview.fileName}
                   </p>
+                  {preview.description ? (
+                    <p className="mt-1.5 line-clamp-3 text-xs leading-5 text-white/60">
+                      {preview.description}
+                    </p>
+                  ) : null}
                 </div>
               </div>
             )}

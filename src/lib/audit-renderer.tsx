@@ -258,6 +258,14 @@ export function renderAuditEntry(
       }
     }
 
+    case AUDIT_ACTIONS.QUIZ_BANK_UPDATED:
+      return {
+        icon: Library,
+        iconClassName: PALETTE.updated,
+        title: <>Editó la descripción del banco {highlight(asString(d.nombre))}</>,
+        subtitle: asString(d.subjectSlug) ? `Materia: ${d.subjectSlug}` : undefined,
+      }
+
     case AUDIT_ACTIONS.QUIZ_BANK_DELETED:
       return {
         icon: Trash2,

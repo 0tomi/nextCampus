@@ -201,8 +201,9 @@ export async function uploadQuizBank(params: {
   totalPreguntas: number
   subidoPor: string
   subidoPorId: string
+  descripcion?: string
 }): Promise<QuizBankMeta> {
-  const { yearSlug, subjectSlug, nombre, rawJson, totalPreguntas, subidoPor, subidoPorId } =
+  const { yearSlug, subjectSlug, nombre, rawJson, totalPreguntas, subidoPor, subidoPorId, descripcion } =
     params
 
   if (Buffer.byteLength(rawJson, 'utf8') > MAX_BANK_BYTES) {
@@ -230,6 +231,7 @@ export async function uploadQuizBank(params: {
     subidoEl: new Date().toISOString(),
     subidoPor,
     subidoPorId,
+    ...(descripcion ? { descripcion } : {}),
   }
 
   const { error: metaErr } = await supabase.storage
@@ -247,6 +249,26 @@ export async function uploadQuizBank(params: {
   }
 
   return meta
+}
+
+// Reescribe el .meta.json de un banco existente (p. ej. al editar su
+// descripción). El banco con las preguntas no se toca.
+export async function updateQuizBankMeta(
+  yearSlug: string,
+  subjectSlug: string,
+  meta: QuizBankMeta,
+): Promise<void> {
+  const supabase = createSupabaseAdminClient()
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(
+      metaKey(yearSlug, subjectSlug, meta.id),
+      new Blob([JSON.stringify(meta)], { type: 'application/json' }),
+      { contentType: 'application/json', upsert: true },
+    )
+  if (error) {
+    throw new Error(`STORAGE: no se pudo actualizar el banco (${error.message})`)
+  }
 }
 
 // Lee y RE-VALIDA un banco desde Storage (defensa en profundidad: el objeto
