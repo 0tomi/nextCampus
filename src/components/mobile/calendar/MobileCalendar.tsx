@@ -154,6 +154,8 @@ export interface MobileCalendarProps {
   accent: string
   initialDate?: Date | string
   initialSelected?: Date | string | null
+  selectedDate?: Date | null
+  onSelectedDateChange?: (date: Date | null) => void
   yearId?: string
   yearSlug?: string
   subjectSlug?: string
@@ -171,6 +173,8 @@ export function MobileCalendar({
   accent,
   initialDate,
   initialSelected = null,
+  selectedDate,
+  onSelectedDateChange,
   yearId,
   yearSlug,
   subjectSlug,
@@ -191,9 +195,14 @@ export function MobileCalendar({
     return d
   })
 
-  const [selected, setSelected] = useState<Date | null>(() =>
+  const [internalSelected, setInternalSelected] = useState<Date | null>(() =>
     initialSelected ? toLocalDate(initialSelected) : null,
   )
+  const selected = selectedDate === undefined ? internalSelected : selectedDate
+  const selectDate = (date: Date | null) => {
+    if (selectedDate === undefined) setInternalSelected(date)
+    onSelectedDateChange?.(date)
+  }
   const [slideDirection, setSlideDirection] = useState<'prev' | 'next' | null>(null)
 
   const monthEvents = useMemo(() => {
@@ -235,12 +244,14 @@ export function MobileCalendar({
   const monthEventsSorted = monthEvents.toSorted(byFechaHora)
 
   const goPrev = () => {
+    selectDate(null)
     setSlideDirection('prev')
     const d = new Date(cursor)
     d.setMonth(d.getMonth() - 1)
     setCursor(d)
   }
   const goNext = () => {
+    selectDate(null)
     setSlideDirection('next')
     const d = new Date(cursor)
     d.setMonth(d.getMonth() + 1)
@@ -260,7 +271,7 @@ export function MobileCalendar({
         selected={selected}
         slideDirection={slideDirection}
         today={today}
-        onSelectDate={(date) => setSelected((current) => (current && sameDay(date, current) ? null : date))}
+        onSelectDate={(date) => selectDate(selected && sameDay(date, selected) ? null : date)}
       />
 
       <MobileCalendarEventList
@@ -270,7 +281,7 @@ export function MobileCalendar({
         selectedEvents={selectedEvents}
         selectedPeriodos={selectedPeriodos}
         yearId={yearId}
-        onClearSelected={() => setSelected(null)}
+        onClearSelected={() => selectDate(null)}
         onOpenDetail={setDetailEvent}
       />
 

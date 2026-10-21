@@ -1,5 +1,10 @@
 'use client'
 
+import { useCallback, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Upload } from 'lucide-react'
+import { AdminControls } from '@/components/admin/AdminControls'
+import { QuizBankModal } from '@/components/admin/QuizBankModal'
 import { QuizConfigPhase } from './QuizConfigPhase'
 import { QuizEmptyState } from './QuizEmptyState'
 import { QuizProvider, useQuiz } from './QuizProvider'
@@ -23,7 +28,7 @@ export function QuizRunnerClient({
   if (bancos.length === 0) {
     return (
       <>
-        <QuizIntro subjectNombre={subjectNombre} />
+        <QuizIntro subjectNombre={subjectNombre} subjectSlug={subjectSlug} yearId={yearId} />
         <QuizEmptyState />
       </>
     )
@@ -31,7 +36,7 @@ export function QuizRunnerClient({
 
   return (
     <QuizProvider bancos={bancos} subjectSlug={subjectSlug} yearId={yearId}>
-      <QuizHeader subjectNombre={subjectNombre} />
+      <QuizHeader subjectNombre={subjectNombre} subjectSlug={subjectSlug} yearId={yearId} />
       <QuizPhaseSwitch />
       <RankedHistoryModal />
     </QuizProvider>
@@ -40,7 +45,7 @@ export function QuizRunnerClient({
 
 // Durante el examen el encabezado se limpia: solo queda el nombre del banco
 // como título, sin contexto adicional que distraiga.
-function QuizHeader({ subjectNombre }: { subjectNombre: string }) {
+function QuizHeader({ subjectNombre, subjectSlug, yearId }: QuizIntroProps) {
   const { bancos, state } = useQuiz()
 
   if (state.phase === 'running') {
@@ -59,10 +64,21 @@ function QuizHeader({ subjectNombre }: { subjectNombre: string }) {
     )
   }
 
-  return <QuizIntro subjectNombre={subjectNombre} />
+  return <QuizIntro subjectNombre={subjectNombre} subjectSlug={subjectSlug} yearId={yearId} />
 }
 
-function QuizIntro({ subjectNombre }: { subjectNombre: string }) {
+interface QuizIntroProps {
+  subjectNombre: string
+  subjectSlug: string
+  yearId?: string
+}
+
+function QuizIntro({ subjectNombre, subjectSlug, yearId }: QuizIntroProps) {
+  const [uploadOpen, setUploadOpen] = useState(false)
+  const router = useRouter()
+  const closeUpload = useCallback(() => setUploadOpen(false), [])
+  const refreshBanks = useCallback(() => router.refresh(), [router])
+
   return (
     <div className="mb-10">
       <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/36">
@@ -75,6 +91,22 @@ function QuizIntro({ subjectNombre }: { subjectNombre: string }) {
         Elegí uno o varios bancos de preguntas, configurá tu práctica y poné a
         prueba lo que sabés.
       </p>
+      <AdminControls yearId={yearId} noWrapper>
+        <button
+          type="button"
+          onClick={() => setUploadOpen(true)}
+          className="mt-5 inline-flex min-h-11 cursor-pointer items-center gap-2 border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition-[background-color,transform] duration-150 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70 motion-safe:active:scale-[0.97]"
+        >
+          <Upload className="size-4" aria-hidden="true" />
+          Subir banco de preguntas
+        </button>
+        <QuizBankModal
+          open={uploadOpen}
+          onClose={closeUpload}
+          subjectSlug={subjectSlug}
+          onUploaded={refreshBanks}
+        />
+      </AdminControls>
     </div>
   )
 }

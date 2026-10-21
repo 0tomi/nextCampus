@@ -71,4 +71,37 @@ describe('MobileCalendar', () => {
     expect(markup).toContain('Junio')
     expect(markup).toContain('2026')
   })
+
+  it('shows only the controlled day even when internal initial selection differs', () => {
+    const markup = renderToStaticMarkup(
+      <MobileCalendar
+        events={eventsInJune}
+        accent="#3b82f6"
+        initialDate="2026-06-01"
+        initialSelected="2026-06-15"
+        selectedDate={new Date(2026, 5, 16)}
+      />,
+    )
+
+    expect(markup).toContain('Sin eventos este día.')
+    expect(markup).toContain('Ver mes')
+    expect(markup).not.toContain('Primer examen parcial')
+  })
+
+  it('returns to all month events when the controlled selection is cleared', () => {
+    const markup = renderToStaticMarkup(
+      <MobileCalendar
+        events={eventsInJune}
+        accent="#3b82f6"
+        initialDate="2026-06-01"
+        initialSelected="2026-06-16"
+        selectedDate={null}
+      />,
+    )
+
+    expect(markup).toContain('Todos los eventos')
+    expect(markup).toContain('Parcial 1')
+    expect(markup).not.toContain('Ver mes')
+  })
+
 })

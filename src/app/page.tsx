@@ -65,6 +65,7 @@ export default async function HomePage() {
           calendarEvents={homeCalendarEvents}
           latestApuntes={latestApuntes}
           hasAnyNotes={hasAnyApuntes}
+          periodos={periodos}
         />
       </div>
     </>

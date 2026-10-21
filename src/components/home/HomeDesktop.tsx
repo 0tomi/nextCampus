@@ -36,7 +36,7 @@ export function HomeDesktop({
       <DashboardShell
         topbar={<HomeTopbarActions />}
         sidebar={
-          <HomeSidebar careerName={career.nombre} initialPrefs={initialPrefs} years={career.years} />
+          <HomeSidebar initialPrefs={initialPrefs} years={career.years} />
         }
         headerOverlay={
           <div className="absolute bottom-[-1px] left-[332px] z-10 hidden lg:block">

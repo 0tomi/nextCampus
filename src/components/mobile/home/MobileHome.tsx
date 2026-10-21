@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
-import { CalendarDays, SlidersHorizontal, ArrowRight } from 'lucide-react'
+import { useReducer, useState } from 'react'
+import { CalendarDays, SlidersHorizontal, ArrowRight, ChevronUp } from 'lucide-react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { YearCarousel } from './YearCarousel'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
@@ -10,7 +10,7 @@ import { HomeLatestApuntes, type HomeLatestApunte } from '@/components/home/Home
 import { AdminControls } from '@/components/admin/AdminControls'
 import { AddYearButton } from '@/components/admin/HomeAdminOverlay'
 import { MobileEventDetailSheet } from '@/components/mobile/calendar/MobileEventDetailSheet'
-import type { MobileCalendarEvent } from '@/components/mobile/calendar/MobileCalendar'
+import { MobileCalendar, type MobileCalendarEvent } from '@/components/mobile/calendar/MobileCalendar'
 import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import { Mascot } from '@/components/ui/Mascot'
 import { usePreferences } from '@/hooks/usePreferences'
@@ -24,6 +24,23 @@ import {
 } from '@/lib/preferences'
 import type { CommissionOption } from '@/lib/commission-preferences'
 import type { SubjectLinkDTO } from '@/lib/subjectLinks'
+import type { HomeCalendarPageEvent } from '@/lib/domain/home-page-adapters'
+import type { PeriodoCalendario } from '@/lib/periodos'
+import { isHomeCalendarEventVisible } from '@/components/home/HomeGlobalCalendar.utils'
+
+interface CalendarState {
+  open: boolean
+  selectedDate: Date | null
+}
+
+type CalendarAction = { type: 'toggle' } | { type: 'select'; date: Date | null }
+
+function calendarReducer(state: CalendarState, action: CalendarAction): CalendarState {
+  if (action.type === 'toggle') return { open: !state.open, selectedDate: null }
+  return { ...state, selectedDate: action.date }
+}
+
+const EMPTY_PERIODOS: readonly PeriodoCalendario[] = []
 
 interface CareerForMobile {
   nombre: string
@@ -69,17 +86,6 @@ interface UpcomingEvent {
   apuntes?: RelatedApunteLink[]
 }
 
-interface HomeCalendarEventForMobile {
-  id: string
-  agendaId: string
-  subjectId: string
-  subjectSlug: string
-  materiaNombre: string
-  yearId: string
-  yearSlug: string
-  apuntes?: RelatedApunteLink[]
-}
-
 export function MobileHome({
   career,
   initialPrefs,
@@ -88,16 +94,20 @@ export function MobileHome({
   calendarEvents,
   latestApuntes,
   hasAnyNotes,
+  periodos = EMPTY_PERIODOS,
 }: {
   career: CareerForMobile
   initialPrefs: UserPreferences | null
   upcomingEvents: UpcomingEvent[]
   tiposEvento: readonly TipoEvento[]
-  calendarEvents: readonly HomeCalendarEventForMobile[]
+  calendarEvents: readonly HomeCalendarPageEvent[]
   latestApuntes: readonly HomeLatestApunte[]
   hasAnyNotes: boolean
+  periodos?: readonly PeriodoCalendario[]
 }) {
   const [detailEvent, setDetailEvent] = useState<MobileCalendarEvent | null>(null)
+  const [calendar, dispatchCalendar] = useReducer(calendarReducer, { open: false, selectedDate: null })
+  const calendarOpen = calendar.open
   const [isAboutOpen, setIsAboutOpen] = useState(false)
   const { prefs, isHydrated } = usePreferences(initialPrefs)
   const shouldWaitForStoredPrefs = !isHydrated && initialPrefs === null
@@ -142,6 +152,10 @@ export function MobileHome({
           effectivePrefs,
         )
       }).slice(0, 6)
+    : []
+
+  const visibleCalendarEvents = hasConfiguredSubjects
+    ? calendarEvents.filter((event) => isHomeCalendarEventVisible(event, effectivePrefs))
     : []
 
   const uniqueSubjectsInEvents = new Set(filteredUpcomingEvents.map((e) => e.subjectId)).size
@@ -246,13 +260,39 @@ export function MobileHome({
           <>
             {/* PRÓXIMOS EVENTOS */}
             <section className="flex flex-col gap-3">
-              <div className="px-[18px]">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">Agenda</p>
-                <h2 className="mt-1 text-lg font-black text-white">
-                  Próximos eventos - {uniqueSubjectsInEvents} {uniqueSubjectsInEvents === 1 ? 'Materia' : 'Materias'}
-                </h2>
+              <div className="flex flex-col items-start gap-3 px-[18px]">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">Agenda</p>
+                  <h2 className="mt-1 text-lg font-black text-white">
+                    {calendar.selectedDate ? 'Eventos del día' : <>Próximos eventos - {uniqueSubjectsInEvents} {uniqueSubjectsInEvents === 1 ? 'Materia' : 'Materias'}</>}
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  aria-expanded={calendarOpen}
+                  aria-controls="home-mobile-calendar"
+                  onClick={() => dispatchCalendar({ type: 'toggle' })}
+                  className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/85 transition-[background-color,transform] duration-150 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70 motion-safe:active:scale-[0.97]"
+                >
+                  <CalendarDays className="size-4 text-white/60" aria-hidden="true" />
+                  {calendarOpen ? 'Ocultar calendario' : 'Ver calendario'}
+                  {calendarOpen ? <ChevronUp className="size-3.5 text-white/50" aria-hidden="true" /> : null}
+                </button>
               </div>
-              <div className="px-[18px] flex flex-col gap-2.5">
+              <div id="home-mobile-calendar" hidden={!calendarOpen}>
+                {calendarOpen ? (
+                  <MobileCalendar
+                    events={visibleCalendarEvents}
+                    periodos={periodos}
+                    selectedDate={calendar.selectedDate}
+                    onSelectedDateChange={(date) => dispatchCalendar({ type: 'select', date })}
+                    accent="var(--color-primary)"
+                    tiposEvento={tiposEvento}
+                    subjects={modalSubjects}
+                  />
+                ) : null}
+              </div>
+              <div hidden={calendar.selectedDate !== null} className="px-[18px] flex flex-col gap-2.5">
                 {!hasConfiguredSubjects ? (
                   <ConfigureAgendaNotice />
                 ) : filteredUpcomingEvents.length === 0 ? (

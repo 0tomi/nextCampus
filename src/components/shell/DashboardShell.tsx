@@ -93,7 +93,8 @@ export function DashboardShell({
   return (
     <div className={cn('min-h-screen bg-surface-0 text-white', className)}>
       <header className="sticky top-0 z-40 h-[calc(4rem+var(--spacing-safe-top))] pt-safe-top border-b border-white/5 bg-surface-1">
-        {resolvedHeaderOverlay}
+        {/* Keep the server-rendered slot in its own child boundary. */}
+        <>{resolvedHeaderOverlay}</>
         <div className="relative flex h-full items-center justify-between gap-4 px-6">
           <GlobalApunteSearch variant="desktop" />
           <div className="flex items-center gap-3">

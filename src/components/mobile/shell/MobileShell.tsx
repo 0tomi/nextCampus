@@ -392,7 +392,7 @@ function MobileDrawer({
       ref={drawerRef}
       aria-label="Menú principal"
       className={cn(
-        'fixed inset-y-0 left-0 z-[70] m-0 flex h-full w-[304px] max-h-none max-w-none flex-col border-r border-white/[0.06] bg-[#141414] p-0 text-white shadow-[24px_0_60px_rgba(0,0,0,0.5)] backdrop:bg-black/60',
+        'fixed inset-y-0 left-0 z-[70] m-0 open:flex h-full w-[304px] max-h-none max-w-none flex-col border-r border-white/[0.06] bg-[#141414] p-0 text-white shadow-[24px_0_60px_rgba(0,0,0,0.5)] backdrop:bg-black/60',
         'transition-transform duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
         open ? 'translate-x-0' : '-translate-x-full',
       )}
