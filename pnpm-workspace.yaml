@@ -14,9 +14,17 @@ trustPolicyExclude:
   - eslint-import-resolver-typescript@3.10.1
   - semver@6.3.1
 minimumReleaseAgeExclude:
-  - '@hono/node-server@1.19.13'
-  - 'postcss@8.5.10'
+  - '@hono/node-server@1.19.17'
+  - 'postcss@8.5.23'
 
 overrides:
-  '@hono/node-server': '1.19.13'
-  'postcss': '8.5.10'
+  '@hono/node-server': '1.19.17'
+  'postcss': '8.5.23'
+  # Prisma 7.8 imports deepmerge() only; v8 fixes recursive-graph stack exhaustion.
+  '@prisma/config>deepmerge-ts': '8.0.2'
+  # Prisma pins the vulnerable MySQL driver even when the app uses PostgreSQL.
+  'prisma>mysql2': '3.23.1'
+  '@prisma/dev>valibot': '1.4.2'
+  'vitest>vite': '7.3.7'
+  'vite>esbuild': '0.28.2'
+  'tsx>esbuild': '0.28.2'
