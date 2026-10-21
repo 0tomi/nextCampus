@@ -362,7 +362,7 @@ function SubjectQuizSection({
         title="Poné a prueba lo que sabés"
         yearId={subject.year.id}
       />
-      <DarkCard variant="interactive" className="p-6 sm:p-8">
+      <Link href={quizHref} className="group block cursor-pointer border border-white/5 bg-surface-1 p-6 transition-colors duration-150 hover:border-white/15 hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/70 sm:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
             <span className={`inline-flex size-12 shrink-0 items-center justify-center bg-gradient-to-r ${colors.progressClassName}`}>
@@ -375,15 +375,14 @@ function SubjectQuizSection({
               </p>
             </div>
           </div>
-          <Link
-            href={quizHref}
-            className="inline-flex shrink-0 cursor-pointer items-center gap-2 self-start bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-primary-light"
+          <span
+            className="inline-flex shrink-0 cursor-pointer items-center gap-2 self-start bg-primary px-5 py-3 text-sm font-bold text-white transition-colors group-hover:bg-primary-light"
           >
             Empezar quiz
             <ArrowRight className="size-4" />
-          </Link>
+          </span>
         </div>
-      </DarkCard>
+      </Link>
     </section>
   )
 }

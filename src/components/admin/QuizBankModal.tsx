@@ -10,6 +10,7 @@ import {
   type QuizBankActionState,
 } from '@/app/admin/actions/quiz'
 import { parseQuizBank } from '@/lib/domain/quiz-bank'
+import { QUIZ_BANK_JSON_FORMAT } from '@/lib/domain/quiz-bank-format'
 
 // ---- Prompt para la IA (autocontenido, sin skill) ---------------------------
 
@@ -58,49 +59,7 @@ Explicación: cada pregunta lleva explicación obligatoria, de 2 a 5 oraciones, 
 
 Organizá el banco por unidad o tema del material: cada unidad es una entrada en "units".
 
-El formato del JSON que debés devolver tiene que seguir EXACTAMENTE esta estructura (sin ningún texto adicional antes o después):
-
-{
-  "title": "Nombre descriptivo del banco (usá el nombre de la materia o cátedra)",
-  "description": "Una o dos oraciones que cuenten qué temas cubre el banco y para qué sirve (ej: repaso para el primer parcial)",
-  "units": [
-    {
-      "name": "Unidad 1: Nombre de la unidad",
-      "questions": [
-        {
-          "type": "single",
-          "question": "¿Cuál de las siguientes afirmaciones describe correctamente el concepto X?",
-          "options": ["Opción A", "Opción B", "Opción C", "Opción D"],
-          "answer": 1,
-          "explanation": "La opción B es correcta porque... Las otras opciones son incorrectas porque..."
-        },
-        {
-          "type": "multiple",
-          "question": "¿Cuáles de los siguientes son características del concepto Y?",
-          "options": ["Característica A", "Característica B", "Característica C", "Característica D"],
-          "answer": [0, 2],
-          "explanation": "A y C son correctas porque... B y D son incorrectas porque..."
-        },
-        {
-          "type": "truefalse",
-          "question": "El concepto Z implica necesariamente que la condición W se cumple siempre.",
-          "answer": false,
-          "explanation": "Es falso porque... El caso correcto es..."
-        }
-      ]
-    }
-  ]
-}
-
-Reglas del formato:
-- "description" es opcional: un texto breve (hasta 1000 caracteres) que describa el banco para quien lo vaya a usar.
-- "type" es exactamente uno de: "single", "multiple", "truefalse".
-- En "single": "answer" es el índice (0-based) de la única opción correcta. Requiere "options" con mínimo 2 elementos.
-- En "multiple": "answer" es un array de índices (0-based) de las opciones correctas, sin repetir. Requiere "options" con mínimo 2 elementos. NO declares en el enunciado cuántas hay que marcar.
-- En "truefalse": "answer" es true o false (booleano, sin comillas). NO lleva campo "options".
-- "explanation" es OBLIGATORIA en todos los tipos — explicá por qué la respuesta es correcta y por qué las otras opciones no lo son.
-- Cubrí todas las unidades del material. Apuntá a preguntas conceptuales, no triviales.
-- Devolvé SOLO el JSON válido, sin texto adicional.`
+${QUIZ_BANK_JSON_FORMAT}`
 
 // ---- Tipos de preview -------------------------------------------------------
 
@@ -133,7 +92,8 @@ export function QuizBankModal({
     uploadQuizBankAction,
     emptyState,
   )
-  const [copied, setCopied] = useState(false)
+  const [clipboard, setClipboard] = useState<{ copied: 'prompt' | 'format' | null; error: string | null }>({ copied: null, error: null })
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [preview, setPreview] = useState<FilePreview | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
@@ -147,13 +107,18 @@ export function QuizBankModal({
     }
   }, [state.ok, onClose, onUploaded])
 
-  async function copyPrompt() {
+  useEffect(() => () => {
+    if (copyTimer.current) clearTimeout(copyTimer.current)
+  }, [])
+
+  async function copyText(kind: 'prompt' | 'format') {
+    if (copyTimer.current) clearTimeout(copyTimer.current)
     try {
-      await navigator.clipboard.writeText(AI_PROMPT)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      await navigator.clipboard.writeText(kind === 'prompt' ? AI_PROMPT : QUIZ_BANK_JSON_FORMAT)
+      setClipboard({ copied: kind, error: null })
+      copyTimer.current = setTimeout(() => setClipboard({ copied: null, error: null }), 2000)
     } catch {
-      /* clipboard no disponible */
+      setClipboard({ copied: null, error: 'No se pudo copiar. Revisá los permisos del portapapeles e intentá de nuevo.' })
     }
   }
 
@@ -232,20 +197,23 @@ export function QuizBankModal({
               3. Subí acá el archivo .json que te devuelva.
             </li>
           </ol>
-          <button
-            type="button"
-            onClick={() => {
-              void copyPrompt()
-            }}
-            className="inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10 cursor-pointer"
-          >
-            {copied ? (
-              <Check className="size-3.5 text-emerald-400" />
-            ) : (
-              <Copy className="size-3.5" />
-            )}
-            {copied ? 'Copiado' : 'Copiar prompt'}
-          </button>
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap">
+            {(['prompt', 'format'] as const).map((kind) => (
+              <button
+                key={kind}
+                type="button"
+                onClick={() => void copyText(kind)}
+                className="inline-flex min-h-11 cursor-pointer items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-left text-xs font-semibold text-white transition-[background-color,transform] duration-150 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70 motion-safe:active:scale-[0.97]"
+              >
+                {clipboard.copied === kind ? <Check className="size-3.5 shrink-0 text-emerald-400" /> : <Copy className="size-3.5 shrink-0" />}
+                {kind === 'prompt' ? 'Copiar prompt' : 'Copiar solo el formato JSON compatible'}
+              </button>
+            ))}
+          </div>
+          <p role="status" className="text-xs text-emerald-400">
+            {clipboard.copied === 'prompt' ? 'Prompt copiado.' : clipboard.copied === 'format' ? 'Formato JSON copiado.' : ''}
+          </p>
+          <FormError message={clipboard.error} />
         </div>
 
         {/* Sección B: Dropzone + form */}

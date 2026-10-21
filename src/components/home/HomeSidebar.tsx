@@ -6,7 +6,6 @@ import { usePreferences } from '@/hooks/usePreferences'
 import { isYearVisible, isSubjectVisible, type UserPreferences } from '@/lib/preferences'
 
 interface HomeSidebarProps {
-  careerName: string
   initialPrefs: UserPreferences | null
   years: Array<{
     id: string
@@ -17,7 +16,7 @@ interface HomeSidebarProps {
   }>
 }
 
-export function HomeSidebar({ careerName, initialPrefs, years }: HomeSidebarProps) {
+export function HomeSidebar({ initialPrefs, years }: HomeSidebarProps) {
   const { prefs, isHydrated } = usePreferences(initialPrefs)
   const shouldWaitForStoredPrefs = !isHydrated && initialPrefs === null
   const effectivePrefs = isHydrated ? prefs : initialPrefs
@@ -89,8 +88,6 @@ export function HomeSidebar({ careerName, initialPrefs, years }: HomeSidebarProp
 
   return (
     <Sidebar
-      eyebrow="CARRERA"
-      title={careerName}
       secondaryEyebrow={isSubjectsView ? 'MATERIAS' : 'AÑOS ACADÉMICOS'}
       items={items}
     />
