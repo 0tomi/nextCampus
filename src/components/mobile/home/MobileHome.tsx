@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useReducer, useState } from 'react'
 import { CalendarDays, SlidersHorizontal, ArrowRight, ChevronUp } from 'lucide-react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { YearCarousel } from './YearCarousel'
@@ -27,6 +27,18 @@ import type { SubjectLinkDTO } from '@/lib/subjectLinks'
 import type { HomeCalendarPageEvent } from '@/lib/domain/home-page-adapters'
 import type { PeriodoCalendario } from '@/lib/periodos'
 import { isHomeCalendarEventVisible } from '@/components/home/HomeGlobalCalendar.utils'
+
+interface CalendarState {
+  open: boolean
+  selectedDate: Date | null
+}
+
+type CalendarAction = { type: 'toggle' } | { type: 'select'; date: Date | null }
+
+function calendarReducer(state: CalendarState, action: CalendarAction): CalendarState {
+  if (action.type === 'toggle') return { open: !state.open, selectedDate: null }
+  return { ...state, selectedDate: action.date }
+}
 
 const EMPTY_PERIODOS: readonly PeriodoCalendario[] = []
 
@@ -94,7 +106,8 @@ export function MobileHome({
   periodos?: readonly PeriodoCalendario[]
 }) {
   const [detailEvent, setDetailEvent] = useState<MobileCalendarEvent | null>(null)
-  const [calendarOpen, setCalendarOpen] = useState(false)
+  const [calendar, dispatchCalendar] = useReducer(calendarReducer, { open: false, selectedDate: null })
+  const calendarOpen = calendar.open
   const [isAboutOpen, setIsAboutOpen] = useState(false)
   const { prefs, isHydrated } = usePreferences(initialPrefs)
   const shouldWaitForStoredPrefs = !isHydrated && initialPrefs === null
@@ -251,14 +264,14 @@ export function MobileHome({
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">Agenda</p>
                   <h2 className="mt-1 text-lg font-black text-white">
-                    Próximos eventos - {uniqueSubjectsInEvents} {uniqueSubjectsInEvents === 1 ? 'Materia' : 'Materias'}
+                    {calendar.selectedDate ? 'Eventos del día' : <>Próximos eventos - {uniqueSubjectsInEvents} {uniqueSubjectsInEvents === 1 ? 'Materia' : 'Materias'}</>}
                   </h2>
                 </div>
                 <button
                   type="button"
                   aria-expanded={calendarOpen}
                   aria-controls="home-mobile-calendar"
-                  onClick={() => setCalendarOpen((open) => !open)}
+                  onClick={() => dispatchCalendar({ type: 'toggle' })}
                   className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/85 transition-[background-color,transform] duration-150 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70 motion-safe:active:scale-[0.97]"
                 >
                   <CalendarDays className="size-4 text-white/60" aria-hidden="true" />
@@ -271,13 +284,15 @@ export function MobileHome({
                   <MobileCalendar
                     events={visibleCalendarEvents}
                     periodos={periodos}
+                    selectedDate={calendar.selectedDate}
+                    onSelectedDateChange={(date) => dispatchCalendar({ type: 'select', date })}
                     accent="var(--color-primary)"
                     tiposEvento={tiposEvento}
                     subjects={modalSubjects}
                   />
                 ) : null}
               </div>
-              <div className="px-[18px] flex flex-col gap-2.5">
+              <div hidden={calendar.selectedDate !== null} className="px-[18px] flex flex-col gap-2.5">
                 {!hasConfiguredSubjects ? (
                   <ConfigureAgendaNotice />
                 ) : filteredUpcomingEvents.length === 0 ? (
