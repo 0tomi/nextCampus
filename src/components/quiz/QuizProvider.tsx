@@ -294,6 +294,7 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
         type: 'START_SUCCESS',
         preguntas: data.preguntas,
         timeLeft: state.mode === 'examen' ? state.timeLimit * 60 : null,
+        examDeadline: state.mode === 'examen' ? Date.now() + state.timeLimit * 60_000 : null,
       })
     } catch (error) {
       dispatch({ type: 'REQUEST_FAILURE', error: error instanceof Error ? error.message : 'Error inesperado.' })
@@ -433,11 +434,15 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
     [enterRanked, finish, loadRankedHistory, loadRankedTop, next, openRankedHistory, reset, setAnswer, start, state.mode, state.selectedBancos, verify],
   )
 
+  const tick = useCallback((timeLeft: number, examDeadline: number) => {
+    dispatch({ type: 'TICK', timeLeft, examDeadline })
+  }, [])
+
   useExamTimer({
-    enabled: state.phase === 'running' && state.mode === 'examen' && state.timeLeft !== null,
-    timeLeft: state.timeLeft,
+    enabled: state.phase === 'running' && state.mode === 'examen' && !state.loading,
+    deadline: state.examDeadline,
     onExpire: actions.finish,
-    onTick: () => dispatch({ type: 'TICK' }),
+    onTick: tick,
   })
 
   useQuizKeyboardShortcuts({

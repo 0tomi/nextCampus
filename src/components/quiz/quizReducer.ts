@@ -13,6 +13,7 @@ export type QuizState = {
   error: string | null
   timeLimit: number
   timeLeft: number | null
+  examDeadline: number | null
   showExitDialog: boolean
   showSubmitDialog: boolean
   excludedUnits: string[]
@@ -40,7 +41,7 @@ export type QuizAction =
   | { type: 'TOGGLE_UNIT'; nombre: string }
   | { type: 'SET_ERROR'; error: string | null }
   | { type: 'START_REQUEST' }
-  | { type: 'START_SUCCESS'; preguntas: PublicQuestion[]; timeLeft: number | null; rankedAttemptId?: string | null; rankedName?: string }
+  | { type: 'START_SUCCESS'; preguntas: PublicQuestion[]; timeLeft: number | null; examDeadline: number | null; rankedAttemptId?: string | null; rankedName?: string }
   | { type: 'RANKED_READY_SUCCESS'; preguntas: PublicQuestion[]; rankedAttemptId: string; rankedName: string }
   | { type: 'ENTER_RANKED_REQUEST' }
   | { type: 'ENTER_RANKED_SUCCESS' }
@@ -61,7 +62,7 @@ export type QuizAction =
   | { type: 'SET_ANSWER'; questionId: string; answer: UserAnswer }
   | { type: 'NEXT_INDEX' }
   | { type: 'PREV_INDEX' }
-  | { type: 'TICK' }
+  | { type: 'TICK'; timeLeft: number; examDeadline: number }
   | { type: 'OPEN_EXIT_DIALOG' }
   | { type: 'CLOSE_EXIT_DIALOG' }
   | { type: 'OPEN_SUBMIT_DIALOG' }
@@ -82,6 +83,7 @@ export function createInitialQuizState(defaultBancoIds: string[]): QuizState {
     error: null,
     timeLimit: 60,
     timeLeft: null,
+    examDeadline: null,
     showExitDialog: false,
     showSubmitDialog: false,
     excludedUnits: [],
@@ -152,6 +154,7 @@ export function quizReducer(state: QuizState, action: QuizAction): QuizState {
         answers: {},
         resultados: {},
         timeLeft: action.timeLeft,
+        examDeadline: action.examDeadline,
         loading: false,
         error: null,
         showExitDialog: false,
@@ -170,6 +173,7 @@ export function quizReducer(state: QuizState, action: QuizAction): QuizState {
         answers: {},
         resultados: {},
         timeLeft: null,
+        examDeadline: null,
         loading: false,
         error: null,
         showExitDialog: false,
@@ -228,7 +232,8 @@ export function quizReducer(state: QuizState, action: QuizAction): QuizState {
     case 'PREV_INDEX':
       return { ...state, index: Math.max(state.index - 1, 0) }
     case 'TICK':
-      return { ...state, timeLeft: state.timeLeft !== null ? Math.max(0, state.timeLeft - 1) : null }
+      if (state.phase !== 'running' || state.examDeadline !== action.examDeadline || state.timeLeft === action.timeLeft) return state
+      return { ...state, timeLeft: Math.max(0, action.timeLeft) }
     case 'OPEN_EXIT_DIALOG':
       return { ...state, showExitDialog: true }
     case 'CLOSE_EXIT_DIALOG':
@@ -248,6 +253,7 @@ export function quizReducer(state: QuizState, action: QuizAction): QuizState {
         error: null,
         loading: false,
         timeLeft: null,
+        examDeadline: null,
         showExitDialog: false,
         showSubmitDialog: false,
         rankedAttemptId: null,
