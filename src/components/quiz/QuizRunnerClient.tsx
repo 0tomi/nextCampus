@@ -1,16 +1,16 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { lazy, Suspense, useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Upload } from 'lucide-react'
 import { AdminControls } from '@/components/admin/AdminControls'
-import { QuizBankModal } from '@/components/admin/QuizBankModal'
+const QuizBankModal = lazy(() => import('@/components/admin/QuizBankModal').then((module) => ({ default: module.QuizBankModal })))
 import { QuizConfigPhase } from './QuizConfigPhase'
 import { QuizEmptyState } from './QuizEmptyState'
 import { QuizProvider, useQuiz } from './QuizProvider'
-import { QuizReadyPhase } from './QuizReadyPhase'
-import { QuizResultsPhase } from './QuizResultsPhase'
-import { QuizRunningPhase } from './QuizRunningPhase'
+const QuizReadyPhase = lazy(() => import('./QuizReadyPhase').then((module) => ({ default: module.QuizReadyPhase })))
+const QuizResultsPhase = lazy(() => import('./QuizResultsPhase').then((module) => ({ default: module.QuizResultsPhase })))
+const QuizRunningPhase = lazy(() => import('./QuizRunningPhase').then((module) => ({ default: module.QuizRunningPhase })))
 import { RankedHistoryModal } from './RankedHistory'
 import type { BancoInfo } from './quizTypes'
 
@@ -100,12 +100,12 @@ function QuizIntro({ subjectNombre, subjectSlug, yearId }: QuizIntroProps) {
           <Upload className="size-4" aria-hidden="true" />
           Subir banco de preguntas
         </button>
-        <QuizBankModal
+        {uploadOpen ? <Suspense fallback={<p role="status" className="py-4 text-sm text-white/60">Preparando formulario…</p>}>      <QuizBankModal
           open={uploadOpen}
           onClose={closeUpload}
           subjectSlug={subjectSlug}
           onUploaded={refreshBanks}
-        />
+        /></Suspense> : null}
       </AdminControls>
     </div>
   )
@@ -115,7 +115,7 @@ function QuizPhaseSwitch() {
   const { state } = useQuiz()
 
   if (state.phase === 'config') return <QuizConfigPhase />
-  if (state.phase === 'ready') return <QuizReadyPhase />
-  if (state.phase === 'done') return <QuizResultsPhase />
-  return <QuizRunningPhase />
+  return <Suspense fallback={<p role="status" className="py-8 text-center text-sm text-white/60">Preparando tu práctica…</p>}>
+    {state.phase === 'ready' ? <QuizReadyPhase /> : state.phase === 'done' ? <QuizResultsPhase /> : <QuizRunningPhase />}
+  </Suspense>
 }

@@ -10,7 +10,6 @@ import {
 } from 'lucide-react'
 import { InstallPWATopbarButton } from '@/components/pwa/InstallPWA'
 import { MobileSubject } from '@/components/mobile/subject/MobileSubject'
-import { DashboardShell } from '@/components/shell/DashboardShell'
 import { Sidebar } from '@/components/shell/Sidebar'
 import { AnimateIn } from '@/components/ui/AnimateIn'
 import { DarkCard } from '@/components/ui/DarkCard'
@@ -33,7 +32,6 @@ import {
 } from '@/lib/domain/event-adapters'
 import { SubjectEventsSection } from '@/components/subject/SubjectEventsSection'
 import { SubjectEventSummaryCard } from '@/components/subject/SubjectEventSummaryCard'
-import { ApuntesFeed } from '@/components/apuntes/ApuntesFeed'
 import { SubjectLinkButtons } from '@/components/subject/SubjectLinkButtons'
 
 type YearColorClasses = ReturnType<typeof getYearColorClasses>
@@ -50,7 +48,10 @@ export function SubjectRoutePage({
   agendaId,
   focusApunteSlug,
 }: SubjectRouteContext & { focusApunteSlug?: string }) {
-  const colors = getYearColorClasses({ slug: subject.year.slug, color: subject.year.color })
+  const colors = getYearColorClasses({
+    slug: subject.year.slug,
+    color: subject.year.color,
+  })
   const subjectHref = buildSubjectHref({
     yearSlug: subject.year.slug,
     subjectSlug: subject.slug,
@@ -62,27 +63,68 @@ export function SubjectRoutePage({
 
   return (
     <>
-      <SubjectDesktopView
-        activeCommission={activeCommission}
-        agendaId={agendaId}
-        colors={colors}
-        focusApunteSlug={focusApunteSlug}
-        periodos={periodos}
-        quizHref={quizHref}
+      <MobileSubject
         subject={subject}
-        subjectHref={subjectHref}
-        tiposEvento={tiposEvento}
-        visibleEvents={visibleEvents}
-      />
-
-      <SubjectMobileView
-        activeCommissionName={activeCommission?.nombre}
         allYears={allYears}
         focusApunteSlug={focusApunteSlug}
+        commissions={subject.commissions}
+        events={toMobileEvents(visibleEvents)}
         periodos={periodos}
-        subject={subject}
+        activeCommissionName={activeCommission?.nombre}
         tiposEvento={tiposEvento}
-        visibleEvents={visibleEvents}
+        desktop={{
+          sidebar: (
+            <Sidebar
+              eyebrow="Materia"
+              title={subject.nombre}
+              items={getSubjectSidebarItems({ colors, subject, visibleEvents })}
+            />
+          ),
+          topbar: <SubjectTopbar subject={subject} />,
+        }}
+        desktopHero={
+          <SubjectHeroBlock
+            activeCommission={activeCommission}
+            colors={colors}
+            subject={subject}
+            subjectHref={subjectHref}
+            visibleEvents={visibleEvents}
+          />
+        }
+        desktopAgenda={
+          <SubjectEventsSection
+            subject={{
+              id: subject.id,
+              slug: subject.slug,
+              nombre: subject.nombre,
+              year: { id: subject.year.id, slug: subject.year.slug },
+            }}
+            agendaId={agendaId}
+            tiposEvento={tiposEvento}
+            categoriasDisponibles={subject.categoriasDisponibles}
+            commissions={subject.commissions}
+            activeCommission={activeCommission}
+            events={toSubjectEvents(visibleEvents)}
+            periodos={periodos}
+            chipClassName={colors.chipClassName}
+          />
+        }
+        desktopQuiz={
+          <SubjectQuizSection
+            colors={colors}
+            quizHref={quizHref}
+            subject={subject}
+          />
+        }
+        notesHeading={
+          <SubjectSectionTitle
+            action="new-apunte"
+            actionLabel="Agregar nuevos apuntes"
+            eyebrow="Recursos"
+            title="Apuntes y descargas"
+            yearId={subject.year.id}
+          />
+        }
       />
 
       <SubjectPageAdminOverlay
@@ -100,68 +142,6 @@ export function SubjectRoutePage({
         tiposEvento={tiposEvento}
       />
     </>
-  )
-}
-
-function SubjectDesktopView({
-  activeCommission,
-  agendaId,
-  colors,
-  focusApunteSlug,
-  periodos,
-  quizHref,
-  subject,
-  subjectHref,
-  tiposEvento,
-  visibleEvents,
-}: Pick<SubjectRouteContext, 'activeCommission' | 'agendaId' | 'periodos' | 'subject' | 'tiposEvento' | 'visibleEvents'> & {
-  colors: YearColorClasses
-  focusApunteSlug?: string
-  quizHref: string
-  subjectHref: string
-}) {
-  const sectionItems = getSubjectSidebarItems({ colors, subject, visibleEvents })
-
-  return (
-    <div className="hidden lg:block" style={colors.style}>
-      <DashboardShell
-        topbar={<SubjectTopbar subject={subject} />}
-        sidebar={<Sidebar eyebrow="Materia" title={subject.nombre} items={sectionItems} />}
-        mainClassName="space-y-10"
-      >
-        <SubjectHeroBlock
-          activeCommission={activeCommission}
-          colors={colors}
-          subject={subject}
-          subjectHref={subjectHref}
-          visibleEvents={visibleEvents}
-        />
-
-        <SubjectEventsSection
-          subject={{
-            id: subject.id,
-            slug: subject.slug,
-            nombre: subject.nombre,
-            year: {
-              id: subject.year.id,
-              slug: subject.year.slug,
-            },
-          }}
-          agendaId={agendaId}
-          tiposEvento={tiposEvento}
-          categoriasDisponibles={subject.categoriasDisponibles}
-          commissions={subject.commissions}
-          activeCommission={activeCommission}
-          events={toSubjectEvents(visibleEvents)}
-          periodos={periodos}
-          chipClassName={colors.chipClassName}
-        />
-
-        <SubjectQuizSection colors={colors} quizHref={quizHref} subject={subject} />
-
-        <SubjectApuntesSection focusApunteSlug={focusApunteSlug} subject={subject} />
-      </DashboardShell>
-    </div>
   )
 }
 
@@ -210,7 +190,11 @@ function getSubjectSidebarItems({
   ]
 }
 
-function SubjectTopbar({ subject }: { subject: SubjectRouteContext['subject'] }) {
+function SubjectTopbar({
+  subject,
+}: {
+  subject: SubjectRouteContext['subject']
+}) {
   return (
     <div className="flex items-center gap-4">
       <Link
@@ -230,15 +214,26 @@ function SubjectHeroBlock({
   subject,
   subjectHref,
   visibleEvents,
-}: Pick<SubjectRouteContext, 'activeCommission' | 'subject' | 'visibleEvents'> & {
+}: Pick<
+  SubjectRouteContext,
+  'activeCommission' | 'subject' | 'visibleEvents'
+> & {
   colors: YearColorClasses
   subjectHref: string
 }) {
   return (
     <AnimateIn className="space-y-6">
-      <SubjectBreadcrumbs activeCommissionName={activeCommission?.nombre} subject={subject} subjectHref={subjectHref} />
+      <SubjectBreadcrumbs
+        activeCommissionName={activeCommission?.nombre}
+        subject={subject}
+        subjectHref={subjectHref}
+      />
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
-        <SubjectHeroCard activeCommission={activeCommission} colors={colors} subject={subject} />
+        <SubjectHeroCard
+          activeCommission={activeCommission}
+          colors={colors}
+          subject={subject}
+        />
         <SubjectEventSummaryCard
           subjectSlug={subject.slug}
           apuntesCount={subject.apuntesTotal}
@@ -266,11 +261,17 @@ function SubjectBreadcrumbs({
         {subject.year.career.nombre}
       </Link>
       <span>/</span>
-      <Link href={`/${subject.year.slug}`} className="transition-colors hover:text-white/72">
+      <Link
+        href={`/${subject.year.slug}`}
+        className="transition-colors hover:text-white/72"
+      >
         {subject.year.nombre}
       </Link>
       <span>/</span>
-      <Link href={subjectHref} className="transition-colors hover:text-white/72">
+      <Link
+        href={subjectHref}
+        className="transition-colors hover:text-white/72"
+      >
         {subject.nombre}
       </Link>
       {activeCommissionName ? (
@@ -287,11 +288,19 @@ function SubjectHeroCard({
   activeCommission,
   colors,
   subject,
-}: Pick<SubjectRouteContext, 'activeCommission' | 'subject'> & { colors: YearColorClasses }) {
+}: Pick<SubjectRouteContext, 'activeCommission' | 'subject'> & {
+  colors: YearColorClasses
+}) {
   return (
     <DarkCard className="p-6 sm:p-8">
-      <SubjectHeroBadges activeCommissionName={activeCommission?.nombre} colors={colors} yearName={subject.year.nombre} />
-      <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl">{subject.nombre}</h1>
+      <SubjectHeroBadges
+        activeCommissionName={activeCommission?.nombre}
+        colors={colors}
+        yearName={subject.year.nombre}
+      />
+      <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl">
+        {subject.nombre}
+      </h1>
       <p className="mt-4 max-w-2xl text-sm leading-7 text-white/64 sm:text-base">
         {subject.descripcion?.trim()
           ? formatDescription(subject.descripcion.trim())
@@ -313,7 +322,9 @@ function SubjectHeroBadges({
 }) {
   return (
     <div className="flex flex-wrap gap-2">
-      <span className={`inline-flex border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${colors.chipClassName}`}>
+      <span
+        className={`inline-flex border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${colors.chipClassName}`}
+      >
         {yearName}
       </span>
       {activeCommissionName ? (
@@ -325,7 +336,11 @@ function SubjectHeroBadges({
   )
 }
 
-function SubjectResourceActions({ subject }: { subject: SubjectRouteContext['subject'] }) {
+function SubjectResourceActions({
+  subject,
+}: {
+  subject: SubjectRouteContext['subject']
+}) {
   return (
     <div className="mt-6 flex flex-wrap items-center gap-2">
       <SubjectLinkButtons links={subject.links} variant="desktop" />
@@ -362,58 +377,33 @@ function SubjectQuizSection({
         title="Poné a prueba lo que sabés"
         yearId={subject.year.id}
       />
-      <Link href={quizHref} className="group block cursor-pointer border border-white/5 bg-surface-1 p-6 transition-colors duration-150 hover:border-white/15 hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/70 sm:p-8">
+      <Link
+        href={quizHref}
+        className="group block cursor-pointer border border-white/5 bg-surface-1 p-6 transition-colors duration-150 hover:border-white/15 hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/70 sm:p-8"
+      >
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <span className={`inline-flex size-12 shrink-0 items-center justify-center bg-gradient-to-r ${colors.progressClassName}`}>
+            <span
+              className={`inline-flex size-12 shrink-0 items-center justify-center bg-gradient-to-r ${colors.progressClassName}`}
+            >
               <Sparkles className="size-5" />
             </span>
             <div>
-              <h3 className="text-xl font-black tracking-tight text-white">Quiz de {subject.nombre}</h3>
+              <h3 className="text-xl font-black tracking-tight text-white">
+                Quiz de {subject.nombre}
+              </h3>
               <p className="mt-2 max-w-md text-sm leading-6 text-white/58">
-                Elegí uno o varios bancos de preguntas y practicá en modo práctica (con explicaciones) o examen.
+                Elegí uno o varios bancos de preguntas y practicá en modo
+                práctica (con explicaciones) o examen.
               </p>
             </div>
           </div>
-          <span
-            className="inline-flex shrink-0 cursor-pointer items-center gap-2 self-start bg-primary px-5 py-3 text-sm font-bold text-white transition-colors group-hover:bg-primary-light"
-          >
+          <span className="inline-flex shrink-0 cursor-pointer items-center gap-2 self-start bg-primary px-5 py-3 text-sm font-bold text-white transition-colors group-hover:bg-primary-light">
             Empezar quiz
             <ArrowRight className="size-4" />
           </span>
         </div>
       </Link>
-    </section>
-  )
-}
-
-function SubjectApuntesSection({
-  focusApunteSlug,
-  subject,
-}: {
-  focusApunteSlug?: string
-  subject: SubjectRouteContext['subject']
-}) {
-  return (
-    <section id="apuntes" className="space-y-4">
-      <SubjectSectionTitle
-        action="new-apunte"
-        actionLabel="Agregar nuevos apuntes"
-        eyebrow="Recursos"
-        title="Apuntes y descargas"
-        yearId={subject.year.id}
-      />
-      <ApuntesFeed
-        subjectId={subject.id}
-        subjectSlug={subject.slug}
-        yearId={subject.year.id}
-        yearSlug={subject.year.slug}
-        categorias={subject.categoriasDisponibles}
-        initialItems={subject.apuntes}
-        initialHasMore={subject.apuntesHasMore}
-        initialNextCursor={subject.apuntesNextCursor}
-        focusApunteSlug={focusApunteSlug}
-      />
     </section>
   )
 }
@@ -433,9 +423,13 @@ function SubjectSectionTitle({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">{eyebrow}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/38">
+        {eyebrow}
+      </p>
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">{title}</h2>
+        <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+          {title}
+        </h2>
         <AdminControls yearId={yearId}>
           <AdminTriggerButton
             action={action}
@@ -446,34 +440,6 @@ function SubjectSectionTitle({
           </AdminTriggerButton>
         </AdminControls>
       </div>
-    </div>
-  )
-}
-
-function SubjectMobileView({
-  activeCommissionName,
-  allYears,
-  focusApunteSlug,
-  periodos,
-  subject,
-  tiposEvento,
-  visibleEvents,
-}: Pick<SubjectRouteContext, 'allYears' | 'periodos' | 'subject' | 'tiposEvento' | 'visibleEvents'> & {
-  activeCommissionName?: string
-  focusApunteSlug?: string
-}) {
-  return (
-    <div className="lg:hidden">
-      <MobileSubject
-        subject={subject}
-        allYears={allYears}
-        focusApunteSlug={focusApunteSlug}
-        commissions={subject.commissions}
-        events={toMobileEvents(visibleEvents)}
-        periodos={periodos}
-        activeCommissionName={activeCommissionName}
-        tiposEvento={tiposEvento}
-      />
     </div>
   )
 }

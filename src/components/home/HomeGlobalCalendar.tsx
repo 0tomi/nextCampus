@@ -1,16 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { CalendarDays, SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react'
-import { EventCalendar, type EventCalendarEvent } from '@/components/calendar/EventCalendar'
+import type { EventCalendarEvent } from '@/components/calendar/EventCalendar'
+
+const EventCalendar = lazy(() => import('@/components/calendar/EventCalendar').then((module) => ({ default: module.EventCalendar })))
 import { PeriodoLegend } from '@/components/calendar/PeriodoLegend'
 import { PeriodoDetailSheet } from '@/components/calendar/PeriodoDetailSheet'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { usePreferences } from '@/hooks/usePreferences'
 import { cn, formatEventDateTime, todayKeyAR } from '@/lib/utils'
 import { SafeMarkdown } from '@/components/ui/SafeMarkdown'
+import { getEventToneBadgeClass } from '@/lib/eventTones'
 import { RelatedApunteLinks, type RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import type { UserPreferences } from '@/lib/preferences'
@@ -123,7 +126,7 @@ export function HomeGlobalCalendar({
             closestEvents.map((evento) => (
               <DarkCard
                 key={evento.id}
-                className="group relative flex min-h-[140px] flex-col justify-between rounded-lg border border-white/5 bg-surface-1/60 p-4 backdrop-blur-sm transition-colors duration-300 hover:border-white/10 hover:bg-surface-1"
+                className="group relative flex min-w-0 min-h-[140px] flex-col justify-between rounded-lg border border-white/5 bg-surface-1/60 p-4 backdrop-blur-sm transition-colors duration-300 hover:border-white/10 hover:bg-surface-1"
               >
                 <Link
                   href={buildHomeCalendarEventHref(evento)}
@@ -132,46 +135,32 @@ export function HomeGlobalCalendar({
                 />
 
                 <div className="space-y-2.5">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[9px] font-bold uppercase tracking-[0.15em] text-white/35">
+                  <div className="flex flex-wrap items-center gap-2 text-xs leading-5 text-white/35 [overflow-wrap:anywhere]">
                     <span
                       className={cn(
-                        "rounded border px-1.5 py-0.5 text-[8px] font-bold tracking-wider",
-                        evento.tipo.toLowerCase() === 'examen' ||
-                        evento.tipo.toLowerCase() === 'parcial' ||
-                        evento.tipo.toLowerCase() === 'final' ||
-                        evento.tipo.toLowerCase() === 'recuperatorio'
-                          ? 'border-red-500/20 bg-red-500/10 text-red-400'
-                          : evento.tipo.toLowerCase() === 'trabajo práctico' ||
-                            evento.tipo.toLowerCase() === 'tp' ||
-                            evento.tipo.toLowerCase() === 'trabajo practico' ||
-                            evento.tipo.toLowerCase() === 'entrega'
-                            ? 'border-yellow-500/20 bg-yellow-500/10 text-yellow-400'
-                            : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+                        "max-w-full rounded border px-1.5 py-0.5 text-xs font-semibold",
+                        getEventToneBadgeClass(evento.tipo),
                       )}
                     >
                       {evento.tipo}
                     </span>
-                    <span className="rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[8px] font-bold tracking-wider text-white/65">
+                    <span className="max-w-full rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-xs font-semibold text-white/65">
                       {evento.yearNombre}
                     </span>
-                    <span>•</span>
                     <span
-                      className="max-w-[120px] truncate text-white/55 transition-colors group-hover:text-white"
+                      className="w-full text-sm font-semibold leading-5 text-white/55 transition-colors group-hover:text-white"
                       title={evento.materiaNombre}
                     >
                       {evento.materiaNombre}
                     </span>
                     {evento.commissionNombre ? (
-                      <>
-                        <span>•</span>
-                        <span className="max-w-[80px] truncate" title={evento.commissionNombre}>
-                          {evento.commissionNombre}
-                        </span>
-                      </>
+                      <span className="w-full" title={evento.commissionNombre}>
+                        {evento.commissionNombre}
+                      </span>
                     ) : null}
                   </div>
 
-                  <h3 className="line-clamp-2 text-sm leading-snug font-black tracking-tight text-white transition-colors group-hover:text-white">
+                  <h3 className="text-sm leading-snug font-black [overflow-wrap:anywhere] tracking-tight text-white transition-colors group-hover:text-white">
                     {evento.titulo}
                   </h3>
 
@@ -186,7 +175,7 @@ export function HomeGlobalCalendar({
                 </div>
 
                 <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-2.5">
-                  <span className="inline-flex max-w-full rounded border border-white/8 bg-white/[0.02] px-2 py-1 text-[8px] font-bold uppercase tracking-[0.1em] text-white/60">
+                  <span className="inline-flex max-w-full rounded border border-white/8 bg-white/[0.02] px-2 py-1 text-xs font-semibold leading-5 text-white/60 [overflow-wrap:anywhere]">
                     {formatEventDateTime(evento.fecha, evento.hora)}
                   </span>
                 </div>
@@ -199,6 +188,7 @@ export function HomeGlobalCalendar({
         {isExpanded && (
           <div className="w-full space-y-3">
             <PeriodoLegend periodos={periodos} className="px-1" />
+            <Suspense fallback={<p role="status" className="min-h-80 animate-pulse p-6 text-sm text-white/60">Cargando calendario…</p>}>
             <EventCalendar
               events={calendarEvents}
               periodos={periodos}
@@ -220,6 +210,7 @@ export function HomeGlobalCalendar({
               }}
               onPeriodoClick={setSelectedPeriodo}
             />
+            </Suspense>
           </div>
         )}
       </div>

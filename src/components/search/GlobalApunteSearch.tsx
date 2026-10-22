@@ -1,6 +1,14 @@
 'use client'
 
-import { useCallback, useEffect, useEffectEvent, useId, useReducer, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useId,
+  useReducer,
+  useRef,
+  useState,
+} from 'react'
 import Link from 'next/link'
 import { ArrowRight, FileText, Loader2, Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -16,7 +24,7 @@ const RESOURCE_TYPE_LABELS: Record<string, string> = {
   YOUTUBE: 'Video',
 }
 
-type GlobalApunteSearchVariant = 'desktop' | 'mobile'
+type GlobalApunteSearchVariant = 'desktop' | 'mobile' | 'responsive'
 
 type SearchState = {
   query: string
@@ -35,7 +43,13 @@ type SearchAction =
 function searchReducer(state: SearchState, action: SearchAction): SearchState {
   switch (action.type) {
     case 'query-changed':
-      return { ...state, query: action.query, items: [], loading: false, error: '' }
+      return {
+        ...state,
+        query: action.query,
+        items: [],
+        loading: false,
+        error: '',
+      }
     case 'search-start':
       return { ...state, loading: true, error: '' }
     case 'search-success':
@@ -47,7 +61,11 @@ function searchReducer(state: SearchState, action: SearchAction): SearchState {
   }
 }
 
-export function GlobalApunteSearch({ variant }: { variant: GlobalApunteSearchVariant }) {
+export function GlobalApunteSearch({
+  variant,
+}: {
+  variant: GlobalApunteSearchVariant
+}) {
   const [open, setOpen] = useState(false)
   const [state, dispatch] = useReducer(searchReducer, {
     query: '',
@@ -80,44 +98,68 @@ export function GlobalApunteSearch({ variant }: { variant: GlobalApunteSearchVar
 
   const closeSearchEvent = useEffectEvent(() => closeSearch())
 
-  const runSearch = useCallback(async (query: string, controller: AbortController) => {
-    dispatch({ type: 'search-start' })
-    try {
-      const response = await fetch(`/api/apuntes/search?q=${encodeURIComponent(query)}`, {
-        signal: controller.signal,
-      })
-      if (!response.ok) {
-        const errBody = (await response.json().catch(() => null)) as { error?: string } | null
-        throw new Error(errBody?.error ?? 'No pudimos buscar ahora.')
+  const runSearch = useCallback(
+    async (query: string, controller: AbortController) => {
+      dispatch({ type: 'search-start' })
+      try {
+        const response = await fetch(
+          `/api/apuntes/search?q=${encodeURIComponent(query)}`,
+          {
+            signal: controller.signal,
+          },
+        )
+        if (!response.ok) {
+          const errBody = (await response.json().catch(() => null)) as {
+            error?: string
+          } | null
+          throw new Error(errBody?.error ?? 'No pudimos buscar ahora.')
+        }
+        const body = (await response.json().catch(() => null)) as {
+          items?: ApunteSearchItem[]
+        } | null
+        if (searchControllerRef.current !== controller) return
+        dispatch({ type: 'search-success', items: body?.items ?? [] })
+      } catch (error) {
+        if (
+          (error as Error).name === 'AbortError' ||
+          searchControllerRef.current !== controller
+        )
+          return
+        dispatch({
+          type: 'search-error',
+          error: 'No pudimos buscar ahora. Probá de nuevo en unos segundos.',
+        })
+      } finally {
+        if (searchControllerRef.current === controller)
+          searchControllerRef.current = null
       }
-      const body = (await response.json().catch(() => null)) as { items?: ApunteSearchItem[] } | null
-      if (searchControllerRef.current !== controller) return
-      dispatch({ type: 'search-success', items: body?.items ?? [] })
-    } catch (error) {
-      if ((error as Error).name === 'AbortError' || searchControllerRef.current !== controller) return
-      dispatch({ type: 'search-error', error: 'No pudimos buscar ahora. Probá de nuevo en unos segundos.' })
-    } finally {
-      if (searchControllerRef.current === controller) searchControllerRef.current = null
-    }
-  }, [])
+    },
+    [],
+  )
 
-  const scheduleSearch = useCallback((query: string) => {
-    clearPendingSearch()
-    const nextQuery = query.trim()
-    if (nextQuery.length < 3 || nextQuery.length > 120) return
+  const scheduleSearch = useCallback(
+    (query: string) => {
+      clearPendingSearch()
+      const nextQuery = query.trim()
+      if (nextQuery.length < 3 || nextQuery.length > 120) return
 
-    const controller = new AbortController()
-    searchControllerRef.current = controller
-    searchTimeoutRef.current = window.setTimeout(() => {
-      searchTimeoutRef.current = null
-      void runSearch(nextQuery, controller)
-    }, SEARCH_DELAY_MS)
-  }, [clearPendingSearch, runSearch])
+      const controller = new AbortController()
+      searchControllerRef.current = controller
+      searchTimeoutRef.current = window.setTimeout(() => {
+        searchTimeoutRef.current = null
+        void runSearch(nextQuery, controller)
+      }, SEARCH_DELAY_MS)
+    },
+    [clearPendingSearch, runSearch],
+  )
 
-  const handleQueryChange = useCallback((query: string) => {
-    dispatch({ type: 'query-changed', query })
-    scheduleSearch(query)
-  }, [scheduleSearch])
+  const handleQueryChange = useCallback(
+    (query: string) => {
+      dispatch({ type: 'query-changed', query })
+      scheduleSearch(query)
+    },
+    [scheduleSearch],
+  )
 
   useEffect(() => {
     if (!open) return
@@ -176,7 +218,9 @@ export function GlobalApunteSearch({ variant }: { variant: GlobalApunteSearchVar
               'relative z-10 mx-auto overflow-hidden border border-white/8 bg-surface-1 text-white shadow-[0_24px_80px_rgba(0,0,0,0.62)]',
               variant === 'desktop'
                 ? 'mt-[calc(4.75rem+var(--spacing-safe-top))] w-[min(680px,calc(100vw-2rem))] rounded-none'
-                : 'mt-[calc(4rem+var(--spacing-safe-top))] w-[calc(100vw-1rem)] rounded-none',
+                : variant === 'responsive'
+                  ? 'mt-[calc(4rem+var(--spacing-safe-top))] w-[calc(100vw-1rem)] rounded-none lg:mt-[calc(4.75rem+var(--spacing-safe-top))] lg:w-[min(680px,calc(100vw-2rem))]'
+                  : 'mt-[calc(4rem+var(--spacing-safe-top))] w-[calc(100vw-1rem)] rounded-none',
             )}
           >
             <div className="border-b border-white/6 p-3">
@@ -194,7 +238,9 @@ export function GlobalApunteSearch({ variant }: { variant: GlobalApunteSearchVar
                   placeholder="Buscar apuntes por tema o materia"
                   className="h-12 min-w-0 flex-1 border-0 bg-transparent px-0 text-sm font-semibold text-white placeholder:text-white/34 focus:ring-0"
                 />
-                {state.loading ? <Loader2 className="size-4 animate-spin text-white/42" /> : null}
+                {state.loading ? (
+                  <Loader2 className="size-4 animate-spin text-white/42" />
+                ) : null}
                 {state.query ? (
                   <button
                     type="button"
@@ -229,7 +275,13 @@ export function GlobalApunteSearch({ variant }: { variant: GlobalApunteSearchVar
   )
 }
 
-function SearchTrigger({ variant, onOpen }: { variant: GlobalApunteSearchVariant; onOpen: () => void }) {
+function SearchTrigger({
+  variant,
+  onOpen,
+}: {
+  variant: GlobalApunteSearchVariant
+  onOpen: () => void
+}) {
   if (variant === 'mobile') {
     return (
       <button
@@ -248,10 +300,21 @@ function SearchTrigger({ variant, onOpen }: { variant: GlobalApunteSearchVariant
       type="button"
       onClick={onOpen}
       aria-label="Buscar apuntes"
-      className="absolute left-1/2 top-1/2 hidden h-10 w-[min(360px,32vw)] -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center gap-3 rounded-full border border-white/10 bg-black/12 px-4 text-sm font-semibold text-white/58 transition-colors hover:bg-white/5 hover:text-white lg:flex"
+      className={cn(
+        'cursor-pointer items-center gap-3 rounded-full border border-white/10 bg-black/12 text-sm font-semibold text-white/58 transition-colors hover:bg-white/5 hover:text-white',
+        variant === 'responsive'
+          ? 'flex size-10 justify-center lg:absolute lg:left-1/2 lg:top-1/2 lg:h-10 lg:w-[min(360px,32vw)] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:justify-start lg:px-4'
+          : 'absolute left-1/2 top-1/2 hidden h-10 w-[min(360px,32vw)] -translate-x-1/2 -translate-y-1/2 px-4 lg:flex',
+      )}
     >
       <Search className="size-4 shrink-0" />
-      <span className="truncate">Buscar apuntes</span>
+      <span
+        className={
+          variant === 'responsive' ? 'hidden truncate lg:block' : 'truncate'
+        }
+      >
+        Buscar apuntes
+      </span>
     </button>
   )
 }
@@ -324,7 +387,8 @@ function SearchContent({
   return (
     <div className="space-y-4">
       <h2 id={titleId} className="px-1 text-sm font-black text-white">
-        {items.length} {items.length === 1 ? 'resultado' : 'resultados'} para “{query}”
+        {items.length} {items.length === 1 ? 'resultado' : 'resultados'} para “
+        {query}”
       </h2>
       <ul className="space-y-4" aria-label="Resultados de búsqueda">
         {groups.map((group) => (
@@ -333,11 +397,17 @@ function SearchContent({
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/34">
                 {group.yearName}
               </p>
-              <h3 className="text-sm font-black text-white/82">{group.subjectName}</h3>
+              <h3 className="text-sm font-black text-white/82">
+                {group.subjectName}
+              </h3>
             </div>
             <div className="space-y-1.5">
               {group.items.map((item) => (
-                <SearchResultItem key={item.id} closeSearch={closeSearch} item={item} />
+                <SearchResultItem
+                  key={item.id}
+                  closeSearch={closeSearch}
+                  item={item}
+                />
               ))}
             </div>
           </li>
@@ -347,7 +417,13 @@ function SearchContent({
   )
 }
 
-function SearchResultItem({ closeSearch, item }: { closeSearch: () => void; item: ApunteSearchItem }) {
+function SearchResultItem({
+  closeSearch,
+  item,
+}: {
+  closeSearch: () => void
+  item: ApunteSearchItem
+}) {
   const labels = buildMetaLabels(item)
 
   return (
@@ -360,7 +436,9 @@ function SearchResultItem({ closeSearch, item }: { closeSearch: () => void; item
         <FileText className="size-4" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-black text-white">{item.title}</span>
+        <span className="block truncate text-sm font-black text-white">
+          {item.title}
+        </span>
         <span className="mt-1 block truncate text-xs font-semibold text-white/46">
           {item.subject.name} · {item.year.name}
         </span>
@@ -395,28 +473,39 @@ function SearchMessage({
 }) {
   return (
     <div className="flex items-start gap-3 rounded-none border border-dashed border-white/10 bg-white/[0.02] p-4">
-      <span className={cn(
-        'flex size-9 shrink-0 items-center justify-center rounded-lg border',
-        tone === 'danger'
-          ? 'border-rose-300/20 bg-rose-400/10 text-rose-200'
-          : 'border-white/8 bg-white/[0.035] text-white/46',
-      )}>
+      <span
+        className={cn(
+          'flex size-9 shrink-0 items-center justify-center rounded-lg border',
+          tone === 'danger'
+            ? 'border-rose-300/20 bg-rose-400/10 text-rose-200'
+            : 'border-white/8 bg-white/[0.035] text-white/46',
+        )}
+      >
         <Search className="size-4" />
       </span>
       <div>
         <h2
           id={titleId}
-          className={cn('text-sm font-black leading-snug', tone === 'danger' ? 'text-rose-100' : 'text-white')}
+          className={cn(
+            'text-sm font-black leading-snug',
+            tone === 'danger' ? 'text-rose-100' : 'text-white',
+          )}
         >
           {title}
         </h2>
-        {description ? <p className="mt-1.5 text-sm leading-6 text-white/48">{description}</p> : null}
+        {description ? (
+          <p className="mt-1.5 text-sm leading-6 text-white/48">
+            {description}
+          </p>
+        ) : null}
       </div>
     </div>
   )
 }
 
 function buildMetaLabels(item: ApunteSearchItem) {
-  const resourceLabels = item.resourceTypes.map((type) => RESOURCE_TYPE_LABELS[type] ?? 'Recurso')
+  const resourceLabels = item.resourceTypes.map(
+    (type) => RESOURCE_TYPE_LABELS[type] ?? 'Recurso',
+  )
   return [...new Set([...item.categories, ...resourceLabels])].slice(0, 5)
 }

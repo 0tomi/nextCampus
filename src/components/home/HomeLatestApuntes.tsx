@@ -31,7 +31,7 @@ interface HomeLatestApuntesProps {
    * selección actual".
    */
   hasAnyNotes: boolean
-  variant?: 'desktop' | 'mobile'
+  variant?: 'desktop' | 'mobile' | 'responsive'
 }
 
 function buildLatestApunteHref(
@@ -56,21 +56,66 @@ export function HomeLatestApuntes({
   hasAnyNotes,
   variant = 'desktop',
 }: HomeLatestApuntesProps) {
+  const newBadges = useSeenApuntes({
+    markOnHover: variant !== 'mobile',
+    markOnViewport: variant !== 'desktop',
+  })
   const { prefs, isHydrated } = usePreferences(initialPrefs)
   const shouldWaitForStoredPrefs = !isHydrated && initialPrefs === null
   const effectivePrefs = isHydrated ? prefs : initialPrefs
   const hasConfiguredSubjects = effectivePrefs !== null
 
+  if (variant === 'responsive') {
+    return (
+      <>
+        <div className="hidden lg:block">
+          {shouldWaitForStoredPrefs ? (
+            <HomeLatestApuntesDesktopSkeleton />
+          ) : !hasConfiguredSubjects ? (
+            <HomeLatestApuntesDesktopSetupNotice />
+          ) : (
+            <HomeLatestApuntesDesktop
+              notes={notes
+                .filter((note) => isLatestApunteVisible(note, effectivePrefs))
+                .slice(0, 6)}
+              hasAnyNotes={hasAnyNotes}
+              newBadges={newBadges}
+            />
+          )}
+        </div>
+        <div className="lg:hidden">
+          {shouldWaitForStoredPrefs ? (
+            <HomeLatestApuntesMobileSkeleton />
+          ) : !hasConfiguredSubjects ? (
+            <HomeLatestApuntesMobileSetupNotice />
+          ) : (
+            <HomeLatestApuntesMobile
+              notes={notes
+                .filter((note) => isLatestApunteVisible(note, effectivePrefs))
+                .slice(0, 6)}
+              hasAnyNotes={hasAnyNotes}
+              newBadges={newBadges}
+            />
+          )}
+        </div>
+      </>
+    )
+  }
+
   if (shouldWaitForStoredPrefs) {
-    return variant === 'mobile'
-      ? <HomeLatestApuntesMobileSkeleton />
-      : <HomeLatestApuntesDesktopSkeleton />
+    return variant === 'mobile' ? (
+      <HomeLatestApuntesMobileSkeleton />
+    ) : (
+      <HomeLatestApuntesDesktopSkeleton />
+    )
   }
 
   if (!hasConfiguredSubjects) {
-    return variant === 'mobile'
-      ? <HomeLatestApuntesMobileSetupNotice />
-      : <HomeLatestApuntesDesktopSetupNotice />
+    return variant === 'mobile' ? (
+      <HomeLatestApuntesMobileSetupNotice />
+    ) : (
+      <HomeLatestApuntesDesktopSetupNotice />
+    )
   }
 
   // `notes` ya llega filtrado desde el servidor; este filtro queda como red de
@@ -81,21 +126,33 @@ export function HomeLatestApuntes({
     .slice(0, 6)
 
   if (variant === 'mobile') {
-    return <HomeLatestApuntesMobile notes={visibleNotes} hasAnyNotes={hasAnyNotes} />
+    return (
+      <HomeLatestApuntesMobile
+        notes={visibleNotes}
+        hasAnyNotes={hasAnyNotes}
+        newBadges={newBadges}
+      />
+    )
   }
 
-  return <HomeLatestApuntesDesktop notes={visibleNotes} hasAnyNotes={hasAnyNotes} />
+  return (
+    <HomeLatestApuntesDesktop
+      notes={visibleNotes}
+      hasAnyNotes={hasAnyNotes}
+      newBadges={newBadges}
+    />
+  )
 }
 
 function HomeLatestApuntesDesktop({
   notes,
   hasAnyNotes,
+  newBadges,
 }: {
   notes: readonly HomeLatestApunte[]
   hasAnyNotes: boolean
+  newBadges: ReturnType<typeof useSeenApuntes>
 }) {
-  const newBadges = useSeenApuntes({ markOnViewport: false })
-
   return (
     <section className="space-y-4">
       <div className="flex flex-col gap-3 px-1 lg:flex-row lg:items-end lg:justify-between">
@@ -119,46 +176,46 @@ function HomeLatestApuntesDesktop({
           notes.map((note) => {
             const seenApunteKey = `${note.id}:${note.updatedAt}`
             return (
-            <DarkCard
-              key={note.id}
-              variant="interactive"
-              className="group relative flex min-h-[176px] flex-col justify-between rounded-lg border border-white/5 bg-surface-1/60 p-4 backdrop-blur-sm"
-              data-apunte-id={seenApunteKey}
-              ref={(node) => newBadges.registerNode(seenApunteKey, node)}
-              onPointerEnter={() => newBadges.startHoverTimer(seenApunteKey)}
-              onPointerLeave={() => newBadges.clearHoverTimer(seenApunteKey)}
-            >
-              <Link
-                href={buildLatestApunteHref(note)}
-                aria-label={`Abrir ${note.subjectNombre}`}
-                className="absolute inset-0 z-10 block cursor-pointer rounded-lg no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-              />
+              <DarkCard
+                key={note.id}
+                variant="interactive"
+                className="group relative flex min-h-[176px] flex-col justify-between rounded-lg border border-white/5 bg-surface-1/60 p-4 backdrop-blur-sm"
+                data-apunte-id={seenApunteKey}
+                ref={(node) => newBadges.registerNode(seenApunteKey, node)}
+                onPointerEnter={() => newBadges.startHoverTimer(seenApunteKey)}
+                onPointerLeave={() => newBadges.clearHoverTimer(seenApunteKey)}
+              >
+                <Link
+                  href={buildLatestApunteHref(note)}
+                  aria-label={`Abrir ${note.subjectNombre}`}
+                  className="absolute inset-0 z-10 block cursor-pointer rounded-lg no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                />
 
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-[0.15em] text-white/35">
-                  <span className="rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[8px] tracking-wider text-white/65">
-                    {note.yearNombre}
-                  </span>
-                  <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[8px] tracking-wider text-emerald-300">
-                    {formatDate(note.updatedAt)}
-                  </span>
-                  {newBadges.isNew(seenApunteKey) ? <NewApunteBadge /> : null}
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-[0.15em] text-white/35">
+                    <span className="rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[8px] tracking-wider text-white/65">
+                      {note.yearNombre}
+                    </span>
+                    <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[8px] tracking-wider text-emerald-300">
+                      {formatDate(note.updatedAt)}
+                    </span>
+                    {newBadges.isNew(seenApunteKey) ? <NewApunteBadge /> : null}
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="line-clamp-2 text-lg font-black leading-tight tracking-tight text-white transition-colors group-hover:text-white">
+                      {note.titulo}
+                    </h3>
+                    <p className="text-sm leading-6 text-white/58 transition-colors group-hover:text-white/70">
+                      {note.subjectNombre}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <h3 className="line-clamp-2 text-lg font-black leading-tight tracking-tight text-white transition-colors group-hover:text-white">
-                    {note.titulo}
-                  </h3>
-                  <p className="text-sm leading-6 text-white/58 transition-colors group-hover:text-white/70">
-                    {note.subjectNombre}
-                  </p>
-                </div>
-              </div>
-
-              <p className="mt-5 text-xs font-semibold text-white/45">
-                Material nuevo para repasar
-              </p>
-            </DarkCard>
+                <p className="mt-5 text-xs font-semibold text-white/45">
+                  Material nuevo para repasar
+                </p>
+              </DarkCard>
             )
           })
         )}
@@ -167,7 +224,11 @@ function HomeLatestApuntesDesktop({
   )
 }
 
-function HomeLatestApuntesDesktopEmpty({ hasAnyNotes }: { hasAnyNotes: boolean }) {
+function HomeLatestApuntesDesktopEmpty({
+  hasAnyNotes,
+}: {
+  hasAnyNotes: boolean
+}) {
   return (
     <DarkCard className="col-span-full flex flex-col items-center justify-center gap-2 border-dashed p-6 py-16 text-center text-sm leading-6 text-white/50">
       <FileText className="size-6 opacity-40" />
@@ -199,7 +260,8 @@ function HomeLatestApuntesDesktopSetupNotice() {
             Elegí qué querés seguir
           </h3>
           <p className="max-w-xl text-sm leading-6 text-white/55">
-            Configurá tus años y materias para ver material nuevo que te sirva de verdad.
+            Configurá tus años y materias para ver material nuevo que te sirva
+            de verdad.
           </p>
         </div>
         <Link
@@ -236,18 +298,24 @@ function HomeLatestApuntesDesktopSkeleton() {
 function HomeLatestApuntesMobile({
   notes,
   hasAnyNotes,
+  newBadges,
 }: {
   notes: readonly HomeLatestApunte[]
   hasAnyNotes: boolean
+  newBadges: ReturnType<typeof useSeenApuntes>
 }) {
-  const newBadges = useSeenApuntes({ markOnHover: false })
-
   return (
     <section className="flex flex-col gap-3">
       <div className="px-[18px]">
-        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">Apuntes</p>
-        <h2 className="mt-1 text-lg font-black text-white">Últimos apuntes subidos</h2>
-        <p className="mt-1 text-sm leading-relaxed text-white/55">Material nuevo para repasar.</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
+          Apuntes
+        </p>
+        <h2 className="mt-1 text-lg font-black text-white">
+          Últimos apuntes subidos
+        </h2>
+        <p className="mt-1 text-sm leading-relaxed text-white/55">
+          Material nuevo para repasar.
+        </p>
       </div>
 
       <div className="px-[18px] flex flex-col gap-2.5">
@@ -259,34 +327,34 @@ function HomeLatestApuntesMobile({
           notes.map((note) => {
             const seenApunteKey = `${note.id}:${note.updatedAt}`
             return (
-            <Link
-              key={note.id}
-              href={buildLatestApunteHref(note)}
-              data-apunte-id={seenApunteKey}
-              ref={(node) => newBadges.registerNode(seenApunteKey, node)}
-              onPointerEnter={() => newBadges.startHoverTimer(seenApunteKey)}
-              onPointerLeave={() => newBadges.clearHoverTimer(seenApunteKey)}
-              className="group flex cursor-pointer flex-col gap-3 rounded-[10px] border border-white/5 bg-[#1a1a1a] px-4 py-3 no-underline transition-colors hover:bg-[#1f1f1f]"
-            >
-              <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-[0.15em] text-white/35">
-                <span className="rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[8px] tracking-wider text-white/65">
-                  {note.yearNombre}
-                </span>
-                <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[8px] tracking-wider text-emerald-300">
-                  {formatDate(note.updatedAt)}
-                </span>
-                {newBadges.isNew(seenApunteKey) ? <NewApunteBadge /> : null}
-              </div>
+              <Link
+                key={note.id}
+                href={buildLatestApunteHref(note)}
+                data-apunte-id={seenApunteKey}
+                ref={(node) => newBadges.registerNode(seenApunteKey, node)}
+                onPointerEnter={() => newBadges.startHoverTimer(seenApunteKey)}
+                onPointerLeave={() => newBadges.clearHoverTimer(seenApunteKey)}
+                className="group flex cursor-pointer flex-col gap-3 rounded-[10px] border border-white/5 bg-[#1a1a1a] px-4 py-3 no-underline transition-colors hover:bg-[#1f1f1f]"
+              >
+                <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-[0.15em] text-white/35">
+                  <span className="rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[8px] tracking-wider text-white/65">
+                    {note.yearNombre}
+                  </span>
+                  <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[8px] tracking-wider text-emerald-300">
+                    {formatDate(note.updatedAt)}
+                  </span>
+                  {newBadges.isNew(seenApunteKey) ? <NewApunteBadge /> : null}
+                </div>
 
-              <div className="space-y-1.5">
-                <h3 className="text-base font-black leading-snug text-white">
-                  {note.titulo}
-                </h3>
-                <p className="text-sm leading-relaxed text-white/55 transition-colors group-hover:text-white/70">
-                  {note.subjectNombre}
-                </p>
-              </div>
-            </Link>
+                <div className="space-y-1.5">
+                  <h3 className="text-base font-black leading-snug text-white">
+                    {note.titulo}
+                  </h3>
+                  <p className="text-sm leading-relaxed text-white/55 transition-colors group-hover:text-white/70">
+                    {note.subjectNombre}
+                  </p>
+                </div>
+              </Link>
             )
           })
         )}
@@ -308,8 +376,12 @@ function HomeLatestApuntesMobileSetupNotice() {
   return (
     <section className="flex flex-col gap-3">
       <div className="px-[18px]">
-        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">Apuntes</p>
-        <h2 className="mt-1 text-lg font-black text-white">Últimos apuntes subidos</h2>
+        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
+          Apuntes
+        </p>
+        <h2 className="mt-1 text-lg font-black text-white">
+          Últimos apuntes subidos
+        </h2>
       </div>
 
       <div className="px-[18px]">
@@ -322,7 +394,8 @@ function HomeLatestApuntesMobileSetupNotice() {
               Elegí tus materias
             </h3>
             <p className="text-sm leading-relaxed text-white/55">
-              Configurá qué querés seguir para ver material nuevo hecho para vos.
+              Configurá qué querés seguir para ver material nuevo hecho para
+              vos.
             </p>
           </div>
           <Link

@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 import { cookies } from 'next/headers'
-import { HomeDesktop } from '@/components/home/HomeDesktop'
+import { HomeGlobalCalendar } from '@/components/home/HomeGlobalCalendar'
+import { HomeSidebar } from '@/components/home/HomeSidebar'
+import { HomeTopbarActions } from '@/components/home/HomeTopbarActions'
+import { HomeYearsGrid } from '@/components/home/HomeYearsGrid'
 import { HomeEmptyState } from '@/components/home/HomeEmptyState'
 import { MobileHome } from '@/components/mobile/home/MobileHome'
 import {
@@ -20,9 +23,9 @@ import { PREFERENCES_KEY, readPreferencesFromCookie } from '@/lib/preferences'
 
 export const metadata: Metadata = {
   title: 'Inicio | NextCampus',
-  description: 'Campus académico con calendario, apuntes y práctica por materia.',
+  description:
+    'Campus académico con calendario, apuntes y práctica por materia.',
 }
-
 
 export default async function HomePage() {
   const cookieStore = await cookies()
@@ -30,7 +33,13 @@ export default async function HomePage() {
     cookieStore.get(PREFERENCES_KEY)?.value ?? null,
   )
 
-  const [career, homeCalendarEventsRaw, tiposEvento, latestApuntesRaw, periodos] = await Promise.all([
+  const [
+    career,
+    homeCalendarEventsRaw,
+    tiposEvento,
+    latestApuntesRaw,
+    periodos,
+  ] = await Promise.all([
     getCareer(),
     getHomeCalendarEvents(),
     getTiposEvento(),
@@ -41,33 +50,42 @@ export default async function HomePage() {
   if (!career) return <HomeEmptyState />
 
   const todayKey = todayKeyAR()
-  const upcomingEvents = buildHomeUpcomingEvents(homeCalendarEventsRaw, initialPrefs, todayKey)
-  const homeCalendarEvents = buildHomeCalendarEvents(homeCalendarEventsRaw, initialPrefs)
+  const upcomingEvents = buildHomeUpcomingEvents(
+    homeCalendarEventsRaw,
+    initialPrefs,
+    todayKey,
+  )
+  const homeCalendarEvents = buildHomeCalendarEvents(
+    homeCalendarEventsRaw,
+    initialPrefs,
+  )
   const latestApuntes = buildHomeLatestApuntes(latestApuntesRaw, initialPrefs)
   const hasAnyApuntes = latestApuntesRaw.length > 0
 
   return (
-    <>
-      <HomeDesktop
-        career={career}
-        initialPrefs={initialPrefs}
-        calendarEvents={homeCalendarEvents}
-        latestApuntes={latestApuntes}
-        hasAnyNotes={hasAnyApuntes}
-        periodos={periodos}
-      />
-      <div className="lg:hidden">
-        <MobileHome
-          career={career}
+    <MobileHome
+      desktopSidebar={
+        <HomeSidebar initialPrefs={initialPrefs} years={career.years} />
+      }
+      desktopTopbar={<HomeTopbarActions />}
+      desktopCalendar={
+        <HomeGlobalCalendar
           initialPrefs={initialPrefs}
-          upcomingEvents={upcomingEvents}
-          tiposEvento={tiposEvento}
-          calendarEvents={homeCalendarEvents}
-          latestApuntes={latestApuntes}
-          hasAnyNotes={hasAnyApuntes}
+          events={homeCalendarEvents}
           periodos={periodos}
         />
-      </div>
-    </>
+      }
+      desktopYears={
+        <HomeYearsGrid initialPrefs={initialPrefs} years={career.years} />
+      }
+      career={career}
+      initialPrefs={initialPrefs}
+      upcomingEvents={upcomingEvents}
+      tiposEvento={tiposEvento}
+      calendarEvents={homeCalendarEvents}
+      latestApuntes={latestApuntes}
+      hasAnyNotes={hasAnyApuntes}
+      periodos={periodos}
+    />
   )
 }

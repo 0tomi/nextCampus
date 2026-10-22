@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { getSubjectQuizMeta, getUserNamesByAccountId } from '@/lib/queries'
-import { listQuizBanks, readQuizBanks } from '@/lib/storage'
+import { listQuizBanks, getQuizBankSummaries } from '@/lib/storage'
 import { CampusHeaderBrand } from '@/components/shell/CampusHeaderBrand'
 import {
   buildSubjectHref,
@@ -36,27 +36,18 @@ export default async function QuizPage({
   }
 
   const banks = await listQuizBanks(subject.year.slug, subject.slug)
-  const loadedBanks = await readQuizBanks(
-    subject.year.slug,
-    subject.slug,
-    banks.map((b) => b.id),
-  )
-  const nombrePorId = await getUserNamesByAccountId(banks.map((b) => b.subidoPorId))
+  const [summaries, nombrePorId] = await Promise.all([
+    getQuizBankSummaries(subject.year.slug, subject.slug, banks),
+    getUserNamesByAccountId(banks.map((bank) => bank.subidoPorId)),
+  ])
 
-  const bancos = banks.map((b) => {
-    const file = loadedBanks.get(b.id)
-    const unidades = file
-      ? file.units.map((u) => ({
-          nombre: u.name,
-          totalPreguntas: u.questions.length,
-        }))
-      : []
+  const bancos = summaries.map((b) => {
     return {
       id: b.id,
       nombre: b.nombre,
       totalPreguntas: b.totalPreguntas,
       descripcion: b.descripcion ?? null,
-      unidades,
+      unidades: b.unidades,
       subidoPorId: b.subidoPorId ?? null,
       subidoPorNombre: b.subidoPorId ? nombrePorId.get(b.subidoPorId) ?? null : null,
     }

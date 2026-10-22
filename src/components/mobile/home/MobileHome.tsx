@@ -1,16 +1,30 @@
 'use client'
 
 import Link from 'next/link'
-import { useReducer, useState } from 'react'
-import { CalendarDays, SlidersHorizontal, ArrowRight, ChevronUp } from 'lucide-react'
-import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
+import { useReducer, useState, type ReactNode } from 'react'
+import {
+  CalendarDays,
+  SlidersHorizontal,
+  ArrowRight,
+  ChevronUp,
+} from 'lucide-react'
+import {
+  MobileShell,
+  type MobileShellDrawerYear,
+} from '@/components/mobile/shell/MobileShell'
 import { YearCarousel } from './YearCarousel'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
-import { HomeLatestApuntes, type HomeLatestApunte } from '@/components/home/HomeLatestApuntes'
+import {
+  HomeLatestApuntes,
+  type HomeLatestApunte,
+} from '@/components/home/HomeLatestApuntes'
 import { AdminControls } from '@/components/admin/AdminControls'
 import { AddYearButton } from '@/components/admin/HomeAdminOverlay'
 import { MobileEventDetailSheet } from '@/components/mobile/calendar/MobileEventDetailSheet'
-import { MobileCalendar, type MobileCalendarEvent } from '@/components/mobile/calendar/MobileCalendar'
+import {
+  MobileCalendar,
+  type MobileCalendarEvent,
+} from '@/components/mobile/calendar/MobileCalendar'
 import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import { Mascot } from '@/components/ui/Mascot'
 import { usePreferences } from '@/hooks/usePreferences'
@@ -35,7 +49,10 @@ interface CalendarState {
 
 type CalendarAction = { type: 'toggle' } | { type: 'select'; date: Date | null }
 
-function calendarReducer(state: CalendarState, action: CalendarAction): CalendarState {
+function calendarReducer(
+  state: CalendarState,
+  action: CalendarAction,
+): CalendarState {
   if (action.type === 'toggle') return { open: !state.open, selectedDate: null }
   return { ...state, selectedDate: action.date }
 }
@@ -95,7 +112,15 @@ export function MobileHome({
   latestApuntes,
   hasAnyNotes,
   periodos = EMPTY_PERIODOS,
+  desktopSidebar,
+  desktopTopbar,
+  desktopCalendar,
+  desktopYears,
 }: {
+  desktopSidebar?: ReactNode
+  desktopTopbar?: ReactNode
+  desktopCalendar?: ReactNode
+  desktopYears?: ReactNode
   career: CareerForMobile
   initialPrefs: UserPreferences | null
   upcomingEvents: UpcomingEvent[]
@@ -105,8 +130,13 @@ export function MobileHome({
   hasAnyNotes: boolean
   periodos?: readonly PeriodoCalendario[]
 }) {
-  const [detailEvent, setDetailEvent] = useState<MobileCalendarEvent | null>(null)
-  const [calendar, dispatchCalendar] = useReducer(calendarReducer, { open: false, selectedDate: null })
+  const [detailEvent, setDetailEvent] = useState<MobileCalendarEvent | null>(
+    null,
+  )
+  const [calendar, dispatchCalendar] = useReducer(calendarReducer, {
+    open: false,
+    selectedDate: null,
+  })
   const calendarOpen = calendar.open
   const [isAboutOpen, setIsAboutOpen] = useState(false)
   const { prefs, isHydrated } = usePreferences(initialPrefs)
@@ -114,7 +144,7 @@ export function MobileHome({
   const effectivePrefs = isHydrated ? prefs : initialPrefs
   const hasConfiguredSubjects = effectivePrefs !== null
 
-  if (shouldWaitForStoredPrefs) {
+  if (shouldWaitForStoredPrefs && !desktopSidebar) {
     return (
       <MobileShell
         title="NextCampus"
@@ -140,30 +170,42 @@ export function MobileHome({
   })
 
   const filteredUpcomingEvents = hasConfiguredSubjects
-    ? upcomingEvents.filter((e) => {
-        if (!e.yearSlug) return false
-        if (!isYearVisible(e.yearSlug, effectivePrefs)) return false
-        if (!isSubjectVisible(e.yearSlug, e.subjectSlug, effectivePrefs)) return false
-        if (!e.commissionSlug) return true
-        return isCommissionVisible(
-          e.yearSlug,
-          e.subjectSlug,
-          e.commissionSlug,
-          effectivePrefs,
-        )
-      }).slice(0, 6)
+    ? upcomingEvents
+        .filter((e) => {
+          if (!e.yearSlug) return false
+          if (!isYearVisible(e.yearSlug, effectivePrefs)) return false
+          if (!isSubjectVisible(e.yearSlug, e.subjectSlug, effectivePrefs))
+            return false
+          if (!e.commissionSlug) return true
+          return isCommissionVisible(
+            e.yearSlug,
+            e.subjectSlug,
+            e.commissionSlug,
+            effectivePrefs,
+          )
+        })
+        .slice(0, 6)
     : []
 
   const visibleCalendarEvents = hasConfiguredSubjects
-    ? calendarEvents.filter((event) => isHomeCalendarEventVisible(event, effectivePrefs))
+    ? calendarEvents.filter((event) =>
+        isHomeCalendarEventVisible(event, effectivePrefs),
+      )
     : []
 
-  const uniqueSubjectsInEvents = new Set(filteredUpcomingEvents.map((e) => e.subjectId)).size
+  const uniqueSubjectsInEvents = new Set(
+    filteredUpcomingEvents.map((e) => e.subjectId),
+  ).size
 
-  const totalSubjects = visibleYears.reduce((acc, y) => acc + y.subjects.length, 0)
+  const totalSubjects = visibleYears.reduce(
+    (acc, y) => acc + y.subjects.length,
+    0,
+  )
   const isConfigured = totalSubjects > 0
 
-  const drawerYears: MobileShellDrawerYear[] = (isConfigured ? visibleYears : career.years).map((y) => ({
+  const drawerYears: MobileShellDrawerYear[] = (
+    isConfigured ? visibleYears : career.years
+  ).map((y) => ({
     slug: y.slug,
     nombre: y.nombre,
     color: y.color,
@@ -181,13 +223,15 @@ export function MobileHome({
       const agendaId = agendaIdBySubjectId.get(subject.id)
       if (!agendaId) return []
 
-      return [{
-        id: subject.id,
-        slug: subject.slug,
-        nombre: subject.nombre,
-        agendaId,
-        commissions: subject.commissions,
-      }]
+      return [
+        {
+          id: subject.id,
+          slug: subject.slug,
+          nombre: subject.nombre,
+          agendaId,
+          commissions: subject.commissions,
+        },
+      ]
     }),
   )
 
@@ -213,29 +257,50 @@ export function MobileHome({
     })
   }
 
-
   return (
     <MobileShell
       title="NextCampus"
       subtitle={career.nombre}
       drawerYears={drawerYears}
       careerName={career.nombre}
+      desktop={
+        desktopSidebar
+          ? { sidebar: desktopSidebar, topbar: desktopTopbar }
+          : undefined
+      }
     >
-      <div className="flex flex-col gap-7">
+      {shouldWaitForStoredPrefs ? (
+        <div className="lg:hidden">
+          <MobileHomeSkeleton />
+        </div>
+      ) : null}
+      <div
+        className={
+          shouldWaitForStoredPrefs
+            ? 'hidden flex-col gap-7 lg:flex lg:gap-10'
+            : 'flex flex-col gap-7 lg:gap-10'
+        }
+      >
         {/* HERO */}
-        <section className="px-[18px] pt-4">
+        <section className="px-[18px] pt-4 lg:hidden">
           <div className="relative overflow-hidden rounded-[24px] border border-white/6 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] px-5 py-4">
             <div className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full bg-orange-400/12 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-10 left-0 size-24 rounded-full bg-amber-200/8 blur-2xl" />
             <div className="relative min-h-[136px] pr-1 pb-12">
               <div className="min-w-0">
                 <div className="flex items-baseline gap-2">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40 shrink-0">CARRERA</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40 shrink-0">
+                    CARRERA
+                  </p>
                   {career.descripcion && (
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/25 truncate">{career.descripcion}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/25 truncate">
+                      {career.descripcion}
+                    </p>
                   )}
                 </div>
-                <h1 className="mt-2 text-2xl font-black tracking-tight text-white leading-tight">{career.nombre}</h1>
+                <h1 className="mt-2 text-2xl font-black tracking-tight text-white leading-tight">
+                  {career.nombre}
+                </h1>
               </div>
               <div className="absolute bottom-[-14px] left-0 right-[-6px] flex items-center justify-between pointer-events-none">
                 <div className="pointer-events-auto flex items-center gap-2">
@@ -256,15 +321,44 @@ export function MobileHome({
           </div>
         </section>
 
+        {desktopSidebar ? (
+          <section className="hidden px-1 pt-2 lg:block">
+            <h1 className="text-5xl font-bold tracking-tight text-white">
+              {career.nombre}
+            </h1>
+            <p className="mt-4 text-base font-medium text-white/50">
+              {career.descripcion}
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsAboutOpen(true)}
+              className="mt-4 cursor-pointer text-sm font-semibold text-white/70"
+            >
+              Nosotros
+            </button>
+          </section>
+        ) : null}
+        {desktopCalendar ? (
+          <div className="hidden lg:block">{desktopCalendar}</div>
+        ) : null}
         {isConfigured ? (
           <>
             {/* PRÓXIMOS EVENTOS */}
-            <section className="flex flex-col gap-3">
+            <section className="flex flex-col gap-3 lg:hidden">
               <div className="flex flex-col items-start gap-3 px-[18px]">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">Agenda</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
+                    Agenda
+                  </p>
                   <h2 className="mt-1 text-lg font-black text-white">
-                    {calendar.selectedDate ? 'Eventos del día' : <>Próximos eventos - {uniqueSubjectsInEvents} {uniqueSubjectsInEvents === 1 ? 'Materia' : 'Materias'}</>}
+                    {calendar.selectedDate ? (
+                      'Eventos del día'
+                    ) : (
+                      <>
+                        Próximos eventos - {uniqueSubjectsInEvents}{' '}
+                        {uniqueSubjectsInEvents === 1 ? 'Materia' : 'Materias'}
+                      </>
+                    )}
                   </h2>
                 </div>
                 <button
@@ -274,9 +368,17 @@ export function MobileHome({
                   onClick={() => dispatchCalendar({ type: 'toggle' })}
                   className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/85 transition-[background-color,transform] duration-150 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70 motion-safe:active:scale-[0.97]"
                 >
-                  <CalendarDays className="size-4 text-white/60" aria-hidden="true" />
+                  <CalendarDays
+                    className="size-4 text-white/60"
+                    aria-hidden="true"
+                  />
                   {calendarOpen ? 'Ocultar calendario' : 'Ver calendario'}
-                  {calendarOpen ? <ChevronUp className="size-3.5 text-white/50" aria-hidden="true" /> : null}
+                  {calendarOpen ? (
+                    <ChevronUp
+                      className="size-3.5 text-white/50"
+                      aria-hidden="true"
+                    />
+                  ) : null}
                 </button>
               </div>
               <div id="home-mobile-calendar" hidden={!calendarOpen}>
@@ -285,14 +387,19 @@ export function MobileHome({
                     events={visibleCalendarEvents}
                     periodos={periodos}
                     selectedDate={calendar.selectedDate}
-                    onSelectedDateChange={(date) => dispatchCalendar({ type: 'select', date })}
+                    onSelectedDateChange={(date) =>
+                      dispatchCalendar({ type: 'select', date })
+                    }
                     accent="var(--color-primary)"
                     tiposEvento={tiposEvento}
                     subjects={modalSubjects}
                   />
                 ) : null}
               </div>
-              <div hidden={calendar.selectedDate !== null} className="px-[18px] flex flex-col gap-2.5">
+              <div
+                hidden={calendar.selectedDate !== null}
+                className="px-[18px] flex flex-col gap-2.5"
+              >
                 {!hasConfiguredSubjects ? (
                   <ConfigureAgendaNotice />
                 ) : filteredUpcomingEvents.length === 0 ? (
@@ -313,18 +420,10 @@ export function MobileHome({
                 )}
               </div>
             </section>
-
-            {/* ÚLTIMOS APUNTES */}
-            <HomeLatestApuntes
-              variant="mobile"
-              initialPrefs={initialPrefs}
-              notes={latestApuntes}
-              hasAnyNotes={hasAnyNotes}
-            />
           </>
         ) : (
           /* CONFIGURATION CTA CARD */
-          <section className="px-[18px]">
+          <section className="px-[18px] lg:hidden">
             <Link
               href="/configurar"
               prefetch={false}
@@ -332,12 +431,12 @@ export function MobileHome({
             >
               <div className="pointer-events-none absolute -right-6 -bottom-6 size-20 rounded-full bg-primary/10 blur-2xl group-hover:bg-primary/15 transition-colors duration-300" />
               <div className="pointer-events-none absolute -left-10 -top-10 size-24 rounded-full bg-white/5 blur-2xl" />
-              
+
               <div className="relative flex flex-col items-center gap-4">
                 <h3 className="text-base font-bold text-white/90 leading-snug max-w-[280px] mx-auto transition-colors group-hover:text-white">
                   Configurá qué materias querés visualizar en el inicio
                 </h3>
-                
+
                 <div className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/5 px-4 py-2 text-xs font-semibold text-white/70 group-hover:bg-white/10 group-hover:text-white transition-all">
                   <span>Configurar inicio</span>
                   <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
@@ -347,12 +446,32 @@ export function MobileHome({
           </section>
         )}
 
+        {isConfigured || desktopSidebar ? (
+          <HomeLatestApuntes
+            variant={desktopSidebar ? 'responsive' : 'mobile'}
+            initialPrefs={initialPrefs}
+            notes={latestApuntes}
+            hasAnyNotes={hasAnyNotes}
+          />
+        ) : null}
+        {desktopYears ? (
+          <section className="hidden space-y-5 lg:block">
+            <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/40">
+              MATERIAS POR AÑO
+            </p>
+            <div>{desktopYears}</div>
+          </section>
+        ) : null}
         {/* CAROUSEL */}
-        <section className="flex flex-col gap-3">
+        <section className="flex flex-col gap-3 lg:hidden">
           <div className="px-[18px] flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">Nivel</p>
-              <h2 className="mt-1 text-lg font-black text-white">Años académicos</h2>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
+                Nivel
+              </p>
+              <h2 className="mt-1 text-lg font-black text-white">
+                Años académicos
+              </h2>
             </div>
             <AdminControls requireGlobal noWrapper>
               <AddYearButton />
@@ -417,7 +536,8 @@ function ConfigureAgendaNotice() {
           Configurá tus materias
         </h3>
         <p className="text-sm leading-relaxed text-white/55">
-          Elegí qué años, materias y comisiones querés seguir para ver tus fechas acá.
+          Elegí qué años, materias y comisiones querés seguir para ver tus
+          fechas acá.
         </p>
       </div>
       <Link

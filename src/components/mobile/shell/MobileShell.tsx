@@ -2,7 +2,15 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   Menu,
@@ -14,13 +22,18 @@ import {
   Map,
   type LucideIcon,
 } from 'lucide-react'
+import { CampusHeaderBrand } from '@/components/shell/CampusHeaderBrand'
 import { cn } from '@/lib/utils'
 import { useAdminSessionContext } from '@/components/admin/AdminSessionProvider'
 import { NotificationBell } from '@/components/changelog/NotificationBell'
 import { GlobalApunteSearch } from '@/components/search/GlobalApunteSearch'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { usePreferences } from '@/hooks/usePreferences'
-import { isYearVisible, isSubjectVisible, type UserPreferences } from '@/lib/preferences'
+import {
+  isYearVisible,
+  isSubjectVisible,
+  type UserPreferences,
+} from '@/lib/preferences'
 
 const SWIPE_EDGE_PX = 28
 const SWIPE_OPEN_PX = 70
@@ -52,6 +65,11 @@ interface MobileShellProps {
   currentYearSlug?: string
   children: ReactNode
   mainClassName?: string
+  desktop?: {
+    sidebar: ReactNode
+    topbar?: ReactNode
+    headerOverlay?: ReactNode
+  }
 }
 
 interface DrawerState {
@@ -71,6 +89,7 @@ interface MobileTopbarProps {
   onBack?: boolean | string
   onOpenMenu: () => void
   showNotifications: boolean
+  desktop?: MobileShellProps['desktop']
 }
 
 interface MobileDrawerProps {
@@ -127,6 +146,7 @@ export function MobileShell({
   currentYearSlug,
   children,
   mainClassName,
+  desktop,
 }: MobileShellProps) {
   const session = useAdminSessionContext()
   const pathname = usePathname()
@@ -144,6 +164,7 @@ export function MobileShell({
         onBack={onBack}
         onOpenMenu={openDrawer}
         showNotifications={session?.isAdmin === true}
+        desktop={desktop}
       />
       <MobileDrawer
         open={open}
@@ -154,7 +175,28 @@ export function MobileShell({
         pathname={pathname}
         years={yearsWithFilteredSubjects}
       />
-      <main className={cn('pb-12 pt-[calc(3.5rem+var(--spacing-safe-top))]', mainClassName)}>{children}</main>
+      <div
+        className={
+          desktop
+            ? 'lg:flex lg:items-start lg:pt-[calc(4rem+var(--spacing-safe-top))]'
+            : undefined
+        }
+      >
+        {desktop ? (
+          <aside className="sticky top-[calc(4rem+var(--spacing-safe-top))] hidden h-[calc(100vh-4rem-var(--spacing-safe-top))] w-72 shrink-0 overflow-hidden border-r border-white/5 bg-surface-2 lg:block">
+            {desktop.sidebar}
+          </aside>
+        ) : null}
+        <main
+          className={cn(
+            'pb-12 pt-[calc(3.5rem+var(--spacing-safe-top))]',
+            desktop && 'min-w-0 flex-1 lg:p-8 lg:pt-8',
+            mainClassName,
+          )}
+        >
+          {children}
+        </main>
+      </div>
     </div>
   )
 }
@@ -168,8 +210,14 @@ function useDrawer(pathname: string): UseDrawerResult {
     openRef.current = open
   }, [open])
 
-  const openDrawer = useCallback(() => setDrawer({ open: true, pathname }), [pathname])
-  const closeDrawer = useCallback(() => setDrawer({ open: false, pathname }), [pathname])
+  const openDrawer = useCallback(
+    () => setDrawer({ open: true, pathname }),
+    [pathname],
+  )
+  const closeDrawer = useCallback(
+    () => setDrawer({ open: false, pathname }),
+    [pathname],
+  )
 
   useDrawerKeyboardLock(open, closeDrawer)
   useDrawerSwipeGestures(openRef, openDrawer, closeDrawer)
@@ -203,10 +251,18 @@ function useDrawerSwipeGestures(
   useEffect(() => {
     const gesture = createSwipeGestureTracker(openRef, openDrawer, closeDrawer)
 
-    document.addEventListener('touchstart', gesture.handleTouchStart, { passive: true })
-    document.addEventListener('touchmove', gesture.handleTouchMove, { passive: true })
-    document.addEventListener('touchend', gesture.handleTouchEnd, { passive: true })
-    document.addEventListener('touchcancel', gesture.handleTouchEnd, { passive: true })
+    document.addEventListener('touchstart', gesture.handleTouchStart, {
+      passive: true,
+    })
+    document.addEventListener('touchmove', gesture.handleTouchMove, {
+      passive: true,
+    })
+    document.addEventListener('touchend', gesture.handleTouchEnd, {
+      passive: true,
+    })
+    document.addEventListener('touchcancel', gesture.handleTouchEnd, {
+      passive: true,
+    })
 
     return () => {
       document.removeEventListener('touchstart', gesture.handleTouchStart)
@@ -279,7 +335,10 @@ function shouldCommitSwipe(absX: number, absY: number): boolean {
   return absX >= absY * SWIPE_AXIS_BIAS
 }
 
-function useVisibleDrawerYears(drawerYears: MobileShellDrawerYear[], prefs: UserPreferences | null) {
+function useVisibleDrawerYears(
+  drawerYears: MobileShellDrawerYear[],
+  prefs: UserPreferences | null,
+) {
   return useMemo(
     () =>
       drawerYears.reduce<MobileShellDrawerYear[]>((acc, year) => {
@@ -299,7 +358,14 @@ function countVisibleSubjects(years: MobileShellDrawerYear[]) {
   return years.reduce((sum, year) => sum + (year.subjects?.length ?? 0), 0)
 }
 
-function MobileTopbar({ title, subtitle, onBack, onOpenMenu, showNotifications }: MobileTopbarProps) {
+function MobileTopbar({
+  title,
+  subtitle,
+  onBack,
+  onOpenMenu,
+  showNotifications,
+  desktop,
+}: MobileTopbarProps) {
   const { push, back } = useRouter()
   const handleLeadingAction = onBack
     ? typeof onBack === 'string'
@@ -308,18 +374,37 @@ function MobileTopbar({ title, subtitle, onBack, onOpenMenu, showNotifications }
     : onOpenMenu
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 h-[calc(3.5rem+var(--spacing-safe-top))] pt-safe-top border-b border-white/5 bg-[rgba(20,20,20,0.92)] backdrop-blur-[14px] backdrop-saturate-[1.8]">
+    <header
+      className={cn(
+        'fixed inset-x-0 top-0 z-50 h-[calc(3.5rem+var(--spacing-safe-top))] pt-safe-top border-b border-white/5 bg-[rgba(20,20,20,0.92)] backdrop-blur-[14px] backdrop-saturate-[1.8]',
+        desktop && 'lg:h-[calc(4rem+var(--spacing-safe-top))] lg:bg-surface-1',
+      )}
+    >
+      {desktop?.headerOverlay}
       <div className="flex h-full items-center justify-between px-3">
         <button
           type="button"
           aria-label={onBack ? 'Volver' : 'Abrir menú'}
           onClick={handleLeadingAction}
-          className="flex size-11 cursor-pointer items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+          className={cn(
+            desktop && 'lg:hidden',
+            'flex size-11 cursor-pointer items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white',
+          )}
         >
-          {onBack ? <ChevronLeft size={22} strokeWidth={2.5} /> : <Menu size={22} strokeWidth={2} />}
+          {onBack ? (
+            <ChevronLeft size={22} strokeWidth={2.5} />
+          ) : (
+            <Menu size={22} strokeWidth={2} />
+          )}
         </button>
 
-        <Link href="/" className="mx-3 flex min-w-0 flex-1 cursor-pointer items-center gap-2.5">
+        <Link
+          href="/"
+          className={cn(
+            'mx-3 flex min-w-0 flex-1 cursor-pointer items-center gap-2.5',
+            desktop && 'lg:hidden',
+          )}
+        >
           <Image
             src="/mascot-icon.svg"
             alt=""
@@ -329,7 +414,11 @@ function MobileTopbar({ title, subtitle, onBack, onOpenMenu, showNotifications }
             className="size-[30px] shrink-0"
           />
           <div className="flex min-w-0 flex-col">
-            {title && <span className="truncate text-sm font-bold leading-tight text-white">{title}</span>}
+            {title && (
+              <span className="truncate text-sm font-bold leading-tight text-white">
+                {title}
+              </span>
+            )}
             {subtitle && (
               <span className="truncate text-[9px] font-bold uppercase leading-tight tracking-[0.18em] text-white/40">
                 {subtitle}
@@ -338,10 +427,18 @@ function MobileTopbar({ title, subtitle, onBack, onOpenMenu, showNotifications }
           </div>
         </Link>
 
-        <div className="flex shrink-0 items-center gap-1">
-          <GlobalApunteSearch variant="mobile" />
+        {desktop ? (
+          <div className="hidden lg:block">
+            <CampusHeaderBrand />
+          </div>
+        ) : null}
+        <div className="flex shrink-0 items-center gap-1 lg:gap-3">
+          <GlobalApunteSearch variant={desktop ? 'responsive' : 'mobile'} />
           {showNotifications ? (
-            <NotificationBell target="mobile" />
+            <NotificationBell target={desktop ? 'all' : 'mobile'} />
+          ) : null}
+          {desktop ? (
+            <div className="hidden lg:block">{desktop.topbar}</div>
           ) : null}
         </div>
       </div>
@@ -410,14 +507,22 @@ function MobileDrawer({
   )
 }
 
-function DrawerHeader({ careerName, onClose }: { careerName: string; onClose: () => void }) {
+function DrawerHeader({
+  careerName,
+  onClose,
+}: {
+  careerName: string
+  onClose: () => void
+}) {
   return (
     <div className="flex items-start justify-between border-b border-white/5 px-5 pb-4 pt-[calc(1.25rem+var(--spacing-safe-top))]">
       <div className="flex flex-col gap-0.5">
         <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
           CARRERA
         </span>
-        <span className="text-[17px] font-black leading-snug text-white">{careerName}</span>
+        <span className="text-[17px] font-black leading-snug text-white">
+          {careerName}
+        </span>
       </div>
       <button
         type="button"
@@ -444,19 +549,36 @@ function DrawerNavigation({
         {isSubjectsView ? 'MATERIAS' : 'AÑOS ACADÉMICOS'}
       </span>
       {isSubjectsView ? (
-        <DrawerSubjectList pathname={pathname} years={years} onClose={onClose} />
+        <DrawerSubjectList
+          pathname={pathname}
+          years={years}
+          onClose={onClose}
+        />
       ) : (
-        <DrawerYearList currentYearSlug={currentYearSlug} years={years} onClose={onClose} />
+        <DrawerYearList
+          currentYearSlug={currentYearSlug}
+          years={years}
+          onClose={onClose}
+        />
       )}
     </nav>
   )
 }
 
-function DrawerSubjectList({ pathname, years, onClose }: DrawerSubjectListProps) {
+function DrawerSubjectList({
+  pathname,
+  years,
+  onClose,
+}: DrawerSubjectListProps) {
   return (
     <ul className="flex flex-col gap-1">
       {years.map((year) => (
-        <DrawerSubjectGroup key={year.slug} pathname={pathname} year={year} onClose={onClose} />
+        <DrawerSubjectGroup
+          key={year.slug}
+          pathname={pathname}
+          year={year}
+          onClose={onClose}
+        />
       ))}
     </ul>
   )
@@ -529,18 +651,30 @@ function DrawerSubjectLink({
           )}
           style={colors.style}
         >
-          <span className="text-[13px] font-black leading-none">{subjectIndex + 1}</span>
+          <span className="text-[13px] font-black leading-none">
+            {subjectIndex + 1}
+          </span>
         </div>
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-sm font-bold leading-tight text-white">{subject.nombre}</span>
+          <span className="truncate text-sm font-bold leading-tight text-white">
+            {subject.nombre}
+          </span>
         </span>
-        <ChevronRight size={15} strokeWidth={2} className="shrink-0 text-white/30" />
+        <ChevronRight
+          size={15}
+          strokeWidth={2}
+          className="shrink-0 text-white/30"
+        />
       </Link>
     </li>
   )
 }
 
-function DrawerYearList({ currentYearSlug, years, onClose }: DrawerYearListProps) {
+function DrawerYearList({
+  currentYearSlug,
+  years,
+  onClose,
+}: DrawerYearListProps) {
   return (
     <ul className="flex flex-col gap-1">
       {years.map((year) => (
@@ -564,7 +698,10 @@ function DrawerYearLink({
   year: MobileShellDrawerYear
   onClose: () => void
 }) {
-  const colorClasses = getYearColorClasses({ slug: year.slug, color: year.color })
+  const colorClasses = getYearColorClasses({
+    slug: year.slug,
+    color: year.color,
+  })
   const isActive = year.slug === currentYearSlug
   const subjectsCount = year.subjects?.length ?? 0
 
@@ -585,15 +722,23 @@ function DrawerYearLink({
           )}
           style={colorClasses.style}
         >
-          <span className="text-[13px] font-black leading-none">{year.orden}</span>
+          <span className="text-[13px] font-black leading-none">
+            {year.orden}
+          </span>
         </div>
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-sm font-bold leading-tight text-white">{year.nombre}</span>
+          <span className="truncate text-sm font-bold leading-tight text-white">
+            {year.nombre}
+          </span>
           <span className="mt-0.5 text-[10px] font-bold uppercase leading-tight tracking-[0.16em] text-white/40">
             {subjectsCount} {subjectsCount === 1 ? 'materia' : 'materias'}
           </span>
         </span>
-        <ChevronRight size={15} strokeWidth={2} className="shrink-0 text-white/30" />
+        <ChevronRight
+          size={15}
+          strokeWidth={2}
+          className="shrink-0 text-white/30"
+        />
       </Link>
     </li>
   )
@@ -651,17 +796,29 @@ function DrawerUtilityLink({
         <Icon size={16} strokeWidth={2} />
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-sm font-bold leading-tight text-white">{label}</span>
+        <span className="truncate text-sm font-bold leading-tight text-white">
+          {label}
+        </span>
         <span className="mt-0.5 text-[10px] font-bold uppercase leading-tight tracking-[0.16em] text-white/40">
           {eyebrow}
         </span>
       </span>
-      <ChevronRight size={15} strokeWidth={2} className="shrink-0 text-white/30" />
+      <ChevronRight
+        size={15}
+        strokeWidth={2}
+        className="shrink-0 text-white/30"
+      />
     </Link>
   )
 }
 
-function MapaDrawerLink({ active, onClose }: { active: boolean; onClose: () => void }) {
+function MapaDrawerLink({
+  active,
+  onClose,
+}: {
+  active: boolean
+  onClose: () => void
+}) {
   return (
     <Link
       href="/mapa"
@@ -678,7 +835,9 @@ function MapaDrawerLink({ active, onClose }: { active: boolean; onClose: () => v
           <Map size={16} strokeWidth={2.2} />
         </span>
         <div className="flex min-w-0 flex-col">
-          <span className="text-sm font-bold leading-tight text-white">Mapa de correlativas</span>
+          <span className="text-sm font-bold leading-tight text-white">
+            Mapa de correlativas
+          </span>
           <span className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-white/42">
             Recorrido interactivo
           </span>
