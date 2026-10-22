@@ -880,46 +880,16 @@ body {
   color: #fff;
 }
 
-.fc .fc-event-tone-amber {
-  background: rgba(251, 191, 36, 0.16);
-  border-color: rgba(251, 191, 36, 0.36);
-  color: #fef3c7;
-}
-
 .fc .fc-event-tone-emerald {
   background: rgba(52, 211, 153, 0.16);
   border-color: rgba(52, 211, 153, 0.36);
   color: #d1fae5;
 }
 
-.fc .fc-event-tone-violet {
-  background: rgba(167, 139, 250, 0.16);
-  border-color: rgba(167, 139, 250, 0.36);
-  color: #ede9fe;
-}
-
-.fc .fc-event-tone-rose {
-  background: rgba(251, 113, 133, 0.16);
-  border-color: rgba(251, 113, 133, 0.36);
-  color: #ffe4e6;
-}
-
-.fc .fc-event-tone-cyan {
-  background: rgba(34, 211, 238, 0.16);
-  border-color: rgba(34, 211, 238, 0.36);
-  color: #cffafe;
-}
-
 .fc .fc-event-tone-red {
   background: rgba(239, 68, 68, 0.16);
   border-color: rgba(239, 68, 68, 0.36);
   color: #fee2e2;
-}
-
-.fc .fc-event-tone-orange {
-  background: rgba(249, 115, 22, 0.16);
-  border-color: rgba(249, 115, 22, 0.36);
-  color: #ffedd5;
 }
 
 .fc .fc-event-tone-yellow {

@@ -8,6 +8,7 @@ import { DarkCard } from '@/components/ui/DarkCard'
 import { cn, slugify } from '@/lib/utils'
 import type { RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import { PERIODO_TONE_BG, type PeriodoCalendario, type PeriodoTone } from '@/lib/periodos'
+import { EVENT_TONE_CALENDAR_CLASSES, getEventTone } from '@/lib/eventTones'
 
 type EventCalendarDateInput = string | Date
 
@@ -73,36 +74,6 @@ function nextDayKey(key: string): string {
 
 const EMPTY_EVENTS: readonly EventCalendarEvent[] = []
 
-const EVENT_TYPE_CLASS_MAP = {
-  examen: 'fc-event-tone-red',
-  parcial: 'fc-event-tone-red',
-  final: 'fc-event-tone-red',
-  recuperatorio: 'fc-event-tone-red',
-  'trabajo-practico': 'fc-event-tone-yellow',
-  tp: 'fc-event-tone-yellow',
-  entrega: 'fc-event-tone-cyan',
-  exposicion: 'fc-event-tone-orange',
-  clase: 'fc-event-tone-emerald',
-} as const
-
-const EVENT_TYPE_FALLBACK_CLASSES = [
-  'fc-event-tone-amber',
-  'fc-event-tone-emerald',
-  'fc-event-tone-violet',
-  'fc-event-tone-rose',
-  'fc-event-tone-cyan',
-] as const
-
-function hashString(value: string): number {
-  let hash = 0
-
-  for (const char of value) {
-    hash = (hash * 31 + char.charCodeAt(0)) | 0
-  }
-
-  return Math.abs(hash)
-}
-
 function toClassNames(classNames?: string | string[]): string[] {
   if (Array.isArray(classNames)) {
     return classNames.filter(Boolean)
@@ -119,17 +90,8 @@ function resolveEventClassNames(event: EventCalendarEvent): string[] {
   const customClassNames = toClassNames(event.classNames)
   if (customClassNames.length > 0) return customClassNames
 
-  const normalizedType = slugify(event.type ?? event.tipo ?? '')
-  if (!normalizedType) return ['fc-event-tone-slate']
-
-  return [
-    EVENT_TYPE_CLASS_MAP[
-      normalizedType as keyof typeof EVENT_TYPE_CLASS_MAP
-    ] ??
-      EVENT_TYPE_FALLBACK_CLASSES[
-        hashString(normalizedType) % EVENT_TYPE_FALLBACK_CLASSES.length
-      ],
-  ]
+  const tone = getEventTone(event.type ?? event.tipo)
+  return [tone ? EVENT_TONE_CALENDAR_CLASSES[tone] : 'fc-event-tone-slate']
 }
 
 function buildEventId(

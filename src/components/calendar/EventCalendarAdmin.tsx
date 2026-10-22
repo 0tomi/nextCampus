@@ -19,6 +19,7 @@ import { RelatedApunteLinks } from '@/components/events/RelatedApunteLinks'
 import { SafeMarkdown } from '@/components/ui/SafeMarkdown'
 import type { CommissionOption } from '@/lib/commission-preferences'
 import type { PeriodoCalendario } from '@/lib/periodos'
+import { getEventToneBadgeClass } from '@/lib/eventTones'
 
 // "Fecha · hora" del evento seleccionado. La fecha llega como "YYYY-MM-DD"; si
 // viniera un Date (fallback de FullCalendar) tomamos su día en UTC.
@@ -278,25 +279,6 @@ export function CalendarPeriodControls({
   )
 }
 
-function getEventToneClass(tipo?: string | null) {
-  const normalized = tipo?.toLowerCase()
-  if (
-    normalized === 'examen' ||
-    normalized === 'parcial' ||
-    normalized === 'final' ||
-    normalized === 'recuperatorio'
-  ) {
-    return 'border-red-500/20 bg-red-500/10 text-red-400'
-  }
-  if (normalized === 'trabajo-practico' || normalized === 'tp') {
-    return 'border-yellow-500/20 bg-yellow-500/10 text-yellow-400'
-  }
-  if (normalized === 'entrega') return 'border-cyan-500/20 bg-cyan-500/10 text-cyan-400'
-  if (normalized === 'exposicion') return 'border-orange-500/20 bg-orange-500/10 text-orange-400'
-  if (normalized === 'clase') return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
-  return 'border-violet-500/20 bg-violet-500/10 text-violet-400'
-}
-
 function EventDetailSheet({
   canEdit,
   event,
@@ -363,7 +345,7 @@ function EventDetailHeader({ event }: { event: EventCalendarEvent }) {
       <span
         className={cn(
           'mb-3 inline-flex rounded-none border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
-          getEventToneClass(event.tipo),
+          getEventToneBadgeClass(event.tipo),
         )}
       >
         {event.tipo}

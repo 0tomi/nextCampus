@@ -13,6 +13,7 @@ import { DarkCard } from '@/components/ui/DarkCard'
 import { usePreferences } from '@/hooks/usePreferences'
 import { cn, formatEventDateTime, todayKeyAR } from '@/lib/utils'
 import { SafeMarkdown } from '@/components/ui/SafeMarkdown'
+import { getEventToneBadgeClass } from '@/lib/eventTones'
 import { RelatedApunteLinks, type RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import type { UserPreferences } from '@/lib/preferences'
@@ -138,17 +139,7 @@ export function HomeGlobalCalendar({
                     <span
                       className={cn(
                         "max-w-full rounded border px-1.5 py-0.5 text-xs font-semibold",
-                        evento.tipo.toLowerCase() === 'examen' ||
-                        evento.tipo.toLowerCase() === 'parcial' ||
-                        evento.tipo.toLowerCase() === 'final' ||
-                        evento.tipo.toLowerCase() === 'recuperatorio'
-                          ? 'border-red-500/20 bg-red-500/10 text-red-400'
-                          : evento.tipo.toLowerCase() === 'trabajo práctico' ||
-                            evento.tipo.toLowerCase() === 'tp' ||
-                            evento.tipo.toLowerCase() === 'trabajo practico' ||
-                            evento.tipo.toLowerCase() === 'entrega'
-                            ? 'border-yellow-500/20 bg-yellow-500/10 text-yellow-400'
-                            : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+                        getEventToneBadgeClass(evento.tipo),
                       )}
                     >
                       {evento.tipo}
