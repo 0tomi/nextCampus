@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from './supabase/admin'
 import { env } from '@/lib/env'
 import {
   parseQuizBank,
+  summarizeQuizBank,
   quizBankMetaSchema,
   type QuizBankFile,
   type QuizBankMeta,
@@ -171,6 +172,26 @@ export async function listQuizBanks(
   return listQuizBanksUncached(yearSlug, subjectSlug)
 }
 
+// Current sidecars contain all configuration data, never question contents.
+// Legacy sidecars are resolved on cache misses only, without mutating Storage.
+export async function getQuizBankSummaries(
+  yearSlug: string,
+  subjectSlug: string,
+  banks: QuizBankMeta[],
+): Promise<Array<QuizBankMeta & { unidades: NonNullable<QuizBankMeta['unidades']> }>> {
+  'use cache'
+  cacheTag(quizBanksCacheTag(yearSlug, subjectSlug))
+  cacheLife({ revalidate: 3600, expire: 86400 })
+
+  return Promise.all(banks.map(async (meta) => {
+    if (meta.unidades && meta.unidades.reduce((total, unit) => total + unit.totalPreguntas, 0) === meta.totalPreguntas) {
+      return { ...meta, unidades: meta.unidades }
+    }
+    const bank = await readQuizBank(yearSlug, subjectSlug, meta.id)
+    return { ...meta, ...(bank ? summarizeQuizBank(bank) : { totalPreguntas: 0, unidades: [] }) }
+  }))
+}
+
 export async function getQuizBankMeta(
   yearSlug: string,
   subjectSlug: string,
@@ -203,12 +224,16 @@ export async function uploadQuizBank(params: {
   subidoPorId: string
   descripcion?: string
 }): Promise<QuizBankMeta> {
-  const { yearSlug, subjectSlug, nombre, rawJson, totalPreguntas, subidoPor, subidoPorId, descripcion } =
+  const { yearSlug, subjectSlug, nombre, rawJson, subidoPor, subidoPorId, descripcion } =
     params
 
   if (Buffer.byteLength(rawJson, 'utf8') > MAX_BANK_BYTES) {
     throw new Error('BAD_REQUEST: el banco supera el límite de 1 MB')
   }
+
+  const parsed = parseQuizBank(rawJson)
+  if (!parsed.ok) throw new Error(`BAD_REQUEST: ${parsed.error}`)
+  const summary = summarizeQuizBank(parsed.bank)
 
   const supabase = createSupabaseAdminClient()
   const bankId = crypto.randomUUID()
@@ -227,7 +252,7 @@ export async function uploadQuizBank(params: {
   const meta: QuizBankMeta = {
     id: bankId,
     nombre,
-    totalPreguntas,
+    ...summary,
     subidoEl: new Date().toISOString(),
     subidoPor,
     subidoPorId,

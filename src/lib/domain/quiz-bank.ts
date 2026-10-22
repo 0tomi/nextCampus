@@ -78,8 +78,13 @@ export interface ResumenIntento {
   porcentaje: number
 }
 
-// Entrada del manifest (index.json) por materia. Lo que ve el selector de
+// Metadata sidecar por banco. Lo que ve el selector de
 // bancos: nunca incluye preguntas ni respuestas.
+export interface QuizBankUnitSummary {
+  nombre: string
+  totalPreguntas: number
+}
+
 export interface QuizBankMeta {
   id: string
   nombre: string
@@ -92,6 +97,8 @@ export interface QuizBankMeta {
   // Texto libre que describe el banco. Se toma del JSON al subirlo y el dueño
   // lo puede editar después (vive solo en el meta).
   descripcion?: string
+  // Optional only for sidecars created before unit summaries were introduced.
+  unidades?: QuizBankUnitSummary[]
 }
 
 export const quizBankMetaSchema = z.object({
@@ -102,8 +109,17 @@ export const quizBankMetaSchema = z.object({
   subidoPor: z.string().min(1),
   subidoPorId: z.string().min(1).optional(),
   descripcion: z.string().max(1000).optional(),
+  unidades: z.array(z.object({
+    nombre: z.string().trim().min(1).max(200),
+    totalPreguntas: z.number().int().min(0).max(500),
+  })).max(50).optional(),
 })
 
+
+export function summarizeQuizBank(bank: QuizBankFile): { totalPreguntas: number; unidades: QuizBankUnitSummary[] } {
+  const unidades = bank.units.map((unit) => ({ nombre: unit.name, totalPreguntas: unit.questions.length }))
+  return { totalPreguntas: unidades.reduce((total, unit) => total + unit.totalPreguntas, 0), unidades }
+}
 
 // --- Cotas (defensa contra payloads abusivos) ------------------------------
 

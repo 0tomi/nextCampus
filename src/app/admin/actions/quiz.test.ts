@@ -33,6 +33,14 @@ beforeEach(() => {
 })
 
 describe('updateQuizBankDescriptionAction', () => {
+  it('preserves unit summaries and invalidates their shared cache on description edits', async () => {
+    const withUnits = { ...meta, unidades: [{ nombre: 'Unidad 1', totalPreguntas: 10 }] }
+    m.getMeta.mockResolvedValue(withUnits)
+    await updateQuizBankDescriptionAction(empty, form('Nueva descripción'))
+    expect(m.updateMeta).toHaveBeenCalledWith('primero', 'calculo', { ...withUnits, descripcion: 'Nueva descripción' })
+    expect(m.updateTag).toHaveBeenCalledWith('quiz-banks:primero:calculo')
+  })
+
   it('guarda la descripción del dueño e invalida el listado', async () => {
     const res = await updateQuizBankDescriptionAction(empty, form('  Repaso de límites.  '))
     expect(res.ok).toBe(true)
