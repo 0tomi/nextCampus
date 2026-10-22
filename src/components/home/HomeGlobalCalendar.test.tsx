@@ -64,6 +64,32 @@ describe('HomeGlobalCalendar', () => {
     expect(markup).not.toContain('Cargando calendario')
   })
 
+  it('keeps long event labels readable without truncating the title or metadata', async () => {
+    const { HomeGlobalCalendar } = await import('./HomeGlobalCalendar')
+    const event = makeEvent({
+      titulo: 'Recuperatorio integrador de todos los contenidos del segundo cuatrimestre',
+      materiaNombre: 'Introducción a los sistemas de información y organizaciones',
+      commissionNombre: 'Comisión del turno vespertino con prácticas de laboratorio',
+      yearNombre: 'Segundo año de la carrera',
+    })
+    const markup = renderToStaticMarkup(
+      <HomeGlobalCalendar
+        initialPrefs={{ hiddenYears: [], hiddenSubjects: [], hiddenCommissions: [] }}
+        events={[event]}
+      />,
+    )
+
+    for (const label of [event.titulo, event.materiaNombre, event.commissionNombre, event.yearNombre]) {
+      expect(markup).toContain(label)
+    }
+    expect(markup).not.toMatch(/text-\[(8|9)px\]|truncate|max-w-\[(80|120)px\]/)
+    expect(markup).toMatch(/<h3 class="[^"]*\[overflow-wrap:anywhere\][^"]*">/)
+    expect(markup).not.toMatch(/<h3 class="[^"]*line-clamp/)
+    expect(markup).toMatch(/class="[^"]*text-xs[^"]*">10 de jun/)
+    expect(markup).toContain('aria-label="Abrir ' + event.materiaNombre + '"')
+    expect(markup).toContain('href="/primer-anio/calculo/comision-a"')
+  })
+
   it('muestra el año y hace navegable toda la card cuando hay comisión', async () => {
     const { HomeGlobalCalendar } = await import('./HomeGlobalCalendar')
 

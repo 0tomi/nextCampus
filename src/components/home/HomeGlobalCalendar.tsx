@@ -125,7 +125,7 @@ export function HomeGlobalCalendar({
             closestEvents.map((evento) => (
               <DarkCard
                 key={evento.id}
-                className="group relative flex min-h-[140px] flex-col justify-between rounded-lg border border-white/5 bg-surface-1/60 p-4 backdrop-blur-sm transition-colors duration-300 hover:border-white/10 hover:bg-surface-1"
+                className="group relative flex min-w-0 min-h-[140px] flex-col justify-between rounded-lg border border-white/5 bg-surface-1/60 p-4 backdrop-blur-sm transition-colors duration-300 hover:border-white/10 hover:bg-surface-1"
               >
                 <Link
                   href={buildHomeCalendarEventHref(evento)}
@@ -134,10 +134,10 @@ export function HomeGlobalCalendar({
                 />
 
                 <div className="space-y-2.5">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[9px] font-bold uppercase tracking-[0.15em] text-white/35">
+                  <div className="flex flex-wrap items-center gap-2 text-xs leading-5 text-white/35 [overflow-wrap:anywhere]">
                     <span
                       className={cn(
-                        "rounded border px-1.5 py-0.5 text-[8px] font-bold tracking-wider",
+                        "max-w-full rounded border px-1.5 py-0.5 text-xs font-semibold",
                         evento.tipo.toLowerCase() === 'examen' ||
                         evento.tipo.toLowerCase() === 'parcial' ||
                         evento.tipo.toLowerCase() === 'final' ||
@@ -153,27 +153,23 @@ export function HomeGlobalCalendar({
                     >
                       {evento.tipo}
                     </span>
-                    <span className="rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[8px] font-bold tracking-wider text-white/65">
+                    <span className="max-w-full rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-xs font-semibold text-white/65">
                       {evento.yearNombre}
                     </span>
-                    <span>•</span>
                     <span
-                      className="max-w-[120px] truncate text-white/55 transition-colors group-hover:text-white"
+                      className="w-full text-sm font-semibold leading-5 text-white/55 transition-colors group-hover:text-white"
                       title={evento.materiaNombre}
                     >
                       {evento.materiaNombre}
                     </span>
                     {evento.commissionNombre ? (
-                      <>
-                        <span>•</span>
-                        <span className="max-w-[80px] truncate" title={evento.commissionNombre}>
-                          {evento.commissionNombre}
-                        </span>
-                      </>
+                      <span className="w-full" title={evento.commissionNombre}>
+                        {evento.commissionNombre}
+                      </span>
                     ) : null}
                   </div>
 
-                  <h3 className="line-clamp-2 text-sm leading-snug font-black tracking-tight text-white transition-colors group-hover:text-white">
+                  <h3 className="text-sm leading-snug font-black [overflow-wrap:anywhere] tracking-tight text-white transition-colors group-hover:text-white">
                     {evento.titulo}
                   </h3>
 
@@ -188,7 +184,7 @@ export function HomeGlobalCalendar({
                 </div>
 
                 <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-2.5">
-                  <span className="inline-flex max-w-full rounded border border-white/8 bg-white/[0.02] px-2 py-1 text-[8px] font-bold uppercase tracking-[0.1em] text-white/60">
+                  <span className="inline-flex max-w-full rounded border border-white/8 bg-white/[0.02] px-2 py-1 text-xs font-semibold leading-5 text-white/60 [overflow-wrap:anywhere]">
                     {formatEventDateTime(evento.fecha, evento.hora)}
                   </span>
                 </div>
