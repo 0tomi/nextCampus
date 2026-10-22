@@ -1,10 +1,11 @@
 'use client'
 
-import { useSyncExternalStore } from 'react'
+import { useSyncExternalStore, type ReactNode } from 'react'
 import { CalendarDays, Sparkles, NotebookTabs } from 'lucide-react'
 import { AgendaTab } from './tabs/AgendaTab'
 import { QuizTab } from './tabs/QuizTab'
 import { ApuntesTab } from './tabs/ApuntesTab'
+import { ApuntesFeed } from '@/components/apuntes/ApuntesFeed'
 import { getYearColorClasses } from '@/lib/yearColors'
 import type { MobileCalendarEvent } from '@/components/mobile/calendar/MobileCalendar'
 import type { CommissionOption } from '@/lib/commission-preferences'
@@ -28,6 +29,9 @@ interface EventModalSubject {
 }
 
 interface SubjectTabsProps {
+  desktopAgenda?: ReactNode
+  desktopQuiz?: ReactNode
+  notesHeading?: ReactNode
   subjectId: string
   subjectSlug: string
   subjectName: string
@@ -45,7 +49,16 @@ interface SubjectTabsProps {
     createdAt: string
     createdByUserId: string | null
     categorias: Array<{ id: string; nombre: string }>
-    recursos: Array<{ id: string; tipo: RecursoTipo; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }>
+    recursos: Array<{
+      id: string
+      tipo: RecursoTipo
+      url: string
+      orden: number
+      nombre: string | null
+      storageKey?: string | null
+      mimeType?: string | null
+      sizeBytes?: number | null
+    }>
   }>
   categorias: Array<{ id: string; nombre: string }>
   apuntesHasMore: boolean
@@ -82,12 +95,40 @@ function getHashServerSnapshot(): string {
   return ''
 }
 
-export function SubjectTabs({ subjectId, subjectSlug, subjectName, yearSlug, yearColor, yearId, agendaId, events, periodos, apuntes, categorias, apuntesHasMore, apuntesNextCursor, tiposEvento, subjects, commissions, focusApunteSlug, activeCommissionName }: SubjectTabsProps) {
-  const rawHash = useSyncExternalStore(subscribeToHash, getHashSnapshot, getHashServerSnapshot)
+export function SubjectTabs({
+  desktopAgenda,
+  desktopQuiz,
+  notesHeading,
+  subjectId,
+  subjectSlug,
+  subjectName,
+  yearSlug,
+  yearColor,
+  yearId,
+  agendaId,
+  events,
+  periodos,
+  apuntes,
+  categorias,
+  apuntesHasMore,
+  apuntesNextCursor,
+  tiposEvento,
+  subjects,
+  commissions,
+  focusApunteSlug,
+  activeCommissionName,
+}: SubjectTabsProps) {
+  const rawHash = useSyncExternalStore(
+    subscribeToHash,
+    getHashSnapshot,
+    getHashServerSnapshot,
+  )
 
   const active: TabKey = focusApunteSlug
     ? 'apuntes'
-    : (rawHash in HASH_MAP ? HASH_MAP[rawHash] : 'agenda')
+    : rawHash in HASH_MAP
+      ? HASH_MAP[rawHash]
+      : 'agenda'
 
   const colors = getYearColorClasses({ slug: yearSlug, color: yearColor })
 
@@ -100,8 +141,11 @@ export function SubjectTabs({ subjectId, subjectSlug, subjectName, yearSlug, yea
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="px-[18px]">
-        <div role="tablist" className="flex p-1 rounded-[10px] bg-[#0f0f0f] gap-1">
+      <div className={desktopAgenda ? 'px-[18px] lg:hidden' : 'px-[18px]'}>
+        <div
+          role="tablist"
+          className="flex p-1 rounded-[10px] bg-[#0f0f0f] gap-1"
+        >
           {TABS.map(({ key, label, Icon }) => {
             const isActive = active === key
             return (
@@ -127,37 +171,96 @@ export function SubjectTabs({ subjectId, subjectSlug, subjectName, yearSlug, yea
         </div>
       </div>
 
-      <div key={active} className="subject-tab-panel">
-        {active === 'agenda' && (
-          <AgendaTab
-            events={events}
-            periodos={periodos}
-            accent={colors.tone}
-            yearId={yearId}
-            yearSlug={yearSlug}
-            subjectSlug={subjectSlug}
-            agendaId={agendaId}
-            tiposEvento={tiposEvento}
-            subjects={subjects}
-            commissions={commissions}
-            activeCommissionName={activeCommissionName}
-          />
-        )}
-        {active === 'quiz' && <QuizTab subjectSlug={subjectSlug} subjectName={subjectName} yearSlug={yearSlug} yearColor={yearColor} yearId={yearId} />}
-        {active === 'apuntes' && (
-          <ApuntesTab
-            apuntes={apuntes}
-            categorias={categorias}
-            yearId={yearId}
-            yearSlug={yearSlug}
-            subjectId={subjectId}
-            subjectSlug={subjectSlug}
-            initialHasMore={apuntesHasMore}
-            initialNextCursor={apuntesNextCursor}
-            focusApunteSlug={focusApunteSlug}
-          />
-        )}
-      </div>
+      {desktopAgenda ? (
+        <>
+          <div className="hidden lg:block">{desktopAgenda}</div>
+          <div className={active === 'agenda' ? 'lg:hidden' : 'hidden'}>
+            <AgendaTab
+              events={events}
+              periodos={periodos}
+              accent={colors.tone}
+              yearId={yearId}
+              yearSlug={yearSlug}
+              subjectSlug={subjectSlug}
+              agendaId={agendaId}
+              tiposEvento={tiposEvento}
+              subjects={subjects}
+              commissions={commissions}
+              activeCommissionName={activeCommissionName}
+            />
+          </div>
+          <div className="hidden lg:block">{desktopQuiz}</div>
+          <div className={active === 'quiz' ? 'lg:hidden' : 'hidden'}>
+            <QuizTab
+              subjectSlug={subjectSlug}
+              subjectName={subjectName}
+              yearSlug={yearSlug}
+              yearColor={yearColor}
+              yearId={yearId}
+            />
+          </div>
+          <section
+            id="apuntes"
+            className={
+              active === 'apuntes' ? 'space-y-4' : 'hidden space-y-4 lg:block'
+            }
+          >
+            <div className="hidden lg:block">{notesHeading}</div>
+            <ApuntesFeed
+              variant="responsive"
+              subjectId={subjectId}
+              subjectSlug={subjectSlug}
+              yearId={yearId}
+              yearSlug={yearSlug}
+              categorias={categorias}
+              initialItems={apuntes}
+              initialHasMore={apuntesHasMore}
+              initialNextCursor={apuntesNextCursor}
+              focusApunteSlug={focusApunteSlug}
+            />
+          </section>
+        </>
+      ) : (
+        <div key={active} className="subject-tab-panel">
+          {active === 'agenda' && (
+            <AgendaTab
+              events={events}
+              periodos={periodos}
+              accent={colors.tone}
+              yearId={yearId}
+              yearSlug={yearSlug}
+              subjectSlug={subjectSlug}
+              agendaId={agendaId}
+              tiposEvento={tiposEvento}
+              subjects={subjects}
+              commissions={commissions}
+              activeCommissionName={activeCommissionName}
+            />
+          )}
+          {active === 'quiz' && (
+            <QuizTab
+              subjectSlug={subjectSlug}
+              subjectName={subjectName}
+              yearSlug={yearSlug}
+              yearColor={yearColor}
+              yearId={yearId}
+            />
+          )}
+          {active === 'apuntes' && (
+            <ApuntesTab
+              apuntes={apuntes}
+              categorias={categorias}
+              yearId={yearId}
+              yearSlug={yearSlug}
+              subjectId={subjectId}
+              subjectSlug={subjectSlug}
+              initialHasMore={apuntesHasMore}
+              initialNextCursor={apuntesNextCursor}
+              focusApunteSlug={focusApunteSlug}
+            />
+          )}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,7 +1,10 @@
 'use client'
 
-import { useMemo } from 'react'
-import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
+import { useMemo, type ReactNode } from 'react'
+import {
+  MobileShell,
+  type MobileShellDrawerYear,
+} from '@/components/mobile/shell/MobileShell'
 import { SubjectTabs } from './SubjectTabs'
 import { getYearColorClasses } from '@/lib/yearColors'
 import { Pencil, Plus } from 'lucide-react'
@@ -24,8 +27,31 @@ interface SubjectForMobile {
   nombre: string
   descripcion: string | null
   links: SubjectLinkDTO[]
-  year: { id: string; slug: string; nombre: string; color?: string | null; career: { nombre: string } }
-  agenda: { id: string; eventos: Array<{ id: string; titulo: string; descripcion: string | null; fecha: string; hora: string | null; tipoEventoId: string; tipoEvento: { nombre: string }; commissionId?: string | null; commissionSlug?: string | null; commissionNombre?: string | null; createdByUserId?: string | null; createdByNombre?: string | null; apuntes?: RelatedApunteLink[] }> } | null
+  year: {
+    id: string
+    slug: string
+    nombre: string
+    color?: string | null
+    career: { nombre: string }
+  }
+  agenda: {
+    id: string
+    eventos: Array<{
+      id: string
+      titulo: string
+      descripcion: string | null
+      fecha: string
+      hora: string | null
+      tipoEventoId: string
+      tipoEvento: { nombre: string }
+      commissionId?: string | null
+      commissionSlug?: string | null
+      commissionNombre?: string | null
+      createdByUserId?: string | null
+      createdByNombre?: string | null
+      apuntes?: RelatedApunteLink[]
+    }>
+  } | null
   apuntes: Array<{
     id: string
     titulo: string
@@ -34,7 +60,16 @@ interface SubjectForMobile {
     createdAt: string
     createdByUserId: string | null
     categorias: Array<{ id: string; nombre: string }>
-    recursos: Array<{ id: string; tipo: RecursoTipo; url: string; orden: number; nombre: string | null; storageKey?: string | null; mimeType?: string | null; sizeBytes?: number | null }>
+    recursos: Array<{
+      id: string
+      tipo: RecursoTipo
+      url: string
+      orden: number
+      nombre: string | null
+      storageKey?: string | null
+      mimeType?: string | null
+      sizeBytes?: number | null
+    }>
   }>
   categoriasDisponibles: Array<{ id: string; nombre: string }>
   apuntesHasMore: boolean
@@ -72,7 +107,6 @@ interface SubjectMobileEvent {
   apuntes?: RelatedApunteLink[]
 }
 
-
 export function MobileSubject({
   subject,
   allYears,
@@ -82,7 +116,17 @@ export function MobileSubject({
   activeCommissionName,
   tiposEvento,
   focusApunteSlug,
+  desktop,
+  desktopHero,
+  desktopAgenda,
+  desktopQuiz,
+  notesHeading,
 }: {
+  desktop?: { sidebar: ReactNode; topbar?: ReactNode }
+  desktopHero?: ReactNode
+  desktopAgenda?: ReactNode
+  desktopQuiz?: ReactNode
+  notesHeading?: ReactNode
   subject: SubjectForMobile
   allYears: AllYear[]
   commissions: CommissionOption[]
@@ -92,7 +136,10 @@ export function MobileSubject({
   tiposEvento: readonly TipoEvento[]
   focusApunteSlug?: string
 }) {
-  const colors = getYearColorClasses({ slug: subject.year.slug, color: subject.year.color })
+  const colors = getYearColorClasses({
+    slug: subject.year.slug,
+    color: subject.year.color,
+  })
   const drawerYears: MobileShellDrawerYear[] = allYears.map((y) => ({
     slug: y.slug,
     nombre: y.nombre,
@@ -112,7 +159,10 @@ export function MobileSubject({
     [events, subject.agenda?.eventos],
   )
   const selectedCommission = useMemo(
-    () => commissions.find((commission) => commission.id === preferredCommissionId) ?? null,
+    () =>
+      commissions.find(
+        (commission) => commission.id === preferredCommissionId,
+      ) ?? null,
     [commissions, preferredCommissionId],
   )
   const eventos = useMemo(() => {
@@ -131,15 +181,24 @@ export function MobileSubject({
       drawerYears={drawerYears}
       careerName={subject.year.career.nombre}
       currentYearSlug={subject.year.slug}
+      desktop={desktop}
     >
-      <div className="flex flex-col gap-6" style={colors.style}>
+      <div className="flex flex-col gap-6 lg:gap-10" style={colors.style}>
+        {desktopHero ? (
+          <div className="hidden lg:block">{desktopHero}</div>
+        ) : null}
         {/* HERO */}
-        <section className="px-[18px] pt-4">
+        <section
+          className={desktop ? 'px-[18px] pt-4 lg:hidden' : 'px-[18px] pt-4'}
+        >
           <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
             <div className="flex items-start justify-between gap-4">
               <div className="flex flex-wrap gap-2">
                 <span
-                  className={['inline-flex px-3 py-1 border text-[10px] font-bold uppercase tracking-[0.2em] rounded', colors.chipClassName].join(' ')}
+                  className={[
+                    'inline-flex px-3 py-1 border text-[10px] font-bold uppercase tracking-[0.2em] rounded',
+                    colors.chipClassName,
+                  ].join(' ')}
                 >
                   {subject.year.nombre}
                 </span>
@@ -153,11 +212,19 @@ export function MobileSubject({
                   </span>
                 ) : null}
               </div>
-              <AdminControls yearId={subject.year.id} requireAcademicStructure noWrapper>
+              <AdminControls
+                yearId={subject.year.id}
+                requireAcademicStructure
+                noWrapper
+              >
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
-                    onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-new-commission'))}
+                    onClick={() =>
+                      window.dispatchEvent(
+                        new CustomEvent('open-admin-modal-new-commission'),
+                      )
+                    }
                     className="p-2 rounded bg-black/20 text-white/70 hover:bg-black/35 transition-colors cursor-pointer"
                     title="Nueva comisión"
                   >
@@ -165,7 +232,11 @@ export function MobileSubject({
                   </button>
                   <button
                     type="button"
-                    onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-subject'))}
+                    onClick={() =>
+                      window.dispatchEvent(
+                        new CustomEvent('open-admin-modal-edit-subject'),
+                      )
+                    }
                     className="p-2 rounded bg-black/20 text-white/70 hover:bg-black/35 transition-colors cursor-pointer"
                     title="Editar materia"
                   >
@@ -183,16 +254,25 @@ export function MobileSubject({
               </p>
             ) : (
               <p className="mt-2 text-sm leading-relaxed text-white/55">
-                Agenda, unidades y apuntes organizados para que puedas estudiar y practicar en una sola vista.
+                Agenda, unidades y apuntes organizados para que puedas estudiar
+                y practicar en una sola vista.
               </p>
             )}
             <div className="mt-4 flex flex-col gap-2">
               <SubjectLinkButtons links={subject.links} variant="mobile" />
-              <AdminControls yearId={subject.year.id} requireAcademicStructure noWrapper>
+              <AdminControls
+                yearId={subject.year.id}
+                requireAcademicStructure
+                noWrapper
+              >
                 {subject.links.length > 0 ? (
                   <button
                     type="button"
-                    onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-subject'))}
+                    onClick={() =>
+                      window.dispatchEvent(
+                        new CustomEvent('open-admin-modal-edit-subject'),
+                      )
+                    }
                     className="flex items-center justify-center size-11 shrink-0 rounded-md bg-white/[0.04] border border-white/10 text-white cursor-pointer hover:bg-white/10 transition-colors"
                     title="Editar materia"
                   >
@@ -201,7 +281,11 @@ export function MobileSubject({
                 ) : (
                   <button
                     type="button"
-                    onClick={() => window.dispatchEvent(new CustomEvent('open-admin-modal-edit-subject'))}
+                    onClick={() =>
+                      window.dispatchEvent(
+                        new CustomEvent('open-admin-modal-edit-subject'),
+                      )
+                    }
                     className="w-full flex items-center justify-center gap-2 h-11 rounded-md bg-white/[0.04] border border-white/10 text-sm font-bold text-white cursor-pointer hover:bg-white/10 transition-colors"
                   >
                     <Plus className="size-4 text-white/70" />
@@ -210,21 +294,32 @@ export function MobileSubject({
                 )}
               </AdminControls>
             </div>
-             <div className="mt-4 grid grid-cols-2 divide-x divide-white/5">
+            <div className="mt-4 grid grid-cols-2 divide-x divide-white/5">
               <div className="flex flex-col items-center justify-center gap-0.5">
-                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">Eventos</span>
-                <span className="text-lg font-black text-white">{eventos.length}</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+                  Eventos
+                </span>
+                <span className="text-lg font-black text-white">
+                  {eventos.length}
+                </span>
               </div>
               <div className="flex flex-col items-center justify-center gap-0.5">
-                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">Apuntes</span>
-                <span className="text-lg font-black text-white">{subject.apuntesTotal}</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+                  Apuntes
+                </span>
+                <span className="text-lg font-black text-white">
+                  {subject.apuntesTotal}
+                </span>
               </div>
-             </div>
+            </div>
           </div>
         </section>
 
         {/* TABS */}
         <SubjectTabs
+          desktopAgenda={desktopAgenda}
+          desktopQuiz={desktopQuiz}
+          notesHeading={notesHeading}
           subjectId={subject.id}
           subjectSlug={subject.slug}
           subjectName={subject.nombre}
@@ -232,7 +327,7 @@ export function MobileSubject({
           yearColor={subject.year.color}
           yearId={subject.year.id}
           agendaId={subject.agenda?.id ?? ''}
-          events={eventos.map(e => ({
+          events={eventos.map((e) => ({
             id: e.id,
             titulo: e.titulo,
             tituloOriginal: e.titulo,
@@ -260,14 +355,16 @@ export function MobileSubject({
           apuntesNextCursor={subject.apuntesNextCursor}
           focusApunteSlug={focusApunteSlug}
           tiposEvento={tiposEvento}
-          subjects={[{
-            id: subject.id,
-            slug: subject.slug,
-            nombre: subject.nombre,
-            agendaId: subject.agenda?.id ?? '',
-            commissions,
-            categoriasDisponibles: subject.categoriasDisponibles,
-          }]}
+          subjects={[
+            {
+              id: subject.id,
+              slug: subject.slug,
+              nombre: subject.nombre,
+              agendaId: subject.agenda?.id ?? '',
+              commissions,
+              categoriasDisponibles: subject.categoriasDisponibles,
+            },
+          ]}
           commissions={commissions}
           activeCommissionName={activeCommissionName}
         />
