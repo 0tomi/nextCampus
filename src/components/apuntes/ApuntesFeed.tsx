@@ -11,6 +11,7 @@ import { DarkCard } from '@/components/ui/DarkCard'
 import { SafeMarkdown } from '@/components/ui/SafeMarkdown'
 import { EditApunteButton } from '@/components/admin/EditApunteButton'
 import { buildContentCardIndex, getContentCardNeighbors, type ContentCardNeighbors } from './content-card-neighbors'
+import { createApuntesPageLoader } from './apuntes-page-loader'
 import type { RecursoTipo } from '@/lib/recursos'
 
 export interface CategoriaItem {
@@ -36,12 +37,6 @@ export interface ApunteFeedItem {
     mimeType?: string | null
     sizeBytes?: number | null
   }>
-}
-
-interface ApuntesPageResponse {
-  items: ApunteFeedItem[]
-  hasMore: boolean
-  nextCursor: string | null
 }
 
 interface ApuntesFeedProps {
@@ -214,39 +209,34 @@ export function ApuntesFeed({
     return cardRefs.current
   }, [])
 
+  const [pageLoader] = useState(() =>
+    createApuntesPageLoader({
+      onStart: () => dispatch({ type: 'load-start' }),
+      onSuccess: (page, reset) =>
+        dispatch({ type: 'load-success', reset, ...page }),
+      onError: () => dispatch({ type: 'load-error' }),
+    }),
+  )
   const loadPage = useCallback(
-    async ({ reset, cursor }: { reset: boolean; cursor?: string | null }) => {
-      dispatch({ type: 'load-start' })
-      try {
-        const params = new URLSearchParams({ subjectId })
-        selectedIds.forEach((id) => params.append('categoria', id))
-        if (cursor) params.set('cursor', cursor)
-
-        const response = await fetch(`/api/apuntes?${params.toString()}`)
-        if (!response.ok) throw new Error('No se pudieron cargar los apuntes.')
-        const page = (await response.json()) as ApuntesPageResponse
-        dispatch({
-          type: 'load-success',
-          reset,
-          items: page.items,
-          hasMore: page.hasMore,
-          nextCursor: page.nextCursor,
-        })
-      } catch {
-        dispatch({ type: 'load-error' })
-      }
+    ({ reset, cursor }: { reset: boolean; cursor?: string | null }) => {
+      const params = new URLSearchParams({ subjectId })
+      selectedIds.forEach((id) => params.append('categoria', id))
+      if (cursor) params.set('cursor', cursor)
+      return pageLoader.load(`/api/apuntes?${params.toString()}`, reset)
     },
-    [selectedIds, subjectId],
+    [pageLoader, selectedIds, subjectId],
   )
 
   useEffect(() => {
+    const cleanup = () => pageLoader.cancel()
     if (firstRunRef.current) {
       firstRunRef.current = false
-      if (selectedIds.length === 0) return
+      if (selectedIds.length === 0) return cleanup
     }
     updateUrl(selectedIds)
     void loadPage({ reset: true })
-  }, [loadPage, selectedIds])
+    return cleanup
+  }, [loadPage, pageLoader, selectedIds])
 
   // Recarga la lista cuando se crea, edita o elimina un apunte en cualquier
   // parte de la pantalla, para que el cambio aparezca al instante sin recargar.
@@ -279,9 +269,10 @@ export function ApuntesFeed({
     const sentinel = sentinelRef.current
     if (!sentinel || !hasMore || loading) return
 
+    let observing = true
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
+        if (observing && entries.some((entry) => entry.isIntersecting)) {
           void loadPage({ reset: false, cursor: nextCursor })
         }
       },
@@ -289,10 +280,14 @@ export function ApuntesFeed({
     )
 
     observer.observe(sentinel)
-    return () => observer.disconnect()
+    return () => {
+      observing = false
+      observer.disconnect()
+    }
   }, [hasMore, loadPage, loading, nextCursor])
 
   const toggleCategoria = (id: string) => {
+    pageLoader.cancel()
     setSelectedIds((prev) =>
       prev.includes(id)
         ? prev.filter((selected) => selected !== id)
@@ -341,7 +336,10 @@ export function ApuntesFeed({
       >
         <button
           type="button"
-          onClick={() => setSelectedIds([])}
+          onClick={() => {
+            pageLoader.cancel()
+            setSelectedIds([])
+          }}
           className={[
             'shrink-0 cursor-pointer whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
             selectedIds.length === 0
