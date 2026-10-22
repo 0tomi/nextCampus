@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { CalendarDays, SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react'
-import { EventCalendar, type EventCalendarEvent } from '@/components/calendar/EventCalendar'
+import type { EventCalendarEvent } from '@/components/calendar/EventCalendar'
+
+const EventCalendar = lazy(() => import('@/components/calendar/EventCalendar').then((module) => ({ default: module.EventCalendar })))
 import { PeriodoLegend } from '@/components/calendar/PeriodoLegend'
 import { PeriodoDetailSheet } from '@/components/calendar/PeriodoDetailSheet'
 import { DarkCard } from '@/components/ui/DarkCard'
@@ -199,6 +201,7 @@ export function HomeGlobalCalendar({
         {isExpanded && (
           <div className="w-full space-y-3">
             <PeriodoLegend periodos={periodos} className="px-1" />
+            <Suspense fallback={<p role="status" className="min-h-80 animate-pulse p-6 text-sm text-white/60">Cargando calendario…</p>}>
             <EventCalendar
               events={calendarEvents}
               periodos={periodos}
@@ -220,6 +223,7 @@ export function HomeGlobalCalendar({
               }}
               onPeriodoClick={setSelectedPeriodo}
             />
+            </Suspense>
           </div>
         )}
       </div>

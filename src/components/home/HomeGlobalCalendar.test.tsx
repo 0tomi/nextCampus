@@ -28,9 +28,11 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
-vi.mock('@/components/calendar/EventCalendar', () => ({
-  EventCalendar: () => null,
-}))
+const calendarImport = vi.hoisted(() => vi.fn())
+vi.mock('@/components/calendar/EventCalendar', () => {
+  calendarImport()
+  return { EventCalendar: () => null }
+})
 
 function makeEvent(
   overrides: Partial<HomeGlobalCalendarEvent> = {},
@@ -55,6 +57,13 @@ function makeEvent(
 }
 
 describe('HomeGlobalCalendar', () => {
+  it('does not load the calendar module while collapsed', async () => {
+    const { HomeGlobalCalendar } = await import('./HomeGlobalCalendar')
+    const markup = renderToStaticMarkup(<HomeGlobalCalendar initialPrefs={{ hiddenYears: [], hiddenSubjects: [], hiddenCommissions: [] }} events={[]} />)
+    expect(calendarImport).not.toHaveBeenCalled()
+    expect(markup).not.toContain('Cargando calendario')
+  })
+
   it('muestra el año y hace navegable toda la card cuando hay comisión', async () => {
     const { HomeGlobalCalendar } = await import('./HomeGlobalCalendar')
 
