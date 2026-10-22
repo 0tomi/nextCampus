@@ -76,3 +76,16 @@ describe('ApuntesFeed resource grouping', () => {
     expect(markup).toContain('flex flex-col gap-3 lg:hidden')
   })
 })
+
+describe('ApuntesFeed category filters', () => {
+  it('exposes the selected filter state to assistive technology', () => {
+    const markup = renderToStaticMarkup(<ApuntesFeed
+      subjectId="subject" subjectSlug="materia" yearId="year" yearSlug="primero"
+      categorias={[{ id: 'teoria', nombre: 'Teoría' }]} initialItems={[note('single', 1)]}
+      initialHasMore={false} initialNextCursor={null} variant="desktop"
+    />)
+    expect(markup).toContain('role="group" aria-label="Filtrar por categoría"')
+    expect(markup).toMatch(/aria-pressed="true"[^>]*>Todos</)
+    expect(markup).toMatch(/aria-pressed="false"[^>]*>Teoría</)
+  })
+})

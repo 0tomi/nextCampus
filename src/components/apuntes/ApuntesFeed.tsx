@@ -269,6 +269,8 @@ export function ApuntesFeed({
     >
       {addApunteButton}
       <div
+        role="group"
+        aria-label="Filtrar por categoría"
         className={
           variant === 'mobile'
             ? '-mx-[18px] flex flex-nowrap gap-2 overflow-x-auto px-[18px] pb-1 scrollbar-none'
@@ -279,6 +281,7 @@ export function ApuntesFeed({
       >
         <button
           type="button"
+          aria-pressed={selectedIds.length === 0}
           onClick={() => {
             pageLoader.cancel()
             setSelectedIds([])
@@ -298,6 +301,7 @@ export function ApuntesFeed({
             <button
               key={categoria.id}
               type="button"
+              aria-pressed={active}
               onClick={() => toggleCategoria(categoria.id)}
               className={[
                 'shrink-0 cursor-pointer whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
