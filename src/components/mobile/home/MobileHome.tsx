@@ -459,7 +459,7 @@ export function MobileHome({
             <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/40">
               MATERIAS POR AÑO
             </p>
-            {desktopYears}
+            <div>{desktopYears}</div>
           </section>
         ) : null}
         {/* CAROUSEL */}
