@@ -1,6 +1,11 @@
 'use client'
 
-import { useSyncExternalStore, type ReactNode } from 'react'
+import {
+  useId,
+  useSyncExternalStore,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react'
 import { CalendarDays, Sparkles, NotebookTabs } from 'lucide-react'
 import { AgendaTab } from './tabs/AgendaTab'
 import { QuizTab } from './tabs/QuizTab'
@@ -82,6 +87,22 @@ const HASH_MAP: Record<string, TabKey> = {
   '#apuntes': 'apuntes',
 }
 
+export function getAdjacentTabKey(current: TabKey, key: string): TabKey | null {
+  const index = TABS.findIndex((tab) => tab.key === current)
+  switch (key) {
+    case 'ArrowRight':
+      return TABS[(index + 1) % TABS.length].key
+    case 'ArrowLeft':
+      return TABS[(index - 1 + TABS.length) % TABS.length].key
+    case 'Home':
+      return TABS[0].key
+    case 'End':
+      return TABS[TABS.length - 1].key
+    default:
+      return null
+  }
+}
+
 function subscribeToHash(callback: () => void) {
   window.addEventListener('hashchange', callback)
   return () => window.removeEventListener('hashchange', callback)
@@ -131,6 +152,16 @@ export function SubjectTabs({
       : 'agenda'
 
   const colors = getYearColorClasses({ slug: yearSlug, color: yearColor })
+  const baseId = useId()
+  const tabId = (key: TabKey) => `${baseId}-tab-${key}`
+  // The shared notes section keeps its anchor id so #apuntes links still land on it.
+  const panelId = (key: TabKey) =>
+    desktopAgenda && key === 'apuntes' ? 'apuntes' : `${baseId}-panel-${key}`
+  const panelProps = (key: TabKey) => ({
+    id: panelId(key),
+    role: 'tabpanel' as const,
+    'aria-labelledby': tabId(key),
+  })
 
   const onSelect = (key: TabKey) => {
     if (typeof window !== 'undefined') {
@@ -139,11 +170,20 @@ export function SubjectTabs({
     }
   }
 
+  const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    const next = getAdjacentTabKey(active, event.key)
+    if (!next) return
+    event.preventDefault()
+    onSelect(next)
+    document.getElementById(tabId(next))?.focus()
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className={desktopAgenda ? 'px-[18px] lg:hidden' : 'px-[18px]'}>
         <div
           role="tablist"
+          aria-label="Secciones de la materia"
           className="flex p-1 rounded-[10px] bg-[#0f0f0f] gap-1"
         >
           {TABS.map(({ key, label, Icon }) => {
@@ -152,9 +192,13 @@ export function SubjectTabs({
               <button
                 type="button"
                 key={key}
+                id={tabId(key)}
                 role="tab"
                 aria-selected={isActive}
+                aria-controls={desktopAgenda || isActive ? panelId(key) : undefined}
+                tabIndex={isActive ? 0 : -1}
                 onClick={() => onSelect(key)}
+                onKeyDown={onTabKeyDown}
                 className={[
                   'flex-1 flex items-center justify-center gap-1.5 h-11 rounded-md',
                   'text-xs font-bold cursor-pointer transition-colors',
@@ -174,7 +218,10 @@ export function SubjectTabs({
       {desktopAgenda ? (
         <>
           <div className="hidden lg:block">{desktopAgenda}</div>
-          <div className={active === 'agenda' ? 'lg:hidden' : 'hidden'}>
+          <div
+            {...panelProps('agenda')}
+            className={active === 'agenda' ? 'lg:hidden' : 'hidden'}
+          >
             <AgendaTab
               events={events}
               periodos={periodos}
@@ -190,7 +237,10 @@ export function SubjectTabs({
             />
           </div>
           <div className="hidden lg:block">{desktopQuiz}</div>
-          <div className={active === 'quiz' ? 'lg:hidden' : 'hidden'}>
+          <div
+            {...panelProps('quiz')}
+            className={active === 'quiz' ? 'lg:hidden' : 'hidden'}
+          >
             <QuizTab
               subjectSlug={subjectSlug}
               subjectName={subjectName}
@@ -200,7 +250,7 @@ export function SubjectTabs({
             />
           </div>
           <section
-            id="apuntes"
+            {...panelProps('apuntes')}
             className={
               active === 'apuntes' ? 'space-y-4' : 'hidden space-y-4 lg:block'
             }
@@ -221,7 +271,7 @@ export function SubjectTabs({
           </section>
         </>
       ) : (
-        <div key={active} className="subject-tab-panel">
+        <div key={active} {...panelProps(active)} className="subject-tab-panel">
           {active === 'agenda' && (
             <AgendaTab
               events={events}
