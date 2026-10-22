@@ -7,22 +7,24 @@ interface ApuntesPage {
 }
 
 export function createApuntesPageLoader(callbacks: {
-  onStart: () => void
+  onStart: (retrying: boolean) => void
   onSuccess: (page: ApuntesPage, reset: boolean) => void
   onError: () => void
 }) {
   let generation = 0
   let active: AbortController | null = null
+  let failed: { url: string; reset: boolean } | null = null
 
   const cancel = () => {
     generation += 1
     active?.abort()
     active = null
+    failed = null
   }
 
-  const load = async (url: string, reset: boolean) => {
+  const load = async (url: string, reset: boolean, retrying = false) => {
     // Observer notifications can repeat before React commits the loading state.
-    if (!reset && active) return
+    if (!reset && (active || (failed && !retrying))) return
     cancel()
     const requestGeneration = generation
     const controller = new AbortController()
@@ -30,7 +32,7 @@ export function createApuntesPageLoader(callbacks: {
     const isCurrent = () =>
       generation === requestGeneration && !controller.signal.aborted
 
-    callbacks.onStart()
+    callbacks.onStart(retrying)
     try {
       const response = await fetch(url, { signal: controller.signal })
       if (!isCurrent()) return
@@ -39,11 +41,20 @@ export function createApuntesPageLoader(callbacks: {
       // Aborting alone is insufficient once response parsing is already pending.
       if (isCurrent()) callbacks.onSuccess(page, reset)
     } catch {
-      if (isCurrent()) callbacks.onError()
+      if (isCurrent()) {
+        failed = { url, reset }
+        callbacks.onError()
+      }
     } finally {
       if (isCurrent()) active = null
     }
   }
 
-  return { load, cancel }
+  const retry = () => {
+    if (active || !failed) return
+    const { url, reset } = failed
+    return load(url, reset, true)
+  }
+
+  return { load, cancel, retry }
 }

@@ -124,10 +124,81 @@ describe('apuntes request ownership', () => {
     const failure = loader.load('/api/apuntes', true)
     requests[0].response.reject(new Error('offline'))
     await failure
-    const httpFailure = loader.load('/api/apuntes?cursor=next', false)
+    const httpFailure = loader.load('/api/apuntes?categoria=new', true)
     requests[1].response.resolve({ ok: false } as Response)
     await httpFailure
     expect(onError).toHaveBeenCalledTimes(2)
     expect(onSuccess).not.toHaveBeenCalled()
+  })
+})
+
+
+describe('controlled apuntes recovery', () => {
+  it.each([true, false])('retries the exact failed URL and reset=%s only on explicit retry', async (reset) => {
+    const { loader, requests, onSuccess, onError, onStart } = setup()
+    const url = '/api/apuntes?subjectId=subject&categoria=latest&cursor=failed-cursor'
+    const failure = loader.load(url, reset)
+    requests[0].response.reject(new Error('offline'))
+    await failure
+    expect(onError).toHaveBeenCalledOnce()
+    // Repeated/queued observer notifications must not bypass the failure latch.
+    await loader.load('/api/apuntes?cursor=wrong', false)
+    await loader.load('/api/apuntes?cursor=wrong', false)
+    expect(requests).toHaveLength(1)
+    expect(onSuccess).not.toHaveBeenCalled()
+    const retry = loader.retry()
+    await loader.retry()
+    expect(requests).toHaveLength(2)
+    expect(requests[1].url).toBe(url)
+    expect(onStart.mock.calls).toEqual([[false], [true]])
+    respond(requests[1], 'recovered')
+    await retry
+    expect(onSuccess).toHaveBeenCalledExactlyOnceWith(page('recovered'), reset)
+    await loader.retry()
+    expect(requests).toHaveLength(2)
+    const next = loader.load('/api/apuntes?cursor=recovered', false)
+    respond(requests[2], 'next')
+    await next
+    expect(onSuccess).toHaveBeenLastCalledWith(page('next'), false)
+  })
+
+  it('keeps repeated retry failures paused and allows another explicit retry', async () => {
+    const { loader, requests, onError } = setup()
+    const failure = loader.load('/api/apuntes?cursor=next', false)
+    requests[0].response.resolve({ ok: false } as Response)
+    await failure
+    const retry = loader.retry()
+    requests[1].response.reject(new Error('still offline'))
+    await retry
+    await loader.load('/api/apuntes?cursor=next', false)
+    expect(requests).toHaveLength(2)
+    expect(onError).toHaveBeenCalledTimes(2)
+    const recovered = loader.retry()
+    respond(requests[2], 'recovered')
+    await recovered
+  })
+
+  it('discards failed categories on cancel and ignores retry results after a newer reset', async () => {
+    const { loader, requests, onSuccess, onError } = setup()
+    const failure = loader.load('/api/apuntes?categoria=old', true)
+    requests[0].response.reject(new Error('offline'))
+    await failure
+    loader.cancel()
+    await loader.retry()
+    expect(requests).toHaveLength(1)
+    const latest = loader.load('/api/apuntes?categoria=latest', true)
+    requests[1].response.reject(new Error('offline'))
+    await latest
+    const retry = loader.retry()
+    const all = loader.load('/api/apuntes', true)
+    expect(requests[2].signal.aborted).toBe(true)
+    respond(requests[3], 'all')
+    await all
+    respond(requests[2], 'obsolete retry')
+    await retry
+    await loader.retry()
+    expect(requests).toHaveLength(4)
+    expect(onSuccess).toHaveBeenCalledExactlyOnceWith(page('all'), true)
+    expect(onError).toHaveBeenCalledTimes(2)
   })
 })

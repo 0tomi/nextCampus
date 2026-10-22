@@ -12,6 +12,7 @@ import { SafeMarkdown } from '@/components/ui/SafeMarkdown'
 import { EditApunteButton } from '@/components/admin/EditApunteButton'
 import { buildContentCardIndex, getContentCardNeighbors, type ContentCardNeighbors } from './content-card-neighbors'
 import { createApuntesPageLoader } from './apuntes-page-loader'
+import { ApuntesFeedRecovery } from './ApuntesFeedRecovery'
 import type { RecursoTipo } from '@/lib/recursos'
 
 export interface CategoriaItem {
@@ -75,7 +76,7 @@ interface FeedState {
 }
 
 type FeedAction =
-  | { type: 'load-start' }
+  | { type: 'load-start'; retrying: boolean }
   | {
       type: 'load-success'
       reset: boolean
@@ -88,7 +89,7 @@ type FeedAction =
 function feedReducer(state: FeedState, action: FeedAction): FeedState {
   switch (action.type) {
     case 'load-start':
-      return { ...state, loading: true, error: '' }
+      return { ...state, loading: true, error: action.retrying ? state.error : '' }
     case 'load-success':
       return {
         items: action.reset ? action.items : [...state.items, ...action.items],
@@ -211,7 +212,7 @@ export function ApuntesFeed({
 
   const [pageLoader] = useState(() =>
     createApuntesPageLoader({
-      onStart: () => dispatch({ type: 'load-start' }),
+      onStart: (retrying) => dispatch({ type: 'load-start', retrying }),
       onSuccess: (page, reset) =>
         dispatch({ type: 'load-success', reset, ...page }),
       onError: () => dispatch({ type: 'load-error' }),
@@ -267,7 +268,7 @@ export function ApuntesFeed({
 
   useEffect(() => {
     const sentinel = sentinelRef.current
-    if (!sentinel || !hasMore || loading) return
+    if (!sentinel || !hasMore || loading || error) return
 
     let observing = true
     const observer = new IntersectionObserver(
@@ -284,7 +285,7 @@ export function ApuntesFeed({
       observing = false
       observer.disconnect()
     }
-  }, [hasMore, loadPage, loading, nextCursor])
+  }, [error, hasMore, loadPage, loading, nextCursor])
 
   const toggleCategoria = (id: string) => {
     pageLoader.cancel()
@@ -369,7 +370,7 @@ export function ApuntesFeed({
         })}
       </div>
 
-      {items.length === 0 && !loading ? (
+      {items.length === 0 && !loading && !error ? (
         <div className="rounded-lg border border-dashed border-white/10 bg-surface-1 px-6 py-10 text-center text-sm text-white/50">
           No hay apuntes con esas categorías.
         </div>
@@ -439,17 +440,17 @@ export function ApuntesFeed({
       ) : null}
 
       <div ref={sentinelRef} className="h-1" />
-      {loading ? (
-        <p className="py-3 text-center text-xs font-semibold text-white/45">
+      {loading && !error ? (
+        <p role="status" className="py-3 text-center text-xs font-semibold text-white/45">
           Cargando más apuntes…
         </p>
       ) : null}
-      {error ? (
-        <p className="py-3 text-center text-xs font-semibold text-rose-300">
-          {error}
-        </p>
-      ) : null}
-      {!hasMore && items.length > 0 ? (
+      <ApuntesFeedRecovery
+        error={error}
+        loading={loading}
+        onRetry={() => { void pageLoader.retry() }}
+      />
+      {!hasMore && !loading && !error && items.length > 0 ? (
         <p className="py-3 text-center text-xs font-semibold text-white/35">
           Ya viste todos los apuntes disponibles.
         </p>
