@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Pencil, Plus } from 'lucide-react'
 import { AdminControls } from '@/components/admin/AdminControls'
@@ -10,7 +10,6 @@ import { CopyApunteLinkButton } from '@/components/apuntes/CopyApunteLinkButton'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { SafeMarkdown } from '@/components/ui/SafeMarkdown'
 import { EditApunteButton } from '@/components/admin/EditApunteButton'
-import { buildContentCardIndex, getContentCardNeighbors, type ContentCardNeighbors } from './content-card-neighbors'
 import { createApuntesPageLoader } from './apuntes-page-loader'
 import { ApuntesFeedRecovery } from './ApuntesFeedRecovery'
 import type { RecursoTipo } from '@/lib/recursos'
@@ -51,17 +50,6 @@ interface ApuntesFeedProps {
   initialNextCursor: string | null
   focusApunteSlug?: string
   variant?: 'desktop' | 'mobile' | 'responsive'
-}
-
-interface DesktopContentCardData {
-  apunte: ApunteFeedItem
-  apunteHref: string
-  cardId: string
-  col: 0 | 1
-  isFirstOfApunte: boolean
-  showApunteActions: boolean
-  recurso: ApunteFeedItem['recursos'][number] | null
-  row: number
 }
 
 // El estado de paginación (lista, cursor, "hay más", carga y error) cambia
@@ -130,49 +118,6 @@ function updateUrl(selectedIds: readonly string[]) {
     '',
     `${url.pathname}${url.search}${url.hash}`,
   )
-}
-
-function buildDesktopContentCards(
-  items: ApunteFeedItem[],
-  yearSlug: string,
-  subjectSlug: string,
-): DesktopContentCardData[] {
-  let linearIndex = 0
-
-  return items.flatMap((apunte) => {
-    const apunteHref = `/${yearSlug}/${subjectSlug}/apuntes/${apunte.slug}`
-
-    if (apunte.recursos.length === 0) {
-      const card: DesktopContentCardData = {
-        apunte,
-        apunteHref,
-        cardId: apunte.id,
-        col: (linearIndex % 2) as 0 | 1,
-        isFirstOfApunte: true,
-        showApunteActions: true,
-        recurso: null,
-        row: Math.floor(linearIndex / 2),
-      }
-      linearIndex += 1
-      return [card]
-    }
-
-    return apunte.recursos.map((recurso, recursoIndex) => {
-      const card: DesktopContentCardData = {
-        apunte,
-        apunteHref,
-        cardId: `${apunte.id}-${recurso.id}`,
-        col: (linearIndex % 2) as 0 | 1,
-        isFirstOfApunte: recursoIndex === 0,
-        showApunteActions:
-          apunte.recursos.length > 1 ? recursoIndex === 1 : recursoIndex === 0,
-        recurso,
-        row: Math.floor(linearIndex / 2),
-      }
-      linearIndex += 1
-      return card
-    })
-  })
 }
 
 export function ApuntesFeed({
@@ -296,9 +241,6 @@ export function ApuntesFeed({
     )
   }
 
-  const desktopCards = useMemo(() => buildDesktopContentCards(items, yearSlug, subjectSlug), [items, yearSlug, subjectSlug])
-  const desktopCardIndex = useMemo(() => buildContentCardIndex(desktopCards), [desktopCards])
-
   const addApunteButton =
     variant !== 'desktop' ? (
       <AdminControls yearId={yearId} noWrapper>
@@ -382,19 +324,17 @@ export function ApuntesFeed({
               : 'stagger-children grid items-start gap-4 xl:grid-cols-2'
           }
         >
-          {desktopCards.map((card) => (
-            <DesktopContentCard
-              key={card.cardId}
-              card={card}
+          {items.map((apunte) => (
+            <DesktopApunteCard
+              key={apunte.id}
+              apunte={apunte}
               focusApunteSlug={focusApunteSlug}
-              neighbors={getContentCardNeighbors(desktopCardIndex, card)}
               subjectSlug={subjectSlug}
               yearId={yearId}
               yearSlug={yearSlug}
               setRef={(node) => {
-                if (!card.isFirstOfApunte) return
-                if (node) getCardRefs().set(card.apunte.slug, node)
-                else getCardRefs().delete(card.apunte.slug)
+                if (node) getCardRefs().set(apunte.slug, node)
+                else getCardRefs().delete(apunte.slug)
               }}
             />
           ))}
@@ -459,124 +399,57 @@ export function ApuntesFeed({
   )
 }
 
-function DesktopContentCard({
-  card,
+function DesktopApunteCard({
+  apunte,
   focusApunteSlug,
-  neighbors,
   subjectSlug,
   yearId,
   yearSlug,
   setRef,
 }: {
-  card: DesktopContentCardData
+  apunte: ApunteFeedItem
   focusApunteSlug?: string
-  neighbors: ContentCardNeighbors
   subjectSlug: string
   yearId: string
   yearSlug: string
   setRef: (node: HTMLDivElement | null) => void
 }) {
-  const { apunte, apunteHref, isFirstOfApunte, recurso, showApunteActions } =
-    card
-  const enfocado = focusApunteSlug === apunte.slug && isFirstOfApunte
-  const shouldShowHeader =
-    isFirstOfApunte || (!neighbors.sameApunteLeft && !neighbors.sameApunteUp)
-  const shouldShowActions =
-    showApunteActions ||
-    (!neighbors.sameApunteRight && !neighbors.sameApunteDown)
-
-  const hasRecurso = recurso !== null
-  const wrapperClassName = [
-    'scroll-mt-24',
-    neighbors.sameApunteLeft ? '-ml-4 w-[calc(100%+1rem)]' : '',
-    hasRecurso ? 'h-[500px]' : '',
-  ]
-    .filter(Boolean)
-    .join(' ')
-  const cardClassName = [
-    'relative flex h-full w-full flex-col overflow-hidden p-5',
-    neighbors.sameApunteLeft ? 'border-l-0' : '',
-    neighbors.sameApunteRight ? 'border-r-0' : '',
-    neighbors.sameApunteDown ? 'border-b-0' : '',
-    neighbors.sameApunteUp ? '-mt-4 h-[calc(100%+1rem)]' : '',
-    neighbors.sameApunteUp ? 'border-t-0' : '',
-    enfocado ? 'ring-1 ring-white/20' : '',
-  ]
-    .filter(Boolean)
-    .join(' ')
+  const apunteHref = `/${yearSlug}/${subjectSlug}/apuntes/${apunte.slug}`
+  const enfocado = focusApunteSlug === apunte.slug
 
   return (
     <div
       ref={setRef}
-      data-feed-apunte={isFirstOfApunte ? apunte.slug : undefined}
-      className={wrapperClassName}
+      data-feed-apunte={apunte.slug}
+      className={`min-w-0 scroll-mt-24 ${apunte.recursos.length > 1 ? 'xl:col-span-2' : ''}`}
     >
-      <DarkCard className={cardClassName}>
-        {shouldShowHeader || neighbors.sameApunteLeft ? (
-          <div
-            aria-hidden="true"
-            className={[
-              'pointer-events-none absolute top-[112px] z-10 h-px bg-gradient-to-r from-transparent via-cyan-200/20 to-transparent',
-              neighbors.sameApunteLeft ? 'left-0' : 'left-5',
-              neighbors.sameApunteRight ? 'right-0' : 'right-5',
-            ].join(' ')}
-          />
-        ) : null}
-        <div
-          className={[
-            'relative shrink-0',
-            shouldShowHeader ? 'mb-3 h-[92px]' : 'hidden',
-          ].join(' ')}
-        >
-          {shouldShowHeader ? (
-            <div className="h-full">
-              <div className={shouldShowActions ? 'pr-[168px]' : ''}>
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
-                    Apunte
-                  </p>
-                </div>
-                <h3
-                  className="mt-2 truncate text-xl font-black tracking-tight text-white transition-colors hover:underline"
-                  title={apunte.titulo}
-                >
-                  <Link href={apunteHref}>{apunte.titulo}</Link>
-                </h3>
-                {apunte.categorias.length > 0 ? (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {apunte.categorias.map((categoria) => (
-                      <span
-                        key={categoria.id}
-                        className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/45"
-                      >
-                        {categoria.nombre}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-                {apunte.descripcion ? (
-                  <SafeMarkdown
-                    stripLinks
-                    className={
-                      hasRecurso
-                        ? 'mt-2 line-clamp-1 text-sm leading-6 text-white/62 [&_p]:m-0 [&_strong]:text-white'
-                        : 'hidden'
-                    }
-                    content={apunte.descripcion}
-                  />
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-        </div>
-
-        {shouldShowActions ? (
-          <div className="absolute right-5 top-5 z-20 flex items-center gap-1.5">
-            <AdminControls
-              yearId={yearId}
-              ownerUserId={apunte.createdByUserId}
-              noWrapper
+      <DarkCard className={`flex min-w-0 flex-col p-5 ${enfocado ? 'ring-1 ring-white/20' : ''}`}>
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
+              Apunte
+            </p>
+            <h3
+              className="mt-2 break-words text-xl font-black tracking-tight text-white transition-colors hover:underline"
+              title={apunte.titulo}
             >
+              <Link href={apunteHref}>{apunte.titulo}</Link>
+            </h3>
+            {apunte.categorias.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {apunte.categorias.map((categoria) => (
+                  <span
+                    key={categoria.id}
+                    className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/45"
+                  >
+                    {categoria.nombre}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+            <AdminControls yearId={yearId} ownerUserId={apunte.createdByUserId} noWrapper>
               <div className="flex gap-1">
                 <EditApunteButton
                   apunte={{
@@ -603,35 +476,32 @@ function DesktopContentCard({
               className="px-2.5 py-1.5"
             />
           </div>
+        </div>
+        {apunte.descripcion ? (
+          <SafeMarkdown
+            stripLinks
+            className="mt-3 line-clamp-3 text-sm leading-6 text-white/65 [&_p]:m-0 [&_strong]:text-white"
+            content={apunte.descripcion}
+          />
         ) : null}
-
-        {hasRecurso ? (
-          <div className="relative mt-auto h-[356px] min-h-0">
-            <ApunteRecursoView
-              recurso={recurso}
-              variant="content-card"
-              apunteHref={apunteHref}
-              htmlLoadMode="on-click"
-            />
-          </div>
-        ) : (
-          <div className="relative mt-1 min-h-0 flex-1">
-            {apunte.descripcion ? (
-              <>
-                <SafeMarkdown
-                  stripLinks
-                  className="line-clamp-[12] text-sm leading-7 text-white/65 [&_p]:m-0 [&_strong]:text-white"
-                  content={apunte.descripcion}
+        {apunte.recursos.length > 0 ? (
+          <div className={`mt-4 grid min-w-0 grid-cols-1 gap-4 border-t border-white/10 pt-4 ${apunte.recursos.length > 1 ? 'xl:grid-cols-2' : ''}`}>
+            {apunte.recursos.map((recurso) => (
+              <div key={recurso.id} className="relative h-[356px] min-w-0">
+                <ApunteRecursoView
+                  recurso={recurso}
+                  variant="content-card"
+                  apunteHref={apunteHref}
+                  htmlLoadMode="on-click"
                 />
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-surface-0 to-transparent" />
-              </>
-            ) : (
-              <p className="py-6 text-center text-sm text-white/35">
-                Este apunte aún no tiene recursos adjuntos.
-              </p>
-            )}
+              </div>
+            ))}
           </div>
-        )}
+        ) : !apunte.descripcion ? (
+          <p className="py-6 text-center text-sm text-white/35">
+            Este apunte aún no tiene recursos adjuntos.
+          </p>
+        ) : null}
       </DarkCard>
     </div>
   )
