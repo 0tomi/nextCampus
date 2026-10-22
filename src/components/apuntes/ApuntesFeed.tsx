@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Pencil, Plus } from 'lucide-react'
 import { AdminControls } from '@/components/admin/AdminControls'
@@ -10,6 +10,7 @@ import { CopyApunteLinkButton } from '@/components/apuntes/CopyApunteLinkButton'
 import { DarkCard } from '@/components/ui/DarkCard'
 import { SafeMarkdown } from '@/components/ui/SafeMarkdown'
 import { EditApunteButton } from '@/components/admin/EditApunteButton'
+import { buildContentCardIndex, getContentCardNeighbors, type ContentCardNeighbors } from './content-card-neighbors'
 import type { RecursoTipo } from '@/lib/recursos'
 
 export interface CategoriaItem {
@@ -65,13 +66,6 @@ interface DesktopContentCardData {
   showApunteActions: boolean
   recurso: ApunteFeedItem['recursos'][number] | null
   row: number
-}
-
-interface ContentCardNeighbors {
-  sameApunteDown: boolean
-  sameApunteLeft: boolean
-  sameApunteRight: boolean
-  sameApunteUp: boolean
 }
 
 // El estado de paginación (lista, cursor, "hay más", carga y error) cambia
@@ -183,24 +177,6 @@ function buildDesktopContentCards(
       return card
     })
   })
-}
-
-function getContentCardNeighbors(
-  cards: DesktopContentCardData[],
-  card: DesktopContentCardData,
-): ContentCardNeighbors {
-  const byPosition = new Map(
-    cards.map((item) => [`${item.row}:${item.col}`, item]),
-  )
-  const sameApunte = (candidate: DesktopContentCardData | undefined) =>
-    candidate?.apunte.id === card.apunte.id
-
-  return {
-    sameApunteDown: sameApunte(byPosition.get(`${card.row + 1}:${card.col}`)),
-    sameApunteLeft: sameApunte(byPosition.get(`${card.row}:${card.col - 1}`)),
-    sameApunteRight: sameApunte(byPosition.get(`${card.row}:${card.col + 1}`)),
-    sameApunteUp: sameApunte(byPosition.get(`${card.row - 1}:${card.col}`)),
-  }
 }
 
 export function ApuntesFeed({
@@ -324,7 +300,8 @@ export function ApuntesFeed({
     )
   }
 
-  const desktopCards = buildDesktopContentCards(items, yearSlug, subjectSlug)
+  const desktopCards = useMemo(() => buildDesktopContentCards(items, yearSlug, subjectSlug), [items, yearSlug, subjectSlug])
+  const desktopCardIndex = useMemo(() => buildContentCardIndex(desktopCards), [desktopCards])
 
   const addApunteButton =
     variant !== 'desktop' ? (
@@ -411,7 +388,7 @@ export function ApuntesFeed({
               key={card.cardId}
               card={card}
               focusApunteSlug={focusApunteSlug}
-              neighbors={getContentCardNeighbors(desktopCards, card)}
+              neighbors={getContentCardNeighbors(desktopCardIndex, card)}
               subjectSlug={subjectSlug}
               yearId={yearId}
               yearSlug={yearSlug}
