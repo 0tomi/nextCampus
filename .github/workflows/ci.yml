@@ -20,11 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Sin `version`: toma package.json#packageManager, la misma versión que
+      # genera pnpm-lock.yaml (allowBuilds/trustPolicy y el hash de
+      # patchedDependencies dependen de pnpm 11).
       - uses: pnpm/action-setup@v4
-        with:
-          # Misma major que generó pnpm-lock.yaml y pnpm-workspace.yaml
-          # (allowBuilds/trustPolicy son settings de pnpm 11).
-          version: 11
       - uses: actions/setup-node@v4
         with:
           # LTS actual y default de Vercel (donde corre producción).
