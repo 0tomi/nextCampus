@@ -939,20 +939,9 @@ export async function getTodayKeyAR(): Promise<string> {
   return todayKeyAR()
 }
 
-// Enumera los slugs existentes (años, materias, comisiones y apuntes) para que las
-// rutas públicas se pre-rendericen en build time vía generateStaticParams. Corre solo
-// durante el build, por eso NO usa 'use cache' (esa directiva es para request time).
-export async function getContentSlugsForStaticParams() {
-  return prisma.academicYear.findMany({
-    select: {
-      slug: true,
-      subjects: {
-        select: {
-          slug: true,
-          commissions: { select: { slug: true } },
-          apuntes: { select: { slug: true } },
-        },
-      },
-    },
-  })
+// Enumera los slugs de año para que las páginas de año se pre-rendericen en build
+// time vía generateStaticParams. Corre solo durante el build, por eso NO usa
+// 'use cache' (esa directiva es para request time).
+export async function getYearSlugsForStaticParams() {
+  return prisma.academicYear.findMany({ select: { slug: true } })
 }

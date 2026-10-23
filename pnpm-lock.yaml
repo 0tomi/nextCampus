@@ -14,6 +14,9 @@ overrides:
   vite>esbuild: 0.28.2
   tsx>esbuild: 0.28.2
 
+patchedDependencies:
+  next@16.3.8: d4342402b5211979d84c6800fd899efa860e9eaa930a88838e53a01e7c6c2876
+
 importers:
 
   .:
@@ -59,7 +62,7 @@ importers:
         version: 1.17.0(react@19.2.4)
       next:
         specifier: 16.3.8
-        version: 16.3.8(@babel/core@7.29.7)(@playwright/test@1.60.0)(@types/node@24.13.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        version: 16.3.8(patch_hash=d4342402b5211979d84c6800fd899efa860e9eaa930a88838e53a01e7c6c2876)(@babel/core@7.29.7)(@playwright/test@1.60.0)(@types/node@24.13.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       radix-ui:
         specifier: ^1.6.1
         version: 1.6.1(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -9256,7 +9259,7 @@ snapshots:
 
   negotiator@1.0.0: {}
 
-  next@16.3.8(@babel/core@7.29.7)(@playwright/test@1.60.0)(@types/node@24.13.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
+  next@16.3.8(patch_hash=d4342402b5211979d84c6800fd899efa860e9eaa930a88838e53a01e7c6c2876)(@babel/core@7.29.7)(@playwright/test@1.60.0)(@types/node@24.13.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
     dependencies:
       '@next/env': 16.3.8
       '@swc/helpers': 0.5.23

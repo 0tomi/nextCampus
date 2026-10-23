@@ -124,9 +124,10 @@ harness. Year output regeneration passed with byte-identical HTML (65,984 bytes)
 and full RSC (43,068 bytes); fixture year lifetimes were 1,800/3,600 seconds.
 Linked-note freshness passed in that final run.
 
-The retained failure is ordinary event public-HTML freshness after a real action,
-reproduced separately on clean main 83cbeb9 with the same disposable stack and
-webpack. The assertion and scoped invalidations remain unchanged. Its root cause
-is not confirmed, and it remains a known baseline functional blocker rather than
-a merge-ready claim. No equivalent-input before/after payload percentage or
+The retained failure was ordinary event public-HTML freshness after a real action,
+also reproduced on clean main 83cbeb9. Its root cause is a Next fallback-shell
+Resume Data Cache seed that ignores persisted tag expirations; it is addressed by
+a pnpm patch to Next and by removing `generateStaticParams` from subject,
+commission and note routes. See the testing guide for the mechanism and limits.
+No equivalent-input before/after payload percentage or
 Vercel billing reduction was established. See the testing guide for proof limits.

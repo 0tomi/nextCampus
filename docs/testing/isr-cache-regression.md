@@ -159,17 +159,41 @@ the full browser harness green or establish merge readiness.
 
 The remaining event test refreshed its cached reader/probe data but ordinary
 anonymous public HTML retained the old title. A separate clean-main build at
-83cbeb9, with the same disposable stack and webpack, reproduced that event symptom
-after a distinct real-action title update. Debug output showed expired concrete
-route tags followed by generic fallback resume-data reads; that observation is
-not a confirmed framework or platform root cause. An initial linked-note failure
-did not recur in final verification and is not attributed to the clean-main
-baseline. Both public freshness assertions remain intact. This change neither
-weakens invalidation nor adds broad fallback-path invalidations to mask the known
-baseline event functional blocker.
+83cbeb9 reproduced the same symptom, so it was not introduced by this change.
+
+#### Root cause and fix (2026-10-23)
+
+A database-free minimal app reproduces the failure on Next 16.3.8, 16.4.2 and
+16.5.0-canary.24 with `cacheComponents`, `generateStaticParams`, any
+`loading.tsx` above the page, a tagged `"use cache"` reader and an action that
+calls `updateTag`/`revalidatePath`:
+
+1. The action correctly expires the concrete route (`/primero/noisy`).
+2. On the next request, `next start` treats the expired entry as a miss and
+   serves the generic fallback shell (`/primero/[subjectSlug]`) instead of
+   regenerating the concrete route.
+3. That shell resumes with a read-only Resume Data Cache seeded from the
+   build-time concrete prerender. Next only discards seed entries for tags
+   revalidated in the same request, so the old title is served indefinitely.
+
+Two independent fixes are applied:
+
+- `patches/next@16.3.8.patch` (pnpm `patchedDependencies`) makes resumed
+  requests also check the cache handler's persisted tag expirations before
+  reusing a seed entry. Verified with webpack and Turbopack builds; the unpatched
+  control stays stale. Re-check or drop the patch on every Next upgrade.
+- Subject, commission and note routes no longer export `generateStaticParams`,
+  so no concrete prerender seeds their fallback shells. Their pages render from
+  the shared static shell plus tagged `"use cache"` readers, which removes their
+  per-path ISR entries at the cost of resuming each visit.
+
+The fallback path lives behind `!isMinimalMode`, so Vercel may not exhibit the
+same indefinite staleness; that was not verified remotely. The full guarded
+harness has **not** been re-run after these fixes. Both public freshness
+assertions remain intact.
 
 A paired clean-main/candidate artifact comparison was also attempted, but the two
 server processes' reader snapshots differed after mutations. Its byte counts are
 not an equivalent-input baseline and support no payload-reduction percentage.
-Resolving the separate public freshness limitation remains necessary before
-claiming complete production verification or merge readiness.
+Re-running the guarded harness remains necessary before claiming complete
+production verification.

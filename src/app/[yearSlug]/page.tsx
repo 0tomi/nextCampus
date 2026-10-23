@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { YearRoutePage } from './YearRoutePage'
 import { getYearRouteContext } from './year-route-context'
 import { getYearRequestDay } from './year-request-day'
-import { getContentSlugsForStaticParams } from '@/lib/queries'
+import { getYearSlugsForStaticParams } from '@/lib/queries'
 
 export const metadata: Metadata = {
   title: 'Año académico | NextCampus',
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 // Pre-renderiza todas las páginas de año existentes en build time.
 export async function generateStaticParams() {
-  const years = await getContentSlugsForStaticParams()
+  const years = await getYearSlugsForStaticParams()
 
   return years.map((year) => ({ yearSlug: year.slug }))
 }
