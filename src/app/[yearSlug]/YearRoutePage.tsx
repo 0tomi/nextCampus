@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { YearEventsProvider } from '@/components/year/YearEventsProvider'
 import { ArrowRight } from 'lucide-react'
 import { EditYearButton } from '@/components/admin/EditYearButton'
 import { YearPageAdminOverlay } from '@/components/admin/YearPageAdminOverlay'
@@ -22,12 +23,12 @@ export function YearRoutePage({
   latestApuntes,
   mobileYear,
   modalSubjects,
-  nextEvents,
-  overviewEvents,
+  events,
+  todayKey,
   periodos,
   tiposEvento,
   year,
-}: YearRouteContext) {
+}: YearRouteContext & { todayKey: Promise<string> }) {
   const colors = getYearColorClasses({ slug: year.slug, color: year.color })
   const sidebarItems = buildYearSidebarItems({
     badgeClassName: colors.badgeClassName,
@@ -36,13 +37,11 @@ export function YearRoutePage({
   })
 
   return (
-    <>
+    <YearEventsProvider events={events} todayKey={todayKey}>
       <YearDesktopView
         colors={colors}
-        events={overviewEvents}
         latestApuntes={latestApuntes}
         modalSubjects={modalSubjects}
-        nextEvents={nextEvents}
         periodos={periodos}
         sidebarItems={sidebarItems}
         tiposEvento={tiposEvento}
@@ -53,7 +52,6 @@ export function YearRoutePage({
         careerName={year.career.nombre}
         latestApuntes={latestApuntes}
         mobileYear={mobileYear}
-        nextEvents={nextEvents}
         tiposEvento={tiposEvento}
       />
       <YearPageAdminOverlay
@@ -62,7 +60,7 @@ export function YearRoutePage({
         tiposEvento={tiposEvento}
         year={adminYear}
       />
-    </>
+    </YearEventsProvider>
   )
 }
 
@@ -70,19 +68,16 @@ type YearColorClasses = ReturnType<typeof getYearColorClasses>
 
 type YearDesktopViewProps = Pick<
   YearRouteContext,
-  'latestApuntes' | 'modalSubjects' | 'nextEvents' | 'periodos' | 'tiposEvento' | 'year'
+  'latestApuntes' | 'modalSubjects' | 'periodos' | 'tiposEvento' | 'year'
 > & {
   colors: YearColorClasses
-  events: YearRouteContext['overviewEvents']
   sidebarItems: ReturnType<typeof buildYearSidebarItems>
 }
 
 function YearDesktopView({
   colors,
-  events,
   latestApuntes,
   modalSubjects,
-  nextEvents,
   periodos,
   sidebarItems,
   tiposEvento,
@@ -108,8 +103,6 @@ function YearDesktopView({
           year={{ id: year.id, slug: year.slug }}
           tiposEvento={tiposEvento}
           subjects={modalSubjects}
-          events={events}
-          nextEvents={nextEvents}
           periodos={periodos}
         />
 
@@ -247,9 +240,8 @@ function YearMobileView({
   careerName,
   latestApuntes,
   mobileYear,
-  nextEvents,
   tiposEvento,
-}: Pick<YearRouteContext, 'allYears' | 'latestApuntes' | 'mobileYear' | 'nextEvents' | 'tiposEvento'> & {
+}: Pick<YearRouteContext, 'allYears' | 'latestApuntes' | 'mobileYear' | 'tiposEvento'> & {
   careerName: string
 }) {
   return (
@@ -258,7 +250,6 @@ function YearMobileView({
         year={mobileYear}
         allYears={allYears}
         latestApuntes={latestApuntes}
-        nextEvents={nextEvents}
         careerName={careerName}
         tiposEvento={tiposEvento}
       />

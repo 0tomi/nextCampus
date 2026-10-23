@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { YearRoutePage } from './YearRoutePage'
 import { getYearRouteContext } from './year-route-context'
+import { getYearRequestDay } from './year-request-day'
 import { getContentSlugsForStaticParams } from '@/lib/queries'
 
 export const metadata: Metadata = {
@@ -24,5 +25,5 @@ export default async function YearPage({
   const { yearSlug } = await params
   const context = await getYearRouteContext(yearSlug)
 
-  return <YearRoutePage {...context} />
+  return <YearRoutePage {...context} todayKey={getYearRequestDay()} />
 }
