@@ -28,6 +28,9 @@ export type QuizState = {
   rankedHistoryName: string
   rankedHistoryLoading: boolean
   rankedHistoryError: boolean
+  practiceStreak: number
+  streakNotice: number | null
+  rankedTiming: { elapsedAtSyncMs: number; syncedAtMs: number } | null
   showHistory: boolean
 }
 
@@ -42,7 +45,7 @@ export type QuizAction =
   | { type: 'SET_ERROR'; error: string | null }
   | { type: 'START_REQUEST' }
   | { type: 'START_SUCCESS'; preguntas: PublicQuestion[]; timeLeft: number | null; examDeadline: number | null; rankedAttemptId?: string | null; rankedName?: string }
-  | { type: 'RANKED_READY_SUCCESS'; preguntas: PublicQuestion[]; rankedAttemptId: string; rankedName: string }
+  | { type: 'RANKED_READY_SUCCESS'; preguntas: PublicQuestion[]; rankedAttemptId: string; rankedName: string; rankedTiming: NonNullable<QuizState['rankedTiming']> }
   | { type: 'ENTER_RANKED_REQUEST' }
   | { type: 'ENTER_RANKED_SUCCESS' }
   | { type: 'RANKED_INVALIDATED' }
@@ -98,6 +101,9 @@ export function createInitialQuizState(defaultBancoIds: string[]): QuizState {
     rankedHistoryName: '',
     rankedHistoryLoading: false,
     rankedHistoryError: false,
+    practiceStreak: 0,
+    streakNotice: null,
+    rankedTiming: null,
     showHistory: false,
   }
 }
@@ -149,6 +155,9 @@ export function quizReducer(state: QuizState, action: QuizAction): QuizState {
       return {
         ...state,
         phase: 'running',
+        practiceStreak: 0,
+        streakNotice: null,
+        rankedTiming: null,
         preguntas: action.preguntas,
         index: 0,
         answers: {},
@@ -168,6 +177,9 @@ export function quizReducer(state: QuizState, action: QuizAction): QuizState {
       return {
         ...state,
         phase: 'ready',
+        practiceStreak: 0,
+        streakNotice: null,
+        rankedTiming: action.rankedTiming,
         preguntas: action.preguntas,
         index: 0,
         answers: {},
@@ -204,16 +216,23 @@ export function quizReducer(state: QuizState, action: QuizAction): QuizState {
       return { ...state, showHistory: true }
     case 'CLOSE_HISTORY':
       return { ...state, showHistory: false }
-    case 'VERIFY_SUCCESS':
+    case 'VERIFY_SUCCESS': {
+      if (state.phase !== 'running' || state.mode !== 'practica' || !state.preguntas.some((question) => question.id === action.resultado.id)) return state
+      if (state.resultados[action.resultado.id]) return state.loading ? { ...state, loading: false } : state
+      const practiceStreak = action.resultado.correcta ? state.practiceStreak + 1 : 0
       return {
         ...state,
+        practiceStreak,
+        streakNotice: practiceStreak >= 3 && practiceStreak % 2 === 1 ? practiceStreak : null,
         loading: false,
         resultados: { ...state.resultados, [action.resultado.id]: action.resultado },
       }
+    }
     case 'FINISH_SUCCESS':
       return {
         ...state,
         phase: 'done',
+        streakNotice: null,
         resultados: action.resultados,
         rankedSummary: action.rankedSummary ?? null,
         loading: false,
@@ -228,9 +247,9 @@ export function quizReducer(state: QuizState, action: QuizAction): QuizState {
         answers: { ...state.answers, [action.questionId]: action.answer },
       }
     case 'NEXT_INDEX':
-      return { ...state, index: Math.min(state.index + 1, state.preguntas.length - 1) }
+      return { ...state, index: Math.min(state.index + 1, state.preguntas.length - 1), streakNotice: null, practiceStreak: state.mode === 'practica' && !state.resultados[state.preguntas[state.index]?.id] ? 0 : state.practiceStreak }
     case 'PREV_INDEX':
-      return { ...state, index: Math.max(state.index - 1, 0) }
+      return { ...state, index: Math.max(state.index - 1, 0), streakNotice: null }
     case 'TICK':
       if (state.phase !== 'running' || state.examDeadline !== action.examDeadline || state.timeLeft === action.timeLeft) return state
       return { ...state, timeLeft: Math.max(0, action.timeLeft) }
@@ -246,6 +265,9 @@ export function quizReducer(state: QuizState, action: QuizAction): QuizState {
       return {
         ...state,
         phase: 'config',
+        practiceStreak: 0,
+        streakNotice: null,
+        rankedTiming: null,
         preguntas: [],
         answers: {},
         resultados: {},

@@ -8,6 +8,7 @@ import { AnswerSummary } from './AnswerSummary'
 import { RankedProgressCard } from './RankedHistory'
 import { UnitBreakdown } from './UnitBreakdown'
 import { useQuiz } from './QuizProvider'
+import { formatQuizTime } from './quizFormat'
 
 export function QuizResultsPhase() {
   const { state } = useQuiz()
@@ -40,6 +41,7 @@ function ResultsSummaryCard({ correctas, pct, total }: { correctas: number; pct:
         {pct}<span className="text-3xl text-white/40">%</span>
       </p>
       <p className="mt-3 text-sm text-white/52">{correctas} de {total} respuestas correctas</p>
+      {state.mode === 'ranked' && state.rankedSummary ? <p className="mt-3 text-sm text-white/70">Tiempo total: <span className="font-mono tabular-nums">{formatQuizTime(state.rankedSummary.durationSeconds)}</span></p> : null}
       {state.mode === 'ranked' && state.rankedSummary ? (
         <p className={cn('mt-4 max-w-md text-sm leading-6', state.rankedSummary.validForRanking ? 'text-cyan-100' : 'text-amber-100')}>
           {state.rankedSummary.validForRanking ? 'Tu intento participa en el top del banco.' : 'Este intento queda fuera del top, pero tu resultado queda completo.'}
@@ -60,10 +62,15 @@ function ResultsSummaryCard({ correctas, pct, total }: { correctas: number; pct:
 
 function QuestionReviewList() {
   const { state } = useQuiz()
+  const questions = state.preguntas.map((question, index) => ({ question, index }))
+  const orderedQuestions = [
+    ...questions.filter(({ question }) => !state.resultados[question.id]?.correcta),
+    ...questions.filter(({ question }) => state.resultados[question.id]?.correcta),
+  ]
 
   return (
     <div className="space-y-3">
-      {state.preguntas.map((question, index) => {
+      {orderedQuestions.map(({ question, index }) => {
         const resultado = state.resultados[question.id]
         const ok = resultado?.correcta
 

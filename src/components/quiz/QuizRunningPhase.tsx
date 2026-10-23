@@ -9,6 +9,7 @@ import { formatQuizTime } from './quizFormat'
 import { OptionButton } from './OptionButton'
 import { optionState } from './quizOptionState'
 import { useQuiz } from './QuizProvider'
+import { RankedTimer } from './RankedTimer'
 
 const TRUE_FALSE_OPTIONS = [
   { value: true, label: 'Verdadero' },
@@ -23,6 +24,7 @@ export function QuizRunningPhase() {
     <div className="space-y-5">
       <QuestionProgressHeader />
       <RankedInvalidationNotice />
+      <PracticeStreakNotice />
       <QuestionCard />
       <QuizDialogs />
     </div>
@@ -38,7 +40,8 @@ function QuestionProgressHeader() {
         <span className="font-semibold text-white/56 tabular-nums">
           Pregunta {state.index + 1}<span className="text-white/32"> / {state.preguntas.length}</span>
         </span>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          {isRanked && state.rankedTiming ? <RankedTimer timing={state.rankedTiming} totalQuestions={state.preguntas.length} /> : null}
           {state.timeLeft !== null ? <TimerBadge timeLeft={state.timeLeft} /> : null}
           <span className="font-semibold uppercase tracking-[0.18em] text-white/32">{isPractica ? 'Práctica' : isRanked ? 'Ranked · beta' : 'Examen'}</span>
           <button type="button" onClick={actions.openExitDialog} className="text-rose-400 hover:text-rose-300 font-semibold cursor-pointer transition-colors">
@@ -72,8 +75,19 @@ function RankedInvalidationNotice() {
   )
 }
 
+function PracticeStreakNotice() {
+  const { isPractica, state } = useQuiz()
+  if (!isPractica || state.streakNotice === null) return null
+
+  return (
+    <p role="status" className="border border-emerald-400/25 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-100">
+      ¡Estás en racha de {state.streakNotice} preguntas correctas!
+    </p>
+  )
+}
+
 function QuestionCard() {
-  const { pregunta, resultado, state } = useQuiz()
+  const { pregunta, state } = useQuiz()
   if (!pregunta) return null
 
   return (
@@ -81,8 +95,8 @@ function QuestionCard() {
       <AnimateIn key={pregunta.id} className="space-y-6">
         <div>
           <h2 className="break-words text-xl font-black leading-snug tracking-tight text-white sm:text-2xl">{pregunta.question}</h2>
+          {pregunta.type === 'multiple' ? <p className="mt-3 text-xs text-white/52">Puede haber más de una respuesta correcta.</p> : null}
           <QuestionOptions />
-          {pregunta.type === 'multiple' && !resultado ? <p className="mt-3 text-xs text-white/36">Puede haber más de una respuesta correcta.</p> : null}
           <PracticeFeedback />
           {state.error ? <p className="mt-6 border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{state.error}</p> : null}
         </div>

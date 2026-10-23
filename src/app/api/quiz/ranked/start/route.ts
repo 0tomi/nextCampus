@@ -67,11 +67,13 @@ export async function POST(request: Request) {
       questionIds: set.map((question) => question.id),
       totalQuestions: set.length,
     },
-    select: { id: true },
+    select: { id: true, startedAt: true },
   })
 
   return NextResponse.json({
     attemptId: attempt.id,
+    startedAt: attempt.startedAt.toISOString(),
+    serverNow: new Date().toISOString(),
     mode: 'ranked',
     total: set.length,
     participantName: participant.name,
