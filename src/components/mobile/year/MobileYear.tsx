@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { Suspense, useMemo, useState } from 'react'
+import { useUpcomingYearEvents } from '@/components/year/yearEvents'
 import { ArrowRight, ChevronRight, Calendar, Layers, Pencil, Trash2, Plus } from 'lucide-react'
 import { MobileShell, type MobileShellDrawerYear } from '@/components/mobile/shell/MobileShell'
 import { AgendaCard } from '@/components/mobile/agenda/AgendaCard'
@@ -18,7 +19,7 @@ import { usePreferredCommissionMap } from '@/components/commissions/usePreferred
 import { formatDescription } from '@/lib/text'
 import { LinkFavicon } from '@/components/ui/LinkFavicon'
 import { YearLatestApuntes } from '@/components/year/YearLatestApuntes'
-import type { YearLatestApunteItem } from '@/lib/domain/year-page-adapters'
+import type { YearEventItem, YearLatestApunteItem } from '@/lib/domain/year-page-adapters'
 import type { YearLinkDTO } from '@/components/year/YearResourceLinks'
 
 interface YearForMobile {
@@ -52,24 +53,7 @@ interface TipoEvento {
   nombre: string
 }
 
-interface NextEvent {
-  id: string
-  titulo: string
-  fecha: string
-  hora: string | null
-  tipo: string
-  tipoId: string
-  subjectId: string
-  subjectSlug: string
-  subjectNombre: string
-  materiaNombre: string
-  descripcion?: string | null
-  commissionId?: string | null
-  commissionSlug?: string | null
-  commissionNombre?: string | null
-  yearId?: string
-  yearSlug?: string
-}
+type NextEvent = YearEventItem
 
 type YearColorClasses = ReturnType<typeof getYearColorClasses>
 type YearSubject = YearForMobile['subjects'][number]
@@ -119,7 +103,7 @@ function toEventDetail(event: NextEvent, year: YearForMobile): MobileCalendarEve
     descripcion: event.descripcion ?? null,
     subjectId: event.subjectId,
     subjectSlug: event.subjectSlug,
-    materiaNombre: event.materiaNombre || event.subjectNombre,
+    materiaNombre: event.materiaNombre,
     yearId: year.id,
     yearSlug: year.slug,
     commissionId: event.commissionId ?? null,
@@ -132,14 +116,12 @@ export function MobileYear({
   year,
   allYears,
   latestApuntes,
-  nextEvents,
   careerName,
   tiposEvento,
 }: {
   year: YearForMobile
   allYears: AllYear[]
   latestApuntes: readonly YearLatestApunteItem[]
-  nextEvents: NextEvent[]
   careerName: string
   tiposEvento: readonly TipoEvento[]
 }) {
@@ -147,15 +129,6 @@ export function MobileYear({
   const colors = getYearColorClasses({ slug: year.slug, color: year.color })
   const preferredBySubject = usePreferredCommissionMap(year.subjects)
   const yearNumber = getYearNumber(allYears, year.slug)
-
-  const subjectsById = useMemo(
-    () => new Map(year.subjects.map((subject) => [subject.id, subject] as const)),
-    [year.subjects],
-  )
-  const subjectsBySlug = useMemo(
-    () => new Map(year.subjects.map((subject) => [subject.slug, subject] as const)),
-    [year.subjects],
-  )
 
   const filteredSubjects = useMemo(
     () =>
@@ -172,24 +145,6 @@ export function MobileYear({
           : null,
       })),
     [preferredBySubject, year.subjects],
-  )
-
-  const filteredNextEvents = useMemo(
-    () =>
-      nextEvents
-        .filter((event) => {
-          const subject =
-            subjectsById.get(event.subjectId) ?? subjectsBySlug.get(event.subjectSlug) ?? null
-
-          if (!subject) return true
-
-          return filterEventsByPreferredCommission(
-            [event],
-            preferredBySubject[subject.slug] ?? null,
-          ).length > 0
-        })
-        .slice(0, 5),
-    [nextEvents, preferredBySubject, subjectsById, subjectsBySlug],
   )
 
   const eventCount = filteredSubjects.reduce((acc, subject) => acc + (subject.agenda?.eventos.length ?? 0), 0)
@@ -209,8 +164,8 @@ export function MobileYear({
         <MobileYearHero colors={colors} eventCount={eventCount} year={year} yearNumber={yearNumber} />
         <MobileYearAgendaSection
           colors={colors}
-          events={filteredNextEvents}
           year={year}
+          preferredBySubject={preferredBySubject}
           onOpenEvent={(event) => setDetailEvent(toEventDetail(event, year))}
         />
         <YearLatestApuntes variant="mobile" notes={latestApuntes} />
@@ -331,14 +286,14 @@ function MobileYearResourceLinks({ links }: { links: readonly YearLinkDTO[] }) {
 
 function MobileYearAgendaSection({
   colors,
-  events,
   year,
   onOpenEvent,
+  preferredBySubject,
 }: {
   colors: YearColorClasses
-  events: NextEvent[]
   year: YearForMobile
   onOpenEvent: (event: NextEvent) => void
+  preferredBySubject: Record<string, string | null>
 }) {
   return (
     <section className="flex flex-col gap-3">
@@ -358,7 +313,9 @@ function MobileYearAgendaSection({
         eyebrow="Agenda"
         title="Próximos eventos"
       />
-      <MobileYearEventList events={events} onOpenEvent={onOpenEvent} />
+      <Suspense fallback={<div className="min-h-32" aria-busy="true" />}>
+        <MobileYearUpcomingEvents year={year} preferredBySubject={preferredBySubject} onOpenEvent={onOpenEvent} />
+      </Suspense>
       <MobileYearCalendarCta colors={colors} yearSlug={year.slug} />
     </section>
   )
@@ -384,6 +341,42 @@ function MobileYearSectionHeader({
   )
 }
 
+function MobileYearUpcomingEvents({ year, preferredBySubject, onOpenEvent }: {
+  year: YearForMobile
+  preferredBySubject: Record<string, string | null>
+  onOpenEvent: (event: NextEvent) => void
+}) {
+  const nextEvents = useUpcomingYearEvents()
+  const subjectsById = useMemo(
+    () => new Map(year.subjects.map((subject) => [subject.id, subject] as const)),
+    [year.subjects],
+  )
+  const subjectsBySlug = useMemo(
+    () => new Map(year.subjects.map((subject) => [subject.slug, subject] as const)),
+    [year.subjects],
+  )
+
+  const filteredNextEvents = useMemo(
+    () =>
+      nextEvents
+        .filter((event) => {
+          const subject =
+            subjectsById.get(event.subjectId) ?? subjectsBySlug.get(event.subjectSlug) ?? null
+
+          if (!subject) return true
+
+          return filterEventsByPreferredCommission(
+            [event],
+            preferredBySubject[subject.slug] ?? null,
+          ).length > 0
+        })
+        .slice(0, 5),
+    [nextEvents, preferredBySubject, subjectsById, subjectsBySlug],
+  )
+
+  return <MobileYearEventList events={filteredNextEvents} onOpenEvent={onOpenEvent} />
+}
+
 function MobileYearEventList({ events, onOpenEvent }: { events: NextEvent[]; onOpenEvent: (event: NextEvent) => void }) {
   return (
     <div className="flex flex-col gap-2.5 px-[18px]">
@@ -399,7 +392,7 @@ function MobileYearEventList({ events, onOpenEvent }: { events: NextEvent[]; onO
             hora={event.hora}
             tipo={event.tipo}
             titulo={event.titulo}
-            materia={event.subjectNombre}
+            materia={event.materiaNombre}
             onClick={() => onOpenEvent(event)}
           />
         ))

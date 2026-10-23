@@ -4,7 +4,10 @@
  * removes private access without expiring warmed academic cache entries.
  * Each test logs in independently. Only disposable fixture rows are mutated.
  */
-import { readFile } from 'node:fs/promises'
+import { readFile, stat } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { getRouteCacheKey } from 'next/dist/server/lib/route-cache-key'
+import type { RouteKind } from 'next/dist/server/route-kind'
 import { readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { test, expect, type Page } from '@playwright/test'
@@ -74,6 +77,46 @@ test('real bounded SQL preserves preferences, count DTOs and calendar history', 
   await page.reload()
   await expect(page.getByTestId('cache-snapshot')).toBeVisible()
   expect(await counts()).toEqual(before)
+})
+
+test('year static shell excludes the daily clock and measures persisted same-data regeneration', async ({ request }) => {
+  const manifest = JSON.parse(await readFile('.next/prerender-manifest.json', 'utf8'))
+  expect(manifest.routes['/primero'].initialRevalidateSeconds).toBeGreaterThanOrEqual(1800)
+  // Next 16.3 scopes mutable route output separately from immutable build seeds.
+  const key = getRouteCacheKey('/primero', { kind: 'APP_PAGE' as RouteKind, sourceRoute: '/[yearSlug]/page' })
+  const base = `.next/server${key}`
+  const paths = { html: `${base}.html`, rsc: `${base}.segments/_full.segment.rsc` }
+  const regenerateHeaders = { 'x-prerender-revalidate': manifest.preview.previewModeId }
+  // Establish a fresh baseline even when resuming a previously mutated fixture.
+  const rendered = await request.get('/primero', { headers: regenerateHeaders })
+  expect(rendered.ok()).toBe(true)
+  // The hero/calendar remain in the persisted shell. Upcoming cards are streamed
+  // with a real SSR day; no comparison of the auth/date-dependent HTTP envelope.
+  const before = { html: await readFile(paths.html), rsc: await readFile(paths.rsc) }
+  expect(before.html.toString()).toContain('Calendario del año')
+  expect(before.html.toString()).toContain('Accesos directos del año')
+  expect(before.html.toString()).toContain('aria-busy="true"')
+  expect(await rendered.text()).toContain('2099')
+  const beforeModified = (await stat(paths.html)).mtimeMs
+  // Exercise Next's native on-demand regeneration protocol only against this
+  // disposable loopback build. The preview token never leaves the local request.
+  // This measures output regeneration, not ordinary action-invalidation behavior,
+  // which remains independently asserted by the event/note tests below.
+  const regenerated = await request.get('/primero', {
+    headers: regenerateHeaders,
+  })
+  expect(regenerated.ok()).toBe(true)
+  await regenerated.body()
+  await expect.poll(async () => (await stat(paths.html)).mtimeMs).toBeGreaterThan(beforeModified)
+  const after = { html: await readFile(paths.html), rsc: await readFile(paths.rsc) }
+  const report = Object.fromEntries((['html', 'rsc'] as const).map((kind) => [kind, {
+    beforeBytes: before[kind].length, afterBytes: after[kind].length,
+    identical: before[kind].equals(after[kind]),
+    beforeSha256: createHash('sha256').update(before[kind]).digest('hex'),
+    afterSha256: createHash('sha256').update(after[kind]).digest('hex'),
+  }]))
+  await test.info().attach('persisted-year-regeneration.json', { body: JSON.stringify(report, null, 2), contentType: 'application/json' })
+  console.info('Persisted year regeneration:', JSON.stringify(report))
 })
 
 test('real event action refreshes event readers without evicting note, quiz or another year', async ({ page, request }) => {

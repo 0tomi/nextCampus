@@ -160,6 +160,34 @@ export function buildYearCalendarEvents(subjects: readonly YearPageSubject[]) {
   return buildYearEventsWithTitle(subjects, (event, subject) => `${event.titulo} · ${subject.nombre}`)
 }
 
+// One date-independent projection is shared by desktop and mobile. Calendar
+// titles and upcoming filtering are view concerns, not extra serialized lists.
+export function buildYearEventItems(subjects: readonly YearPageSubject[]) {
+  return sortEventsByDateTime(
+    subjects.flatMap((subject) =>
+      getSubjectVisibleEvents(subject).map((event) => ({
+        id: event.id,
+        titulo: event.titulo,
+        fecha: event.fecha,
+        hora: event.hora,
+        tipo: event.tipoEvento.nombre,
+        tipoId: event.tipoEventoId,
+        subjectId: subject.id,
+        subjectSlug: subject.slug,
+        materiaNombre: subject.nombre,
+        descripcion: event.descripcion,
+        commissionId: event.commissionId,
+        commissionSlug: event.commission?.slug ?? null,
+        commissionNombre: event.commission?.nombre ?? null,
+        createdByUserId: event.createdByUserId,
+        apuntes: event.apuntes,
+      })),
+    ),
+  )
+}
+
+export type YearEventItem = ReturnType<typeof buildYearEventItems>[number]
+
 export function buildYearUpcomingEvents(
   subjects: readonly YearPageSubject[],
   todayKey: string,

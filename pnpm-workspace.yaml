@@ -28,3 +28,6 @@ overrides:
   'vitest>vite': '7.3.7'
   'vite>esbuild': '0.28.2'
   'tsx>esbuild': '0.28.2'
+
+patchedDependencies:
+  next@16.3.8: patches/next@16.3.8.patch

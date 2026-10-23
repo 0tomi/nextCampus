@@ -1,0 +1,58 @@
+diff --git a/dist/esm/server/use-cache/use-cache-wrapper.js b/dist/esm/server/use-cache/use-cache-wrapper.js
+index a838e2d876f2fee6f2920ea5529485ac5ee2add0..ea7712e6bb10408912986b8769369bbeddd1368c 100644
+--- a/dist/esm/server/use-cache/use-cache-wrapper.js
++++ b/dist/esm/server/use-cache/use-cache-wrapper.js
+@@ -1619,6 +1619,24 @@ export async function cache(kind, id, boundArgsLength, originalFn, args) {
+                     rdcResult = undefined;
+                 }
+             }
++            // Patched: request-local revalidation checks miss tags that expired in
++            // an earlier request, so a read-only RDC seed (e.g. a fallback shell
++            // seeded by a sibling prerender) would keep serving stale data.
++            // Also honor the cache handler's persisted tag expirations.
++            if (rdcResult !== undefined && cacheHandler && workUnitStore.type === 'request') {
++                const { timestamp } = rdcResult.entry;
++                const tagsExpiration = await cacheHandler.getExpiration(rdcResult.entry.tags);
++                let implicitTagsExpiration = 0;
++                const lazyExpiration = workUnitStore.implicitTags == null ? void 0 : workUnitStore.implicitTags.expirationsByCacheKind.get(kind);
++                if (lazyExpiration) {
++                    const expiration = isResolvedLazyResult(lazyExpiration) ? lazyExpiration.value : await lazyExpiration;
++                    if (expiration < Infinity) implicitTagsExpiration = expiration;
++                }
++                if (tagsExpiration < Infinity && tagsExpiration >= timestamp || implicitTagsExpiration >= timestamp) {
++                    debug == null ? void 0 : debug('discarding RDC entry due to persisted tag expiration', serializedCacheKey);
++                    rdcResult = undefined;
++                }
++            }
+             if (rdcResult !== undefined) {
+                 if (rdcResult.entry.revalidate === 0 || rdcResult.entry.expire < MIN_PRERENDERABLE_EXPIRE) {
+                     // The nested-cache error only makes sense when a dynamic nested cache
+diff --git a/dist/server/use-cache/use-cache-wrapper.js b/dist/server/use-cache/use-cache-wrapper.js
+index 422acf47d8516ae2c9dc61f97c5981d363fe9f27..6b4c674607a757fd96468a592b662aa255d04fd2 100644
+--- a/dist/server/use-cache/use-cache-wrapper.js
++++ b/dist/server/use-cache/use-cache-wrapper.js
+@@ -1675,6 +1675,24 @@ async function cache(kind, id, boundArgsLength, originalFn, args) {
+                     rdcResult = undefined;
+                 }
+             }
++            // Patched: request-local revalidation checks miss tags that expired in
++            // an earlier request, so a read-only RDC seed (e.g. a fallback shell
++            // seeded by a sibling prerender) would keep serving stale data.
++            // Also honor the cache handler's persisted tag expirations.
++            if (rdcResult !== undefined && cacheHandler && workUnitStore.type === 'request') {
++                const { timestamp } = rdcResult.entry;
++                const tagsExpiration = await cacheHandler.getExpiration(rdcResult.entry.tags);
++                let implicitTagsExpiration = 0;
++                const lazyExpiration = workUnitStore.implicitTags == null ? void 0 : workUnitStore.implicitTags.expirationsByCacheKind.get(kind);
++                if (lazyExpiration) {
++                    const expiration = (0, _lazyresult.isResolvedLazyResult)(lazyExpiration) ? lazyExpiration.value : await lazyExpiration;
++                    if (expiration < Infinity) implicitTagsExpiration = expiration;
++                }
++                if (tagsExpiration < Infinity && tagsExpiration >= timestamp || implicitTagsExpiration >= timestamp) {
++                    debug == null ? void 0 : debug('discarding RDC entry due to persisted tag expiration', serializedCacheKey);
++                    rdcResult = undefined;
++                }
++            }
+             if (rdcResult !== undefined) {
+                 if (rdcResult.entry.revalidate === 0 || rdcResult.entry.expire < _constants.MIN_PRERENDERABLE_EXPIRE) {
+                     // The nested-cache error only makes sense when a dynamic nested cache

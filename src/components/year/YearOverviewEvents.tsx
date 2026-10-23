@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo } from 'react'
+import { Suspense, useMemo } from 'react'
+import { useUpcomingYearEvents, useYearEvents } from './yearEvents'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { EventCalendarAdmin } from '@/components/calendar/EventCalendarAdmin'
@@ -13,7 +14,7 @@ import {
 import { buildSubjectHref } from '@/components/mobile/shared/subjectRoutes'
 import { formatEventDateTime } from '@/lib/utils'
 import { SafeMarkdown } from '@/components/ui/SafeMarkdown'
-import { RelatedApunteLinks, type RelatedApunteLink } from '@/components/events/RelatedApunteLinks'
+import { RelatedApunteLinks } from '@/components/events/RelatedApunteLinks'
 import {
   filterEventsByPreferredCommission,
   type CommissionOption,
@@ -35,25 +36,6 @@ interface YearSubjectOption {
   categoriasDisponibles?: Array<{ id: string; nombre: string }>
 }
 
-interface YearOverviewEvent {
-  id: string
-  titulo: string
-  fecha: string
-  hora: string | null
-  tipo: string
-  tipoId?: string
-  subjectSlug: string
-  subjectId: string
-  materiaNombre: string
-  descripcion?: string | null
-  tituloOriginal?: string
-  commissionId?: string | null
-  commissionSlug?: string | null
-  commissionNombre?: string | null
-  createdByUserId?: string | null
-  apuntes?: RelatedApunteLink[]
-}
-
 interface YearOverviewEventsProps {
   year: {
     id: string
@@ -61,8 +43,6 @@ interface YearOverviewEventsProps {
   }
   tiposEvento: TipoEvento[]
   subjects: readonly YearSubjectOption[]
-  events: readonly YearOverviewEvent[]
-  nextEvents: readonly YearOverviewEvent[]
   periodos: readonly PeriodoCalendario[]
 }
 
@@ -70,10 +50,9 @@ export function YearOverviewEvents({
   year,
   tiposEvento,
   subjects,
-  events,
-  nextEvents,
   periodos,
 }: YearOverviewEventsProps) {
+  const { events } = useYearEvents()
   const preferredBySubject = usePreferredCommissionMap(subjects)
 
   const subjectsById = useMemo(
@@ -87,23 +66,8 @@ export function YearOverviewEvents({
 
   const filteredEvents = useMemo(
     () =>
-      events.filter((event) => {
-        const subject =
-          subjectsById.get(event.subjectId) ?? subjectsBySlug.get(event.subjectSlug) ?? null
-
-        if (!subject) return true
-
-        return filterEventsByPreferredCommission(
-          [event],
-          preferredBySubject[subject.slug] ?? null,
-        ).length > 0
-      }),
-    [events, preferredBySubject, subjectsById, subjectsBySlug],
-  )
-
-  const filteredNextEvents = useMemo(
-    () =>
-      nextEvents
+      events
+        .map((event) => ({ ...event, tituloOriginal: event.titulo, titulo: `${event.titulo} (${event.materiaNombre})` }))
         .filter((event) => {
           const subject =
             subjectsById.get(event.subjectId) ?? subjectsBySlug.get(event.subjectSlug) ?? null
@@ -114,9 +78,8 @@ export function YearOverviewEvents({
             [event],
             preferredBySubject[subject.slug] ?? null,
           ).length > 0
-        })
-        .slice(0, 5),
-    [nextEvents, preferredBySubject, subjectsById, subjectsBySlug],
+        }),
+    [events, preferredBySubject, subjectsById, subjectsBySlug],
   )
 
   return (
@@ -155,67 +118,98 @@ export function YearOverviewEvents({
           subjects={subjects}
         />
 
-        <div className="space-y-3 xl:min-w-[324px] 2xl:min-w-[344px]">
-          {filteredNextEvents.length === 0 ? (
-            <DarkCard className="p-5 text-sm leading-6 text-white/58">
-              Por ahora no hay eventos próximos con la selección actual.
-            </DarkCard>
-          ) : (
-            filteredNextEvents.map((evento) => (
-              <DarkCard key={evento.id} className="p-4 2xl:p-[18px]">
-                <div className="flex flex-col gap-3">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">
-                        <span>{evento.tipo}</span>
-                        <span>•</span>
-                        <Link
-                          href={buildSubjectHref({
-                            yearSlug: year.slug,
-                            subjectSlug: evento.subjectSlug,
-                            commissionSlug: evento.commissionSlug,
-                          })}
-                          className="hover:text-white transition-colors"
-                        >
-                          {evento.materiaNombre}
-                        </Link>
-                        {evento.commissionNombre ? (
-                          <>
-                            <span>•</span>
-                            <span>{evento.commissionNombre}</span>
-                          </>
-                        ) : null}
-                      </div>
-                      <h3 className="mt-2 text-base font-black tracking-tight text-white leading-snug 2xl:text-lg">
-                        {evento.titulo}
-                      </h3>
-                      <RelatedApunteLinks apuntes={evento.apuntes} className="mt-2" />
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span className="inline-flex max-w-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] border-white/10 bg-surface-1 text-white/72">
-                        {formatEventDateTime(evento.fecha, evento.hora)}
-                      </span>
-                      <DeleteEventoButton
-                        eventoId={evento.id}
-                        subjectSlug={evento.subjectSlug}
-                        yearId={year.id}
-                        ownerUserId={evento.createdByUserId}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {evento.descripcion ? (
-                  <SafeMarkdown
-                    className="mt-3 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
-                    content={evento.descripcion}
-                  />
-                ) : null}
-              </DarkCard>
-            ))
-          )}
-        </div>
+        <Suspense fallback={<div className="min-h-32" aria-busy="true" />}>
+          <YearUpcomingEventCards year={year} subjects={subjects} preferredBySubject={preferredBySubject} />
+        </Suspense>
       </div>
     </section>
+  )
+}
+
+function YearUpcomingEventCards({ year, subjects, preferredBySubject }: Pick<YearOverviewEventsProps, 'year' | 'subjects'> & {
+  preferredBySubject: Record<string, string | null>
+}) {
+  const nextEvents = useUpcomingYearEvents()
+  const subjectsById = useMemo(() => new Map(subjects.map((subject) => [subject.id, subject])), [subjects])
+  const subjectsBySlug = useMemo(() => new Map(subjects.map((subject) => [subject.slug, subject])), [subjects])
+  const filteredNextEvents = useMemo(
+    () =>
+      nextEvents
+        .filter((event) => {
+          const subject =
+            subjectsById.get(event.subjectId) ?? subjectsBySlug.get(event.subjectSlug) ?? null
+
+          if (!subject) return true
+
+          return filterEventsByPreferredCommission(
+            [event],
+            preferredBySubject[subject.slug] ?? null,
+          ).length > 0
+        })
+        .slice(0, 5),
+    [nextEvents, preferredBySubject, subjectsById, subjectsBySlug],
+  )
+
+  return (
+    <div className="space-y-3 xl:min-w-[324px] 2xl:min-w-[344px]">
+      {filteredNextEvents.length === 0 ? (
+        <DarkCard className="p-5 text-sm leading-6 text-white/58">
+          Por ahora no hay eventos próximos con la selección actual.
+        </DarkCard>
+      ) : (
+        filteredNextEvents.map((evento) => (
+          <DarkCard key={evento.id} className="p-4 2xl:p-[18px]">
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">
+                    <span>{evento.tipo}</span>
+                    <span>•</span>
+                    <Link
+                      href={buildSubjectHref({
+                        yearSlug: year.slug,
+                        subjectSlug: evento.subjectSlug,
+                        commissionSlug: evento.commissionSlug,
+                      })}
+                      className="hover:text-white transition-colors"
+                    >
+                      {evento.materiaNombre}
+                    </Link>
+                    {evento.commissionNombre ? (
+                      <>
+                        <span>•</span>
+                        <span>{evento.commissionNombre}</span>
+                      </>
+                    ) : null}
+                  </div>
+                  <h3 className="mt-2 text-base font-black tracking-tight text-white leading-snug 2xl:text-lg">
+                    {evento.titulo}
+                  </h3>
+                  <RelatedApunteLinks apuntes={evento.apuntes} className="mt-2" />
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="inline-flex max-w-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] border-white/10 bg-surface-1 text-white/72">
+                    {formatEventDateTime(evento.fecha, evento.hora)}
+                  </span>
+                  <DeleteEventoButton
+                    eventoId={evento.id}
+                    subjectSlug={evento.subjectSlug}
+                    yearId={year.id}
+                    ownerUserId={evento.createdByUserId}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {evento.descripcion ? (
+              <SafeMarkdown
+                className="mt-3 space-y-2 text-sm leading-6 text-white/62 [&_a]:text-white [&_a]:underline [&_p]:m-0 [&_strong]:text-white"
+                content={evento.descripcion}
+              />
+            ) : null}
+          </DarkCard>
+        ))
+      )}
+    </div>
   )
 }

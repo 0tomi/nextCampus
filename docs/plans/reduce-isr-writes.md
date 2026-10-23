@@ -97,3 +97,37 @@ Observability upgrade, provider migration, global dynamic rendering, or global
 prefetch disabling. Expired proxy cookies and logout error handling are separate
 follow-ups, not confirmed ISR causes. This document records approved scope, not
 runtime progress or verification status.
+
+## Follow-up: isolate the year day and responsive event payload
+
+The accepted follow-up removes getTodayKeyAR from getYearRouteContext, not by
+lengthening that date cache but by streaming the current Argentina day into only
+the upcoming-list boundaries. It shares one canonical all-date event projection
+across the desktop calendar/upcoming list and mobile agenda, deriving presentation
+titles and date filtering at consumption rather than serializing separate lists.
+The heavy public readers and all existing scoped invalidations are unchanged.
+The year shell can follow its remaining aggregate dependencies (currently 1,800
+seconds) while an open page still refreshes at Argentina midnight or tab resume.
+
+Regression coverage includes SSR/static-boundary placement, clock rollover and
+cleanup, complete calendar history and a smaller shared event DTO. The isolated
+production harness records persisted HTML/RSC sizes and same-data regeneration
+hashes separately from streamed auth/date output. This is an implemented
+optimization and reproducible measurement path, not a measured billing reduction.
+
+### Follow-up verification status (2026-10-23)
+
+The final guarded production build passed (85 pages); ordinary pnpm check passed
+456 tests across 68 files, typecheck and lint, and React Doctor reported 100/100.
+The independent browser run finished **4 passed / 1 failed**, not a green full
+harness. Year output regeneration passed with byte-identical HTML (65,984 bytes)
+and full RSC (43,068 bytes); fixture year lifetimes were 1,800/3,600 seconds.
+Linked-note freshness passed in that final run.
+
+The retained failure was ordinary event public-HTML freshness after a real action,
+also reproduced on clean main 83cbeb9. Its root cause is a Next fallback-shell
+Resume Data Cache seed that ignores persisted tag expirations; it is addressed by
+a pnpm patch to Next and by removing `generateStaticParams` from subject,
+commission and note routes. See the testing guide for the mechanism and limits.
+No equivalent-input before/after payload percentage or
+Vercel billing reduction was established. See the testing guide for proof limits.

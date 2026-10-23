@@ -4,6 +4,7 @@ import { getSubjectVisibleEvents } from './event-adapters'
 import type { YearPageCareer, YearPageYear } from './year-page-adapters'
 import {
   buildMobileYear,
+  buildYearEventItems,
   buildYearCalendarEvents,
   buildYearDrawerYears,
   buildYearLatestApuntes,
@@ -252,5 +253,23 @@ describe('lean mobile and modal projections', () => {
     year.subjects[0].agendas = []
     expect(buildMobileYear(year).subjects[0].agenda).toBeNull()
     expect(buildYearModalSubjects(year.subjects, [])).toEqual([])
+  })
+})
+
+describe('shared year event projection', () => {
+  it('retains calendar history and details once, deriving desktop/mobile upcoming lists without duplicate titles', () => {
+    const year = makeYear()
+    const events = buildYearEventItems(year.subjects)
+    expect(events.map((event) => event.id)).toEqual(['general-event', 'commission-event'])
+    expect(events[1]).toMatchObject({ titulo: 'Parcial', materiaNombre: 'Cálculo', createdByUserId: 'user-1', descripcion: '<p>Temas</p>', tipoId: 'tipo-2', apuntes: [] })
+    expect(events[1]).not.toHaveProperty('tituloOriginal')
+    expect(events[1]).not.toHaveProperty('subjectNombre')
+    for (const day of ['2026-06-04', '2026-06-05', '2026-06-11']) {
+      expect(events.filter((event) => event.fecha >= day).map((event) => event.id)).toEqual(buildYearUpcomingEvents(year.subjects, day).map((event) => event.id))
+    }
+    const before = Buffer.byteLength(JSON.stringify({ overviewEvents: buildYearOverviewEvents(year.subjects), nextEvents: buildYearUpcomingEvents(year.subjects, '2026-06-04') }))
+    const after = Buffer.byteLength(JSON.stringify({ events }))
+    expect(after).toBeLessThan(before / 2)
+    console.info(`shared year event DTO bytes: ${before} -> ${after}`)
   })
 })
