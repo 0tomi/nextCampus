@@ -257,11 +257,16 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ subject: subjectSlug, bankId: rankedSelectedBank.id, name: participant.name }),
         })
-        const data: { attemptId?: string; preguntas?: PublicQuestion[]; participantName?: string; error?: string } = await res.json()
+        const data: { attemptId?: string; preguntas?: PublicQuestion[]; participantName?: string; startedAt?: string; serverNow?: string; error?: string } = await res.json()
         if (!res.ok || !data.preguntas || !data.attemptId) throw new Error(data.error ?? 'No se pudo cargar el ranked.')
 
+        const startedAt = Date.parse(data.startedAt ?? '')
+        const serverNow = Date.parse(data.serverNow ?? '')
+        if (!Number.isFinite(startedAt) || !Number.isFinite(serverNow)) throw new Error('No se pudo cargar el tiempo del ranked.')
+        const rankedTiming = { elapsedAtSyncMs: Math.max(0, serverNow - startedAt), syncedAtMs: Date.now() }
+
         window.localStorage.setItem(RANKED_NAME_STORAGE_KEY, data.participantName ?? participant.name)
-        dispatch({ type: 'RANKED_READY_SUCCESS', preguntas: data.preguntas, rankedAttemptId: data.attemptId, rankedName: data.participantName ?? participant.name })
+        dispatch({ type: 'RANKED_READY_SUCCESS', preguntas: data.preguntas, rankedAttemptId: data.attemptId, rankedName: data.participantName ?? participant.name, rankedTiming })
       } catch (error) {
         dispatch({ type: 'REQUEST_FAILURE', error: error instanceof Error ? error.message : 'Error inesperado.' })
       }
@@ -322,7 +327,7 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
   )
 
   const verify = useCallback(async () => {
-    if (!pregunta) return
+    if (!pregunta || state.loading || state.resultados[pregunta.id] || state.mode !== 'practica' || state.phase !== 'running') return
 
     dispatch({ type: 'VERIFY_REQUEST' })
     try {
@@ -341,7 +346,7 @@ function useQuizRuntime({ bancos, subjectSlug, yearId }: QuizRuntimeParams): Qui
     } catch (error) {
       dispatch({ type: 'REQUEST_FAILURE', error: error instanceof Error ? error.message : 'Error inesperado.' })
     }
-  }, [pregunta, state.answers, subjectSlug])
+  }, [pregunta, state.answers, state.loading, state.mode, state.phase, state.resultados, subjectSlug])
 
   const finish = useCallback(async () => {
     dispatch({ type: 'FINISH_REQUEST' })

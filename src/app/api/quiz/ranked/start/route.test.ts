@@ -44,7 +44,7 @@ beforeEach(() => {
   getSubjectQuizMetaMock.mockResolvedValue({ id: 'subject-1', slug: 'algoritmos', year: { slug: 'primero' } })
   listQuizBanksMock.mockResolvedValue([{ id: 'bank-1', nombre: 'Banco 1', totalPreguntas: 50, subidoEl: '', subidoPor: '' }])
   readQuizBankMock.mockResolvedValue(makeBank(50))
-  rankedCreateMock.mockResolvedValue({ id: 'attempt-1' })
+  rankedCreateMock.mockResolvedValue({ id: 'attempt-1', startedAt: new Date('2026-10-22T12:00:00.000Z') })
 })
 
 describe('POST /api/quiz/ranked/start', () => {
@@ -58,6 +58,9 @@ describe('POST /api/quiz/ranked/start', () => {
 
     expect(response.status).toBe(200)
     expect(body).toMatchObject({ attemptId: 'attempt-1', mode: 'ranked', total: 10, participantName: 'Tomi' })
+    expect(body.startedAt).toBe('2026-10-22T12:00:00.000Z')
+    expect(Number.isFinite(Date.parse(body.serverNow))).toBe(true)
+    expect(rankedCreateMock.mock.calls[0][0].select).toEqual({ id: true, startedAt: true })
     expect(body.preguntas).toHaveLength(10)
     expect(body.preguntas[0]).not.toHaveProperty('answer')
     expect(body.preguntas[0].options[0]).toEqual(expect.objectContaining({ id: expect.any(Number), label: expect.any(String) }))
